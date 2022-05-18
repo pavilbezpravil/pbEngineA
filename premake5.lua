@@ -15,3 +15,5 @@ workspace "pbEngine"
    filter {}
 
 include "src/tests/premake5.lua"
+include "src/imgui/premake5.lua"
+include "src/imgui_test/premake5.lua"
