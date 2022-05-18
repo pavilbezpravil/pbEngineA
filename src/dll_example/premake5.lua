@@ -1,4 +1,4 @@
-project "imgui"
+project "dll_example"
    kind "SharedLib"
    language "C++"
    cppdialect "C++20"
@@ -6,5 +6,6 @@ project "imgui"
    targetdir "../../bin/%{cfg.buildcfg}"
    objdir "../../bin-int/%{cfg.buildcfg}"
 
-   defines { "IMGUI_API_EXPORT" }
+   defines { "DLL_EXAMPLE" }
+
    files { "**.h", "**.cpp" }

@@ -22,16 +22,19 @@ void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #include <filesystem>
+namespace fs = std::filesystem;
+
 void TestFunc() {
     ImGui::Text("counter1");
     ImGui::Text("counter2");
     ImGui::Text("counter3");
 
-    ImGui::Text("cwd %ls", std::filesystem::current_path().c_str());
-    ImGui::Text("tmp dir %ls", std::filesystem::temp_directory_path().c_str());
-    // for (auto& file : std::filesystem::recursive_directory_iterator(path_to_watch)) {
-    //      paths_[file.path().string()] = std::filesystem::last_write_time(file);
-    // }
+    ImGui::Text("cwd %ls", fs::current_path().c_str());
+    ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
+
+    for (auto& file : fs::recursive_directory_iterator(".")) {
+         ImGui::Text("cwd %ls", file.path().c_str());
+    }
 }
 
 // Main code
