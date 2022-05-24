@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef DLL_EXAMPLE
-#define DLL_EXAMPLE_API  __declspec(dllexport)   // export DLL information
+#define DLL_EXAMPLE_API  __declspec(dllexport)
 #else
-#define DLL_EXAMPLE_API  __declspec(dllimport)   // import DLL information
+#define DLL_EXAMPLE_API  __declspec(dllimport)
 #endif
 
 class DLL_EXAMPLE_API DllExample {
