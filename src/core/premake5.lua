@@ -1,12 +1,10 @@
 project "core"
-   kind "SharedLib"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
    targetdir "../../bin/%{cfg.buildcfg}"
    objdir "../../bin-int/%{cfg.buildcfg}"
-
-   defines { "PBE_CORE_API_DLL" }
 
    files { "**.h", "**.cpp" }
 
