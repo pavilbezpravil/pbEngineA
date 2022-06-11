@@ -1,6 +1,7 @@
 #include "EditorLayer.h"
 #include "app/Application.h"
 #include "fs/FileSystem.h"
+#include "typer/Typer.h"
 
 
 class ImGuiDemoWindow : public EditorWindow {
@@ -101,6 +102,20 @@ public:
 };
 
 
+class TyperWindow : public EditorWindow {
+public:
+   using EditorWindow::EditorWindow;
+
+   void OnImGuiRender() override {
+      ImGui::Begin(name.c_str(), &show);
+
+      sTyper.ImGui();
+
+      ImGui::End();
+   }
+};
+
+
 Application* CreateApplication() {
    Application* app = new Application();
    EditorLayer* editor = new EditorLayer();
@@ -108,6 +123,7 @@ Application* CreateApplication() {
    editor->AddEditorWindow(new TestWindow("TestWindow"));
    editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowser"), true);
    editor->AddEditorWindow(new ViewportWindow("Viewport"), true);
+   editor->AddEditorWindow(new TyperWindow("TyperWindow"), true);
    app->PushLayer(editor);
    return app;
 }

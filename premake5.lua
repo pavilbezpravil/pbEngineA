@@ -54,6 +54,7 @@ include "deps/deps.lua"
 
 group "deps"
    include "deps/imgui/imgui.lua"
+   include "deps/yaml-cpp/yaml.lua"
 group ""
 
 include "core/core.lua"
