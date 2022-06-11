@@ -26,6 +26,38 @@ public:
    }
 };
 
+class CommandList {
+public:
+   CommandList(ID3D11DeviceContext* pContext) : pContext(pContext) {
+      
+   }
+
+   CommandList() {
+      sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
+   }
+
+
+   void SetRenderTargets(Texture2D* rt, Texture2D* depth = nullptr) {
+      int nRtvs = rt ? 1 : 0;
+      ID3D11RenderTargetView** rtv = rt ? &rt->rtv : nullptr;
+      ID3D11DepthStencilView* dsv = depth ? depth->dsv : nullptr;
+
+      pContext->OMSetRenderTargets(nRtvs, rtv, dsv);
+   }
+
+   void ClearRenderTarget(Texture2D& rt, const vec4& color) {
+      pContext->ClearRenderTargetView(rt.rtv, &color.x);
+   }
+
+
+   ID3D11CommandList* GetD3DCommandList() {
+      return nullptr;
+   }
+
+
+   ID3D11DeviceContext* pContext{};
+};
+
 
 // Main code
 int main(int, char**) {
@@ -37,6 +69,8 @@ int main(int, char**) {
       delete sWindow;
       return 1;
    }
+
+   CommandList cmd{sDevice->g_pd3dDeviceContext};
 
    Scope<ImGuiLayer> imguiLayer = std::make_unique<ImGuiLayer>();
    // ImGuiLayer* imguiLayer = new ImGuiLayer{};
@@ -108,10 +142,34 @@ int main(int, char**) {
       const float clear_color_with_alpha[4] = {
             clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
                };
-      // todo:
-      sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
-      sDevice->g_pd3dDeviceContext->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
+      vec4 clearColor = {
+            clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
+      };;
 
+      // todo:
+      // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
+      // sDevice->g_pd3dDeviceContext->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
+
+      
+      cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
+      cmd.SetRenderTargets(sDevice->backBuffer);
+
+
+      // ID3D11DeviceContext* context{};
+      // sDevice->g_pd3dDevice->CreateDeferredContext(0, &context);
+      //
+      // context->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
+      // context->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
+      // ID3D11CommandList* commandList;
+      // context->FinishCommandList(true, &commandList);
+      //
+      // sDevice->g_pd3dDeviceContext->ExecuteCommandList(commandList, true);
+      //
+      // commandList->Release();
+      // context->Release();
+
+
+      sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
       imguiLayer->EndFrame();
 
       // todo:

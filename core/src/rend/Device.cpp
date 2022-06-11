@@ -28,9 +28,12 @@ Device::Device() {
    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
    UINT createDeviceFlags = 0;
-   //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#if defined(DEBUG)
+   createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
    D3D_FEATURE_LEVEL featureLevel;
-   const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
+   const D3D_FEATURE_LEVEL featureLevelArray[2] = {D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0,};
    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2,
                                      D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel,
                                      &g_pd3dDeviceContext) != S_OK) {

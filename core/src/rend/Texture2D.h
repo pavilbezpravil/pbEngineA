@@ -27,4 +27,5 @@ public:
    ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource; }
 
    ID3D11RenderTargetView* rtv{};
+   ID3D11DepthStencilView* dsv{};
 };

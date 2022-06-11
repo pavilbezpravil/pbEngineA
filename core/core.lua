@@ -8,6 +8,6 @@ project "core"
                  libsinfo.glm.includepath,
                  libsinfo.spdlog.includepath,
                  libsinfo.core.includepath }
-   links { "imgui" }
+   links { "imgui", "d3d11.lib"  }
 
    files { "**.h", "**.cpp" }
