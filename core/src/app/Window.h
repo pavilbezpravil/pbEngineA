@@ -2,6 +2,9 @@
 
 #include "../math/Types.h"
 #include <d3d11.h>
+#include <functional>
+
+struct Event;
 
 
 class Window {
@@ -10,8 +13,13 @@ public:
 
    ~Window();
 
+   void Update();
+
    WNDCLASSEX wc{};
    HWND hwnd{};
+
+   using EventCallbackFn = std::function<void(Event&)>;
+   EventCallbackFn eventCallback;
 };
 
 

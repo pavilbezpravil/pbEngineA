@@ -1,6 +1,8 @@
 #include "Window.h"
 
 #include <tchar.h>
+
+#include "Event.h"
 #include "imgui.h"
 #include "rend/Device.h"
 
@@ -22,9 +24,14 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
       return true;
 
+   if (!sWindow || !sWindow->eventCallback) {
+      return ::DefWindowProc(hWnd, msg, wParam, lParam);;
+   }
+
    switch (msg) {
-      case WM_SIZE: if (sDevice != NULL && wParam != SIZE_MINIMIZED) {
-            sDevice->Resize(int2{(UINT)LOWORD(lParam), (UINT)HIWORD(lParam)});
+      case WM_SIZE: if (wParam != SIZE_MINIMIZED) {
+         WindowResizeEvent e{ int2{(UINT)LOWORD(lParam), (UINT)HIWORD(lParam)} };
+         sWindow->eventCallback(e);
          }
          return 0;
       case WM_SYSCOMMAND: if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
@@ -56,6 +63,8 @@ Window::Window(int2 size) {
    hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100,
                               size.x, size.y, NULL, NULL, wc.hInstance, NULL);
 
+   sWindow = this;
+
    // Show the window
    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
    ::UpdateWindow(hwnd);
@@ -64,4 +73,17 @@ Window::Window(int2 size) {
 Window::~Window() {
    ::DestroyWindow(hwnd);
    ::UnregisterClass(wc.lpszClassName, wc.hInstance);
+}
+
+void Window::Update() {
+   MSG msg;
+   while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+      ::TranslateMessage(&msg);
+      ::DispatchMessage(&msg);
+
+      if (msg.message == WM_QUIT) {
+         AppQuitEvent e;
+         eventCallback(e);
+      }
+   }
 }

@@ -10,6 +10,8 @@
 Device* sDevice = nullptr;
 
 Device::Device() {
+   sDevice = this;
+
    // Setup swap chain
    DXGI_SWAP_CHAIN_DESC sd;
    ZeroMemory(&sd, sizeof(sd));
