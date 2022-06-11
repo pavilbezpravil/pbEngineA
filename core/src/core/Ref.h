@@ -8,35 +8,32 @@
 class RefCounted {
 public:
    void IncRefCount() const {
-      m_RefCount++;
+      refCount++;
    }
 
    void DecRefCount() const {
-      assert(m_RefCount > 0);
-      m_RefCount--;
+      assert(refCount > 0);
+      refCount--;
    }
 
-   uint32_t GetRefCount() const { return m_RefCount; }
+   uint32_t GetRefCount() const { return refCount; }
 
    RefCounted& operator=(const RefCounted&) = delete;
 
 private:
-   mutable uint32_t m_RefCount = 0; // TODO: atomic
+   mutable uint32_t refCount = 0;
 };
 
 template <typename T>
 class Ref {
 public:
-   Ref()
-      : m_Instance(nullptr) {
-   }
+   Ref() : instance(nullptr) {}
 
    Ref(std::nullptr_t n)
-      : m_Instance(nullptr) {
+      : instance(nullptr) {
    }
 
-   Ref(T* instance)
-      : m_Instance(instance) {
+   Ref(T* instance) : instance(instance) {
       static_assert(std::is_base_of<RefCounted, T>::value, "Class is not RefCounted!");
 
       IncRef();
@@ -44,14 +41,14 @@ public:
 
    template <typename T2>
    Ref(const Ref<T2>& other) {
-      m_Instance = (T*)other.m_Instance;
+      instance = (T*)other.instance;
       IncRef();
    }
 
    template <typename T2>
    Ref(Ref<T2>&& other) {
-      m_Instance = (T*)other.m_Instance;
-      other.m_Instance = nullptr;
+      instance = (T*)other.instance;
+      other.instance = nullptr;
    }
 
    ~Ref() {
@@ -59,13 +56,13 @@ public:
    }
 
    Ref(const Ref<T>& other)
-      : m_Instance(other.m_Instance) {
+      : instance(other.instance) {
       IncRef();
    }
 
    Ref& operator=(std::nullptr_t) {
       DecRef();
-      m_Instance = nullptr;
+      instance = nullptr;
       return *this;
    }
 
@@ -73,7 +70,7 @@ public:
       other.IncRef();
       DecRef();
 
-      m_Instance = other.m_Instance;
+      instance = other.instance;
       return *this;
    }
 
@@ -82,7 +79,7 @@ public:
       other.IncRef();
       DecRef();
 
-      m_Instance = other.m_Instance;
+      instance = other.instance;
       return *this;
    }
 
@@ -90,28 +87,28 @@ public:
    Ref& operator=(Ref<T2>&& other) {
       DecRef();
 
-      m_Instance = other.m_Instance;
-      other.m_Instance = nullptr;
+      instance = other.instance;
+      other.instance = nullptr;
       return *this;
    }
 
-   operator bool() { return m_Instance != nullptr; }
-   operator bool() const { return m_Instance != nullptr; }
+   operator bool() { return instance != nullptr; }
+   operator bool() const { return instance != nullptr; }
 
-   T* operator->() { return m_Instance; }
-   const T* operator->() const { return m_Instance; }
+   T* operator->() { return instance; }
+   const T* operator->() const { return instance; }
 
-   T& operator*() { return *m_Instance; }
-   const T& operator*() const { return *m_Instance; }
+   T& operator*() { return *instance; }
+   const T& operator*() const { return *instance; }
 
-   T* Raw() { return m_Instance; }
-   const T* Raw() const { return m_Instance; }
+   T* Raw() { return instance; }
+   const T* Raw() const { return instance; }
 
-   operator T*() { return m_Instance; }
+   operator T*() { return instance; }
 
-   void Reset(T* instance = nullptr) {
+   void Reset(T* instance_ = nullptr) {
       DecRef();
-      m_Instance = instance;
+      instance = instance_;
    }
 
    template <typename... Args>
@@ -121,22 +118,22 @@ public:
 
 private:
    void IncRef() const {
-      if (m_Instance)
-         m_Instance->IncRefCount();
+      if (instance)
+         instance->IncRefCount();
    }
 
    void DecRef() const {
-      if (m_Instance) {
-         m_Instance->DecRefCount();
-         if (m_Instance->GetRefCount() == 0) {
-            delete m_Instance;
+      if (instance) {
+         instance->DecRefCount();
+         if (instance->GetRefCount() == 0) {
+            delete instance;
          }
       }
    }
 
    template <class T2>
    friend class Ref;
-   T* m_Instance;
+   T* instance;
 };
 
 template<typename T>

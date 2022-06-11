@@ -2,6 +2,8 @@
 
 #include "core/Common.h"
 #include "Event.h"
+#include "LayerStack.h"
+#include "gui/ImGuiLayer.h"
 
 
 class Application {
@@ -14,9 +16,15 @@ public:
    virtual void OnTerm();
    virtual void OnEvent(Event& e);
 
+   void PushLayer(Layer* layer);
+   void PushOverlay(Layer* overlay);
+
    void Run();
 
+private:
    bool running = false;
+   LayerStack layerStack;
+   ImGuiLayer* imguiLayer{};
 };
 
 extern Application* sApplication;

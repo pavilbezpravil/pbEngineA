@@ -5,7 +5,8 @@
 #include "app/Window.h"
 #include "rend/Device.h"
 
-ImGuiLayer::ImGuiLayer() {
+
+void ImGuiLayer::OnAttach() {
    // Setup Dear ImGui context
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
@@ -54,24 +55,27 @@ ImGuiLayer::ImGuiLayer() {
    //IM_ASSERT(font != NULL);
 }
 
-ImGuiLayer::~ImGuiLayer() {
-   // Cleanup
+void ImGuiLayer::OnDetach() {
    ImGui_ImplDX11_Shutdown();
    ImGui_ImplWin32_Shutdown();
    ImGui::DestroyContext();
 }
 
+void ImGuiLayer::OnImGuiRender() {
+   Layer::OnImGuiRender();
+}
+
 void ImGuiLayer::NewFrame() {
-   // Start the Dear ImGui frame
    ImGui_ImplDX11_NewFrame();
    ImGui_ImplWin32_NewFrame();
    ImGui::NewFrame();
 }
 
 void ImGuiLayer::EndFrame() {
-   // Rendering
    ImGui::Render();
+}
 
+void ImGuiLayer::Render() {
    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
    ImGuiIO& io = ImGui::GetIO();
