@@ -4,6 +4,7 @@
 
 #include "Event.h"
 #include "imgui.h"
+#include "core/Log.h"
 #include "rend/Device.h"
 
 Window* sWindow = nullptr;
@@ -68,6 +69,8 @@ Window::Window(int2 size) {
    // Show the window
    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
    ::UpdateWindow(hwnd);
+
+   INFO("Window inited with size {}x{}", size.x, size.y);
 }
 
 Window::~Window() {

@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include "core/Common.h"
+#include "core/Log.h"
 #include "rend/Device.h"
 #include "rend/CommandList.h"
 #include "Window.h"
@@ -11,6 +12,8 @@ Application* sApplication = nullptr;
 
 
 void Application::OnInit() {
+   Log::Init();
+
    new Window();
 
    new Device();
@@ -20,16 +23,19 @@ void Application::OnInit() {
 
    sWindow->eventCallback = std::bind(&Application::OnEvent, this, std::placeholders::_1);
 
+   INFO("App init success");
    running = true;
 }
 
 void Application::OnTerm() {
    SAFE_DELETE(sDevice);
    SAFE_DELETE(sWindow);
+   // Log::Term();
 }
 
 void Application::OnEvent(Event& e) {
    if (e.GetEvent<AppQuitEvent>()) {
+      INFO("App quit event");
       running = false;
    }
    if (auto* windowResize = e.GetEvent<WindowResizeEvent>()) {
@@ -47,14 +53,12 @@ void Application::Run() {
    Scope<ImGuiLayer> imguiLayer = std::make_unique<ImGuiLayer>();
    // ImGuiLayer* imguiLayer = new ImGuiLayer{};
 
-
    // Our state
    bool show_demo_window = true;
    bool show_another_window = false;
    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
    // Main loop
-   bool done = false;
    while (running) {
       sWindow->Update();
       if (!running) {

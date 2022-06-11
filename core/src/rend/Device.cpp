@@ -5,6 +5,8 @@
 #include <winerror.h>
 
 #include "Texture2D.h"
+#include "core/Common.h"
+#include "core/Log.h"
 
 
 Device* sDevice = nullptr;
@@ -32,6 +34,7 @@ Device::Device() {
    UINT createDeviceFlags = 0;
 #if defined(DEBUG)
    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+   INFO("Create device with debug layer");
 #endif
 
    D3D_FEATURE_LEVEL featureLevel;
@@ -39,8 +42,11 @@ Device::Device() {
    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2,
                                      D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel,
                                      &g_pd3dDeviceContext) != S_OK) {
+      WARN("Failed create device");
       return;
    }
+
+   INFO("Device init success");
 
    ID3D11Texture2D* pBackBuffer;
    g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
@@ -52,21 +58,13 @@ Device::Device() {
 Device::~Device() {
    backBuffer = nullptr;
 
-   if (g_pSwapChain) {
-      g_pSwapChain->Release();
-      g_pSwapChain = NULL;
-   }
-   if (g_pd3dDeviceContext) {
-      g_pd3dDeviceContext->Release();
-      g_pd3dDeviceContext = NULL;
-   }
-   if (g_pd3dDevice) {
-      g_pd3dDevice->Release();
-      g_pd3dDevice = NULL;
-   }
+   SAFE_RELEASE(g_pSwapChain);
+   SAFE_RELEASE(g_pd3dDeviceContext);
+   SAFE_RELEASE(g_pd3dDevice);
 }
 
 void Device::Resize(int2 size) {
+   INFO("Device resize {}x{}", size.x, size.y);
 
    backBuffer = nullptr;
 
