@@ -47,3 +47,27 @@ constexpr vec3 Vec4_WNeg = vec4(0, 0, 0, -1);
 
 constexpr quat Quat_Identity = quat(1, 0, 0, 0);
 
+template<typename OStream>
+OStream& operator<<(OStream& os, const int2& v)
+{
+   return os << "(" << v.x << ", " << v.y << ")";
+}
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const vec2& v)
+{
+   return os << "(" << v.x << ", " << v.y << ")";
+}
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const vec3& v)
+{
+   return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+}
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const vec4& v)
+{
+   return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
+}
+

@@ -70,7 +70,7 @@ Window::Window(int2 size) {
    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
    ::UpdateWindow(hwnd);
 
-   INFO("Window inited with size {}x{}", size.x, size.y);
+   INFO("Window inited with size {}", size);
 }
 
 Window::~Window() {

@@ -62,7 +62,7 @@ Device::~Device() {
 }
 
 void Device::Resize(int2 size) {
-   INFO("Device resize {}x{}", size.x, size.y);
+   INFO("Device resize {}", size);
 
    backBuffer = nullptr;
 
