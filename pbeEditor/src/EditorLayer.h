@@ -20,7 +20,7 @@ public:
    void OnImGuiRender() override;
    void OnEvent(Event& event) override;
 
-   void AddEditorWindow(EditorWindow* window);
+   void AddEditorWindow(EditorWindow* window, bool showed = false);
 
 private:
    std::vector<std::unique_ptr<EditorWindow>> editorWindows;

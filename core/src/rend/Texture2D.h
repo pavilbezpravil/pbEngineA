@@ -1,9 +1,11 @@
 #pragma once
 #include <d3d11.h>
 
+#include "core/Common.h"
 #include "core/Ref.h"
 
 class GPUResource : public RefCounted {
+   NON_COPYABLE(GPUResource);
 public:
    GPUResource(ID3D11Resource* pResource) : pResource(pResource) {
 
@@ -21,6 +23,7 @@ public:
    Texture2D(ID3D11Texture2D* pTexture);
 
    ~Texture2D() override {
+      GPUResource::~GPUResource();
       rtv->Release();
    }
 
@@ -29,3 +32,5 @@ public:
    ID3D11RenderTargetView* rtv{};
    ID3D11DepthStencilView* dsv{};
 };
+
+extern template class Ref<Texture2D>;

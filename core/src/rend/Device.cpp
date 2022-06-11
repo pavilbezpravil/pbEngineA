@@ -48,9 +48,7 @@ Device::Device() {
 
    INFO("Device init success");
 
-   ID3D11Texture2D* pBackBuffer;
-   g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-   backBuffer = Ref<Texture2D>::Create(pBackBuffer);
+   SetupBackbuffer();
 
    created = true;
 }
@@ -70,7 +68,12 @@ void Device::Resize(int2 size) {
 
    g_pSwapChain->ResizeBuffers(0, size.x, size.y, DXGI_FORMAT_UNKNOWN, 0);
 
+   SetupBackbuffer();
+}
+
+void Device::SetupBackbuffer() {
    ID3D11Texture2D* pBackBuffer;
    g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+   pBackBuffer->AddRef();
    backBuffer = Ref<Texture2D>::Create(pBackBuffer);
 }

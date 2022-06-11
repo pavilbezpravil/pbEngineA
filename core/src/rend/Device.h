@@ -24,6 +24,9 @@ public:
 
    Ref<Texture2D> backBuffer;
    bool created = false;
+
+private:
+   void SetupBackbuffer();
 };
 
 extern Device* sDevice;

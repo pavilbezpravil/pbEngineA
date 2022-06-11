@@ -46,7 +46,7 @@ public:
    using EditorWindow::EditorWindow;
 
    void OnImGuiRender() override {
-      ImGui::Begin("ContentBrowserWindow", &show);
+      ImGui::Begin(name.c_str(), &show);
 
       // ImGui::Text("cwd %ls", fs::current_path().c_str());
       // ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
@@ -57,18 +57,28 @@ public:
          currentPath = currentPath.parent_path();
       }
 
+      ImGui::Columns(5, 0, false);
+
       // for (auto& file : fs::recursive_directory_iterator(".")) {
       for (auto& file : fs::directory_iterator(currentPath)) {
          const auto& path = file.path();
 
+         float size = 64;
+         bool clicked = ImGui::Button(path.filename().string().c_str(), {size, size});
+         ImGui::Text(path.filename().string().c_str());
+
          if (file.is_directory()) {
-            if (ImGui::Button(file.path().filename().string().c_str())) {
+            if (clicked) {
                currentPath = file.path();
             }
          } else {
-            ImGui::Text("%ls", file.path().filename().c_str());
+            // ImGui::Text("%ls", file.path().filename().c_str());
          }
+
+         ImGui::NextColumn();
       }
+
+      ImGui::Columns(1);
 
       ImGui::End();
    }
@@ -82,7 +92,7 @@ public:
    using EditorWindow::EditorWindow;
 
    void OnImGuiRender() override {
-      ImGui::Begin("ViewportWindow", &show);
+      ImGui::Begin(name.c_str(), &show);
 
       ImGui::Text("VIEWPORT!!!!");
 
@@ -96,8 +106,8 @@ Application* CreateApplication() {
    EditorLayer* editor = new EditorLayer();
    editor->AddEditorWindow(new ImGuiDemoWindow("ImGuiDemoWindow"));
    editor->AddEditorWindow(new TestWindow("TestWindow"));
-   editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowserWindow"));
-   editor->AddEditorWindow(new ViewportWindow("ViewportWindow"));
+   editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowser"), true);
+   editor->AddEditorWindow(new ViewportWindow("Viewport"), true);
    app->PushLayer(editor);
    return app;
 }
