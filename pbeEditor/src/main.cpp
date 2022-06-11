@@ -1,5 +1,6 @@
 #include "EditorLayer.h"
 #include "app/Application.h"
+#include "fs/FileSystem.h"
 
 
 class ImGuiDemoWindow : public EditorWindow {
@@ -7,11 +8,8 @@ public:
    using EditorWindow::EditorWindow;
 
    void OnImGuiRender() override {
-      if (show)
-         ImGui::ShowDemoWindow(&show);
+      ImGui::ShowDemoWindow(&show);
    }
-
-   bool show = true;
 };
 
 class TestWindow : public EditorWindow {
@@ -22,7 +20,7 @@ public:
       static float f = 0.0f;
       static int counter = 0;
 
-      ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+      ImGui::Begin("Hello, world!", &show); // Create a window called "Hello, world!" and append into it.
 
       ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
       // ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
@@ -42,11 +40,64 @@ public:
    }
 };
 
+
+class ContentBrowserWindow : public EditorWindow {
+public:
+   using EditorWindow::EditorWindow;
+
+   void OnImGuiRender() override {
+      ImGui::Begin("ContentBrowserWindow", &show);
+
+      // ImGui::Text("cwd %ls", fs::current_path().c_str());
+      // ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
+
+      ImGui::Text("current dir %s", fs::relative(currentPath, "./").string().c_str());
+
+      if (ImGui::Button("<-")) {
+         currentPath = currentPath.parent_path();
+      }
+
+      // for (auto& file : fs::recursive_directory_iterator(".")) {
+      for (auto& file : fs::directory_iterator(currentPath)) {
+         const auto& path = file.path();
+
+         if (file.is_directory()) {
+            if (ImGui::Button(file.path().filename().string().c_str())) {
+               currentPath = file.path();
+            }
+         } else {
+            ImGui::Text("%ls", file.path().filename().c_str());
+         }
+      }
+
+      ImGui::End();
+   }
+
+private:
+   fs::path currentPath = fs::current_path();
+};
+
+class ViewportWindow : public EditorWindow {
+public:
+   using EditorWindow::EditorWindow;
+
+   void OnImGuiRender() override {
+      ImGui::Begin("ViewportWindow", &show);
+
+      ImGui::Text("VIEWPORT!!!!");
+
+      ImGui::End();
+   }
+};
+
+
 Application* CreateApplication() {
    Application* app = new Application();
    EditorLayer* editor = new EditorLayer();
    editor->AddEditorWindow(new ImGuiDemoWindow("ImGuiDemoWindow"));
    editor->AddEditorWindow(new TestWindow("TestWindow"));
+   editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowserWindow"));
+   editor->AddEditorWindow(new ViewportWindow("ViewportWindow"));
    app->PushLayer(editor);
    return app;
 }

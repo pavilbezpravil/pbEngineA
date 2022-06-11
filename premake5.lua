@@ -21,8 +21,8 @@ libsinfo = {}
 workspace_dir = os.getcwd()
 
 function setBuildDirs()
-   targetdir(workspace_dir.."bin/%{cfg.buildcfg}")
-   objdir(workspace_dir.."bin-int/%{cfg.buildcfg}")
+   targetdir(workspace_dir.."/bin/%{cfg.buildcfg}")
+   objdir(workspace_dir.."/bin-int/%{cfg.buildcfg}")
 end
 
 function staticCppLib()
@@ -38,7 +38,7 @@ function consoleCppApp()
    language "C++"
    cppdialect "C++20"
 
-   debugdir(workspace_dir.."bin/%{cfg.buildcfg}")
+   debugdir(workspace_dir.."/bin/%{cfg.buildcfg}")
 
    setBuildDirs()
 end

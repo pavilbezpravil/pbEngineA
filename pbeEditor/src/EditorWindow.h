@@ -12,4 +12,5 @@ public:
    virtual void OnImGuiRender() = 0;
 
    std::string name{ "EditorWindow" };
+   bool show = true;
 };

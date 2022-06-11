@@ -18,7 +18,9 @@ void EditorLayer::OnUpdate(float dt) {
 
 void EditorLayer::OnImGuiRender() {
    for (auto& window: editorWindows) {
-      window->OnImGuiRender();
+      if (window->show) {
+         window->OnImGuiRender();
+      }
    }
 }
 

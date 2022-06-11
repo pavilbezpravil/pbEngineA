@@ -14,6 +14,10 @@ private:
    static std::shared_ptr<spdlog::logger> sLogger;
 };
 
+#ifdef ERROR
+   #undef ERROR
+#endif
+
 // Core Logging Macros
 #define TRACE(...)	Log::GetLogger()->trace(__VA_ARGS__)
 #define INFO(...)	Log::GetLogger()->info(__VA_ARGS__)

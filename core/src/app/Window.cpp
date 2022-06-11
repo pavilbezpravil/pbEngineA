@@ -61,7 +61,7 @@ Window::Window(int2 size) {
       _T("ImGui Example"), NULL
    };
    ::RegisterClassEx(&wc);
-   hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100,
+   hwnd = ::CreateWindow(wc.lpszClassName, _T("pbeEditor"), WS_OVERLAPPEDWINDOW, 100, 100,
                               size.x, size.y, NULL, NULL, wc.hInstance, NULL);
 
    sWindow = this;
