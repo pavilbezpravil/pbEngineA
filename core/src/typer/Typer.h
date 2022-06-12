@@ -6,6 +6,24 @@
 
 #include "core/Core.h"
 
+
+#define TYPER_BEGIN(type) \
+   int TyperRegister_##type() { \
+      using CurrentType = type; \
+      TypeInfo ti; \
+      ti.name = #type; \
+      ti.typeID = GetTypeID<type>();
+
+#define TYPER_FIELD(name) \
+      ti.fields.emplace_back(#name, GetTypeID<decltype(CurrentType{}.name)>(), offsetof(CurrentType, name));
+
+#define TYPER_END(type) \
+      sTyper.types[ti.typeID] = ti; \
+      return 0; \
+   } \
+   static int TypeInfo_##type = TyperRegister_##type();
+
+
 namespace YAML {
    class Node;
    class Emitter;

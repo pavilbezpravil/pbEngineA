@@ -5,5 +5,6 @@ project "pbeEditor"
 
    includedirs { libsinfo.core.includepath, libsinfo.imgui.includepath,
                  libsinfo.glm.includepath,
-                 libsinfo.spdlog.includepath }
+                 libsinfo.spdlog.includepath,
+                 libsinfo.optick.includepath }
    links { "core" }

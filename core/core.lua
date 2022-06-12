@@ -8,7 +8,8 @@ project "core"
                  libsinfo.imgui.includepath,
                  libsinfo.glm.includepath,
                  libsinfo.spdlog.includepath,
-                 libsinfo.yaml.includepath }
-   links { "imgui", "d3d11.lib", "yaml" }
+                 libsinfo.yaml.includepath,
+                 libsinfo.optick.includepath }
+   links { "imgui", "d3d11.lib", "yaml", "optick" }
 
    files { "**.h", "**.cpp" }

@@ -2,6 +2,7 @@
 
 #include "core/Common.h"
 #include "core/Log.h"
+#include "core/Profiler.h"
 #include "rend/Device.h"
 #include "rend/CommandList.h"
 #include "Window.h"
@@ -77,24 +78,29 @@ void Application::Run() {
 
    // Main loop
    while (running) {
+      OPTICK_FRAME("MainThread");
+
       float dt = 1.f / 60.f; // todo:
       // debug handle
       if (dt > 1.f) {
          dt = 1.f / 60.f;
       }
+      OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
 
       for (auto* layer : layerStack) {
          layer->OnUpdate(dt);
       }
 
-      imguiLayer->NewFrame();
+      {
+         OPTICK_EVENT("OnImGuiRender");
+         imguiLayer->NewFrame();
 
-      for (auto* layer : layerStack) {
-         layer->OnImGuiRender();
+         for (auto* layer : layerStack) {
+            layer->OnImGuiRender();
+         }
+
+         imguiLayer->EndFrame();
       }
-
-      imguiLayer->EndFrame();
-
 
       // ID3D11DeviceContext* context{};
       // sDevice->g_pd3dDevice->CreateDeferredContext(0, &context);
@@ -116,13 +122,20 @@ void Application::Run() {
       cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
       cmd.SetRenderTargets(sDevice->backBuffer);
 
-      // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
-      imguiLayer->Render();
+      {
+         OPTICK_EVENT("ImGui Render");
+         // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
+         imguiLayer->Render();
+      }
 
-      // todo:
-      sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
-      //g_pSwapChain->Present(0, 0); // Present without vsync
+      {
+         OPTICK_EVENT("Swapchain Present");
+         // todo:
+         sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
+         //g_pSwapChain->Present(0, 0); // Present without vsync
+      }
 
+      OPTICK_EVENT("Window Update");
       sWindow->Update();
    }
 
