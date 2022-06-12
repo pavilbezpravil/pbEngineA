@@ -84,24 +84,24 @@ Typer::Typer() {
    ti.name = "bool";
    ti.typeID = GetTypeID<bool>();
    ti.imguiFunc = [](const char* name, byte* value) { ImGui::Checkbox(name, (bool*)value); };
-   ti.serialize = [](YAML::Node& node, const char* name, const byte* value) { node[name] = *(bool*)value; };
-   ti.deserialize = [](YAML::Node& node, const char* name, byte* value) { *(bool*)value = node[name].as<bool>(); };
+   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(bool*)value; };
+   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(bool*)value = node[name].as<bool>(); };
    types[ti.typeID] = ti;
 
    ti = {};
    ti.name = "float";
    ti.typeID = GetTypeID<float>();
    ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat(name, (float*)value); };
-   ti.serialize = [](YAML::Node& node, const char* name, const byte* value) { node[name] = *(float*)value; };
-   ti.deserialize = [](YAML::Node& node, const char* name, byte* value) { *(float*)value = node[name].as<float>(); };
+   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(float*)value; };
+   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(float*)value = node[name].as<float>(); };
    types[ti.typeID] = ti;
 
    ti = {};
    ti.name = "int";
    ti.typeID = GetTypeID<int>();
    ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputInt(name, (int*)value); };
-   ti.serialize = [](YAML::Node& node, const char* name, const byte* value) { node[name] = *(int*)value; };
-   ti.deserialize = [](YAML::Node& node, const char* name, byte* value) { *(int*)value = node[name].as<int>(); };
+   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(int*)value; };
+   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(int*)value = node[name].as<int>(); };
    types[ti.typeID] = ti;
 
 }
@@ -130,20 +130,29 @@ void Typer::ImGui() {
    constexpr const char* testFilename = "test.yaml";
 
    if (ImGui::Button("test hard save yaml")) {
-      YAML::Node node;
-      Serialize(node, "testHard", testHard);
+      YAML::Emitter out;
+
+      out << YAML::BeginMap;
+      Serialize(out, "i", i);
+      Serialize(out, "f", f);
+      Serialize(out, "test", test);
+      Serialize(out, "testHard", testHard);
+      out << YAML::EndMap;
 
       std::ofstream fout{ testFilename };
-      fout << node;
+      fout << out.c_str();
    }
 
    if (ImGui::Button("test hard load yaml")) {
-      std::string data = ReadFileAsString(testFilename);
-      YAML::Node node = YAML::Load(data);
+      // std::string data = ReadFileAsString(testFilename);
+      // YAML::Node node = YAML::Load(data);
 
-      // std::ifstream fin{ testFilename };
-      // YAML::Node node = YAML::Load(fin);
+      std::ifstream fin{ testFilename };
+      YAML::Node node = YAML::Load(fin);
 
+      Deserialize(node, "i", i);
+      Deserialize(node, "f", f);
+      Deserialize(node, "test", test);
       Deserialize(node, "testHard", testHard);
    }
 }
@@ -182,35 +191,37 @@ void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) {
    }
 }
 
-void Typer::SerializeImpl(YAML::Node& node, std::string_view name, TypeID typeID, const byte* value) {
+void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) {
    const auto& ti = types[typeID];
 
    if (ti.imguiFunc) {
-      ti.serialize(node, name.data(), value);
+      ti.serialize(out, name.data(), value);
    } else {
-      YAML::Node nodeFields;
+      out << YAML::Key << name.data() << YAML::Value;
+
+      out << YAML::BeginMap;
 
       for (const auto& f : ti.fields) {
          const byte* data = value + f.offset;
-         SerializeImpl(nodeFields, f.name, f.typeID, data);
+         SerializeImpl(out, f.name, f.typeID, data);
       }
 
-      node[name.data()] = nodeFields;
+      out << YAML::EndMap;
    }
 }
 
-void Typer::DeserializeImpl(YAML::Node& node, std::string_view name, TypeID typeID, byte* value) {
+void Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) {
    const auto& ti = types[typeID];
+
+   if (!node[name.data()]) {
+      WARN("Serialization failed! Cant find {}", name);
+      return;
+   }
 
    if (ti.imguiFunc) {
       ti.deserialize(node, name.data(), value);
    } else {
-      if (!node[name.data()]) {
-         WARN("Serialization failed! Cant find {}", name);
-         return;
-      }
-
-      YAML::Node nodeFields = node[name.data()];
+      const YAML::Node& nodeFields = node[name.data()];
 
       for (const auto& f : ti.fields) {
          byte* data = value + f.offset;
