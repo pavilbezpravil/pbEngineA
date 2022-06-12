@@ -42,6 +42,14 @@ void Application::OnEvent(Event& e) {
       INFO("App quit event");
       running = false;
    }
+   if (e.GetEvent<AppLoseFocusEvent>()) {
+      INFO("Lose Focus");
+      focused = false;
+   }
+   if (e.GetEvent<AppGetFocusEvent>()) {
+      INFO("Get Focus");
+      focused = true;
+   }
    if (auto* windowResize = e.GetEvent<WindowResizeEvent>()) {
       sDevice->Resize(windowResize->size);
    }
@@ -79,6 +87,11 @@ void Application::Run() {
    // Main loop
    while (running) {
       OPTICK_FRAME("MainThread");
+
+      if (!focused) {
+         OPTICK_EVENT("Sleep On Focused");
+         std::this_thread::sleep_for(std::chrono::microseconds(50));
+      }
 
       float dt = 1.f / 60.f; // todo:
       // debug handle
@@ -120,10 +133,10 @@ void Application::Run() {
       };
 
       cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
-      cmd.SetRenderTargets(sDevice->backBuffer);
 
       {
          OPTICK_EVENT("ImGui Render");
+         cmd.SetRenderTargets(sDevice->backBuffer);
          // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
          imguiLayer->Render();
       }

@@ -4,6 +4,8 @@
 enum class EventType {
    None,
    AppQuit,
+   AppLoseFocus,
+   AppGetFocus,
    WindowResize,
 };
 
@@ -29,6 +31,14 @@ struct Event {
 
 struct AppQuitEvent : Event {
    EVENT_TYPE(AppQuit)
+};
+
+struct AppLoseFocusEvent : Event {
+   EVENT_TYPE(AppLoseFocus)
+};
+
+struct AppGetFocusEvent : Event {
+   EVENT_TYPE(AppGetFocus)
 };
 
 struct WindowResizeEvent : Event {

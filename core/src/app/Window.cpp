@@ -40,6 +40,16 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
          break;
       case WM_DESTROY: ::PostQuitMessage(0);
          return 0;
+      case WM_SETFOCUS: {
+         AppGetFocusEvent e{};
+         sWindow->eventCallback(e);
+         return 0;
+      }
+      case WM_KILLFOCUS: {
+         AppLoseFocusEvent e{};
+         sWindow->eventCallback(e);
+         return 0;
+      }
       case WM_DPICHANGED: if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports) {
             //const int dpi = HIWORD(wParam);
             //printf("WM_DPICHANGED to %d (%.0f%%)\n", dpi, (float)dpi / 96.0f * 100.0f);

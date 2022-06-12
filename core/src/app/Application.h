@@ -25,6 +25,8 @@ private:
    bool running = false;
    LayerStack layerStack;
    ImGuiLayer* imguiLayer{};
+
+   bool focused = true;
 };
 
 extern Application* sApplication;
