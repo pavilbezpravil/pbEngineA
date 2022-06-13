@@ -6,6 +6,7 @@
 #include "rend/Device.h"
 #include "rend/CommandList.h"
 #include "Window.h"
+#include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
 
 
@@ -90,7 +91,7 @@ void Application::Run() {
 
       if (!focused) {
          OPTICK_EVENT("Sleep On Focused");
-         std::this_thread::sleep_for(std::chrono::microseconds(50));
+         ThreadSleepMs(50);
       }
 
       float dt = 1.f / 60.f; // todo:
