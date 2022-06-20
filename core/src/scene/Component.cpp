@@ -4,11 +4,15 @@
 #include "typer/Typer.h"
 #include "scene/Entity.h"
 
+COMPONENT_EXPLICIT_TEMPLATE_DEF(UUIDComponent);
+COMPONENT_EXPLICIT_TEMPLATE_DEF(TagComponent);
+
 TYPER_BEGIN(SceneTransformComponent)
 TYPER_FIELD(position)
 TYPER_FIELD(rotation)
 TYPER_END(SceneTransformComponent)
 
+COMPONENT_EXPLICIT_TEMPLATE_DEF(SceneTransformComponent)
 
 TYPER_BEGIN(TestCustomUIComponent)
 TYPER_FIELD(integer)
@@ -16,6 +20,7 @@ TYPER_FIELD(floating)
 TYPER_FIELD(float3)
 TYPER_END(TestCustomUIComponent)
 
+COMPONENT_EXPLICIT_TEMPLATE_DEF(TestCustomUIComponent)
 
 ComponentList& ComponentList::Get() {
    static ComponentList cl;
@@ -31,14 +36,14 @@ int RegisterComponents() {
 
    id = GetTypeID<SceneTransformComponent>();
    ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
-      if (auto* c = entity.GetPtr<SceneTransformComponent>()) {
+      if (auto* c = entity.TryGet<SceneTransformComponent>()) {
          EditorUI<SceneTransformComponent>(c->GetName(), *c);
       }
    });
 
    id = GetTypeID<TestCustomUIComponent>();
    ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
-      if (auto* c = entity.GetPtr<TestCustomUIComponent>()) {
+      if (auto* c = entity.TryGet<TestCustomUIComponent>()) {
          EditorUI<TestCustomUIComponent>(c->GetName(), *c);
       }
    });

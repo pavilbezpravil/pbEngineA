@@ -4,8 +4,6 @@
 
 #include "Scene.h"
 #include "core/Assert.h"
-#include "core/UUID.h"
-
 
 class Entity {
 public:
@@ -20,8 +18,7 @@ public:
 
    template<typename T>
    bool Has() const {
-      T* c = scene->registry.try_get<T>(id);
-      return c != nullptr;
+      return TryGet<T>() != nullptr;
    }
 
    template<typename T>
@@ -37,12 +34,12 @@ public:
    }
 
    template<typename T>
-   T* GetPtr() {
+   T* TryGet() {
       return scene->registry.try_get<T>(id);
    }
 
    template<typename T>
-   const T* GetPtr() const {
+   const T* TryGet() const {
       return scene->registry.try_get<T>(id);
    }
 

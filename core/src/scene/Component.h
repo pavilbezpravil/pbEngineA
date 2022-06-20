@@ -26,17 +26,34 @@ public:
       return STRINGIFY(Component); \
    }
 
+#define COMPONENT_EXPLICIT_TEMPLATES_DECL(Component) \
+   extern template struct entt::type_hash<Component>; \
+   extern template TypeID GetTypeID<Component>(); \
+   extern template decltype(auto) entt::registry::get<Component>(const entt::entity); \
+   extern template auto entt::registry::try_get<Component>(const entt::entity);
+
+#define COMPONENT_EXPLICIT_TEMPLATE_DEF(Component) \
+   template struct entt::type_hash<Component>; \
+   template TypeID GetTypeID<Component>(); \
+   template decltype(auto) entt::registry::get<Component>(const entt::entity); \
+   template auto entt::registry::try_get<Component>(const entt::entity);
+
 struct UUIDComponent {
    UUID uuid;
 
    DECL_COMPONENT(UUIDComponent);
 };
+COMPONENT_EXPLICIT_TEMPLATES_DECL(UUIDComponent);
+
+// extern template decltype(auto) entt::registry::get<UUIDComponent>(const entt::entity);
+// extern template auto entt::registry::try_get<UUIDComponent>(const entt::entity);
 
 struct TagComponent {
    std::string tag;
 
    DECL_COMPONENT(TagComponent);
 };
+COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
 
 struct SceneTransformComponent {
    vec3 position;
@@ -44,6 +61,7 @@ struct SceneTransformComponent {
 
    DECL_COMPONENT(SceneTransformComponent);
 };
+COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
 
 struct TestCustomUIComponent {
    int integer;
@@ -52,3 +70,4 @@ struct TestCustomUIComponent {
 
    DECL_COMPONENT(TestCustomUIComponent);
 };
+COMPONENT_EXPLICIT_TEMPLATES_DECL(TestCustomUIComponent);
