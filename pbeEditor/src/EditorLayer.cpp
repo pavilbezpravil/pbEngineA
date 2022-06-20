@@ -5,6 +5,7 @@
 #include "gui/Gui.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
+#include "scene/Component.h"
 
 
 class SceneHierarchyWindow : public EditorWindow {
@@ -81,28 +82,10 @@ public:
       if (!entity.Valid()) {
          ImGui::Text("No entity");
       } else {
-         if (auto* c = entity.GetPtr<TagComponent>()) {
-            if (ImGui::TreeNodeEx(c->GetName(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-               if (ImGui::IsItemHovered()) {
-                  ImGui::SetTooltip("Right-click to open popup");
-               }
+         ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
 
-               ImGui::Text("tag: %s", c->tag.c_str());
-
-               ImGui::TreePop();
-            }
-         }
-
-         if (auto* c = entity.GetPtr<UUIDComponent>()) {
-            if (ImGui::TreeNodeEx(c->GetName(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-               ImGui::Text("uuid: %llu", (uint64)c->uuid);
-
-               ImGui::TreePop();
-            }
-         }
-
-         if (auto* c = entity.GetPtr<SceneTransformComponent>()) {
-            EditorUI<SceneTransformComponent>(c->GetName(), *c);
+         for (const auto& [id, func] : ComponentList::Get().components2) {
+            func(entity);
          }
       }
 

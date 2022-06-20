@@ -1,4 +1,6 @@
 #include "Scene.h"
+
+#include "Component.h"
 #include "Entity.h"
 
 Entity Scene::Create(std::string_view name) {
@@ -11,6 +13,7 @@ Entity Scene::Create(std::string_view name) {
    }
 
    e.Add<SceneTransformComponent>();
+   e.Add<TestCustomUIComponent>();
 
    return e;
 }

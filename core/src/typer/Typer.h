@@ -13,7 +13,8 @@
       using CurrentType = type; \
       TypeInfo ti; \
       ti.name = #type; \
-      ti.typeID = GetTypeID<type>();
+      ti.typeID = GetTypeID<type>(); \
+      ti.typeSizeOf = sizeof(type);
 
 #define TYPER_FIELD(name) \
       ti.fields.emplace_back(#name, GetTypeID<decltype(CurrentType{}.name)>(), offsetof(CurrentType, name));
@@ -40,6 +41,7 @@ struct TypeField {
 struct TypeInfo {
    std::string name;
    TypeID typeID;
+   int typeSizeOf;
 
    std::vector<TypeField> fields;
 

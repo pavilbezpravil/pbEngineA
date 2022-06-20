@@ -121,7 +121,8 @@ void Typer::ImGui() {
 
 void Typer::ImGuiTypeInfo(const TypeInfo& ti) {
    if (ImGui::TreeNode(ti.name.c_str())) {
-      ImGui::Text("type ID: %llu", ti.typeID);
+      ImGui::Text("typeID: %llu", ti.typeID);
+      ImGui::Text("sizeof: %d", ti.typeSizeOf);
 
       if (!ti.fields.empty()) {
          for (const auto& f : ti.fields) {
@@ -137,6 +138,7 @@ void Typer::ImGuiTypeInfo(const TypeInfo& ti) {
 }
 
 void Typer::RegisterType(TypeID typeID, TypeInfo&& ti) {
+   ASSERT(types.find(typeID) == types.end());
    types[typeID] = std::move(ti);
 }
 

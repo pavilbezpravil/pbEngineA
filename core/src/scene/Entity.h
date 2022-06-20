@@ -5,7 +5,6 @@
 #include "Scene.h"
 #include "core/Assert.h"
 #include "core/UUID.h"
-#include "math/Types.h"
 
 
 class Entity {
@@ -54,33 +53,4 @@ public:
 private:
    entt::entity id{ entt::null };
    Scene* scene{};
-};
-
-
-#define DECL_COMPONENT(Component) \
-   static const char* GetName() { \
-      return STRINGIFY(Component); \
-   }
-
-struct UUIDComponent {
-   UUID uuid;
-
-   DECL_COMPONENT(UUIDComponent);
-};
-
-
-struct TagComponent {
-   std::string tag;
-
-   DECL_COMPONENT(TagComponent);
-};
-
-
-struct SceneTransformComponent {
-   vec3 position;
-   quat rotation;
-
-   float x, y, z;
-
-   DECL_COMPONENT(SceneTransformComponent);
 };
