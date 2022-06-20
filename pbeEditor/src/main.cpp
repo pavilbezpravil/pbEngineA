@@ -1,7 +1,8 @@
-#include "EditorLayer.h"
 #include "app/Application.h"
 #include "fs/FileSystem.h"
 #include "typer/Typer.h"
+#include "scene/Scene.h"
+#include "EditorLayer.h"
 
 
 class ImGuiDemoWindow : public EditorWindow {
@@ -109,7 +110,7 @@ public:
    void OnImGuiRender() override {
       ImGui::Begin(name.c_str(), &show);
 
-      sTyper.ImGui();
+      Typer::Get().ImGui();
 
       ImGui::End();
    }

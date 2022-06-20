@@ -2,10 +2,137 @@
 #include "EditorWindow.h"
 
 #include "imgui.h"
+#include "gui/Gui.h"
+#include "scene/Scene.h"
+#include "scene/Entity.h"
+
+
+class SceneHierarchyWindow : public EditorWindow {
+public:
+   using EditorWindow::EditorWindow;
+
+   void OnImGuiRender() override {
+      ImGui::Begin(name.c_str(), &show);
+
+      if (!pScene) {
+         ImGui::Text("No scene");
+      } else {
+         // todo:
+         if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::Selectable("Create new entity")) {
+               pScene->Create();
+            }
+            ImGui::EndPopup();
+         }
+
+         for (auto [e, tag] : pScene->GetEntitiesWith<TagComponent>().each()) {
+            const auto* name = tag.tag.data();
+
+            if (ImGui::TreeNodeEx(tag.tag.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+               if (ImGui::BeginPopupContextItem()) {
+                  ImGui::Text("This a popup for \"%s\"!", name);
+
+                  if (ImGui::Button("Add component"))
+                     ImGui::Text("sfdsdf");
+
+                  ImGui::Separator();
+
+                  if (ImGui::Button("Delete"))
+                     ImGui::Text("sfdsdf");
+
+                  if (ImGui::Button("Close"))
+                     ImGui::CloseCurrentPopup();
+
+                  ImGui::EndPopup();
+               }
+
+               // if (ImGui::IsItemHovered()) {
+               //    ImGui::SetTooltip("Right-click to open popup");
+               // }
+
+               if (ImGui::IsItemClicked()) {
+                  if (selectedCb) {
+                     Entity entity{e, pScene};
+                     selectedCb(entity);
+                  }
+               }
+
+               ImGui::TreePop();
+            }
+         }
+      }
+
+      ImGui::End();
+   }
+
+   Scene* pScene{};
+
+   std::function<void(Entity)> selectedCb;
+};
+
+
+class InspectorWindow : public EditorWindow {
+public:
+   using EditorWindow::EditorWindow;
+
+   void OnImGuiRender() override {
+      ImGui::Begin(name.c_str(), &show);
+
+      if (!entity.Valid()) {
+         ImGui::Text("No entity");
+      } else {
+         if (auto* c = entity.GetPtr<TagComponent>()) {
+            if (ImGui::TreeNodeEx(c->GetName(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip("Right-click to open popup");
+               }
+
+               ImGui::Text("tag: %s", c->tag.c_str());
+
+               ImGui::TreePop();
+            }
+         }
+
+         if (auto* c = entity.GetPtr<UUIDComponent>()) {
+            if (ImGui::TreeNodeEx(c->GetName(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+               ImGui::Text("uuid: %llu", (uint64)c->uuid);
+
+               ImGui::TreePop();
+            }
+         }
+
+         if (auto* c = entity.GetPtr<SceneTransformComponent>()) {
+            EditorUI<SceneTransformComponent>(c->GetName(), *c);
+         }
+      }
+
+      ImGui::End();
+   }
+
+   void SetEntity(Entity e) {
+      entity = e;
+   }
+
+   Entity entity{};
+};
 
 
 void EditorLayer::OnAttach() {
+   AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
+   AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
+
+   sceneHierarchyWindow->selectedCb = std::bind(&InspectorWindow::SetEntity, inspectorWindow, std::placeholders::_1);
+
    Layer::OnAttach();
+
+   // todo:
+   scene.reset(new Scene());
+
+   scene->Create("red");
+   scene->Create("green");
+   scene->Create("blue");
+
+   sceneHierarchyWindow->pScene = scene.get();
 }
 
 void EditorLayer::OnDetach() {

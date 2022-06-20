@@ -5,8 +5,12 @@
 
 #include "EditorWindow.h"
 #include "app/Layer.h"
+#include "core/Ref.h"
 
 
+class InspectorWindow;
+class SceneHierarchyWindow;
+class Scene;
 struct Event;
 
 
@@ -22,6 +26,13 @@ public:
 
    void AddEditorWindow(EditorWindow* window, bool showed = false);
 
+   Scene* GetOpenedScene() const { return scene.get(); }
+
 private:
    std::vector<std::unique_ptr<EditorWindow>> editorWindows;
+
+   Scope<Scene> scene;
+
+   SceneHierarchyWindow* sceneHierarchyWindow{};
+   InspectorWindow* inspectorWindow{};
 };

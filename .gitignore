@@ -8,6 +8,8 @@ imgui.ini
 bin/
 bin-int/
 
+**VTune**
+
 # Prerequisites
 *.d
 

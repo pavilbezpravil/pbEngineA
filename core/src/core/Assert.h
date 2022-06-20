@@ -2,6 +2,8 @@
 
 #include "Log.h"
 
+#define SASSERT(cond) static_assert(cond, "")
+
 #ifdef DEBUG
    #define ENABLE_ASSERTS
 #endif

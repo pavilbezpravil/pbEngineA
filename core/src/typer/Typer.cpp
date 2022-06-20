@@ -1,15 +1,13 @@
 #include "Typer.h"
 #include <fstream>
-
-#define YAML_CPP_STATIC_DEFINE
-#include "yaml-cpp/yaml.h"
-
+#include "BasicTypes.h"
 #include "imgui.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
 
-
-Typer sTyper;
+// todo:
+#define YAML_CPP_STATIC_DEFINE
+#include "yaml-cpp/yaml.h"
 
 
 struct Test {
@@ -61,32 +59,13 @@ TYPER_END(TestHard);
 
 
 Typer::Typer() {
-   TypeInfo ti;
+   RegisterBasicTypes(*this);
+}
 
-   ti = {};
-   ti.name = "bool";
-   ti.typeID = GetTypeID<bool>();
-   ti.imguiFunc = [](const char* name, byte* value) { ImGui::Checkbox(name, (bool*)value); };
-   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(bool*)value; };
-   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(bool*)value = node[name].as<bool>(); };
-   types[ti.typeID] = ti;
 
-   ti = {};
-   ti.name = "float";
-   ti.typeID = GetTypeID<float>();
-   ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat(name, (float*)value); };
-   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(float*)value; };
-   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(float*)value = node[name].as<float>(); };
-   types[ti.typeID] = ti;
-
-   ti = {};
-   ti.name = "int";
-   ti.typeID = GetTypeID<int>();
-   ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputInt(name, (int*)value); };
-   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(int*)value; };
-   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(int*)value = node[name].as<int>(); };
-   types[ti.typeID] = ti;
-
+Typer& Typer::Get() {
+   static Typer sTyper;
+   return sTyper;
 }
 
 
@@ -157,13 +136,17 @@ void Typer::ImGuiTypeInfo(const TypeInfo& ti) {
    }
 }
 
+void Typer::RegisterType(TypeID typeID, TypeInfo&& ti) {
+   types[typeID] = std::move(ti);
+}
+
 void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) {
    const auto& ti = types[typeID];
 
    if (ti.imguiFunc) {
       ti.imguiFunc(name.data(), value);
    } else {
-      if (ImGui::TreeNode(name.data())) {
+      if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
          for (const auto& f : ti.fields) {
             byte* data = value + f.offset;
             ImGuiValueImpl(f.name, f.typeID, data);

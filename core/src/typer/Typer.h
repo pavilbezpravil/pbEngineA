@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "core/Core.h"
+#include "core/Type.h"
 
 
 #define TYPER_BEGIN(type) \
@@ -18,7 +19,7 @@
       ti.fields.emplace_back(#name, GetTypeID<decltype(CurrentType{}.name)>(), offsetof(CurrentType, name));
 
 #define TYPER_END(type) \
-      sTyper.types[ti.typeID] = ti; \
+      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
       return 0; \
    } \
    static int TypeInfo_##type = TyperRegister_##type();
@@ -27,13 +28,6 @@
 namespace YAML {
    class Node;
    class Emitter;
-}
-
-using TypeID = uint64;
-
-template<typename T>
-TypeID GetTypeID() {
-   return typeid(T).hash_code(); // todo:
 }
 
 
@@ -58,8 +52,12 @@ class Typer {
 public:
    Typer();
 
+   static Typer& Get();
+
    void ImGui();
    void ImGuiTypeInfo(const TypeInfo& ti);
+
+   void RegisterType(TypeID typeID, TypeInfo&& ti);
 
    template<typename T>
    void ImGuiValue(std::string_view name, T& value) {
@@ -87,6 +85,3 @@ public:
 
    std::unordered_map<TypeID, TypeInfo> types;
 };
-
-
-extern Typer sTyper;
