@@ -7,6 +7,12 @@
 #include "core/Core.h"
 #include "core/Type.h"
 
+namespace YAML {
+   class Node;
+   class Emitter;
+}
+
+namespace pbe {
 
 #define TYPER_BEGIN(type) \
    int TyperRegister_##type() { \
@@ -25,65 +31,60 @@
    } \
    static int TypeInfo_##type = TyperRegister_##type();
 
+   struct TypeField {
+      std::string name;
+      TypeID typeID;
+      size_t offset;
+   };
 
-namespace YAML {
-   class Node;
-   class Emitter;
+   struct TypeInfo {
+      std::string name;
+      TypeID typeID;
+      int typeSizeOf;
+
+      std::vector<TypeField> fields;
+
+      std::function<void(const char*, byte*)> imguiFunc;
+      std::function<void(YAML::Emitter&, const char*, const byte*)> serialize;
+      std::function<void(const YAML::Node&, const char*, byte*)> deserialize;
+   };
+
+   class Typer {
+   public:
+      Typer();
+
+      static Typer& Get();
+
+      void ImGui();
+      void ImGuiTypeInfo(const TypeInfo& ti);
+
+      void RegisterType(TypeID typeID, TypeInfo&& ti);
+
+      template<typename T>
+      void ImGuiValue(std::string_view name, T& value) {
+         auto typeID = GetTypeID<T>();
+         ImGuiValueImpl(name, typeID, (byte*)&value);
+      }
+
+      void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value);
+
+      template<typename T>
+      void Serialize(YAML::Emitter& out, std::string_view name, const T& value) {
+         auto typeID = GetTypeID<T>();
+         SerializeImpl(out, name, typeID, (byte*)&value);
+      }
+
+      void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value);
+
+      template<typename T>
+      void Deserialize(const YAML::Node& node, std::string_view name, T& value) {
+         auto typeID = GetTypeID<T>();
+         DeserializeImpl(node, name, typeID, (byte*)&value);
+      }
+
+      void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value);
+
+      std::unordered_map<TypeID, TypeInfo> types;
+   };
+
 }
-
-
-struct TypeField {
-   std::string name;
-   TypeID typeID;
-   size_t offset;
-};
-
-struct TypeInfo {
-   std::string name;
-   TypeID typeID;
-   int typeSizeOf;
-
-   std::vector<TypeField> fields;
-
-   std::function<void(const char*, byte*)> imguiFunc;
-   std::function<void(YAML::Emitter&, const char*, const byte*)> serialize;
-   std::function<void(const YAML::Node&, const char*, byte*)> deserialize;
-};
-
-class Typer {
-public:
-   Typer();
-
-   static Typer& Get();
-
-   void ImGui();
-   void ImGuiTypeInfo(const TypeInfo& ti);
-
-   void RegisterType(TypeID typeID, TypeInfo&& ti);
-
-   template<typename T>
-   void ImGuiValue(std::string_view name, T& value) {
-      auto typeID = GetTypeID<T>();
-      ImGuiValueImpl(name, typeID,(byte*) & value);
-   }
-
-   void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value);
-
-   template<typename T>
-   void Serialize(YAML::Emitter& out, std::string_view name, const T& value) {
-      auto typeID = GetTypeID<T>();
-      SerializeImpl(out, name, typeID, (byte*)&value);
-   }
-
-   void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value);
-
-   template<typename T>
-   void Deserialize(const YAML::Node& node, std::string_view name, T& value) {
-      auto typeID = GetTypeID<T>();
-      DeserializeImpl(node, name, typeID, (byte*)&value);
-   }
-
-   void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value);
-
-   std::unordered_map<TypeID, TypeInfo> types;
-};

@@ -1,4 +1,8 @@
 #include "Entity.h"
 
-Entity::Entity(entt::entity id, Scene* scene) :id(id), scene(scene) {
+namespace pbe {
+
+   Entity::Entity(entt::entity id, Scene* scene) :id(id), scene(scene) {
+   }
+
 }

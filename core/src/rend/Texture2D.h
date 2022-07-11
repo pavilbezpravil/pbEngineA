@@ -1,36 +1,63 @@
 #pragma once
 #include <d3d11.h>
+#include <string_view>
 
+#include "Common.h"
 #include "core/Common.h"
 #include "core/Ref.h"
+#include "math/Types.h"
 
-class GPUResource : public RefCounted {
-   NON_COPYABLE(GPUResource);
-public:
-   GPUResource(ID3D11Resource* pResource) : pResource(pResource) {
+namespace pbe {
 
-   }
+   class GPUResource : public RefCounted {
+      NON_COPYABLE(GPUResource);
+   public:
+      GPUResource(ID3D11Resource* pResource) : pResource(pResource) {
 
-   virtual ~GPUResource() {
-      pResource->Release();
-   }
+      }
 
-   ID3D11Resource* pResource{};
-};
+      virtual ~GPUResource() {
+         SAFE_RELEASE(pResource);
+      }
 
-class Texture2D : public GPUResource {
-public:
-   Texture2D(ID3D11Texture2D* pTexture);
+      void SetDbgName(std::string_view dbgName) {
+         ::pbe::SetDbgName(pResource, dbgName);
+      }
 
-   ~Texture2D() override {
-      GPUResource::~GPUResource();
-      rtv->Release();
-   }
+      ID3D11Resource* pResource{};
+   };
 
-   ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource; }
+   class Texture2D : public GPUResource {
+   public:
 
-   ID3D11RenderTargetView* rtv{};
-   ID3D11DepthStencilView* dsv{};
-};
+      struct Desc {
+         int2 size;
+         DXGI_FORMAT format;
+         UINT bindFlags;
+      };
 
-extern template class Ref<Texture2D>;
+      static Ref<Texture2D> Create(ID3D11Texture2D* pTexture);
+      static Ref<Texture2D> Create(Desc& desc);
+
+      ~Texture2D() override;
+
+      ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource; }
+      Desc GetDesc() const;
+
+      ID3D11RenderTargetView* rtv{};
+      ID3D11DepthStencilView* dsv{};
+      ID3D11ShaderResourceView* srv{};
+
+      // todo: Ref::Create cant access to private member
+   private:
+      friend Ref<Texture2D>;
+
+      Texture2D(ID3D11Texture2D* pTexture);
+      Texture2D(Desc& desc);
+
+      Desc desc;
+   };
+
+   extern template class Ref<Texture2D>;
+
+}

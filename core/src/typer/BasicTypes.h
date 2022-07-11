@@ -1,5 +1,9 @@
 #pragma once
 
-class Typer;
+namespace pbe {
 
-void RegisterBasicTypes(Typer& typer);
+   class Typer;
+
+   void RegisterBasicTypes(Typer& typer);
+
+}

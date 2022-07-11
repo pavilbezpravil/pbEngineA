@@ -4,24 +4,27 @@
 
 #include <vector>
 
+namespace pbe {
 
-class LayerStack {
-public:
-   LayerStack();
-   ~LayerStack();
+   class LayerStack {
+   public:
+      LayerStack();
+      ~LayerStack();
 
-   void PushLayer(Layer* layer);
-   void PushOverlay(Layer* overlay);
-   void PopLayer(Layer* layer);
-   void PopOverlay(Layer* overlay);
+      void PushLayer(Layer* layer);
+      void PushOverlay(Layer* overlay);
+      void PopLayer(Layer* layer);
+      void PopOverlay(Layer* overlay);
 
-   void Clear();
+      void Clear();
 
-   using Layers = std::vector<Layer*>;
+      using Layers = std::vector<Layer*>;
 
-   Layers::iterator begin() { return layers.begin(); }
-   Layers::iterator end() { return layers.end(); }
-private:
-   Layers layers;
-   Layers::iterator layerInsert;
-};
+      Layers::iterator begin() { return layers.begin(); }
+      Layers::iterator end() { return layers.end(); }
+   private:
+      Layers layers;
+      Layers::iterator layerInsert;
+   };
+
+}

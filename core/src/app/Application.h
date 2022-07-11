@@ -5,28 +5,31 @@
 #include "LayerStack.h"
 #include "gui/ImGuiLayer.h"
 
+namespace pbe {
 
-class Application {
-public:
-   NON_COPYABLE(Application);
-   Application() = default;
-   virtual ~Application() = default;
+   class Application {
+   public:
+      NON_COPYABLE(Application);
+      Application() = default;
+      virtual ~Application() = default;
 
-   virtual void OnInit();
-   virtual void OnTerm();
-   virtual void OnEvent(Event& e);
+      virtual void OnInit();
+      virtual void OnTerm();
+      virtual void OnEvent(Event& e);
 
-   void PushLayer(Layer* layer);
-   void PushOverlay(Layer* overlay);
+      void PushLayer(Layer* layer);
+      void PushOverlay(Layer* overlay);
 
-   void Run();
+      void Run();
 
-private:
-   bool running = false;
-   LayerStack layerStack;
-   ImGuiLayer* imguiLayer{};
+   private:
+      bool running = false;
+      LayerStack layerStack;
+      ImGuiLayer* imguiLayer{};
 
-   bool focused = true;
-};
+      bool focused = true;
+   };
 
-extern Application* sApplication;
+   extern Application* sApplication;
+
+}

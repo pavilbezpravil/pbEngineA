@@ -3,14 +3,18 @@
 
 #include "core/Common.h"
 
-class EditorWindow {
-   NON_COPYABLE(EditorWindow);
-public:
-   EditorWindow(std::string_view name) : name(name) {}
-   virtual ~EditorWindow() = default;
+namespace pbe {
 
-   virtual void OnImGuiRender() = 0;
+   class EditorWindow {
+      NON_COPYABLE(EditorWindow);
+   public:
+      EditorWindow(std::string_view name) : name(name) { }
+      virtual ~EditorWindow() = default;
 
-   std::string name{ "EditorWindow" };
-   bool show = true;
-};
+      virtual void OnImGuiRender() = 0;
+
+      std::string name{ "EditorWindow" };
+      bool show = true;
+   };
+
+}

@@ -6,204 +6,212 @@
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
+#include "rend/Renderer.h"
 
 
-class SceneHierarchyWindow : public EditorWindow {
-public:
-   using EditorWindow::EditorWindow;
+namespace pbe {
 
-   void OnImGuiRender() override {
-      ImGui::Begin(name.c_str(), &show);
+   class SceneHierarchyWindow : public EditorWindow {
+   public:
+      using EditorWindow::EditorWindow;
 
-      if (!pScene) {
-         ImGui::Text("No scene");
-      } else {
-         // todo:
-         if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::Selectable("Create new entity")) {
-               pScene->Create();
-            }
-            ImGui::EndPopup();
+      void OnImGuiRender() override {
+         ImGui::Begin(name.c_str(), &show);
+
+         if (!pScene) {
+            ImGui::Text("No scene");
          }
-
-         for (auto [e, tag] : pScene->GetEntitiesWith<TagComponent>().each()) {
-            const auto* name = tag.tag.data();
-
-            if (ImGui::TreeNodeEx(tag.tag.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-               if (ImGui::BeginPopupContextItem()) {
-                  ImGui::Text("This a popup for \"%s\"!", name);
-
-                  if (ImGui::Button("Add component"))
-                     ImGui::Text("sfdsdf");
-
-                  ImGui::Separator();
-
-                  if (ImGui::Button("Delete"))
-                     ImGui::Text("sfdsdf");
-
-                  if (ImGui::Button("Close"))
-                     ImGui::CloseCurrentPopup();
-
-                  ImGui::EndPopup();
+         else {
+            // todo:
+            if (ImGui::BeginPopupContextItem()) {
+               if (ImGui::Selectable("Create new entity")) {
+                  pScene->Create();
                }
+               ImGui::EndPopup();
+            }
 
-               // if (ImGui::IsItemHovered()) {
-               //    ImGui::SetTooltip("Right-click to open popup");
-               // }
+            for (auto [e, tag] : pScene->GetEntitiesWith<TagComponent>().each()) {
+               const auto* name = tag.tag.data();
 
-               if (ImGui::IsItemClicked()) {
-                  if (selectedCb) {
-                     Entity entity{e, pScene};
-                     selectedCb(entity);
+               if (ImGui::TreeNodeEx(tag.tag.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+                  if (ImGui::BeginPopupContextItem()) {
+                     ImGui::Text("This a popup for \"%s\"!", name);
+
+                     if (ImGui::Button("Add component"))
+                        ImGui::Text("sfdsdf");
+
+                     ImGui::Separator();
+
+                     if (ImGui::Button("Delete"))
+                        ImGui::Text("sfdsdf");
+
+                     if (ImGui::Button("Close"))
+                        ImGui::CloseCurrentPopup();
+
+                     ImGui::EndPopup();
                   }
-               }
 
-               ImGui::TreePop();
+                  // if (ImGui::IsItemHovered()) {
+                  //    ImGui::SetTooltip("Right-click to open popup");
+                  // }
+
+                  if (ImGui::IsItemClicked()) {
+                     if (selectedCb) {
+                        Entity entity{ e, pScene };
+                        selectedCb(entity);
+                     }
+                  }
+
+                  ImGui::TreePop();
+               }
             }
          }
+
+         ImGui::End();
+      }
+
+      Scene* pScene{};
+
+      std::function<void(Entity)> selectedCb;
+   };
+
+
+   class InspectorWindow : public EditorWindow {
+   public:
+      using EditorWindow::EditorWindow;
+
+      void OnImGuiRender() override {
+         ImGui::Begin(name.c_str(), &show);
+
+         if (!entity.Valid()) {
+            ImGui::Text("No entity");
+         }
+         else {
+            ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
+
+            for (const auto& [id, func] : ComponentList::Get().components2) {
+               func(entity);
+            }
+         }
+
+         ImGui::End();
+      }
+
+      void SetEntity(Entity e) {
+         entity = e;
+      }
+
+      Entity entity{};
+   };
+
+
+   void EditorLayer::OnAttach() {
+      AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
+      AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
+
+      sceneHierarchyWindow->selectedCb = std::bind(&InspectorWindow::SetEntity, inspectorWindow, std::placeholders::_1);
+
+      Layer::OnAttach();
+
+      // todo:
+      scene.reset(new Scene());
+
+      scene->Create("red");
+      scene->Create("green");
+      scene->Create("blue");
+
+      sceneHierarchyWindow->pScene = scene.get();
+   }
+
+   void EditorLayer::OnDetach() {
+      Layer::OnDetach();
+   }
+
+   void EditorLayer::OnUpdate(float dt) {
+      Layer::OnUpdate(dt);
+   }
+
+   void EditorLayer::OnImGuiRender() {
+      static bool p_open = true; // todo:
+
+      static bool opt_fullscreen = true;
+      static bool opt_padding = false;
+      static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+      // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+      // because it would be confusing to have two docking targets within each others.
+      ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+      if (opt_fullscreen) {
+         const ImGuiViewport* viewport = ImGui::GetMainViewport();
+         ImGui::SetNextWindowPos(viewport->WorkPos);
+         ImGui::SetNextWindowSize(viewport->WorkSize);
+         ImGui::SetNextWindowViewport(viewport->ID);
+         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+         window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove;
+         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+      }
+      else {
+         dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+      }
+
+      // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+      // and handle the pass-thru hole, so we ask Begin() to not render a background.
+      if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+         window_flags |= ImGuiWindowFlags_NoBackground;
+
+      // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+      // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+      // all active windows docked into it will lose their parent and become undocked.
+      // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+      // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+      if (!opt_padding)
+         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+      ImGui::Begin("DockSpace Demo", &p_open, window_flags);
+      if (!opt_padding)
+         ImGui::PopStyleVar();
+
+      if (opt_fullscreen)
+         ImGui::PopStyleVar(2);
+
+      // Submit the DockSpace
+      ImGuiIO& io = ImGui::GetIO();
+      if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+      }
+
+
+      if (ImGui::BeginMenuBar()) {
+         if (ImGui::BeginMenu("Windows")) {
+            for (auto& window : editorWindows) {
+               ImGui::MenuItem(window->name.c_str(), NULL, &window->show);
+            }
+            ImGui::EndMenu();
+         }
+
+         ImGui::EndMenuBar();
       }
 
       ImGui::End();
-   }
-
-   Scene* pScene{};
-
-   std::function<void(Entity)> selectedCb;
-};
 
 
-class InspectorWindow : public EditorWindow {
-public:
-   using EditorWindow::EditorWindow;
-
-   void OnImGuiRender() override {
-      ImGui::Begin(name.c_str(), &show);
-
-      if (!entity.Valid()) {
-         ImGui::Text("No entity");
-      } else {
-         ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
-
-         for (const auto& [id, func] : ComponentList::Get().components2) {
-            func(entity);
+      for (auto& window : editorWindows) {
+         if (window->show) {
+            window->OnImGuiRender();
          }
       }
-
-      ImGui::End();
    }
 
-   void SetEntity(Entity e) {
-      entity = e;
-   }
-
-   Entity entity{};
-};
-
-
-void EditorLayer::OnAttach() {
-   AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
-   AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
-
-   sceneHierarchyWindow->selectedCb = std::bind(&InspectorWindow::SetEntity, inspectorWindow, std::placeholders::_1);
-
-   Layer::OnAttach();
-
-   // todo:
-   scene.reset(new Scene());
-
-   scene->Create("red");
-   scene->Create("green");
-   scene->Create("blue");
-
-   sceneHierarchyWindow->pScene = scene.get();
-}
-
-void EditorLayer::OnDetach() {
-   Layer::OnDetach();
-}
-
-void EditorLayer::OnUpdate(float dt) {
-   Layer::OnUpdate(dt);
-}
-
-void EditorLayer::OnImGuiRender() {
-   static bool p_open = true; // todo:
-
-   static bool opt_fullscreen = true;
-   static bool opt_padding = false;
-   static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
-   // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-   // because it would be confusing to have two docking targets within each others.
-   ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-   if (opt_fullscreen) {
-      const ImGuiViewport* viewport = ImGui::GetMainViewport();
-      ImGui::SetNextWindowPos(viewport->WorkPos);
-      ImGui::SetNextWindowSize(viewport->WorkSize);
-      ImGui::SetNextWindowViewport(viewport->ID);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-         ImGuiWindowFlags_NoMove;
-      window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-   } else {
-      dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-   }
-
-   // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-   // and handle the pass-thru hole, so we ask Begin() to not render a background.
-   if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-      window_flags |= ImGuiWindowFlags_NoBackground;
-
-   // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-   // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-   // all active windows docked into it will lose their parent and become undocked.
-   // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-   // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-   if (!opt_padding)
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-   ImGui::Begin("DockSpace Demo", &p_open, window_flags);
-   if (!opt_padding)
-      ImGui::PopStyleVar();
-
-   if (opt_fullscreen)
-      ImGui::PopStyleVar(2);
-
-   // Submit the DockSpace
-   ImGuiIO& io = ImGui::GetIO();
-   if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-      ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-      ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+   void EditorLayer::OnEvent(Event& event) {
+      Layer::OnEvent(event);
    }
 
 
-   if (ImGui::BeginMenuBar()) {
-      if (ImGui::BeginMenu("Windows")) {
-         for (auto& window : editorWindows) {
-            ImGui::MenuItem(window->name.c_str(), NULL, &window->show);
-         }
-         ImGui::EndMenu();
-      }
-
-      ImGui::EndMenuBar();
+   void EditorLayer::AddEditorWindow(EditorWindow* window, bool showed) {
+      window->show = showed;
+      editorWindows.emplace_back(window);
    }
 
-   ImGui::End();
-
-
-   for (auto& window : editorWindows) {
-      if (window->show) {
-         window->OnImGuiRender();
-      }
-   }
-}
-
-void EditorLayer::OnEvent(Event& event) {
-   Layer::OnEvent(event);
-}
-
-
-void EditorLayer::AddEditorWindow(EditorWindow* window, bool showed) {
-   window->show = showed;
-   editorWindows.emplace_back(window);
 }

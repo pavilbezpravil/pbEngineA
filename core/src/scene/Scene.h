@@ -2,21 +2,24 @@
 
 #include <entt/entt.hpp>
 
-class Entity;
+namespace pbe {
 
+   class Entity;
 
-class Scene {
-public:
+   class Scene {
+   public:
 
-   Entity Create(std::string_view name = {});
+      Entity Create(std::string_view name = {});
 
-   template<typename T>
-   auto GetEntitiesWith() {
-      return registry.view<T>();
-   }
+      template<typename T>
+      auto GetEntitiesWith() {
+         return registry.view<T>();
+      }
 
-private:
-   entt::registry registry;
+   private:
+      entt::registry registry;
 
-   friend Entity;
-};
+      friend Entity;
+   };
+
+}

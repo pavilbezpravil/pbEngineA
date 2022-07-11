@@ -1,6 +1,9 @@
 #include "Layer.h"
 
-Layer::Layer(const std::string& name)
-   : name(name) {
-}
+namespace pbe {
 
+   Layer::Layer(const std::string& name)
+      : name(name) {
+   }
+
+}

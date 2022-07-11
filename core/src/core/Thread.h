@@ -1,3 +1,7 @@
 #pragma once
 
-void ThreadSleepMs(float ms);
+namespace pbe {
+
+   void ThreadSleepMs(float ms);
+
+}

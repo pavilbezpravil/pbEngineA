@@ -2,7 +2,11 @@
 
 #include <thread>
 
-void ThreadSleepMs(float ms) {
-   int ims = std::max(int(ms), 1);
-   std::this_thread::sleep_for(std::chrono::microseconds(ims));
+namespace pbe {
+
+   void ThreadSleepMs(float ms) {
+      int ims = std::max(int(ms), 1);
+      std::this_thread::sleep_for(std::chrono::microseconds(ims));
+   }
+
 }

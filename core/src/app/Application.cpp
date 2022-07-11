@@ -10,163 +10,166 @@
 #include "gui/ImGuiLayer.h"
 #include "rend/Shader.h"
 
+namespace pbe {
 
-Application* sApplication = nullptr;
+   Application* sApplication = nullptr;
 
+   void Application::OnInit() {
+      Log::Init();
 
-void Application::OnInit() {
-   Log::Init();
+      new Window();
 
-   new Window();
-
-   new Device();
-   if (!sDevice->created) {
-      return;
-   }
-
-   sWindow->eventCallback = std::bind(&Application::OnEvent, this, std::placeholders::_1);
-
-   imguiLayer = new ImGuiLayer();
-   PushOverlay(imguiLayer);
-
-   INFO("App init success");
-   running = true;
-}
-
-void Application::OnTerm() {
-   SAFE_DELETE(sDevice);
-   SAFE_DELETE(sWindow);
-   // Log::Term();
-}
-
-void Application::OnEvent(Event& e) {
-   if (e.GetEvent<AppQuitEvent>()) {
-      INFO("App quit event");
-      running = false;
-   }
-   if (e.GetEvent<AppLoseFocusEvent>()) {
-      INFO("Lose Focus");
-      focused = false;
-   }
-   if (e.GetEvent<AppGetFocusEvent>()) {
-      INFO("Get Focus");
-      focused = true;
-   }
-   if (auto* windowResize = e.GetEvent<WindowResizeEvent>()) {
-      sDevice->Resize(windowResize->size);
-   }
-
-   if (auto* key = e.GetEvent<KeyPressedEvent>()) {
-      // INFO("KeyCode: {}", key->keyCode);
-      if (key->keyCode == 'R') {
-         ShaderCompileTest();
-         e.handled = true;
+      new Device();
+      if (!sDevice->created) {
+         return;
       }
+
+      sWindow->eventCallback = std::bind(&Application::OnEvent, this, std::placeholders::_1);
+
+      imguiLayer = new ImGuiLayer();
+      PushOverlay(imguiLayer);
+
+      INFO("App init success");
+      running = true;
    }
 
-   if (!e.handled) {
-      for (auto it = layerStack.end(); it != layerStack.begin();) {
-         (*--it)->OnEvent(e);
-         if (e.handled) {
-            break;
+   void Application::OnTerm() {
+      layerStack.Clear();
+
+      SAFE_DELETE(sDevice);
+      SAFE_DELETE(sWindow);
+      // Log::Term();
+   }
+
+   void Application::OnEvent(Event& e) {
+      if (e.GetEvent<AppQuitEvent>()) {
+         INFO("App quit event");
+         running = false;
+      }
+      if (e.GetEvent<AppLoseFocusEvent>()) {
+         INFO("Lose Focus");
+         focused = false;
+      }
+      if (e.GetEvent<AppGetFocusEvent>()) {
+         INFO("Get Focus");
+         focused = true;
+      }
+      if (auto* windowResize = e.GetEvent<WindowResizeEvent>()) {
+         sDevice->Resize(windowResize->size);
+      }
+
+      if (auto* key = e.GetEvent<KeyPressedEvent>()) {
+         // INFO("KeyCode: {}", key->keyCode);
+         if (key->keyCode == 'R') {
+            ShaderCompileTest();
+            e.handled = true;
+         }
+      }
+
+      if (!e.handled) {
+         for (auto it = layerStack.end(); it != layerStack.begin();) {
+            (*--it)->OnEvent(e);
+            if (e.handled) {
+               break;
+            }
          }
       }
    }
-}
 
-
-void Application::PushLayer(Layer* layer) {
-   layerStack.PushLayer(layer);
-   layer->OnAttach();
-}
-
-
-void Application::PushOverlay(Layer* overlay) {
-   overlay->OnAttach();
-   layerStack.PushOverlay(overlay);
-}
-
-
-void Application::Run() {
-   if (!running) {
-      return;
+   void Application::PushLayer(Layer* layer) {
+      layerStack.PushLayer(layer);
    }
 
-   CommandList cmd{ sDevice->g_pd3dDeviceContext };
+   void Application::PushOverlay(Layer* overlay) {
+      layerStack.PushOverlay(overlay);
+   }
 
-   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-   // Main loop
-   while (running) {
-      OPTICK_FRAME("MainThread");
-
-      if (!focused) {
-         OPTICK_EVENT("Sleep On Focused");
-         ThreadSleepMs(50);
+   void Application::Run() {
+      if (!running) {
+         return;
       }
-
-      float dt = 1.f / 60.f; // todo:
-      // debug handle
-      if (dt > 1.f) {
-         dt = 1.f / 60.f;
-      }
-      OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
 
       for (auto* layer : layerStack) {
-         layer->OnUpdate(dt);
+         layer->OnAttach();
       }
 
-      {
-         OPTICK_EVENT("OnImGuiRender");
-         imguiLayer->NewFrame();
+      CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-         for (auto* layer : layerStack) {
-            layer->OnImGuiRender();
+      ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+      // Main loop
+      while (running) {
+         OPTICK_FRAME("MainThread");
+
+         if (!focused) {
+            OPTICK_EVENT("Sleep On Focused");
+            ThreadSleepMs(50);
          }
 
-         imguiLayer->EndFrame();
+         float dt = 1.f / 60.f; // todo:
+         // debug handle
+         if (dt > 1.f) {
+            dt = 1.f / 60.f;
+         }
+         OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
+
+         for (auto* layer : layerStack) {
+            layer->OnUpdate(dt);
+         }
+
+         {
+            OPTICK_EVENT("OnImGuiRender");
+            imguiLayer->NewFrame();
+
+            for (auto* layer : layerStack) {
+               layer->OnImGuiRender();
+            }
+
+            imguiLayer->EndFrame();
+         }
+
+         // ID3D11DeviceContext* context{};
+         // sDevice->g_pd3dDevice->CreateDeferredContext(0, &context);
+         //
+         // context->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
+         // context->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
+         // ID3D11CommandList* commandList;
+         // context->FinishCommandList(true, &commandList);
+         //
+         // sDevice->g_pd3dDeviceContext->ExecuteCommandList(commandList, true);
+         //
+         // commandList->Release();
+         // context->Release();
+
+         vec4 clearColor = {
+         clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
+         };
+
+         cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
+
+         {
+            OPTICK_EVENT("ImGui Render");
+            cmd.SetRenderTargets(sDevice->backBuffer);
+            // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
+            imguiLayer->Render();
+         }
+
+         {
+            OPTICK_EVENT("Swapchain Present");
+            // todo:
+            sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
+            //g_pSwapChain->Present(0, 0); // Present without vsync
+         }
+
+         OPTICK_EVENT("Window Update");
+         sWindow->Update();
       }
 
-      // ID3D11DeviceContext* context{};
-      // sDevice->g_pd3dDevice->CreateDeferredContext(0, &context);
-      //
-      // context->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
-      // context->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
-      // ID3D11CommandList* commandList;
-      // context->FinishCommandList(true, &commandList);
-      //
-      // sDevice->g_pd3dDeviceContext->ExecuteCommandList(commandList, true);
-      //
-      // commandList->Release();
-      // context->Release();
-
-      vec4 clearColor = {
-      clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
-      };
-
-      cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
-
-      {
-         OPTICK_EVENT("ImGui Render");
-         cmd.SetRenderTargets(sDevice->backBuffer);
-         // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
-         imguiLayer->Render();
+      for (auto* layer : layerStack) {
+         layer->OnDetach();
       }
 
-      {
-         OPTICK_EVENT("Swapchain Present");
-         // todo:
-         sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
-         //g_pSwapChain->Present(0, 0); // Present without vsync
-      }
-
-      OPTICK_EVENT("Window Update");
-      sWindow->Update();
+      imguiLayer = nullptr;
    }
 
-   for (auto* layer : layerStack) {
-      layer->OnDetach();
-   }
-
-   imguiLayer = nullptr;
 }

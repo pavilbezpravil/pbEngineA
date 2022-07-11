@@ -1,59 +1,63 @@
 #pragma once
 #include "math/Types.h"
 
-enum class EventType {
-   None,
-   AppQuit,
-   AppLoseFocus,
-   AppGetFocus,
-   WindowResize,
-   KeyPressed,
-};
+namespace pbe {
+
+   enum class EventType {
+      None,
+      AppQuit,
+      AppLoseFocus,
+      AppGetFocus,
+      WindowResize,
+      KeyPressed,
+   };
 
 #define EVENT_TYPE(type) \
    static EventType GetStaticEventType() { return EventType::type; } \
    EventType GetEventType() override { return EventType::type; }
 
 
-struct Event {
-   bool handled = false;
+   struct Event {
+      bool handled = false;
 
-   template<typename T>
-   T* GetEvent() {
-      if (GetEventType() == T::GetStaticEventType()) {
-         return (T*)this;
+      template<typename T>
+      T* GetEvent() {
+         if (GetEventType() == T::GetStaticEventType()) {
+            return (T*)this;
+         }
+         return nullptr;
       }
-      return nullptr;
-   }
 
-   virtual EventType GetEventType() = 0;
-};
+      virtual EventType GetEventType() = 0;
+   };
 
 
-struct AppQuitEvent : Event {
-   EVENT_TYPE(AppQuit)
-};
+   struct AppQuitEvent : Event {
+      EVENT_TYPE(AppQuit)
+   };
 
-struct AppLoseFocusEvent : Event {
-   EVENT_TYPE(AppLoseFocus)
-};
+   struct AppLoseFocusEvent : Event {
+      EVENT_TYPE(AppLoseFocus)
+   };
 
-struct AppGetFocusEvent : Event {
-   EVENT_TYPE(AppGetFocus)
-};
+   struct AppGetFocusEvent : Event {
+      EVENT_TYPE(AppGetFocus)
+   };
 
-struct WindowResizeEvent : Event {
-   WindowResizeEvent(int2 size) : size(size) {}
+   struct WindowResizeEvent : Event {
+      WindowResizeEvent(int2 size) : size(size) {}
 
-   int2 size{};
+      int2 size{};
 
-   EVENT_TYPE(WindowResize)
-};
+      EVENT_TYPE(WindowResize)
+   };
 
-struct KeyPressedEvent : Event {
-   KeyPressedEvent(int keyCode) : keyCode(keyCode) {}
+   struct KeyPressedEvent : Event {
+      KeyPressedEvent(int keyCode) : keyCode(keyCode) {}
 
-   int keyCode = -1;
+      int keyCode = -1;
 
-   EVENT_TYPE(KeyPressed)
-};
+      EVENT_TYPE(KeyPressed)
+   };
+
+}

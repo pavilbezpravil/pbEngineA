@@ -4,23 +4,25 @@
 #include <d3d11.h>
 #include <functional>
 
-struct Event;
+namespace pbe {
 
+   struct Event;
 
-class Window {
-public:
-   Window(int2 size = {1280, 800});
+   class Window {
+   public:
+      Window(int2 size = { 1280, 800 });
 
-   ~Window();
+      ~Window();
 
-   void Update();
+      void Update();
 
-   WNDCLASSEX wc{};
-   HWND hwnd{};
+      WNDCLASSEX wc{};
+      HWND hwnd{};
 
-   using EventCallbackFn = std::function<void(Event&)>;
-   EventCallbackFn eventCallback;
-};
+      using EventCallbackFn = std::function<void(Event&)>;
+      EventCallbackFn eventCallback;
+   };
 
+   extern Window* sWindow;
 
-extern Window* sWindow;
+}

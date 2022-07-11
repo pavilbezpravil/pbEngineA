@@ -7,32 +7,35 @@
 #include "app/Layer.h"
 #include "core/Ref.h"
 
+namespace pbe {
 
-class InspectorWindow;
-class SceneHierarchyWindow;
-class Scene;
-struct Event;
+   class InspectorWindow;
+   class SceneHierarchyWindow;
+   class Scene;
+   struct Event;
 
 
-class EditorLayer : public Layer {
-public:
-   EditorLayer() = default;
+   class EditorLayer : public Layer {
+   public:
+      EditorLayer() = default;
 
-   void OnAttach() override;
-   void OnDetach() override;
-   void OnUpdate(float dt) override;
-   void OnImGuiRender() override;
-   void OnEvent(Event& event) override;
+      void OnAttach() override;
+      void OnDetach() override;
+      void OnUpdate(float dt) override;
+      void OnImGuiRender() override;
+      void OnEvent(Event& event) override;
 
-   void AddEditorWindow(EditorWindow* window, bool showed = false);
+      void AddEditorWindow(EditorWindow* window, bool showed = false);
 
-   Scene* GetOpenedScene() const { return scene.get(); }
+      Scene* GetOpenedScene() const { return scene.get(); }
 
-private:
-   std::vector<std::unique_ptr<EditorWindow>> editorWindows;
+   private:
+      std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
-   Scope<Scene> scene;
+      Own<Scene> scene;
 
-   SceneHierarchyWindow* sceneHierarchyWindow{};
-   InspectorWindow* inspectorWindow{};
-};
+      SceneHierarchyWindow* sceneHierarchyWindow{};
+      InspectorWindow* inspectorWindow{};
+   };
+
+}

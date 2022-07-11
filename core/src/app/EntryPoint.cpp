@@ -1,11 +1,13 @@
 #include "Application.h"
 
-extern Application* CreateApplication();
+namespace pbe {
+   extern Application* CreateApplication();
+}
 
 
 int main(int, char**) {
 
-   Application* sApplication = CreateApplication();
+   pbe::Application* sApplication = pbe::CreateApplication();
    sApplication->OnInit();
    sApplication->Run();
    sApplication->OnTerm();

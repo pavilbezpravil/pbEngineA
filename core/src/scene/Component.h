@@ -6,68 +6,72 @@
 #include "math/Types.h"
 #include "core/Type.h"
 
-class Entity;
+namespace pbe {
 
-class ComponentList {
-public:
+   class Entity;
 
-   using ComponentID = TypeID;
-   using ComponentFunc = std::function<void(Entity&)>;
+   class ComponentList {
+   public:
 
-   static ComponentList& Get();
+      using ComponentID = TypeID;
+      using ComponentFunc = std::function<void(Entity&)>;
 
-   void RegisterComponent(ComponentID componentID, ComponentFunc&& func);
+      static ComponentList& Get();
 
-   std::unordered_map<ComponentID, ComponentFunc> components2;
-};
+      void RegisterComponent(ComponentID componentID, ComponentFunc&& func);
+
+      std::unordered_map<ComponentID, ComponentFunc> components2;
+   };
 
 #define DECL_COMPONENT(Component) \
    static const char* GetName() { \
       return STRINGIFY(Component); \
    }
 
-#define COMPONENT_EXPLICIT_TEMPLATES_DECL(Component) \
-   extern template struct entt::type_hash<Component>; \
-   extern template TypeID GetTypeID<Component>(); \
-   extern template decltype(auto) entt::registry::get<Component>(const entt::entity); \
-   extern template auto entt::registry::try_get<Component>(const entt::entity);
+   // todo:
+#define COMPONENT_EXPLICIT_TEMPLATES_DECL(Component)
+#define COMPONENT_EXPLICIT_TEMPLATE_DEF(Component)
+// #define COMPONENT_EXPLICIT_TEMPLATES_DECL(Component) \
+//    extern template struct entt::type_hash<Component>; \
+//    extern template TypeID GetTypeID<Component>(); \
+//    extern template decltype(auto) entt::registry::get<Component>(const entt::entity); \
+//    extern template auto entt::registry::try_get<Component>(const entt::entity);
+//
+// #define COMPONENT_EXPLICIT_TEMPLATE_DEF(Component) \
+//    template struct entt::type_hash<Component>; \
+//    template TypeID GetTypeID<Component>(); \
+//    template decltype(auto) entt::registry::get<Component>(const entt::entity); \
+//    template auto entt::registry::try_get<Component>(const entt::entity);
 
-#define COMPONENT_EXPLICIT_TEMPLATE_DEF(Component) \
-   template struct entt::type_hash<Component>; \
-   template TypeID GetTypeID<Component>(); \
-   template decltype(auto) entt::registry::get<Component>(const entt::entity); \
-   template auto entt::registry::try_get<Component>(const entt::entity);
+   struct UUIDComponent {
+      UUID uuid;
 
-struct UUIDComponent {
-   UUID uuid;
+      DECL_COMPONENT(UUIDComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(UUIDComponent);
 
-   DECL_COMPONENT(UUIDComponent);
-};
-COMPONENT_EXPLICIT_TEMPLATES_DECL(UUIDComponent);
+   struct TagComponent {
+      std::string tag;
 
-// extern template decltype(auto) entt::registry::get<UUIDComponent>(const entt::entity);
-// extern template auto entt::registry::try_get<UUIDComponent>(const entt::entity);
+      DECL_COMPONENT(TagComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
 
-struct TagComponent {
-   std::string tag;
+   struct SceneTransformComponent {
+      vec3 position;
+      quat rotation;
 
-   DECL_COMPONENT(TagComponent);
-};
-COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
+      DECL_COMPONENT(SceneTransformComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
 
-struct SceneTransformComponent {
-   vec3 position;
-   quat rotation;
+   struct TestCustomUIComponent {
+      int integer;
+      float floating;
+      vec3 float3;
 
-   DECL_COMPONENT(SceneTransformComponent);
-};
-COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
+      DECL_COMPONENT(TestCustomUIComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(TestCustomUIComponent);
 
-struct TestCustomUIComponent {
-   int integer;
-   float floating;
-   vec3 float3;
-
-   DECL_COMPONENT(TestCustomUIComponent);
-};
-COMPONENT_EXPLICIT_TEMPLATES_DECL(TestCustomUIComponent);
+}
