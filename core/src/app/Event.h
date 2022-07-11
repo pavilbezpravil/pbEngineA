@@ -7,6 +7,7 @@ enum class EventType {
    AppLoseFocus,
    AppGetFocus,
    WindowResize,
+   KeyPressed,
 };
 
 #define EVENT_TYPE(type) \
@@ -47,4 +48,12 @@ struct WindowResizeEvent : Event {
    int2 size{};
 
    EVENT_TYPE(WindowResize)
+};
+
+struct KeyPressedEvent : Event {
+   KeyPressedEvent(int keyCode) : keyCode(keyCode) {}
+
+   int keyCode = -1;
+
+   EVENT_TYPE(KeyPressed)
 };

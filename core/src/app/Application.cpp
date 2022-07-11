@@ -8,6 +8,7 @@
 #include "Window.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
+#include "rend/Shader.h"
 
 
 Application* sApplication = nullptr;
@@ -55,10 +56,20 @@ void Application::OnEvent(Event& e) {
       sDevice->Resize(windowResize->size);
    }
 
-   for (auto it = layerStack.end(); it != layerStack.begin();) {
-      (*--it)->OnEvent(e);
-      if (e.handled) {
-         break;
+   if (auto* key = e.GetEvent<KeyPressedEvent>()) {
+      // INFO("KeyCode: {}", key->keyCode);
+      if (key->keyCode == 'R') {
+         Compile();
+         e.handled = true;
+      }
+   }
+
+   if (!e.handled) {
+      for (auto it = layerStack.end(); it != layerStack.begin();) {
+         (*--it)->OnEvent(e);
+         if (e.handled) {
+            break;
+         }
       }
    }
 }

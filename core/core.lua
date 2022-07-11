@@ -11,6 +11,7 @@ project "core"
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
                  libsinfo.entt.includepath }
-   links { "imgui", "d3d11.lib", "yaml", "optick" }
+
+   links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 
    files { "**.h", "**.cpp" }

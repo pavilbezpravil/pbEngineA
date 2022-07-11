@@ -40,6 +40,11 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
          break;
       case WM_DESTROY: ::PostQuitMessage(0);
          return 0;
+      case WM_KEYDOWN: {
+         KeyPressedEvent e{ (int)wParam };
+         sWindow->eventCallback(e);
+         return 0;
+      }
       case WM_SETFOCUS: {
          AppGetFocusEvent e{};
          sWindow->eventCallback(e);
