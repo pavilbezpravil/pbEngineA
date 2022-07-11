@@ -14,7 +14,7 @@
 
    #define ASSERT(condition) { if(!(condition)) { ERROR("Assertion Failed"); __debugbreak(); } }
 
-   #define UNIMPLEMENTED() HZ_CORE_ASSERT(FALSE)
+   #define UNIMPLEMENTED() ASSERT(FALSE)
 #else
    #define ASSERT(...)
 

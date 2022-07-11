@@ -7,6 +7,7 @@
 #define M_2PI 2 * M_PI
 
 using int2 = glm::ivec2;
+using int3 = glm::ivec3;
 
 using glm::vec2;
 using glm::vec3;

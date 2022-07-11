@@ -59,7 +59,7 @@ void Application::OnEvent(Event& e) {
    if (auto* key = e.GetEvent<KeyPressedEvent>()) {
       // INFO("KeyCode: {}", key->keyCode);
       if (key->keyCode == 'R') {
-         Compile();
+         ShaderCompileTest();
          e.handled = true;
       }
    }
