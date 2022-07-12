@@ -58,17 +58,17 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
 
    struct SceneTransformComponent {
-      vec3 position;
-      quat rotation;
+      vec3 position{};
+      quat rotation = quat_Identity;
 
       DECL_COMPONENT(SceneTransformComponent);
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
 
    struct TestCustomUIComponent {
-      int integer;
-      float floating;
-      vec3 float3;
+      int integer{};
+      float floating{};
+      vec3 float3{};
 
       DECL_COMPONENT(TestCustomUIComponent);
    };

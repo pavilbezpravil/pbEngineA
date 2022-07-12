@@ -101,7 +101,7 @@ namespace pbe {
          Texture2D::Desc sceneTexDesc;
          sceneTexDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
          sceneTexDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
-         sceneTexDesc.size = { 200, 200 };
+         sceneTexDesc.size = { 640, 480 };
 
          sceneTexture = Texture2D::Create(sceneTexDesc);
          sceneTexture->SetDbgName("scene color");
@@ -116,9 +116,10 @@ namespace pbe {
             INFO("Play pressed!");
          }
 
-         ImGui::InputFloat3("translate", &renderer.triangleTranslate.x);
          ImGui::InputFloat3("cameraPos", &renderer.cameraPos.x);
-         ImGui::ColorEdit3("triangle color", &renderer.triangleColor.x);
+         ImGui::SliderFloat("cameraAngle", &renderer.angle, -180, 180);
+         ImGui::InputFloat3("triangleTranslate", &renderer.triangleTranslate.x);
+         ImGui::ColorEdit3("triangleColor", &renderer.triangleColor.x);
 
          auto size = ImGui::GetContentRegionAvail();
 

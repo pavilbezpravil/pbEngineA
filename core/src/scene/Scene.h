@@ -20,6 +20,8 @@ namespace pbe {
       entt::registry registry;
 
       friend Entity;
+
+      friend void SceneSerialize(std::string_view path, Scene& scene);
    };
 
 }

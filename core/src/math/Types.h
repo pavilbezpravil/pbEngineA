@@ -8,11 +8,16 @@
 
 namespace pbe {
 
-#define M_PI 3.14159265358979323846
-#define M_2PI 2 * M_PI
-
-   constexpr float pi = 3.14159265358979323846f;
+   constexpr float pi = glm::pi<float>();
    constexpr float pi2 = pi * 2.f;
+
+   constexpr float ToRadians(float degrees) {
+      return degrees / 180.f * pi;
+   }
+
+   constexpr float ToDegrees(float radians) {
+      return radians * 180.f / pi;
+   }
 
    using uint = uint32_t;
    using int2 = glm::ivec2;

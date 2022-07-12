@@ -2,6 +2,7 @@
 #include "EditorWindow.h"
 
 #include "imgui.h"
+#include "app/Event.h"
 #include "gui/Gui.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
@@ -182,6 +183,25 @@ namespace pbe {
          ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
       }
 
+      if (ImGui::BeginMenuBar()) {
+         if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New Scene")) {
+               INFO("New Scene");
+            }
+            if (ImGui::MenuItem("Open Scene")) {
+               INFO("Open Scene");
+            }
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+               if (scene) {
+                  SceneSerialize("scene.scn", *scene);
+               }
+            }
+
+            ImGui::EndMenu();
+         }
+
+         ImGui::EndMenuBar();
+      }
 
       if (ImGui::BeginMenuBar()) {
          if (ImGui::BeginMenu("Windows")) {
@@ -205,6 +225,13 @@ namespace pbe {
    }
 
    void EditorLayer::OnEvent(Event& event) {
+      if (auto* key = event.GetEvent<KeyPressedEvent>()) {
+         if (key->keyCode == 'S') {
+            ShaderCompileTest();
+            event.handled = true;
+         }
+      }
+
       Layer::OnEvent(event);
    }
 

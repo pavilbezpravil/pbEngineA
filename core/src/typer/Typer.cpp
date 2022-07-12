@@ -161,9 +161,13 @@ namespace pbe {
       const auto& ti = types[typeID];
 
       if (ti.imguiFunc) {
-         ti.serialize(out, name.data(), value);
-      }
-      else {
+         if (ti.serialize) {
+            ti.serialize(out, name.data(), value);
+         } else {
+            out << YAML::Key << name.data() << YAML::Value << "Cant serialize";
+            WARN("{} doesnt have serialize function", ti.name);
+         }
+      } else {
          out << YAML::Key << name.data() << YAML::Value;
 
          out << YAML::BeginMap;
@@ -186,9 +190,12 @@ namespace pbe {
       }
 
       if (ti.imguiFunc) {
-         ti.deserialize(node, name.data(), value);
-      }
-      else {
+         if (ti.deserialize) {
+            ti.deserialize(node, name.data(), value);
+         } else {
+            WARN("{} doesnt have deserialize function", ti.name);
+         }
+      } else {
          const YAML::Node& nodeFields = node[name.data()];
 
          for (const auto& f : ti.fields) {

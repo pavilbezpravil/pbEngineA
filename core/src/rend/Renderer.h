@@ -19,6 +19,19 @@ namespace pbe {
       float _dymmy;
    };
 
+   struct VertexPos {
+      float3 position;
+
+      static std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
+   struct VertexPosNormal {
+      float3 position;
+      float3 normal;
+
+      static std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
    class Renderer {
    public:
       ~Renderer() {
@@ -35,11 +48,26 @@ namespace pbe {
       UINT vertex_offset{};
       UINT vertex_count{};
 
-      vec3 triangleTranslate{};
+      vec3 triangleTranslate = vec3_Z;
       vec3 cameraPos{};
       vec3 triangleColor{};
+      float angle = 0;
 
       void Init() {
+         // VertexPos::inputElementDesc = {
+         //    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+         //    /*
+         //    { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+         //    { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+         //    { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+         //    */
+         // };
+         //
+         // VertexPosNormal::inputElementDesc = {
+         //    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+         //    { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+         // };
+
          auto* device_ptr = sDevice->g_pd3dDevice;
 
          auto programDesc = ProgramDesc::VsPs("shaders.hlsl", "vs_main", "ps_main");
@@ -284,8 +312,10 @@ namespace pbe {
 
          CameraCB cb;
 
-         mat4 view = glm::lookAt(cameraPos, cameraPos + vec3_Z, vec3_Y);
-         mat4 proj = glm::perspectiveFov(90.f / (180) * pi, 100.f, 100.f, 0.1f, 100.f);
+         float3 direction = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), angle / 180.f * pi, vec3_Up);
+
+         mat4 view = glm::lookAt(cameraPos, cameraPos + direction, vec3_Y);
+         mat4 proj = glm::perspectiveFov(90.f / (180) * pi, (float)target.GetDesc().size.x, (float)target.GetDesc().size.y, 0.1f, 100.f);
 
          cb.viewProjection = proj * view;
          cb.transform = glm::translate(mat4(1), triangleTranslate);
