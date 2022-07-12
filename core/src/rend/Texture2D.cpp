@@ -70,6 +70,9 @@ namespace pbe {
       if (desc.bindFlags & D3D11_BIND_DEPTH_STENCIL) {
          pDevice->CreateDepthStencilView(pTexture, NULL, &dsv);
       }
+      if (desc.bindFlags & D3D11_BIND_UNORDERED_ACCESS) {
+         pDevice->CreateUnorderedAccessView(pTexture, NULL, &uav);
+      }
 
       pResource = pTexture;
    }

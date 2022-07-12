@@ -1,19 +1,35 @@
-/* vertex attributes go here to input to the vertex shader */
 struct vs_in {
     float3 position_local : POS;
 };
 
-/* outputs from vertex shader go here. can be interpolated to pixel shader */
 struct vs_out {
-    float4 position_clip : SV_POSITION; // required output of VS
+    float4 position_clip : SV_POSITION;
 };
 
+struct CameraCB {
+  float4x4 viewProjection;
+  float4x4 transform;
+  float3 color;
+  float _dymmy;
+};
+
+cbuffer gCamera {
+  CameraCB camera;
+}
+
 vs_out vs_main(vs_in input) {
-  vs_out output = (vs_out)0; // zero the memory first
-  output.position_clip = float4(input.position_local, 1.0);
+  vs_out output = (vs_out)0;
+
+  float4 posL4 = float4(input.position_local, 1);
+
+  float3 posW = mul(posL4, camera.transform).xyz;
+  float4 posH = mul(float4(posW, 1), camera.viewProjection);
+  output.position_clip = posH;
+  // output.position_clip = float4(input.position_local, 1.0);
   return output;
 }
 
 float4 ps_main(vs_out input) : SV_TARGET {
-  return float4( 1.0, 0.0, 1.0, 1.0 ); // must return an RGBA colour
+  return float4( camera.color, 1.0 );
+  // return float4( 1.0, 0.0, 1.0, 1.0 );
 }

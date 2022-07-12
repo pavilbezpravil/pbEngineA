@@ -5,6 +5,7 @@
 #include "Device.h"
 #include "core/Log.h"
 #include "Texture2D.h"
+#include "Buffer.h"
 #include "CommandList.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
@@ -148,6 +149,56 @@ namespace pbe {
 
       if (cs) {
          cmd.pContext->CSSetShader(cs->cs.Get(), nullptr, 0);
+      }
+   }
+
+   void GpuProgram::SetConstantBuffer(CommandList& cmd, std::string_view name, Buffer& buffer) {
+      size_t id = StrHash(name);
+
+      ID3D11Buffer* dxBuffer = buffer.GetBuffer();
+
+      if (vs) {
+         const auto reflection = vs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->VSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+         }
+      }
+
+      if (ps) {
+         const auto reflection = ps->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->PSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+         }
+      }
+
+      if (cs) {
+         const auto reflection = cs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->CSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+         }
+      }
+   }
+
+   void GpuProgram::SetSrvBuffer(CommandList& cmd, std::string_view name, Buffer& buffer) {
+      size_t id = StrHash(name);
+
+      if (vs) {
+         const auto reflection = vs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, &buffer.srv);
+         }
       }
    }
 

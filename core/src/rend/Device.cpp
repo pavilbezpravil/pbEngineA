@@ -4,6 +4,7 @@
 #include <d3dcommon.h>
 #include <winerror.h>
 
+#include "Common.h"
 #include "Texture2D.h"
 #include "core/Common.h"
 #include "core/Log.h"

@@ -15,6 +15,7 @@ struct ID3D11PixelShader;
 struct ID3D11ComputeShader;
 
 namespace pbe {
+   class Buffer;
 
    class Texture2D;
    class CommandList;
@@ -87,6 +88,8 @@ namespace pbe {
       void Activate(CommandList& cmd);
 
       void SetConstantBufferRaw(CommandList& cmd, std::string_view name, std::span<byte> data);
+      void SetConstantBuffer(CommandList& cmd, std::string_view name, Buffer& buffer);
+      void SetSrvBuffer(CommandList& cmd, std::string_view name, Buffer& buffer);
       void SetTexture(CommandList& cmd, std::string_view name, Texture2D& texture);
 
       void DrawInstanced(CommandList& cmd, int vertCount, int instCount = 1, int startVert = 0);

@@ -1,31 +1,11 @@
 #pragma once
 #include <d3d11.h>
-#include <string_view>
 
-#include "Common.h"
-#include "core/Common.h"
+#include "GpuResource.h"
 #include "core/Ref.h"
 #include "math/Types.h"
 
 namespace pbe {
-
-   class GPUResource : public RefCounted {
-      NON_COPYABLE(GPUResource);
-   public:
-      GPUResource(ID3D11Resource* pResource) : pResource(pResource) {
-
-      }
-
-      virtual ~GPUResource() {
-         SAFE_RELEASE(pResource);
-      }
-
-      void SetDbgName(std::string_view dbgName) {
-         ::pbe::SetDbgName(pResource, dbgName);
-      }
-
-      ID3D11Resource* pResource{};
-   };
 
    class Texture2D : public GPUResource {
    public:
@@ -47,8 +27,8 @@ namespace pbe {
       ID3D11RenderTargetView* rtv{};
       ID3D11DepthStencilView* dsv{};
       ID3D11ShaderResourceView* srv{};
+      ID3D11UnorderedAccessView* uav{};
 
-      // todo: Ref::Create cant access to private member
    private:
       friend Ref<Texture2D>;
 

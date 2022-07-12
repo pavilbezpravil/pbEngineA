@@ -7,7 +7,7 @@ namespace pbe {
 
    class CommandList {
    public:
-      CommandList(ID3D11DeviceContext* pContext) : pContext(pContext) {
+      CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
 
       }
 
@@ -34,7 +34,7 @@ namespace pbe {
       }
 
 
-      ID3D11DeviceContext* pContext{};
+      ID3D11DeviceContext3* pContext{};
    };
 
 }

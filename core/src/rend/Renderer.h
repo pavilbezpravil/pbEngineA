@@ -1,18 +1,26 @@
 #pragma once
 
+#include "Buffer.h"
 #include "Device.h"
 #include "CommandList.h"
 #include "Texture2D.h"
 
 #include "Shader.h"
 #include "core/Log.h"
+#include "math/Types.h"
 
 
 namespace pbe {
 
+   struct CameraCB {
+      float4x4 viewProjection;
+      float4x4 transform;
+      float3 color;
+      float _dymmy;
+   };
+
    class Renderer {
    public:
-
       ~Renderer() {
          INFO("Renderer destroy");
       }
@@ -20,12 +28,16 @@ namespace pbe {
       ComPtr<ID3D11InputLayout> input_layout_ptr;
 
       Ref<GpuProgram> program;
-
-      ComPtr<ID3D11Buffer> vertex_buffer_ptr;
+      Ref<Buffer> vertexBuffer;
+      Ref<Buffer> cameraCbBuffer;
 
       UINT vertex_stride{};
       UINT vertex_offset{};
       UINT vertex_count{};
+
+      vec3 triangleTranslate{};
+      vec3 cameraPos{};
+      vec3 triangleColor{};
 
       void Init() {
          auto* device_ptr = sDevice->g_pd3dDevice;
@@ -36,12 +48,12 @@ namespace pbe {
          HRESULT hr;
 
          D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
-           { "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-           /*
-           { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-           { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-           { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-           */
+            {"POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            /*
+            { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            */
          };
 
          ID3DBlob* vs_blob_ptr = program->vs->blob;
@@ -56,35 +68,25 @@ namespace pbe {
          SetDbgName(input_layout_ptr.Get(), "triangle input layout");
 
          float vertex_data_array[] = {
-            0.0f,  0.5f,  0.0f, // point at top
-            0.5f, -0.5f,  0.0f, // point at bottom-right
-           -0.5f, -0.5f,  0.0f, // point at bottom-left
+            0.0f, 0.5f, 0.0f, // point at top
+            0.5f, -0.5f, 0.0f, // point at bottom-right
+            -0.5f, -0.5f, 0.0f, // point at bottom-left
          };
          vertex_stride = 3 * sizeof(float);
          vertex_offset = 0;
          vertex_count = 3;
 
-         { /*** load mesh data into vertex buffer **/
-            D3D11_BUFFER_DESC vertex_buff_descr = {};
-            vertex_buff_descr.ByteWidth = sizeof(vertex_data_array);
-            vertex_buff_descr.Usage = D3D11_USAGE_DEFAULT;
-            vertex_buff_descr.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-            D3D11_SUBRESOURCE_DATA sr_data = { 0 };
-            sr_data.pSysMem = vertex_data_array;
-
-            HRESULT hr = device_ptr->CreateBuffer(
-               &vertex_buff_descr,
-               &sr_data,
-               &vertex_buffer_ptr);
-            assert(SUCCEEDED(hr));
-
-            SetDbgName(vertex_buffer_ptr.Get(), "triangle vert buf");
+         {
+            auto bufferDesc = Buffer::Desc::VertexBuffer(sizeof(vertex_data_array));
+            vertexBuffer = Buffer::Create(bufferDesc, vertex_data_array);
+            vertexBuffer->SetDbgName("triangle vert buf");
          }
 
-
-         // INFO(input_layout_ptr->Release());
-         // INFO(vertex_buffer_ptr->Release());
+         {
+            auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
+            cameraCbBuffer = Buffer::Create(bufferDesc);
+            cameraCbBuffer->SetDbgName("camera cb");
+         }
 
          // auto* device = sDevice->g_pd3dDevice;
          //
@@ -263,23 +265,42 @@ namespace pbe {
       }
 
       void Render(Texture2D& target, CommandList& cmd) {
-         auto device_context_ptr = cmd.pContext;
+         auto context = cmd.pContext;
 
          /* clear the back buffer to cornflower blue for the new frame */
-         vec4 background_colour{ 0x64 / 255.0f, 0x95 / 255.0f, 0xED / 255.0f, 1.0f };
+         vec4 background_colour{0x64 / 255.0f, 0x95 / 255.0f, 0xED / 255.0f, 1.0f};
          cmd.ClearRenderTarget(target, background_colour);
 
-         D3D11_VIEWPORT viewport = { 0.0f, 0.0f, (FLOAT)target.GetDesc().size.x, (FLOAT)target.GetDesc().size.y, 0.0f, 1.0f };
-         device_context_ptr->RSSetViewports(1, &viewport);
+         D3D11_VIEWPORT viewport = {
+            0.0f, 0.0f, (FLOAT)target.GetDesc().size.x, (FLOAT)target.GetDesc().size.y, 0.0f, 1.0f
+         };
+         context->RSSetViewports(1, &viewport);
 
          cmd.SetRenderTargets(&target);
-         
+
          /***** Input Assembler (map how the vertex shader inputs should be read from vertex buffer) ******/
-         device_context_ptr->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-         device_context_ptr->IASetInputLayout(input_layout_ptr.Get());
-         device_context_ptr->IASetVertexBuffers(0, 1, vertex_buffer_ptr.GetAddressOf(), &vertex_stride, &vertex_offset);
+         context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+         context->IASetInputLayout(input_layout_ptr.Get());
+
+         CameraCB cb;
+
+         mat4 view = glm::lookAt(cameraPos, cameraPos + vec3_Z, vec3_Y);
+         mat4 proj = glm::perspectiveFov(90.f / (180) * pi, 100.f, 100.f, 0.1f, 100.f);
+
+         cb.viewProjection = proj * view;
+         cb.transform = glm::translate(mat4(1), triangleTranslate);
+         cb.color = triangleColor;
+
+         cb.viewProjection = glm::transpose(cb.viewProjection);
+         cb.transform = glm::transpose(cb.transform);
+
+         context->UpdateSubresource(cameraCbBuffer->GetBuffer(), 0, nullptr, &cb, 0, 0);
+
+         ID3D11Buffer* vBuffer = vertexBuffer->GetBuffer();
+         context->IASetVertexBuffers(0, 1, &vBuffer, &vertex_stride, &vertex_offset);
 
          program->Activate(cmd);
+         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
          program->DrawInstanced(cmd, vertex_count);
 
 

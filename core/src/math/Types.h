@@ -1,5 +1,8 @@
 #pragma once
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_FORCE_LEFT_HANDED
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -8,6 +11,10 @@ namespace pbe {
 #define M_PI 3.14159265358979323846
 #define M_2PI 2 * M_PI
 
+   constexpr float pi = 3.14159265358979323846f;
+   constexpr float pi2 = pi * 2.f;
+
+   using uint = uint32_t;
    using int2 = glm::ivec2;
    using int3 = glm::ivec3;
 
@@ -21,34 +28,43 @@ namespace pbe {
 
    using glm::quat;
 
-   constexpr vec2 Vec2_One = vec2(1, 1);
-   constexpr vec2 Vec2_Zero = vec2(0, 0);
-   constexpr vec2 Vec2_X = vec2(1, 0);
-   constexpr vec2 Vec2_XNeg = vec2(-1, 0);
-   constexpr vec2 Vec2_Y = vec2(0, 1);
-   constexpr vec2 Vec2_YNeg = vec2(0, -1);
+   using float2 = vec2;
+   using float3 = vec3;
+   using float4 = vec4;
+   using float4x4 = mat4;
 
-   constexpr vec3 Vec3_One = vec3(1, 1, 1);
-   constexpr vec3 Vec3_Zero = vec3(0, 0, 0);
-   constexpr vec3 Vec3_X = vec3(1, 0, 0);
-   constexpr vec3 Vec3_XNeg = vec3(-1, 0, 0);
-   constexpr vec3 Vec3_Y = vec3(0, 1, 0);
-   constexpr vec3 Vec3_YNeg = vec3(0, -1, 0);
-   constexpr vec3 Vec3_Z = vec3(0, 0, 1);
-   constexpr vec3 Vec3_ZNeg = vec3(0, 0, -1);
+   constexpr vec2 vec2_One = vec2(1, 1);
+   constexpr vec2 vec2_Zero = vec2(0, 0);
+   constexpr vec2 vec2_X = vec2(1, 0);
+   constexpr vec2 vec2_XNeg = vec2(-1, 0);
+   constexpr vec2 vec2_Y = vec2(0, 1);
+   constexpr vec2 vec2_YNeg = vec2(0, -1);
 
-   constexpr vec4 Vec4_One = vec4(1, 1, 1, 1);
-   constexpr vec4 Vec4_Zero = vec4(0, 0, 0, 0);
-   constexpr vec3 Vec4_X = vec4(1, 0, 0, 0);
-   constexpr vec3 Vec4_XNeg = vec4(-1, 0, 0, 0);
-   constexpr vec3 Vec4_Y = vec4(0, 1, 0, 0);
-   constexpr vec3 Vec4_YNeg = vec4(0, -1, 0, 0);
-   constexpr vec3 Vec4_Z = vec4(0, 0, 1, 0);
-   constexpr vec3 Vec4_ZNeg = vec4(0, 0, -1, 0);
-   constexpr vec3 Vec4_W = vec4(0, 0, 0, 1);
-   constexpr vec3 Vec4_WNeg = vec4(0, 0, 0, -1);
+   constexpr vec3 vec3_One = vec3(1, 1, 1);
+   constexpr vec3 vec3_Zero = vec3(0, 0, 0);
+   constexpr vec3 vec3_X = vec3(1, 0, 0);
+   constexpr vec3 vec3_XNeg = vec3(-1, 0, 0);
+   constexpr vec3 vec3_Y = vec3(0, 1, 0);
+   constexpr vec3 vec3_YNeg = vec3(0, -1, 0);
+   constexpr vec3 vec3_Z = vec3(0, 0, 1);
+   constexpr vec3 vec3_ZNeg = vec3(0, 0, -1);
 
-   constexpr quat Quat_Identity = quat(1, 0, 0, 0);
+   constexpr vec3 vec3_Right = vec3_X;
+   constexpr vec3 vec3_Up = vec3_Y;
+   constexpr vec3 vec3_Forward = vec3_Z;
+
+   constexpr vec4 vec4_One = vec4(1, 1, 1, 1);
+   constexpr vec4 vec4_Zero = vec4(0, 0, 0, 0);
+   constexpr vec3 vec4_X = vec4(1, 0, 0, 0);
+   constexpr vec3 vec4_XNeg = vec4(-1, 0, 0, 0);
+   constexpr vec3 vec4_Y = vec4(0, 1, 0, 0);
+   constexpr vec3 vec4_YNeg = vec4(0, -1, 0, 0);
+   constexpr vec3 vec4_Z = vec4(0, 0, 1, 0);
+   constexpr vec3 vec4_ZNeg = vec4(0, 0, -1, 0);
+   constexpr vec3 vec4_W = vec4(0, 0, 0, 1);
+   constexpr vec3 vec4_WNeg = vec4(0, 0, 0, -1);
+
+   constexpr quat quat_Identity = quat(1, 0, 0, 0);
 
 }
 

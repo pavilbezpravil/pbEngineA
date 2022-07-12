@@ -116,6 +116,10 @@ namespace pbe {
             INFO("Play pressed!");
          }
 
+         ImGui::InputFloat3("translate", &renderer.triangleTranslate.x);
+         ImGui::InputFloat3("cameraPos", &renderer.cameraPos.x);
+         ImGui::ColorEdit3("triangle color", &renderer.triangleColor.x);
+
          auto size = ImGui::GetContentRegionAvail();
 
          CommandList cmd{sDevice->g_pd3dDeviceContext};
