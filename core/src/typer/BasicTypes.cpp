@@ -100,6 +100,12 @@ namespace pbe {
       DEFAULT_SER_DESER(int64);
       END_DECL_TYPE();
 
+      START_DECL_TYPE(string);
+      // todo:
+      ti.imguiFunc = [](const char* name, byte* value) { ImGui::Text(((string*)value)->data()); };
+      DEFAULT_SER_DESER(string);
+      END_DECL_TYPE();
+
       START_DECL_TYPE(vec3);
       ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat3(name, (float*)value); };
       DEFAULT_SER_DESER(vec3);

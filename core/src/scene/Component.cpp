@@ -7,6 +7,11 @@
 namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(UUIDComponent);
+
+   TYPER_BEGIN(TagComponent)
+      TYPER_FIELD(tag)
+   TYPER_END(TagComponent)
+
    COMPONENT_EXPLICIT_TEMPLATE_DEF(TagComponent);
 
    TYPER_BEGIN(SceneTransformComponent)

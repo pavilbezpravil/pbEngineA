@@ -30,6 +30,8 @@ namespace pbe {
       Scene* GetOpenedScene() const { return scene.get(); }
 
    private:
+      void OpenScene(std::string_view path);
+
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
       Own<Scene> scene;

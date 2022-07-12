@@ -71,6 +71,13 @@ namespace pbe {
          ImGui::End();
       }
 
+      void SetScene(Scene* scene) {
+         pScene = scene;
+         if (selectedCb) {
+            selectedCb({});
+         }
+      }
+
       Scene* pScene{};
 
       std::function<void(Entity)> selectedCb;
@@ -86,8 +93,7 @@ namespace pbe {
 
          if (!entity.Valid()) {
             ImGui::Text("No entity");
-         }
-         else {
+         } else {
             ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
 
             for (const auto& [id, func] : ComponentList::Get().components2) {
@@ -121,7 +127,7 @@ namespace pbe {
       scene->Create("green");
       scene->Create("blue");
 
-      sceneHierarchyWindow->pScene = scene.get();
+      sceneHierarchyWindow->SetScene(scene.get());
    }
 
    void EditorLayer::OnDetach() {
@@ -189,7 +195,8 @@ namespace pbe {
                INFO("New Scene");
             }
             if (ImGui::MenuItem("Open Scene")) {
-               INFO("Open Scene");
+               scene = SceneDeserialize("scene.scn");
+               sceneHierarchyWindow->SetScene(scene.get());
             }
             if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
                if (scene) {
