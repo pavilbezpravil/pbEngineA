@@ -8,18 +8,17 @@ namespace pbe {
 
       static std::random_device sRandomDevice;
       static std::mt19937_64 sEng(sRandomDevice());
-      static std::uniform_int_distribution<uint64> sDistribution;
 
-      float UniformFloat(float min, float max) {
+      float Uniform(float min, float max) {
          const std::uniform_real_distribution distribution{ min, max };
          return distribution(sEng);
       }
 
-      vec3 UniformVec3(vec3 min, vec3 max) {
+      vec3 Uniform(vec3 min, vec3 max) {
          return {
-            UniformFloat(min.x, max.x),
-            UniformFloat(min.y, max.y),
-            UniformFloat(min.z, max.z) };
+            Uniform(min.x, max.x),
+            Uniform(min.y, max.y),
+            Uniform(min.z, max.z) };
       }
 
    }

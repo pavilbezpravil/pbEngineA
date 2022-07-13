@@ -2,10 +2,9 @@
 #include "EditorLayer.h"
 #include "EditorWindow.h"
 #include "ViewportWindow.h"
-
-#include "imgui.h"
 #include "app/Event.h"
 #include "gui/Gui.h"
+#include "math/Random.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
@@ -124,9 +123,16 @@ namespace pbe {
       // todo:
       Own<Scene> scene{ new Scene() };
 
-      scene->Create("red");
-      scene->Create("green");
-      scene->Create("blue");
+      // scene->Create("red");
+      // scene->Create("green");
+      // scene->Create("blue");
+
+      for (int i = 0; i < 100; ++i) {
+         Entity e = scene->Create(std::to_string(i));
+
+         e.Get<SceneTransformComponent>().position = Random::Uniform({-10, -10, 0}, {10, 10, 40});
+         e.Get<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
+      }
 
       SetEditorScene(std::move(scene));
    }
