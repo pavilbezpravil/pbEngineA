@@ -78,7 +78,7 @@ namespace pbe {
 
       if (g_d3dDebug) {
          // g_d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY);
-         g_d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+         // g_d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
       }
       SAFE_RELEASE(g_d3dDebug);
       SAFE_RELEASE(g_pd3dDevice);
