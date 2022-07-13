@@ -65,13 +65,11 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
 
-   struct TestCustomUIComponent {
-      int integer{};
-      float floating{};
-      vec3 float3{};
+   struct SimpleMaterialComponent {
+      vec3 albedo = vec3_One;
 
-      DECL_COMPONENT(TestCustomUIComponent);
+      DECL_COMPONENT(SimpleMaterialComponent);
    };
-   COMPONENT_EXPLICIT_TEMPLATES_DECL(TestCustomUIComponent);
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(SimpleMaterialComponent);
 
 }

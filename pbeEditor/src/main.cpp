@@ -94,49 +94,6 @@ namespace pbe {
       fs::path currentPath = fs::current_path();
    };
 
-   class ViewportWindow : public EditorWindow {
-   public:
-      // using EditorWindow::EditorWindow;
-      ViewportWindow(std::string_view name) : EditorWindow(name) {
-         Texture2D::Desc sceneTexDesc;
-         sceneTexDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
-         sceneTexDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
-         sceneTexDesc.size = { 640, 480 };
-
-         sceneTexture = Texture2D::Create(sceneTexDesc);
-         sceneTexture->SetDbgName("scene color");
-
-         renderer.Init();
-      }
-
-      void OnImGuiRender() override {
-         ImGui::Begin(name.c_str(), &show);
-
-         if (ImGui::Button("Play")) {
-            INFO("Play pressed!");
-         }
-
-         ImGui::InputFloat3("cameraPos", &renderer.cameraPos.x);
-         ImGui::SliderFloat("cameraAngle", &renderer.angle, -180, 180);
-         ImGui::InputFloat3("triangleTranslate", &renderer.triangleTranslate.x);
-         ImGui::ColorEdit3("triangleColor", &renderer.triangleColor.x);
-
-         auto size = ImGui::GetContentRegionAvail();
-
-         CommandList cmd{sDevice->g_pd3dDeviceContext};
-         renderer.Render(*sceneTexture, cmd);
-         
-         ImGui::Image(sceneTexture->srv, size);
-
-         ImGui::End();
-      }
-
-      Renderer renderer;
-
-      Ref<Texture2D> sceneTexture;
-   };
-
-
    class TyperWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
@@ -158,8 +115,7 @@ namespace pbe {
          EditorLayer* editor = new EditorLayer();
          editor->AddEditorWindow(new ImGuiDemoWindow("ImGuiDemoWindow"));
          editor->AddEditorWindow(new TestWindow("TestWindow"));
-         editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowser"), true);
-         editor->AddEditorWindow(new ViewportWindow("Viewport"), true);
+         editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowser"), false);
          editor->AddEditorWindow(new TyperWindow("TyperWindow"), true);
 
          PushLayer(editor);

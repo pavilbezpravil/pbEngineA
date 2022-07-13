@@ -25,9 +25,15 @@ namespace pbe {
       }
 
       e.Add<SceneTransformComponent>();
-      e.Add<TestCustomUIComponent>();
+      e.Add<SimpleMaterialComponent>();
 
       return e;
+   }
+
+   static string gAssetsPath = "../../assets/";
+
+   string GetAssetsPath(string_view path) {
+      return gAssetsPath + path.data();
    }
 
    void SceneSerialize(std::string_view path, Scene& scene) {
@@ -55,6 +61,9 @@ namespace pbe {
                   if (const auto* c = entity.TryGet<SceneTransformComponent>()) {
                      Typer::Get().Serialize(out, SceneTransformComponent::GetName(), *c);
                   }
+                  if (const auto* c = entity.TryGet<SimpleMaterialComponent>()) {
+                     Typer::Get().Serialize(out, SimpleMaterialComponent::GetName(), *c);
+                  }
                }
                out << YAML::EndMap;
             }
@@ -63,7 +72,7 @@ namespace pbe {
       }
       out << YAML::EndMap;
 
-      std::ofstream fout{ path.data() };
+      std::ofstream fout{ GetAssetsPath(path)};
       fout << out.c_str();
    }
 
@@ -72,7 +81,7 @@ namespace pbe {
 
       Own<Scene> scene{ new Scene() };
 
-      YAML::Node root = YAML::LoadFile(path.data());
+      YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
 
       auto name = root["sceneName"].as<string>();
       INFO("sceneName {}", name);
@@ -94,7 +103,9 @@ namespace pbe {
          if (auto node = it[SceneTransformComponent::GetName()]) {
             Typer::Get().Deserialize(it, SceneTransformComponent::GetName(), entity.Get<SceneTransformComponent>());
          }
-
+         if (auto node = it[SimpleMaterialComponent::GetName()]) {
+            Typer::Get().Deserialize(it, SimpleMaterialComponent::GetName(), entity.Get<SimpleMaterialComponent>());
+         }
       }
 
       return scene;

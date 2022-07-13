@@ -1,5 +1,6 @@
 #include "EditorLayer.h"
 #include "EditorWindow.h"
+#include "ViewportWindow.h"
 
 #include "imgui.h"
 #include "app/Event.h"
@@ -83,7 +84,6 @@ namespace pbe {
       std::function<void(Entity)> selectedCb;
    };
 
-
    class InspectorWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
@@ -111,23 +111,23 @@ namespace pbe {
       Entity entity{};
    };
 
-
    void EditorLayer::OnAttach() {
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
+      AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
 
       sceneHierarchyWindow->selectedCb = std::bind(&InspectorWindow::SetEntity, inspectorWindow, std::placeholders::_1);
 
       Layer::OnAttach();
 
       // todo:
-      scene.reset(new Scene());
+      Own<Scene> scene{ new Scene() };
 
       scene->Create("red");
       scene->Create("green");
       scene->Create("blue");
 
-      sceneHierarchyWindow->SetScene(scene.get());
+      SetEditorScene(std::move(scene));
    }
 
    void EditorLayer::OnDetach() {
@@ -195,12 +195,12 @@ namespace pbe {
                INFO("New Scene");
             }
             if (ImGui::MenuItem("Open Scene")) {
-               scene = SceneDeserialize("scene.scn");
-               sceneHierarchyWindow->SetScene(scene.get());
+               auto s = SceneDeserialize("scene.scn");
+               SetEditorScene(std::move(s));
             }
             if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-               if (scene) {
-                  SceneSerialize("scene.scn", *scene);
+               if (editorScene) {
+                  SceneSerialize("scene.scn", *editorScene);
                }
             }
 
@@ -246,6 +246,13 @@ namespace pbe {
    void EditorLayer::AddEditorWindow(EditorWindow* window, bool showed) {
       window->show = showed;
       editorWindows.emplace_back(window);
+   }
+
+   void EditorLayer::SetEditorScene(Own<Scene>&& scene) {
+      editorScene = std::move(scene);
+
+      sceneHierarchyWindow->SetScene(editorScene.get());
+      viewportWindow->scene = editorScene.get();
    }
 
 }

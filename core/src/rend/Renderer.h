@@ -8,6 +8,8 @@
 #include "Shader.h"
 #include "core/Log.h"
 #include "math/Types.h"
+#include "scene/Component.h"
+#include "scene/Scene.h"
 
 
 namespace pbe {
@@ -48,9 +50,7 @@ namespace pbe {
       UINT vertex_offset{};
       UINT vertex_count{};
 
-      vec3 triangleTranslate = vec3_Z;
       vec3 cameraPos{};
-      vec3 triangleColor{};
       float angle = 0;
 
       void Init() {
@@ -292,7 +292,7 @@ namespace pbe {
 
       }
 
-      void Render(Texture2D& target, CommandList& cmd) {
+      void RenderScene(Texture2D& target, CommandList& cmd, Scene& scene) {
          auto context = cmd.pContext;
 
          /* clear the back buffer to cornflower blue for the new frame */
@@ -310,6 +310,12 @@ namespace pbe {
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
          context->IASetInputLayout(input_layout_ptr.Get());
 
+         ID3D11Buffer* vBuffer = vertexBuffer->GetBuffer();
+         context->IASetVertexBuffers(0, 1, &vBuffer, &vertex_stride, &vertex_offset);
+
+         program->Activate(cmd);
+         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
+
          CameraCB cb;
 
          float3 direction = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), angle / 180.f * pi, vec3_Up);
@@ -318,43 +324,24 @@ namespace pbe {
          mat4 proj = glm::perspectiveFov(90.f / (180) * pi, (float)target.GetDesc().size.x, (float)target.GetDesc().size.y, 0.1f, 100.f);
 
          cb.viewProjection = proj * view;
-         cb.transform = glm::translate(mat4(1), triangleTranslate);
-         cb.color = triangleColor;
-
          cb.viewProjection = glm::transpose(cb.viewProjection);
-         cb.transform = glm::transpose(cb.transform);
 
-         context->UpdateSubresource(cameraCbBuffer->GetBuffer(), 0, nullptr, &cb, 0, 0);
+         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+            cb.transform = glm::translate(mat4(1), sceneTrans.position);
+            cb.transform = glm::transpose(cb.transform);
 
-         ID3D11Buffer* vBuffer = vertexBuffer->GetBuffer();
-         context->IASetVertexBuffers(0, 1, &vBuffer, &vertex_stride, &vertex_offset);
+            cb.color = material.albedo;
 
-         program->Activate(cmd);
-         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
-         program->DrawInstanced(cmd, vertex_count);
+            context->UpdateSubresource(cameraCbBuffer->GetBuffer(), 0, nullptr, &cb, 0, 0);
 
+            program->DrawInstanced(cmd, vertex_count);
+         }
 
-         // matrix rotateX = { 1, 0, 0, 0, 0, static_cast<float>(cos(modelRotation.x)), -static_cast<float>(sin(modelRotation.x)), 0, 0, static_cast<float>(sin(modelRotation.x)), static_cast<float>(cos(modelRotation.x)), 0, 0, 0, 0, 1 };
-         // matrix rotateY = { static_cast<float>(cos(modelRotation.y)), 0, static_cast<float>(sin(modelRotation.y)), 0, 0, 1, 0, 0, -static_cast<float>(sin(modelRotation.y)), 0, static_cast<float>(cos(modelRotation.y)), 0, 0, 0, 0, 1 };
-         // matrix rotateZ = { static_cast<float>(cos(modelRotation.z)), -static_cast<float>(sin(modelRotation.z)), 0, 0, static_cast<float>(sin(modelRotation.z)), static_cast<float>(cos(modelRotation.z)), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-         // matrix scale = { modelScale.x, 0, 0, 0, 0, modelScale.y, 0, 0, 0, 0, modelScale.z, 0, 0, 0, 0, 1 };
-         // matrix translate = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, modelTranslation.x, modelTranslation.y, modelTranslation.z, 1 };
-         //
-         // modelRotation.x += 0.005f;
-         // modelRotation.y += 0.009f;
-         // modelRotation.z += 0.001f;
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////
-         //
          // D3D11_MAPPED_SUBRESOURCE mappedSubresource;
          //
          // deviceContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
          //
          // Constants* constants = reinterpret_cast<Constants*>(mappedSubresource.pData);
-         //
-         // constants->Transform = rotateX * rotateY * rotateZ * scale * translate;
-         // constants->Projection = { 2 * n / w, 0, 0, 0, 0, 2 * n / h, 0, 0, 0, 0, f / (f - n), 1, 0, 0, n * f / (n - f), 0 };
-         // constants->LightVector = { 1.0f, -1.0f, 1.0f };
          //
          // deviceContext->Unmap(constantBuffer, 0);
          //

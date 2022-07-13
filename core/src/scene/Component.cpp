@@ -21,15 +21,13 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(SceneTransformComponent)
 
-   TYPER_BEGIN(TestCustomUIComponent)
-      TYPER_FIELD(integer)
-      TYPER_FIELD(floating)
-      TYPER_FIELD(float3)
-   TYPER_END(TestCustomUIComponent)
+   TYPER_BEGIN(SimpleMaterialComponent)
+      TYPER_FIELD(albedo)
+   TYPER_END(SimpleMaterialComponent)
 
-   COMPONENT_EXPLICIT_TEMPLATE_DEF(TestCustomUIComponent)
+   COMPONENT_EXPLICIT_TEMPLATE_DEF(SimpleMaterialComponent)
 
-      ComponentList& ComponentList::Get() {
+   ComponentList& ComponentList::Get() {
       static ComponentList cl;
       return cl;
    }
@@ -48,10 +46,10 @@ namespace pbe {
          }
          });
 
-      id = GetTypeID<TestCustomUIComponent>();
+      id = GetTypeID<SimpleMaterialComponent>();
       ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
-         if (auto* c = entity.TryGet<TestCustomUIComponent>()) {
-            EditorUI<TestCustomUIComponent>(c->GetName(), *c);
+         if (auto* c = entity.TryGet<SimpleMaterialComponent>()) {
+            EditorUI<SimpleMaterialComponent>(c->GetName(), *c);
          }
          });
 

@@ -11,6 +11,7 @@ namespace pbe {
 
    class InspectorWindow;
    class SceneHierarchyWindow;
+   class ViewportWindow;
    class Scene;
    struct Event;
 
@@ -27,17 +28,18 @@ namespace pbe {
 
       void AddEditorWindow(EditorWindow* window, bool showed = false);
 
-      Scene* GetOpenedScene() const { return scene.get(); }
+      Scene* GetOpenedScene() const { return editorScene.get(); }
 
    private:
-      void OpenScene(std::string_view path);
+      void SetEditorScene(Own<Scene>&& scene);
 
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
-      Own<Scene> scene;
+      Own<Scene> editorScene;
 
       SceneHierarchyWindow* sceneHierarchyWindow{};
       InspectorWindow* inspectorWindow{};
+      ViewportWindow* viewportWindow{};
    };
 
 }
