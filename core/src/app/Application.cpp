@@ -25,7 +25,7 @@ namespace pbe {
          return;
       }
 
-      sWindow->eventCallback = std::bind(&Application::OnEvent, this, std::placeholders::_1);
+      sWindow->eventCallback = [&](Event& event) { OnEvent(event); };
 
       imguiLayer = new ImGuiLayer();
       PushOverlay(imguiLayer);

@@ -28,6 +28,14 @@ namespace pbe {
          pContext->ClearRenderTargetView(rt.rtv, &color.x);
       }
 
+      void BeginEvent(std::string_view name) {
+         pContext->BeginEventInt(std::wstring(name.begin(), name.end()).data(), 0);
+      }
+
+      void EndEvent() {
+         pContext->EndEvent();
+      }
+
 
       ID3D11CommandList* GetD3DCommandList() {
          return nullptr;
@@ -35,6 +43,18 @@ namespace pbe {
 
 
       ID3D11DeviceContext3* pContext{};
+   };
+
+   struct GpuMarker {
+      GpuMarker(CommandList& cmd, std::string_view name) : cmd(cmd) {
+         cmd.BeginEvent(name);
+      }
+
+      ~GpuMarker() {
+         cmd.EndEvent();
+      }
+
+      CommandList& cmd;
    };
 
 }

@@ -293,6 +293,8 @@ namespace pbe {
       }
 
       void RenderScene(Texture2D& target, CommandList& cmd, Scene& scene) {
+         GpuMarker marker{ cmd, "Color Pass" };
+
          auto context = cmd.pContext;
 
          /* clear the back buffer to cornflower blue for the new frame */

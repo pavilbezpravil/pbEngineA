@@ -50,8 +50,8 @@ namespace pbe {
          return;
       }
 
-      device->QueryInterface(__uuidof(decltype(g_pd3dDevice)), reinterpret_cast<void**>(&g_pd3dDevice));
-      context->QueryInterface(__uuidof(decltype(g_pd3dDeviceContext)), reinterpret_cast<void**>(&g_pd3dDeviceContext));
+      device->QueryInterface(IID_PPV_ARGS(&g_pd3dDevice));
+      context->QueryInterface(IID_PPV_ARGS(&g_pd3dDeviceContext));
 
       device->Release();
       context->Release();
@@ -60,7 +60,7 @@ namespace pbe {
 
       if (createDeviceFlags & D3D11_CREATE_DEVICE_DEBUG) {
          INFO("Querry debug interface");
-         g_pd3dDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&g_d3dDebug));
+         g_pd3dDevice->QueryInterface(IID_PPV_ARGS(&g_d3dDebug));
       }
 
       INFO("Device init success");

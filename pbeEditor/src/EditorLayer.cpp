@@ -116,7 +116,7 @@ namespace pbe {
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
 
-      sceneHierarchyWindow->selectedCb = std::bind(&InspectorWindow::SetEntity, inspectorWindow, std::placeholders::_1);
+      sceneHierarchyWindow->selectedCb = [&](Entity e) { inspectorWindow->SetEntity(e); };
 
       Layer::OnAttach();
 
@@ -130,7 +130,8 @@ namespace pbe {
       for (int i = 0; i < 100; ++i) {
          Entity e = scene->Create(std::to_string(i));
 
-         e.Get<SceneTransformComponent>().position = Random::Uniform({-10, -10, 0}, {10, 10, 40});
+         e.Get<SceneTransformComponent>().position = Random::Uniform({-10, -10, 0},
+            {10, 10, 40});
          e.Get<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
       }
 
