@@ -1,5 +1,5 @@
+#include "pch.h"
 #include "Texture2D.h"
-
 #include "Device.h"
 #include "core/Assert.h"
 

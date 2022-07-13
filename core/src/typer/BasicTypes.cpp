@@ -1,11 +1,7 @@
+#include "pch.h"
 #include "BasicTypes.h"
 #include "Typer.h"
 #include "math/Types.h"
-
-#include "imgui.h"
-
-#define YAML_CPP_STATIC_DEFINE
-#include "yaml-cpp/yaml.h"
 
 namespace YAML {
    template<>

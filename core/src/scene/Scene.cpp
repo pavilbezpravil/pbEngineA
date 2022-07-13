@@ -1,13 +1,9 @@
+#include "pch.h"
 #include "Scene.h"
 
-#include <fstream>
 #include "Component.h"
 #include "Entity.h"
 #include "typer/Typer.h"
-
-// todo:
-#define YAML_CPP_STATIC_DEFINE
-#include "yaml-cpp/yaml.h"
 
 namespace pbe {
 

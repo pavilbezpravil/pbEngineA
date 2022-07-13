@@ -1,6 +1,5 @@
+#include "pch.h"
 #include "GpuResource.h"
-
-#include <d3d11.h>
 #include "Common.h"
 
 namespace pbe {

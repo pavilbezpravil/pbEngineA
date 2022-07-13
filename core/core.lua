@@ -4,6 +4,9 @@ project "core"
    libsinfo.core = {}
    libsinfo.core.includepath = os.getcwd().."/src"
 
+   pchheader "pch.h"
+   pchsource "pch.cpp"
+
    includedirs { libsinfo.core.includepath,
                  libsinfo.imgui.includepath,
                  libsinfo.glm.includepath,

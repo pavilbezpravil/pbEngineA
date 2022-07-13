@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Thread.h"
 
 #include <thread>

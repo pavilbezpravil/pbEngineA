@@ -1,7 +1,5 @@
-#pragma once
-
+#include "pch.h"
 #include "Common.h"
-
 #include "Device.h"
 
 namespace pbe {

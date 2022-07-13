@@ -1,13 +1,8 @@
+#include "pch.h"
 #include "Typer.h"
-#include <fstream>
 #include "BasicTypes.h"
-#include "imgui.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
-
-// todo:
-#define YAML_CPP_STATIC_DEFINE
-#include "yaml-cpp/yaml.h"
 
 namespace pbe {
 

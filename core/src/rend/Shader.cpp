@@ -1,7 +1,5 @@
+#include "pch.h"
 #include "Shader.h"
-
-#include <d3d11shader.h>
-#include <d3dcompiler.h>
 #include "Device.h"
 #include "core/Log.h"
 #include "Texture2D.h"
@@ -9,6 +7,9 @@
 #include "CommandList.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
+
+#include <d3d11shader.h>
+#include <d3dcompiler.h>
 
 namespace pbe {
 
