@@ -3,8 +3,8 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "CommandList.h"
+#include "RendRes.h"
 #include "Texture2D.h"
-
 #include "Shader.h"
 #include "core/Log.h"
 #include "math/Types.h"
@@ -38,6 +38,8 @@ namespace pbe {
    public:
       ~Renderer() {
          INFO("Renderer destroy");
+
+         rendres::Term();
       }
 
       ComPtr<ID3D11InputLayout> input_layout_ptr;
@@ -54,6 +56,8 @@ namespace pbe {
       float angle = 0;
 
       void Init() {
+         rendres::Init(); // todo:
+
          // VertexPos::inputElementDesc = {
          //    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
          //    /*
@@ -115,198 +119,21 @@ namespace pbe {
             cameraCbBuffer = Buffer::Create(bufferDesc);
             cameraCbBuffer->SetDbgName("camera cb");
          }
-
-         // auto* device = sDevice->g_pd3dDevice;
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_TEXTURE2D_DESC depthBufferDesc;
-         //
-         // frameBuffer->GetDesc(&depthBufferDesc); // base on framebuffer properties
-         //
-         // depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-         // depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-         //
-         // ID3D11Texture2D* depthBuffer;
-         //
-         // device->CreateTexture2D(&depthBufferDesc, nullptr, &depthBuffer);
-         //
-         // ID3D11DepthStencilView* depthBufferView;
-         //
-         // device->CreateDepthStencilView(depthBuffer, nullptr, &depthBufferView);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // ID3DBlob* vsBlob;
-         //
-         // D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "vs_main", "vs_5_0", 0, 0, &vsBlob, nullptr);
-         //
-         // ID3D11VertexShader* vertexShader;
-         //
-         // device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &vertexShader);
-         //
-         // D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = // float3 position, float3 normal, float2 texcoord, float3 color
-         // {
-         //     { "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,                            0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //     { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //     { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //     { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         // };
-         //
-         // ID3D11InputLayout* inputLayout;
-         //
-         // device->CreateInputLayout(inputElementDesc, ARRAYSIZE(inputElementDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // ID3DBlob* psBlob;
-         //
-         // D3DCompileFromFile(L"shaders.hlsl", nullptr, nullptr, "ps_main", "ps_5_0", 0, 0, &psBlob, nullptr);
-         //
-         // ID3D11PixelShader* pixelShader;
-         //
-         // device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &pixelShader);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
-         // rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-         // rasterizerDesc.CullMode = D3D11_CULL_BACK;
-         //
-         // ID3D11RasterizerState1* rasterizerState;
-         //
-         // device->CreateRasterizerState1(&rasterizerDesc, &rasterizerState);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_SAMPLER_DESC samplerDesc = {};
-         // samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-         // samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-         // samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-         // samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-         // samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-         //
-         // ID3D11SamplerState* samplerState;
-         //
-         // device->CreateSamplerState(&samplerDesc, &samplerState);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-         // depthStencilDesc.DepthEnable = TRUE;
-         // depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-         // depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-         //
-         // ID3D11DepthStencilState* depthStencilState;
-         //
-         // device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // struct Constants
-         // {
-         //    matrix Transform;
-         //    matrix Projection;
-         //    float3 LightVector;
-         // };
-         //
-         // D3D11_BUFFER_DESC constantBufferDesc = {};
-         // constantBufferDesc.ByteWidth = sizeof(Constants) + 0xf & 0xfffffff0; // round constant buffer size to 16 byte boundary
-         // constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-         // constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-         // constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-         //
-         // ID3D11Buffer* constantBuffer;
-         //
-         // device->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_BUFFER_DESC vertexBufferDesc = {};
-         // vertexBufferDesc.ByteWidth = sizeof(VertexData);
-         // vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-         // vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-         //
-         // D3D11_SUBRESOURCE_DATA vertexData = { VertexData };
-         //
-         // ID3D11Buffer* vertexBuffer;
-         //
-         // device->CreateBuffer(&vertexBufferDesc, &vertexData, &vertexBuffer);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_BUFFER_DESC indexBufferDesc = {};
-         // indexBufferDesc.ByteWidth = sizeof(IndexData);
-         // indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-         // indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-         //
-         // D3D11_SUBRESOURCE_DATA indexData = { IndexData };
-         //
-         // ID3D11Buffer* indexBuffer;
-         //
-         // device->CreateBuffer(&indexBufferDesc, &indexData, &indexBuffer);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // D3D11_TEXTURE2D_DESC textureDesc = {};
-         // textureDesc.Width = TEXTURE_WIDTH;  // in data.h
-         // textureDesc.Height = TEXTURE_HEIGHT; // in data.h
-         // textureDesc.MipLevels = 1;
-         // textureDesc.ArraySize = 1;
-         // textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-         // textureDesc.SampleDesc.Count = 1;
-         // textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
-         // textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-         //
-         // D3D11_SUBRESOURCE_DATA textureData = {};
-         // textureData.pSysMem = TextureData;
-         // textureData.SysMemPitch = TEXTURE_WIDTH * 4; // 4 bytes per pixel
-         //
-         // ID3D11Texture2D* texture;
-         //
-         // device->CreateTexture2D(&textureDesc, &textureData, &texture);
-         //
-         // ID3D11ShaderResourceView* textureView;
-         //
-         // device->CreateShaderResourceView(texture, nullptr, &textureView);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // FLOAT backgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-         //
-         // UINT stride = 11 * 4; // vertex size (11 floats: float3 position, float3 normal, float2 texcoord, float3 color)
-         // UINT offset = 0;
-         //
-         // D3D11_VIEWPORT viewport = { 0.0f, 0.0f, static_cast<float>(depthBufferDesc.Width), static_cast<float>(depthBufferDesc.Height), 0.0f, 1.0f };
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // float w = viewport.Width / viewport.Height; // width (aspect ratio)
-         // float h = 1.0f;                             // height
-         // float n = 1.0f;                             // near
-         // float f = 9.0f;                             // far
-         //
-         // float3 modelRotation = { 0.0f, 0.0f, 0.0f };
-         // float3 modelScale = { 1.0f, 1.0f, 1.0f };
-         // float3 modelTranslation = { 0.0f, 0.0f, 4.0f };
-
       }
 
-      void RenderScene(Texture2D& target, CommandList& cmd, Scene& scene) {
+      void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
          GpuMarker marker{ cmd, "Color Pass" };
 
          auto context = cmd.pContext;
 
-         /* clear the back buffer to cornflower blue for the new frame */
-         vec4 background_colour{0x64 / 255.0f, 0x95 / 255.0f, 0xED / 255.0f, 1.0f};
+         // vec4 background_colour{0x64 / 255.0f, 0x95 / 255.0f, 0xED / 255.0f, 1.0f};
+         vec4 background_colour{0};
          cmd.ClearRenderTarget(target, background_colour);
+         cmd.ClearDepthTarget(depth, 1);
 
-         D3D11_VIEWPORT viewport = {
-            0.0f, 0.0f, (FLOAT)target.GetDesc().size.x, (FLOAT)target.GetDesc().size.y, 0.0f, 1.0f
-         };
-         context->RSSetViewports(1, &viewport);
-
-         cmd.SetRenderTargets(&target);
+         cmd.SetRenderTargets(&target, &depth);
+         cmd.SetViewport({}, target.GetDesc().size);
+         cmd.SetDepthStencilState(rendres::depthStencilState);
 
          /***** Input Assembler (map how the vertex shader inputs should be read from vertex buffer) ******/
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

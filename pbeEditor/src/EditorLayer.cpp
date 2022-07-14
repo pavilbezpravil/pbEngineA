@@ -131,7 +131,7 @@ namespace pbe {
          Entity e = scene->Create(std::to_string(i));
 
          e.Get<SceneTransformComponent>().position = Random::Uniform({-10, -10, 0},
-            {10, 10, 40});
+            {10, 10, 10});
          e.Get<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
       }
 

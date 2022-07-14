@@ -19,7 +19,8 @@ namespace pbe {
 
       Scene* scene{};
       Own<Renderer> renderer;
-      Ref<Texture2D> sceneTexture;
+      Ref<Texture2D> colorTexture;
+      Ref<Texture2D> depthTexture;
    };
 
 }
