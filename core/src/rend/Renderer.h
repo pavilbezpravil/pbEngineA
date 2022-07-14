@@ -34,11 +34,90 @@ namespace pbe {
       static std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
    };
 
+   class GpuTimer {
+   public:
+      D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData{};
+      uint64 start = 0;
+      uint64 stop = 0;
+
+      ComPtr<ID3D11Query> disjointQuery;
+      ComPtr<ID3D11Query> startQuery;
+      ComPtr<ID3D11Query> stopQuery;
+
+      GpuTimer() {
+         auto device = sDevice->g_pd3dDevice;
+
+         CD3D11_QUERY_DESC queryDesc(D3D11_QUERY_TIMESTAMP);
+         device->CreateQuery(&queryDesc, startQuery.GetAddressOf());
+         device->CreateQuery(&queryDesc, stopQuery.GetAddressOf());
+
+         queryDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+         device->CreateQuery(&queryDesc, disjointQuery.GetAddressOf());
+      }
+
+      bool busy = false;
+      float time{};
+
+      void Start() {
+         if (busy) {
+            return;
+         }
+
+         auto context = sDevice->g_pd3dDeviceContext;
+         context->Begin(disjointQuery.Get());
+         context->End(startQuery.Get());
+      }
+
+      void Stop() {
+         if (busy) {
+            return;
+         }
+         busy = true;
+
+         auto context = sDevice->g_pd3dDeviceContext;
+         context->End(stopQuery.Get());
+         context->End(disjointQuery.Get());
+      }
+
+      bool Ready() {
+         auto context = sDevice->g_pd3dDeviceContext;
+
+         if (context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_OK) {
+            if (disjointData.Disjoint) {
+               INFO("Disjoint!");
+               return false;
+            }
+         } else {
+            return false;
+         }
+
+         if (context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK) {
+            // INFO("Start!");
+         } else {
+            return false;
+         }
+
+         if (context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK) {
+            // INFO("Stop!");
+         } else {
+            return false;
+         }
+
+         time = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
+
+         busy = false;
+         return true;
+      }
+
+      float GetTimeMs() {
+         Ready();
+         return time;
+      }
+   };
+
    class Renderer {
    public:
       ~Renderer() {
-         INFO("Renderer destroy");
-
          rendres::Term();
       }
 
@@ -47,6 +126,8 @@ namespace pbe {
       Ref<GpuProgram> program;
       Ref<Buffer> vertexBuffer;
       Ref<Buffer> cameraCbBuffer;
+
+      GpuTimer timer;
 
       UINT vertex_stride{};
       UINT vertex_offset{};
@@ -155,6 +236,8 @@ namespace pbe {
          cb.viewProjection = proj * view;
          cb.viewProjection = glm::transpose(cb.viewProjection);
 
+         timer.Start();
+
          for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
             cb.transform = glm::translate(mat4(1), sceneTrans.position);
             cb.transform = glm::transpose(cb.transform);
@@ -165,6 +248,8 @@ namespace pbe {
 
             program->DrawInstanced(cmd, vertex_count);
          }
+
+         timer.Stop();
 
          // D3D11_MAPPED_SUBRESOURCE mappedSubresource;
          //

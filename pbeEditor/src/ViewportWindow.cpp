@@ -37,6 +37,8 @@ namespace pbe {
       ImGui::InputFloat3("cameraPos", &renderer->cameraPos.x);
       ImGui::SliderFloat("cameraAngle", &renderer->angle, -180, 180);
 
+      ImGui::Text("ColorPass: %.3f ms", renderer->timer.GetTimeMs());
+
       auto size = ImGui::GetContentRegionAvail();
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
