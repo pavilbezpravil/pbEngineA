@@ -65,7 +65,7 @@ namespace pbe {
       if (auto* key = event.GetEvent<KeyPressedEvent>()) {
          // INFO("KeyCode: {}", key->keyCode);
          if (Input::IsKeyPressed(VK_CONTROL) && key->keyCode == 'R') {
-            ShaderCompileTest();
+            ReloadShaders();
             event.handled = true;
          }
       }

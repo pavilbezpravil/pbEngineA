@@ -20,7 +20,7 @@ namespace pbe {
    class Texture2D;
    class CommandList;
 
-   void ShaderCompileTest();
+   void ReloadShaders();
 
    struct ShaderDefine {
       std::string define;
@@ -49,14 +49,20 @@ namespace pbe {
 
    class Shader : public RefCounted {
    public:
-      ID3DBlob* blob{};
+      Shader(ShaderDesc& desc);
 
-      // todo: leak
+      bool compiled = false;
+      ShaderDesc desc;
+
+      ComPtr<ID3DBlob> blob;
+
       ComPtr<ID3D11VertexShader> vs;
       ComPtr<ID3D11PixelShader> ps;
       ComPtr<ID3D11ComputeShader> cs;
 
       std::unordered_map<size_t, D3D11_SHADER_INPUT_BIND_DESC> reflection;
+
+      bool Compile();
    };
 
    struct ProgramDesc {

@@ -77,15 +77,31 @@ namespace pbe {
       return hr;
    }
 
-   void ShaderCompileTest() {
-      auto desc = ProgramDesc::Cs("test.cs", "main");
-      auto program = GpuProgram::Create(desc);
+   static std::vector<Shader*> shaders;
+
+   void ReloadShaders() {
+      INFO("Reload shaders!");
+      for (auto shader : shaders) {
+         shader->Compile();
+      }
    }
+
+   Shader::Shader(ShaderDesc& desc) : desc(desc) {}
 
    Ref<Shader> ShaderCompile(ShaderDesc& desc) {
       if (desc.path.empty()) {
          return {};
       }
+
+      // todo: check if already exist
+      Ref shader{ new Shader(desc) };
+      shader->Compile();
+      shaders.push_back(shader);
+      return shader;
+   }
+
+   bool Shader::Compile() {
+      compiled = false;
 
       static const char* gShaderProfile[] = {
          "vs_5_0",
@@ -93,43 +109,41 @@ namespace pbe {
          "cs_5_0",
       };
 
-      ID3D10Blob* shaderBuffer;
+      ID3D10Blob* shaderBuffer{};
       CompileShader(desc.path, desc.entryPoint.data(), gShaderProfile[(int)desc.type], &shaderBuffer);
       if (!shaderBuffer) {
-         return {};
+         return false;
       }
 
-      Ref shader{new Shader()};
-
-      shader->blob = shaderBuffer;
+      blob = shaderBuffer;
 
       std::string_view dbgName = desc.path.data();
 
       switch (desc.type) {
-         case ShaderType::Vertex: sDevice->g_pd3dDevice->CreateVertexShader(
-               shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
-               nullptr, &shader->vs);
-            SetDbgName(shader->vs.Get(), dbgName);
-            break;
-         case ShaderType::Pixel: sDevice->g_pd3dDevice->CreatePixelShader(
-               shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
-               nullptr, &shader->ps);
-            SetDbgName(shader->ps.Get(), dbgName);
-            break;
-         case ShaderType::Compute: sDevice->g_pd3dDevice->CreateComputeShader(
-               shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
-               nullptr, &shader->cs);
-            SetDbgName(shader->cs.Get(), dbgName);
-            break;
-         default:
-            UNIMPLEMENTED();
+      case ShaderType::Vertex: sDevice->g_pd3dDevice->CreateVertexShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &vs);
+         SetDbgName(vs.Get(), dbgName);
+         break;
+      case ShaderType::Pixel: sDevice->g_pd3dDevice->CreatePixelShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &ps);
+         SetDbgName(ps.Get(), dbgName);
+         break;
+      case ShaderType::Compute: sDevice->g_pd3dDevice->CreateComputeShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &cs);
+         SetDbgName(cs.Get(), dbgName);
+         break;
+      default:
+         UNIMPLEMENTED();
       }
 
       INFO("Reflection:");
 
       ID3D11ShaderReflection* pReflector = NULL;
       D3DReflect(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection,
-                 (void**)&pReflector);
+         (void**)&pReflector);
 
       int resourceIdx = 0;
       D3D11_SHADER_INPUT_BIND_DESC bindDesc;
@@ -137,10 +151,11 @@ namespace pbe {
          INFO("\tName: {} Type: {} BindPoint: {}", bindDesc.Name, bindDesc.Type, bindDesc.BindPoint);
 
          size_t id = StrHash(bindDesc.Name);
-         shader->reflection[id] = bindDesc;
+         reflection[id] = bindDesc;
       }
 
-      return shader;
+      compiled = true;
+      return compiled;
    }
 
    Ref<GpuProgram> GpuProgram::Create(ProgramDesc& desc) {

@@ -252,12 +252,12 @@ namespace pbe {
          cmd.SetViewport({}, target.GetDesc().size);
          cmd.SetDepthStencilState(rendres::depthStencilState);
          cmd.SetRasterizerState(rendres::rasterizerState);
+         // context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 
          // set mesh
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-         ID3DBlob* vsBlob = program->vs->blob;
-         ID3D11InputLayout* inputLayout = rendres::GetInputLayout(vsBlob, VertexPosNormal::inputElementDesc);
+         ID3D11InputLayout* inputLayout = rendres::GetInputLayout(program->vs->blob.Get(), VertexPosNormal::inputElementDesc);
          context->IASetInputLayout(inputLayout);
 
          ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
@@ -294,22 +294,6 @@ namespace pbe {
          }
 
          timer.Stop();
-
-         // D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-         //
-         // deviceContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
-         //
-         // Constants* constants = reinterpret_cast<Constants*>(mappedSubresource.pData);
-         //
-         // deviceContext->Unmap(constantBuffer, 0);
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // deviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-         //
-         // deviceContext->PSSetSamplers(0, 1, &samplerState);
-         //
-         // deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // use default blend mode (i.e. disable)
       }
 
    };
