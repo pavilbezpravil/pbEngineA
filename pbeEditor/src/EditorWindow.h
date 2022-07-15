@@ -12,6 +12,7 @@ namespace pbe {
       virtual ~EditorWindow() = default;
 
       virtual void OnImGuiRender() = 0;
+      virtual void OnUpdate(float dt) {}
 
       std::string name{ "EditorWindow" };
       bool show = true;

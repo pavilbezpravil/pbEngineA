@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Application.h"
 
+#include "Input.h"
 #include "core/Common.h"
 #include "core/Log.h"
 #include "core/Profiler.h"
@@ -39,38 +40,40 @@ namespace pbe {
 
       SAFE_DELETE(sDevice);
       SAFE_DELETE(sWindow);
-      // Log::Term();
    }
 
-   void Application::OnEvent(Event& e) {
-      if (e.GetEvent<AppQuitEvent>()) {
+   void Application::OnEvent(Event& event) {
+      Input::OnEvent(event);
+
+      if (event.GetEvent<AppQuitEvent>()) {
          INFO("App quit event");
          running = false;
       }
-      if (e.GetEvent<AppLoseFocusEvent>()) {
+      if (event.GetEvent<AppLoseFocusEvent>()) {
          INFO("Lose Focus");
          focused = false;
       }
-      if (e.GetEvent<AppGetFocusEvent>()) {
+      if (event.GetEvent<AppGetFocusEvent>()) {
          INFO("Get Focus");
          focused = true;
       }
-      if (auto* windowResize = e.GetEvent<WindowResizeEvent>()) {
+
+      if (auto* windowResize = event.GetEvent<WindowResizeEvent>()) {
          sDevice->Resize(windowResize->size);
       }
 
-      if (auto* key = e.GetEvent<KeyPressedEvent>()) {
+      if (auto* key = event.GetEvent<KeyPressedEvent>()) {
          // INFO("KeyCode: {}", key->keyCode);
-         if (key->keyCode == 'R') {
+         if (Input::IsKeyPressed(VK_CONTROL) && key->keyCode == 'R') {
             ShaderCompileTest();
-            e.handled = true;
+            event.handled = true;
          }
       }
 
-      if (!e.handled) {
+      if (!event.handled) {
          for (auto it = layerStack.end(); it != layerStack.begin();) {
-            (*--it)->OnEvent(e);
-            if (e.handled) {
+            (*--it)->OnEvent(event);
+            if (event.handled) {
                break;
             }
          }
@@ -113,6 +116,8 @@ namespace pbe {
             dt = 1.f / 60.f;
          }
          OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
+
+         Input::OnUpdate(dt);
 
          for (auto* layer : layerStack) {
             layer->OnUpdate(dt);

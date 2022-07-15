@@ -11,10 +11,11 @@ namespace pbe {
    class Window {
    public:
       Window(int2 size = { 1280, 800 });
-
       ~Window();
 
       void Update();
+
+      int2 GetMousePosition() const;
 
       WNDCLASSEX wc{};
       HWND hwnd{};

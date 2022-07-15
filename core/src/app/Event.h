@@ -10,6 +10,8 @@ namespace pbe {
       AppGetFocus,
       WindowResize,
       KeyPressed,
+      KeyReleased,
+      Mouse,
    };
 
 #define EVENT_TYPE(type) \
@@ -59,5 +61,23 @@ namespace pbe {
 
       EVENT_TYPE(KeyPressed)
    };
+
+   struct KeyReleasedEvent : Event {
+      KeyReleasedEvent(int keyCode) : keyCode(keyCode) {}
+
+      int keyCode = -1;
+
+      EVENT_TYPE(KeyReleased)
+   };
+
+   // // want to see dif in code between X Pressed\Release Event and just X Event
+   // struct MouseEvent : Event {
+   //    MouseEvent(int keyCode, bool pressed) : keyCode(keyCode), pressed(pressed) {}
+   //
+   //    int keyCode = -1;
+   //    bool pressed{};
+   //
+   //    EVENT_TYPE(KeyReleased)
+   // };
 
 }

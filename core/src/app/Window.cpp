@@ -48,6 +48,31 @@ namespace pbe {
          sWindow->eventCallback(e);
          return 0;
       }
+      case WM_KEYUP: {
+         KeyReleasedEvent e{ (int)wParam };
+         sWindow->eventCallback(e);
+         return 0;
+      }
+      // case WM_LBUTTONDOWN: {
+      //    MouseEvent e{ VK_LBUTTON, true };
+      //    sWindow->eventCallback(e);
+      //    return 0;
+      // }
+      // case WM_LBUTTONUP: {
+      //    MouseEvent e{ VK_LBUTTON, false };
+      //    sWindow->eventCallback(e);
+      //    return 0;
+      // }
+      // case WM_RBUTTONDOWN: {
+      //    MouseEvent e{ VK_RBUTTON, true };
+      //    sWindow->eventCallback(e);
+      //    return 0;
+      // }
+      // case WM_RBUTTONUP: {
+      //    MouseEvent e{ VK_RBUTTON, false };
+      //    sWindow->eventCallback(e);
+      //    return 0;
+      // }
       case WM_SETFOCUS: {
          AppGetFocusEvent e{};
          sWindow->eventCallback(e);
@@ -107,6 +132,16 @@ namespace pbe {
             eventCallback(e);
          }
       }
+   }
+
+   int2 Window::GetMousePosition() const {
+      POINT p;
+      if (GetCursorPos(&p)) {
+         if (ScreenToClient(hwnd, &p)) {
+            return {p.x, p.y};
+         }
+      }
+      return {};
    }
 
 }

@@ -36,7 +36,7 @@ namespace pbe {
       auto path = GetShadersPath(srcFile);
 
       if (!fs::exists(path)) {
-         WARN("Cant find file '{}'", path);
+         WARN("Cant find file '{}'", srcFile);
       }
 
       *blob = nullptr;

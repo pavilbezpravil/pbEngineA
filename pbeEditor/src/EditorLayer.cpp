@@ -143,7 +143,11 @@ namespace pbe {
    }
 
    void EditorLayer::OnUpdate(float dt) {
-      Layer::OnUpdate(dt);
+      for (auto& window : editorWindows) {
+         if (window->show) {
+            window->OnUpdate(dt);
+         }
+      }
    }
 
    void EditorLayer::OnImGuiRender() {
@@ -240,14 +244,7 @@ namespace pbe {
    }
 
    void EditorLayer::OnEvent(Event& event) {
-      if (auto* key = event.GetEvent<KeyPressedEvent>()) {
-         if (key->keyCode == 'S') {
-            ShaderCompileTest();
-            event.handled = true;
-         }
-      }
 
-      Layer::OnEvent(event);
    }
 
 

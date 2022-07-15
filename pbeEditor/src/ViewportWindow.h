@@ -16,11 +16,14 @@ namespace pbe {
       ViewportWindow(std::string_view name);
 
       void OnImGuiRender() override;
+      void OnUpdate(float dt) override;
 
       Scene* scene{};
       Own<Renderer> renderer;
       Ref<Texture2D> colorTexture;
       Ref<Texture2D> depthTexture;
+
+      bool windowFocused = false;
    };
 
 }

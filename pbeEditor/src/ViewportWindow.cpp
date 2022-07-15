@@ -3,6 +3,7 @@
 
 #include "EditorWindow.h"
 #include "imgui.h"
+#include "app/Input.h"
 #include "scene/Scene.h"
 #include "rend/Renderer.h"
 
@@ -30,6 +31,8 @@ namespace pbe {
    void ViewportWindow::OnImGuiRender() {
       ImGui::Begin(name.c_str(), &show);
 
+      windowFocused = ImGui::IsWindowFocused();
+
       if (ImGui::Button("Play")) {
          INFO("Play pressed!");
       }
@@ -47,5 +50,50 @@ namespace pbe {
       ImGui::Image(colorTexture->srv, size);
 
       ImGui::End();
+   }
+
+   void ViewportWindow::OnUpdate(float dt) {
+      if (!windowFocused) {
+         return;
+      }
+
+      vec3 cameraInput{};
+
+      if (Input::IsKeyPressed('A')) {
+         cameraInput.x = -1;
+      }
+      if (Input::IsKeyPressed('D')) {
+         cameraInput.x = 1;
+      }
+      if (Input::IsKeyPressed('Q')) {
+         cameraInput.y = -1;
+      }
+      if (Input::IsKeyPressed('E')) {
+         cameraInput.y = 1;
+      }
+      if (Input::IsKeyPressed('W')) {
+         cameraInput.z = 1;
+      }
+      if (Input::IsKeyPressed('S')) {
+         cameraInput.z = -1;
+      }
+
+      if (cameraInput != vec3{}) {
+         cameraInput = glm::normalize(cameraInput);
+
+         vec3 right = vec3_X;
+         vec3 up = vec3_Y;
+         vec3 forward = vec3_Z;
+
+         vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
+
+         renderer->cameraPos += cameraOffset * dt * 3.f;
+      }
+
+      if (Input::IsKeyPressed(VK_RBUTTON)) {
+         renderer->angle += float(-Input::GetMouseDelta().x) * dt * 3.f;
+      }
+
+      // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
    }
 }

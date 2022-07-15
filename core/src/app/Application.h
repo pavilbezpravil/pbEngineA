@@ -15,7 +15,7 @@ namespace pbe {
 
       virtual void OnInit();
       virtual void OnTerm();
-      virtual void OnEvent(Event& e);
+      virtual void OnEvent(Event& event);
 
       void PushLayer(Layer* layer);
       void PushOverlay(Layer* overlay);

@@ -18,5 +18,6 @@ namespace pbe {
    using std::vector;
 
 #define STRINGIFY(x) #x
+#define CONCATENATION(a, b) a ## b
 
 }

@@ -4,9 +4,11 @@
 
 #include "core/Common.h"
 
+
 namespace pbe {
 
    struct Event;
+
 
    class Layer {
       NON_COPYABLE(Layer);
@@ -14,20 +16,15 @@ namespace pbe {
       Layer(const std::string& name = "Layer");
       virtual ~Layer() = default;
 
-      virtual void OnAttach() {
-      }
+      virtual void OnAttach() { }
 
-      virtual void OnDetach() {
-      }
+      virtual void OnDetach() { }
 
-      virtual void OnUpdate(float dt) {
-      }
+      virtual void OnUpdate(float dt) { }
 
-      virtual void OnImGuiRender() {
-      }
+      virtual void OnImGuiRender() {}
 
-      virtual void OnEvent(Event& event) {
-      }
+      virtual void OnEvent(Event& event) { }
 
       const std::string& GetName() const { return name; }
    protected:
