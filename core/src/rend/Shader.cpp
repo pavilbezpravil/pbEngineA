@@ -21,14 +21,22 @@ namespace pbe {
       return std::wstring(str.begin(), str.end());
    }
 
+   string GetShadersPath(string_view path) {
+      static string gAssetsPath = "../../core/shaders/";
+      return gAssetsPath + path.data();
+   }
+
    HRESULT CompileShader(std::string_view srcFile, LPCSTR entryPoint, LPCSTR profile, ID3DBlob** blob) {
       INFO("Compile shader '{}' entryPoint: '{}' profile: '{}'", srcFile, entryPoint, profile);
 
       if (!entryPoint || !profile || !blob)
          return E_INVALIDARG;
 
-      if (!fs::exists(srcFile)) {
-         WARN("Cant find file '{}'", srcFile);
+
+      auto path = GetShadersPath(srcFile);
+
+      if (!fs::exists(path)) {
+         WARN("Cant find file '{}'", path);
       }
 
       *blob = nullptr;
@@ -40,7 +48,7 @@ namespace pbe {
 
       const D3D_SHADER_MACRO defines[] = {"EXAMPLE_DEFINE", "1", NULL, NULL};
 
-      auto wsrcPath = ToWstr(srcFile);
+      auto wsrcPath = ToWstr(path);
 
       ID3DBlob* shaderBlob = nullptr;
       ID3DBlob* errorBlob = nullptr;

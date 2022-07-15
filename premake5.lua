@@ -14,6 +14,8 @@ workspace "pbEngine"
 
    filter {}
 
+   startproject "pbeEditor"
+
 libsinfo = {}
 
 -- print(os.getcwd())

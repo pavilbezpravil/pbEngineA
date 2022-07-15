@@ -11,15 +11,10 @@
 #include "scene/Component.h"
 #include "scene/Scene.h"
 
+#include "shared/common.hlsli"
+
 
 namespace pbe {
-
-   struct CameraCB {
-      float4x4 viewProjection;
-      float4x4 transform;
-      float3 color;
-      float _dymmy;
-   };
 
    struct VertexPos {
       float3 position;

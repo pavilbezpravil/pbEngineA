@@ -5,7 +5,10 @@ project "core"
    libsinfo.core.includepath = os.getcwd().."/src"
 
    pchheader "pch.h"
-   pchsource "pch.cpp"
+   pchsource "src/pch.cpp"
+
+   libsinfo.shaders = {}
+   libsinfo.shaders.includepath = os.getcwd().."/shaders"
 
    includedirs { libsinfo.core.includepath,
                  libsinfo.imgui.includepath,
@@ -13,7 +16,8 @@ project "core"
                  libsinfo.spdlog.includepath,
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
-                 libsinfo.entt.includepath }
+                 libsinfo.entt.includepath,
+                 libsinfo.shaders.includepath }
 
    links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 

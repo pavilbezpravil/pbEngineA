@@ -1,16 +1,11 @@
+#include "shared/common.hlsli"
+
 struct vs_in {
     float3 position_local : POS;
 };
 
 struct vs_out {
     float4 position_clip : SV_POSITION;
-};
-
-struct CameraCB {
-  float4x4 viewProjection;
-  float4x4 transform;
-  float3 color;
-  float _dymmy;
 };
 
 cbuffer gCamera {

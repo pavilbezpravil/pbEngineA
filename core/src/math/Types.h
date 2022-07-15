@@ -33,11 +33,6 @@ namespace pbe {
 
    using glm::quat;
 
-   using float2 = vec2;
-   using float3 = vec3;
-   using float4 = vec4;
-   using float4x4 = mat4;
-
    constexpr vec2 vec2_One = vec2(1, 1);
    constexpr vec2 vec2_Zero = vec2(0, 0);
    constexpr vec2 vec2_X = vec2(1, 0);
@@ -96,3 +91,9 @@ OStream& operator<<(OStream& os, const glm::vec4& v)
 {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 }
+
+// for HLSL
+using float2 = glm::vec2;
+using float3 = glm::vec3;
+using float4 = glm::vec4;
+using float4x4 = glm::mat4;
