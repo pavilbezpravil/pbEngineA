@@ -2,6 +2,7 @@
 #include "RendRes.h"
 
 #include "Device.h"
+#include "core/Assert.h"
 #include "core/Common.h"
 
 namespace pbe {
@@ -45,6 +46,35 @@ namespace pbe {
          SAFE_RELEASE(rasterizerState);
          SAFE_RELEASE(samplerState);
          SAFE_RELEASE(depthStencilState);
+      }
+
+      struct InputLayoutEntry {
+         ComPtr<ID3D11InputLayout> inputLayout;
+         // std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+      };
+
+      static std::unordered_map<ID3DBlob*, InputLayoutEntry> sLayoutMap;
+
+      ID3D11InputLayout* GetInputLayout(ID3DBlob* vsBlob,
+         std::vector<D3D11_INPUT_ELEMENT_DESC>& inputElementDesc) {
+         // todo: inputElementDesc
+
+         if (sLayoutMap.find(vsBlob) == sLayoutMap.end()) {
+            ComPtr<ID3D11InputLayout> input_layout_ptr;
+
+            HRESULT hr = sDevice->g_pd3dDevice->CreateInputLayout(
+               inputElementDesc.data(),
+               inputElementDesc.size(),
+               vsBlob->GetBufferPointer(),
+               vsBlob->GetBufferSize(),
+               input_layout_ptr.GetAddressOf());
+            ASSERT(SUCCEEDED(hr));
+            SetDbgName(input_layout_ptr.Get(), "input layout");
+
+            sLayoutMap[vsBlob] = InputLayoutEntry{ input_layout_ptr };
+         }
+
+         return sLayoutMap[vsBlob].inputLayout.Get();
       }
 
    }

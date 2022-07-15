@@ -24,6 +24,14 @@ namespace pbe {
             return desc;
          }
 
+         static Desc IndexBuffer(int size) {
+            Desc desc{};
+            desc.Size = size;
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+            return desc;
+         }
+
          static Desc ConstantBuffer(int size) {
             Desc desc{};
             desc.Size = size;

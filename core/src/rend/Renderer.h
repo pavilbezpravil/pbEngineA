@@ -17,16 +17,67 @@
 namespace pbe {
 
    struct VertexPos {
-      float3 position;
+      vec3 position;
 
-      static std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+      static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
    };
 
    struct VertexPosNormal {
-      float3 position;
-      float3 normal;
+      vec3 position;
+      vec3 normal;
 
-      static std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+      static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
+   class MeshGeom {
+   public:
+      std::vector<byte> vertexes;
+      std::vector<int16> indexes;
+
+      uint nVertexByteSize = 0;
+
+      MeshGeom() = default;
+      MeshGeom(int nVertexByteSize) : nVertexByteSize(nVertexByteSize) {}
+
+      int VertexesBytes() const { return (int)vertexes.size(); }
+      int IndexesBytes() const { return IndexCount() * sizeof(uint16); }
+      int VertexCount() const { return int(vertexes.size() / nVertexByteSize); }
+      int IndexCount() const { return (int)indexes.size(); }
+
+      // template<typename T>
+      // void SetVertex(int iVert, T&& v) {
+      //    vertexes[sizeof(T) * iVert] = std::move(v);
+      // }
+
+      template<typename T>
+      std::vector<T>& VertexesAs() {
+         return *(std::vector<T>*)&vertexes;
+      }
+   };
+
+   class Mesh {
+   public:
+      Mesh() = default;
+      Mesh(MeshGeom&& geom) : geom(std::move(geom)) {}
+
+      Ref<Buffer> vertexBuffer;
+      Ref<Buffer> indexBuffer;
+
+      MeshGeom geom;
+
+      static Mesh Create(MeshGeom&& geom) {
+         Mesh mesh{ std::move(geom) };
+
+         auto bufferDesc = Buffer::Desc::VertexBuffer(mesh.geom.VertexesBytes());
+         mesh.vertexBuffer = Buffer::Create(bufferDesc, mesh.geom.vertexes.data());
+         mesh.vertexBuffer->SetDbgName("vertex buf");
+
+         bufferDesc = Buffer::Desc::IndexBuffer(mesh.geom.IndexesBytes());
+         mesh.indexBuffer = Buffer::Create(bufferDesc, mesh.geom.indexes.data());
+         mesh.indexBuffer->SetDbgName("index buf");
+
+         return mesh;
+      }
    };
 
    class GpuTimer {
@@ -34,6 +85,9 @@ namespace pbe {
       D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjointData{};
       uint64 start = 0;
       uint64 stop = 0;
+
+      bool busy = false;
+      float time{};
 
       ComPtr<ID3D11Query> disjointQuery;
       ComPtr<ID3D11Query> startQuery;
@@ -49,9 +103,6 @@ namespace pbe {
          queryDesc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
          device->CreateQuery(&queryDesc, disjointQuery.GetAddressOf());
       }
-
-      bool busy = false;
-      float time{};
 
       void Start() {
          if (busy) {
@@ -116,85 +167,76 @@ namespace pbe {
          rendres::Term();
       }
 
-      ComPtr<ID3D11InputLayout> input_layout_ptr;
-
       Ref<GpuProgram> program;
-      Ref<Buffer> vertexBuffer;
+
+      Mesh mesh;
+
       Ref<Buffer> cameraCbBuffer;
 
       GpuTimer timer;
-
-      UINT vertex_stride{};
-      UINT vertex_offset{};
-      UINT vertex_count{};
 
       vec3 cameraPos{};
       float angle = 0;
 
       void Init() {
+         VertexPos s[] = {
+            {{1.f, 1.f, 1.f}},
+            {{1.f, 1.f, 1.f}},
+         };
+
          rendres::Init(); // todo:
 
-         // VertexPos::inputElementDesc = {
-         //    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-         //    /*
-         //    { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //    { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //    { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         //    */
-         // };
-         //
-         // VertexPosNormal::inputElementDesc = {
-         //    {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-         //    { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-         // };
-
-         auto* device_ptr = sDevice->g_pd3dDevice;
+         VertexPos::inputElementDesc = {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+         };
+         
+         VertexPosNormal::inputElementDesc = {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+         };
 
          auto programDesc = ProgramDesc::VsPs("shaders.hlsl", "vs_main", "ps_main");
          program = GpuProgram::Create(programDesc);
 
-         HRESULT hr;
+         MeshGeom cube{sizeof(VertexPosNormal)};
 
-         D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
-            {"POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-            /*
-            { "COL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            */
+         // todo: super dirty
+         cube.vertexes.resize(sizeof(VertexPosNormal) * 8);
+
+         // auto a = cube.VertexesAs<VertexPosNormal>();
+         // a =
+         cube.VertexesAs<VertexPosNormal>() =
+         {
+             {{ -1.0f, 1.0f, -1.0f}, {0, 0, 255}, },
+             {{ 1.0f, 1.0f, -1.0f}, {0, 255, 0}, },
+             {{ -1.0f, -1.0f, -1.0f}, {255, 0, 0}, },
+             {{ 1.0f, -1.0f, -1.0f}, {0, 255, 255}, },
+             {{ -1.0f, 1.0f, 1.0f}, {0, 0, 255}, },
+             {{ 1.0f, 1.0f, 1.0f}, {255, 0, 0}, },
+             {{ -1.0f, -1.0f, 1.0f}, {0, 255, 0}, },
+             {{ 1.0f, -1.0f, 1.0f}, {0, 255, 255}, },
          };
 
-         ID3DBlob* vs_blob_ptr = program->vs->blob;
-
-         hr = device_ptr->CreateInputLayout(
-            inputElementDesc,
-            ARRAYSIZE(inputElementDesc),
-            vs_blob_ptr->GetBufferPointer(),
-            vs_blob_ptr->GetBufferSize(),
-            input_layout_ptr.GetAddressOf());
-         assert(SUCCEEDED(hr));
-         SetDbgName(input_layout_ptr.Get(), "triangle input layout");
-
-         float vertex_data_array[] = {
-            0.0f, 0.5f, 0.0f, // point at top
-            0.5f, -0.5f, 0.0f, // point at bottom-right
-            -0.5f, -0.5f, 0.0f, // point at bottom-left
+         cube.indexes = {
+              0, 1, 2,    // side 1
+              2, 1, 3,
+              4, 0, 6,    // side 2
+              6, 0, 2,
+              7, 5, 6,    // side 3
+              6, 5, 4,
+              3, 1, 7,    // side 4
+              7, 1, 5,
+              4, 5, 0,    // side 5
+              0, 5, 1,
+              3, 7, 2,    // side 6
+              2, 7, 6,
          };
-         vertex_stride = 3 * sizeof(float);
-         vertex_offset = 0;
-         vertex_count = 3;
 
-         {
-            auto bufferDesc = Buffer::Desc::VertexBuffer(sizeof(vertex_data_array));
-            vertexBuffer = Buffer::Create(bufferDesc, vertex_data_array);
-            vertexBuffer->SetDbgName("triangle vert buf");
-         }
+         mesh = Mesh::Create(std::move(cube));
 
-         {
-            auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
-            cameraCbBuffer = Buffer::Create(bufferDesc);
-            cameraCbBuffer->SetDbgName("camera cb");
-         }
+         auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
+         cameraCbBuffer = Buffer::Create(bufferDesc);
+         cameraCbBuffer->SetDbgName("camera cb");
       }
 
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
@@ -202,7 +244,6 @@ namespace pbe {
 
          auto context = cmd.pContext;
 
-         // vec4 background_colour{0x64 / 255.0f, 0x95 / 255.0f, 0xED / 255.0f, 1.0f};
          vec4 background_colour{0};
          cmd.ClearRenderTarget(target, background_colour);
          cmd.ClearDepthTarget(depth, 1);
@@ -210,13 +251,20 @@ namespace pbe {
          cmd.SetRenderTargets(&target, &depth);
          cmd.SetViewport({}, target.GetDesc().size);
          cmd.SetDepthStencilState(rendres::depthStencilState);
+         cmd.SetRasterizerState(rendres::rasterizerState);
 
-         /***** Input Assembler (map how the vertex shader inputs should be read from vertex buffer) ******/
+         // set mesh
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-         context->IASetInputLayout(input_layout_ptr.Get());
 
-         ID3D11Buffer* vBuffer = vertexBuffer->GetBuffer();
-         context->IASetVertexBuffers(0, 1, &vBuffer, &vertex_stride, &vertex_offset);
+         ID3DBlob* vsBlob = program->vs->blob;
+         ID3D11InputLayout* inputLayout = rendres::GetInputLayout(vsBlob, VertexPosNormal::inputElementDesc);
+         context->IASetInputLayout(inputLayout);
+
+         ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
+         uint offset = 0;
+         context->IASetVertexBuffers(0, 1, &vBuffer, &mesh.geom.nVertexByteSize, &offset);
+         context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
+         //
 
          program->Activate(cmd);
          program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
@@ -241,7 +289,8 @@ namespace pbe {
 
             context->UpdateSubresource(cameraCbBuffer->GetBuffer(), 0, nullptr, &cb, 0, 0);
 
-            program->DrawInstanced(cmd, vertex_count);
+            // program->DrawInstanced(cmd, mesh.geom.VertexCount());
+            program->DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
          }
 
          timer.Stop();
@@ -256,31 +305,11 @@ namespace pbe {
          //
          // ///////////////////////////////////////////////////////////////////////////////////////////
          //
-         // deviceContext->ClearRenderTargetView(frameBufferView, backgroundColor);
-         // deviceContext->ClearDepthStencilView(depthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-         //
-         // deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-         // deviceContext->IASetInputLayout(inputLayout);
-         // deviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
          // deviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
          //
-         // deviceContext->VSSetShader(vertexShader, nullptr, 0);
-         // deviceContext->VSSetConstantBuffers(0, 1, &constantBuffer);
-         //
-         // deviceContext->RSSetViewports(1, &viewport);
-         // deviceContext->RSSetState(rasterizerState);
-         //
-         // deviceContext->PSSetShader(pixelShader, nullptr, 0);
-         // deviceContext->PSSetShaderResources(0, 1, &textureView);
          // deviceContext->PSSetSamplers(0, 1, &samplerState);
          //
-         // deviceContext->OMSetRenderTargets(1, &frameBufferView, depthBufferView);
-         // deviceContext->OMSetDepthStencilState(depthStencilState, 0);
          // deviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff); // use default blend mode (i.e. disable)
-         //
-         // ///////////////////////////////////////////////////////////////////////////////////////////
-         //
-         // deviceContext->DrawIndexed(ARRAYSIZE(IndexData), 0, 0);
       }
 
    };

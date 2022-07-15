@@ -37,7 +37,6 @@ namespace pbe {
          INFO("Play pressed!");
       }
 
-      ImGui::InputFloat3("cameraPos", &renderer->cameraPos.x);
       ImGui::SliderFloat("cameraAngle", &renderer->angle, -180, 180);
 
       ImGui::Text("ColorPass: %.3f ms", renderer->timer.GetTimeMs());

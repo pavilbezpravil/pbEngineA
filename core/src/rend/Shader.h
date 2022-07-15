@@ -93,6 +93,7 @@ namespace pbe {
       void SetTexture(CommandList& cmd, std::string_view name, Texture2D& texture);
 
       void DrawInstanced(CommandList& cmd, int vertCount, int instCount = 1, int startVert = 0);
+      void DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount = 1, int indexStart = 0, int startVert = 0);
       void Dispatch(CommandList& cmd, int3 groups);
 
       Ref<Shader> vs;

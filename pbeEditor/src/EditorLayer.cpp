@@ -127,7 +127,7 @@ namespace pbe {
       // scene->Create("green");
       // scene->Create("blue");
 
-      for (int i = 0; i < 100; ++i) {
+      for (int i = 0; i < 500; ++i) {
          Entity e = scene->Create(std::to_string(i));
 
          e.Get<SceneTransformComponent>().position = Random::Uniform({-10, -10, 0},

@@ -224,6 +224,10 @@ namespace pbe {
       cmd.pContext->DrawInstanced(vertCount, instCount, startVert, 0);
    }
 
+   void GpuProgram::DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount, int indexStart, int startVert) {
+      cmd.pContext->DrawIndexedInstanced(indexCount, instCount, indexStart, startVert, 0);
+   }
+
    void GpuProgram::Dispatch(CommandList& cmd, int3 groups) {
       cmd.pContext->Dispatch(groups.x, groups.y, groups.z);
    }

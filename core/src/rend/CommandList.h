@@ -36,6 +36,10 @@ namespace pbe {
          pContext->OMSetDepthStencilState(state, stencilRef);
       }
 
+      void SetRasterizerState(ID3D11RasterizerState1* state) {
+         pContext->RSSetState(state);
+      }
+
       void SetViewport(vec2 top, vec2 size, vec2 minMaxDepth = {0, 1}) {
          D3D11_VIEWPORT viewport = {
             top.x, top.y, size.x, size.y, minMaxDepth.x, minMaxDepth.y
