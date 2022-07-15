@@ -6,6 +6,20 @@
 
 
 namespace pbe {
+
+   struct VertexPos {
+      vec3 position;
+
+      static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
+   struct VertexPosNormal {
+      vec3 position;
+      vec3 normal;
+
+      static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
    namespace rendres {
 
       void Init();

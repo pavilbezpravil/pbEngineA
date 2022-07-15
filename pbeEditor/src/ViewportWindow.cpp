@@ -14,6 +14,7 @@ namespace pbe {
       texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
       texDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
       texDesc.size = { 640, 480 };
+      // texDesc.size *= 3;
 
       colorTexture = Texture2D::Create(texDesc);
       colorTexture->SetDbgName("scene color");
@@ -40,6 +41,7 @@ namespace pbe {
       ImGui::SliderFloat("cameraAngle", &renderer->angle, -180, 180);
 
       ImGui::Text("ColorPass: %.3f ms", renderer->timer.GetTimeMs());
+      INFO("ColorPass: {} ms", renderer->timer.GetTimeMs());
 
       auto size = ImGui::GetContentRegionAvail();
 
@@ -80,13 +82,22 @@ namespace pbe {
       if (cameraInput != vec3{}) {
          cameraInput = glm::normalize(cameraInput);
 
-         vec3 right = vec3_X;
-         vec3 up = vec3_Y;
-         vec3 forward = vec3_Z;
+         // vec3 right = vec3_X;
+         // vec3 up = vec3_Y;
+         // vec3 forward = vec3_Z;
+
+         vec3 right = vec4(1, 0, 0, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
+         vec3 up = vec4(0, 1, 0, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
+         vec3 forward = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
 
          vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
 
-         renderer->cameraPos += cameraOffset * dt * 3.f;
+         float cameraSpeed = 5;
+         if (Input::IsKeyPressed(VK_SHIFT)) {
+            cameraSpeed *= 5;
+         }
+
+         renderer->cameraPos += cameraOffset * cameraSpeed * dt;
       }
 
       if (Input::IsKeyPressed(VK_RBUTTON)) {

@@ -32,7 +32,7 @@ float4 ps_main(VsOut input) : SV_TARGET {
   float3 b = ddy(input.posW);
   float3 normalW = normalize(cross(a, b));
 
-  Material material;
+  Material material = (Material)0;
   material.albedo = camera.color; 
 
   Light light = (Light)0;

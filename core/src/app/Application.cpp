@@ -156,7 +156,6 @@ namespace pbe {
          {
             OPTICK_EVENT("ImGui Render");
             cmd.SetRenderTargets(sDevice->backBuffer);
-            // sDevice->g_pd3dDeviceContext->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
             imguiLayer->Render();
          }
 
