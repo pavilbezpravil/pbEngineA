@@ -38,10 +38,8 @@ namespace pbe {
          INFO("Play pressed!");
       }
 
-      ImGui::SliderFloat("cameraAngle", &renderer->angle, -180, 180);
-
       ImGui::Text("ColorPass: %.3f ms", renderer->timer.GetTimeMs());
-      INFO("ColorPass: {} ms", renderer->timer.GetTimeMs());
+      // INFO("ColorPass: {} ms", renderer->timer.GetTimeMs());
 
       auto size = ImGui::GetContentRegionAvail();
 

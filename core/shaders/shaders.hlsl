@@ -15,10 +15,15 @@ cbuffer gCamera {
   CameraCB camera;
 }
 
+StructuredBuffer<Instance> gInstances;
+
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
 
-  float3 posW = mul(float4(input.posL, 1), camera.transform).xyz;
+  float4x4 transform = gInstances[camera.instanceStart].transform;
+  // transform = camera.transform;
+
+  float3 posW = mul(float4(input.posL, 1), transform).xyz;
   float4 posH = mul(float4(posW, 1), camera.viewProjection);
 
   output.posW = posW;

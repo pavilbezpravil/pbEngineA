@@ -221,7 +221,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, &buffer.srv);
+            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, buffer.srv.GetAddressOf());
          }
       }
    }

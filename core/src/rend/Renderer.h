@@ -28,6 +28,7 @@ namespace pbe {
       Mesh mesh;
 
       Ref<Buffer> cameraCbBuffer;
+      Ref<Buffer> instanceBuffer;
 
       GpuTimer timer;
 
@@ -74,8 +75,22 @@ namespace pbe {
          context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
          //
 
-         program->Activate(cmd);
-         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
+         if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
+            instanceBuffer = Buffer::Create(bufferDesc);
+            instanceBuffer->SetDbgName("instance buffer");
+         }
+
+         std::vector<Instance> instances;
+         instances.reserve(scene.EntitiesCount());
+         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+            mat4 transform = glm::translate(mat4(1), sceneTrans.position);
+            transform = glm::transpose(transform);
+         
+            instances.emplace_back(transform);
+         }
+
+         cmd.UpdateSubresource(*instanceBuffer, instances.data());
 
          CameraCB cb;
 
@@ -89,13 +104,20 @@ namespace pbe {
 
          timer.Start();
 
+         program->Activate(cmd);
+         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
+         program->SetSrvBuffer(cmd, "gInstances", *instanceBuffer);
+
+         int instanceID = 0;
+
          for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
             cb.transform = glm::translate(mat4(1), sceneTrans.position);
             cb.transform = glm::transpose(cb.transform);
 
             cb.color = material.albedo;
+            cb.instanceStart = instanceID++;
 
-            context->UpdateSubresource(cameraCbBuffer->GetBuffer(), 0, nullptr, &cb, 0, 0);
+            cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
             // program->DrawInstanced(cmd, mesh.geom.VertexCount());
             program->DrawIndexedInstanced(cmd, mesh.geom.IndexCount());

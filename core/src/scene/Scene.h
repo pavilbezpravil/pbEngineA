@@ -20,6 +20,10 @@ namespace pbe {
          return registry.view<Component, Other...>();
       }
 
+      int EntitiesCount() const {
+         return (int)registry.size();
+      }
+
    private:
       entt::registry registry;
 

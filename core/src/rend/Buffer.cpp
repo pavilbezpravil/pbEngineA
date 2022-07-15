@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Buffer.h"
 #include "Device.h"
+#include "core/Assert.h"
 #include "core/Log.h"
 
 namespace pbe {
@@ -9,8 +10,8 @@ namespace pbe {
       return Ref<Buffer>::Create(desc, data);
    }
 
-   Buffer::~Buffer() {
-      GPUResource::~GPUResource();
+   int Buffer::ElementsCount() const {
+      return desc.Size / desc.StructureByteStride;
    }
 
    Buffer::Buffer(Desc& desc, void* data) : GPUResource(nullptr), desc(desc) {
@@ -21,11 +22,11 @@ namespace pbe {
       dxDesc.BindFlags = desc.BindFlags;
       dxDesc.CPUAccessFlags = desc.CPUAccessFlags;
       dxDesc.StructureByteStride = desc.StructureByteStride;
+      dxDesc.MiscFlags = desc.MiscFlags;
 
       ID3D11Device* pDevice = sDevice->g_pd3dDevice;
 
-      D3D11_SUBRESOURCE_DATA initialData = { 0 };
-      initialData.pSysMem = data;
+      D3D11_SUBRESOURCE_DATA initialData = { data };
 
       ID3D11Buffer* pBuffer;
       pDevice->CreateBuffer(&dxDesc, data ? &initialData : nullptr, &pBuffer);
@@ -35,10 +36,10 @@ namespace pbe {
       }
 
       if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
-         pDevice->CreateShaderResourceView(pBuffer, NULL, &srv);
+         pDevice->CreateShaderResourceView(pBuffer, NULL, srv.GetAddressOf());
       }
       if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS) {
-         pDevice->CreateUnorderedAccessView(pBuffer, NULL, &uav);
+         pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
       }
 
       pResource = pBuffer;

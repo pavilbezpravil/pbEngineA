@@ -1,6 +1,7 @@
 #pragma once
 #include <d3d11.h>
 
+#include "Common.h"
 #include "GpuResource.h"
 #include "math/Types.h"
 
@@ -15,6 +16,7 @@ namespace pbe {
          uint BindFlags;
          uint CPUAccessFlags = 0;
          uint StructureByteStride = 0;
+         uint MiscFlags = 0;
 
          static Desc VertexBuffer(int size) {
             Desc desc{};
@@ -38,7 +40,17 @@ namespace pbe {
             // desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.Usage = D3D11_USAGE_DEFAULT;
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            // desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+            return desc;
+         }
+
+         static Desc StructureBuffer(int count, uint structureByteSize) {
+            Desc desc{};
+            desc.Size = structureByteSize * count;
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.StructureByteStride = structureByteSize;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
             return desc;
          }
@@ -46,13 +58,13 @@ namespace pbe {
 
       static Ref<Buffer> Create(Desc& desc, void* data = nullptr);
 
-      ~Buffer() override;
-
       ID3D11Buffer* GetBuffer() { return (ID3D11Buffer*)pResource; }
       Desc GetDesc() const { return desc; }
 
-      ID3D11ShaderResourceView* srv{};
-      ID3D11UnorderedAccessView* uav{};
+      int ElementsCount() const;
+
+      ComPtr<ID3D11ShaderResourceView> srv;
+      ComPtr<ID3D11UnorderedAccessView> uav;
 
    private:
       friend Ref<Buffer>;

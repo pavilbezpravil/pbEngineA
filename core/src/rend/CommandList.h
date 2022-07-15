@@ -1,5 +1,6 @@
 #pragma once
 // todo:
+#include "Buffer.h"
 #include "Device.h"
 #include "Texture2D.h"
 #include "core/Core.h"
@@ -15,6 +16,10 @@ namespace pbe {
       // CommandList() {
       //    sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
       // }
+
+      void UpdateSubresource(Buffer& buffer, void* data) {
+         pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
+      }
 
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {
          pContext->ClearDepthStencilView(depth.dsv, clearFlags, depthValue, stencilValue);
