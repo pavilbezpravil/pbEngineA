@@ -101,7 +101,7 @@ namespace pbe {
 
       ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-      std::chrono::time_point tStart = std::chrono::high_resolution_clock::now();
+      CpuTimer frameTimer{};
 
       // Main loop
       while (running) {
@@ -112,13 +112,8 @@ namespace pbe {
             ThreadSleepMs(50);
          }
 
-
-         // Framelimit set to 60 fps
-         std::chrono::time_point tEnd = std::chrono::high_resolution_clock::now();
-         float dt = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
-         tStart = tEnd;
-
-         // INFO("DeltaTime: {}", time);
+         float dt = frameTimer.ElapsedMs(true);
+         INFO("DeltaTime: {}", dt);
 
          // debug handle
          if (dt > 1.f) {
@@ -134,6 +129,8 @@ namespace pbe {
 
          {
             OPTICK_EVENT("OnImGuiRender");
+            PROFILE_CPU("OnImGuiRender");
+
             imguiLayer->NewFrame();
 
             for (auto* layer : layerStack) {
@@ -141,6 +138,14 @@ namespace pbe {
             }
 
             imguiLayer->EndFrame();
+         }
+
+         {
+            INFO("Profiler Stats");
+            auto& profiler = Profiler::Get();
+            for (auto& [name, cpuEvent] : profiler.cpuEvents) {
+               INFO("\t{}: {} ms", cpuEvent.name, cpuEvent.elapsedMs);
+            }
          }
 
          // ID3D11DeviceContext* context{};
