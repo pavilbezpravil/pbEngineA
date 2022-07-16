@@ -67,7 +67,6 @@ namespace pbe {
       struct CpuEvent {
          std::string name;
          CpuTimer timer;
-         float elapsedMs = 0;
          float elapsedMsCur = 0;
 
          AverageTime averageTime;
@@ -89,7 +88,6 @@ namespace pbe {
          std::string name;
          GpuTimer timer[2];
          int timerIdx = 0;
-         float elapsedMs = 0;
 
          AverageTime averageTime;
 
@@ -113,11 +111,9 @@ namespace pbe {
             if (event.usedInFrame) {
                event.usedInFrame = false;
 
-               event.elapsedMs = event.elapsedMsCur;
                event.averageTime.Add(event.elapsedMsCur, historyLength);
                event.elapsedMsCur = -1;
             } else {
-               event.elapsedMs = -1;
                event.averageTime.Clear();
             }
          }
@@ -127,14 +123,11 @@ namespace pbe {
                event.usedInFrame = false;
 
                event.timerIdx = 1 - event.timerIdx;
-               event.elapsedMs = event.timer[event.timerIdx].GetData() ?
-                  event.timer[event.timerIdx].GetTimeMs() : -1.f;
 
-               if (event.elapsedMs > 0) {
-                  event.averageTime.Add(event.elapsedMs, historyLength);
+               if (event.timer[event.timerIdx].GetData()) {
+                  event.averageTime.Add(event.timer[event.timerIdx].GetTimeMs(), historyLength);
                }
             } else {
-               event.elapsedMs = -1;
                event.averageTime.Clear();
             }
          }
