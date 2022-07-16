@@ -27,8 +27,16 @@ namespace pbe {
       std::string value;
    };
 
-   // todo: inherit from vector
-   using ShaderDefines = std::vector<ShaderDefine>;
+   struct ShaderDefines : public std::vector<D3D_SHADER_MACRO> {
+      void AddDefine(string_view name, string_view value = {}) {
+         if (empty()) {
+            emplace_back(name.data(), value.data());
+         } else {
+            back() = { name.data(), value.data() };
+         }
+         push_back({});
+      }
+   };
 
    enum class ShaderType {
       Vertex,
@@ -41,6 +49,7 @@ namespace pbe {
       std::string path;
       std::string entryPoint;
       ShaderType type = ShaderType::Unknown;
+      ShaderDefines defines;
 
       ShaderDesc() = default;
       ShaderDesc(const std::string& path, const std::string& entry_point, ShaderType type) : path(path),
@@ -81,10 +90,12 @@ namespace pbe {
          return desc;
       }
 
-      static ProgramDesc VsPs(std::string_view path, std::string_view vsEntry, std::string_view psEntry) {
+      static ProgramDesc VsPs(std::string_view path, std::string_view vsEntry, std::string_view psEntry = {}) {
          ProgramDesc desc;
          desc.vs = { path.data(), vsEntry.data(), ShaderType::Vertex };
-         desc.ps = { path.data(), psEntry.data(), ShaderType::Pixel };
+         if (!psEntry.empty()) {
+            desc.ps = { path.data(), psEntry.data(), ShaderType::Pixel };
+         }
          return desc;
       }
    };
@@ -104,7 +115,6 @@ namespace pbe {
       void DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount = 1, int indexStart = 0, int startVert = 0);
       void Dispatch(CommandList& cmd, int3 groups);
 
-      operator bool() const;
       bool Valid() const;
 
       Ref<Shader> vs;

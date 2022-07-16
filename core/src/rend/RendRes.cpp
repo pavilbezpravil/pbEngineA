@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "RendRes.h"
 
+#include "Common.h"
 #include "Device.h"
 #include "core/Assert.h"
 #include "core/Common.h"
@@ -12,6 +13,7 @@ namespace pbe {
       ID3D11SamplerState* samplerState;
       ID3D11DepthStencilState* depthStencilState;
       ID3D11DepthStencilState* depthStencilStateEqual;
+      ID3D11DepthStencilState* depthStencilStateDisable;
 
       void Init() {
          VertexPos::inputElementDesc = {
@@ -52,7 +54,12 @@ namespace pbe {
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
 
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
+         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateEqual);
+
+         // todo: wtf?
+         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDisable);
       }
 
       void Term() {
@@ -60,6 +67,7 @@ namespace pbe {
          SAFE_RELEASE(samplerState);
          SAFE_RELEASE(depthStencilState);
          SAFE_RELEASE(depthStencilStateEqual);
+         SAFE_RELEASE(depthStencilStateDisable);
       }
 
       struct InputLayoutEntry {

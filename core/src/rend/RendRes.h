@@ -1,7 +1,5 @@
 #pragma once
-#include <d3d11_3.h>
 
-#include "Common.h"
 #include "Device.h"
 
 
@@ -29,6 +27,7 @@ namespace pbe {
       extern ID3D11SamplerState* samplerState;
       extern ID3D11DepthStencilState* depthStencilState;
       extern ID3D11DepthStencilState* depthStencilStateEqual;
+      extern ID3D11DepthStencilState* depthStencilStateDisable;
 
       ID3D11InputLayout* GetInputLayout(ID3DBlob* vsBlob, std::vector<D3D11_INPUT_ELEMENT_DESC>& inputElementDesc);
 

@@ -26,17 +26,21 @@ namespace pbe {
       return gAssetsPath + path.data();
    }
 
-   HRESULT CompileShader(std::string_view srcFile, LPCSTR entryPoint, LPCSTR profile, ID3DBlob** blob) {
-      INFO("Compile shader '{}' entryPoint: '{}' profile: '{}'", srcFile, entryPoint, profile);
+   HRESULT CompileShader(ShaderDesc& desc, ID3DBlob** blob) {
+      static const char* gShaderProfile[] = {
+         "vs_5_0",
+         "ps_5_0",
+         "cs_5_0",
+      };
 
-      if (!entryPoint || !profile || !blob)
-         return E_INVALIDARG;
+      auto profile = gShaderProfile[(int)desc.type];
 
+      INFO("Compile shader '{}' entryPoint: '{}' profile: '{}'", desc.path, desc.entryPoint, profile);
 
-      auto path = GetShadersPath(srcFile);
+      auto path = GetShadersPath(desc.path);
 
       if (!fs::exists(path)) {
-         WARN("Cant find file '{}'", srcFile);
+         WARN("Cant find file '{}'", desc.path);
       }
 
       *blob = nullptr;
@@ -46,13 +50,14 @@ namespace pbe {
       flags |= D3DCOMPILE_DEBUG;
 #endif
 
-      const D3D_SHADER_MACRO defines[] = {"EXAMPLE_DEFINE", "1", NULL, NULL};
+      // const D3D_SHADER_MACRO defines[] = {"EXAMPLE_DEFINE", "1", NULL, NULL};
+      const D3D_SHADER_MACRO* defines = desc.defines.data();
 
       auto wsrcPath = ToWstr(path);
 
       ID3DBlob* shaderBlob = nullptr;
       ID3DBlob* errorBlob = nullptr;
-      HRESULT hr = D3DCompileFromFile(wsrcPath.data(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, profile,
+      HRESULT hr = D3DCompileFromFile(wsrcPath.data(), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, desc.entryPoint.data(), profile,
                                       flags, 0,
                                       &shaderBlob, &errorBlob);
 
@@ -103,14 +108,8 @@ namespace pbe {
    bool Shader::Compile() {
       compiled = false;
 
-      static const char* gShaderProfile[] = {
-         "vs_5_0",
-         "ps_5_0",
-         "cs_5_0",
-      };
-
       ID3D10Blob* shaderBuffer{};
-      CompileShader(desc.path, desc.entryPoint.data(), gShaderProfile[(int)desc.type], &shaderBuffer);
+      CompileShader(desc, &shaderBuffer);
       if (!shaderBuffer) {
          return false;
       }
@@ -163,16 +162,14 @@ namespace pbe {
    }
 
    void GpuProgram::Activate(CommandList& cmd) {
-      if (vs) {
-         cmd.pContext->VSSetShader(vs->vs.Get(), nullptr, 0);
-      }
-
-      if (ps) {
-         cmd.pContext->PSSetShader(ps->ps.Get(), nullptr, 0);
-      }
-
-      if (cs) {
-         cmd.pContext->CSSetShader(cs->cs.Get(), nullptr, 0);
+      bool graphics = vs || ps;
+      if (graphics) {
+         cmd.pContext->VSSetShader(vs ? vs->vs.Get() : nullptr, nullptr, 0);
+         cmd.pContext->PSSetShader(ps ? ps->ps.Get() : nullptr, nullptr, 0);
+      } else {
+         if (cs) {
+            cmd.pContext->CSSetShader(cs->cs.Get(), nullptr, 0);
+         }
       }
    }
 

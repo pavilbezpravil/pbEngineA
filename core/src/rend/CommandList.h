@@ -81,4 +81,6 @@ namespace pbe {
       CommandList& cmd;
    };
 
+#define GPU_EVENT(Name) GpuMarker marker{ cmd, Name };
+
 }

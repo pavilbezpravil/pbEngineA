@@ -23,7 +23,8 @@ namespace pbe {
          rendres::Term();
       }
 
-      Ref<GpuProgram> program;
+      Ref<GpuProgram> baseColorPass;
+      Ref<GpuProgram> baseZPass;
 
       Mesh mesh;
 
@@ -40,8 +41,12 @@ namespace pbe {
       void Init() {
          rendres::Init(); // todo:
 
-         auto programDesc = ProgramDesc::VsPs("shaders.hlsl", "vs_main", "ps_main");
-         program = GpuProgram::Create(programDesc);
+         auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+         baseColorPass = GpuProgram::Create(programDesc);
+
+         programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
+         programDesc.vs.defines.AddDefine("ZPASS");
+         baseZPass = GpuProgram::Create(programDesc);
 
          mesh = Mesh::Create(MeshGeomCube());
 
@@ -91,11 +96,12 @@ namespace pbe {
       }
 
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
-         if (!program->Valid()) {
+         if (!baseColorPass->Valid() || !baseZPass->Valid()) {
             return;
          }
 
-         GpuMarker marker{ cmd, "Color Pass" };
+         GpuMarker marker{ cmd, "Render Scene" };
+         timer.Start();
 
          RenderDataPrepare(cmd, scene);
 
@@ -105,16 +111,14 @@ namespace pbe {
          cmd.ClearRenderTarget(target, background_colour);
          cmd.ClearDepthTarget(depth, 1);
 
-         cmd.SetRenderTargets(&target, &depth);
          cmd.SetViewport({}, target.GetDesc().size);
-         cmd.SetDepthStencilState(rendres::depthStencilState);
          cmd.SetRasterizerState(rendres::rasterizerState);
          // context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 
          // set mesh
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-         ID3D11InputLayout* inputLayout = rendres::GetInputLayout(program->vs->blob.Get(), VertexPosNormal::inputElementDesc);
+         ID3D11InputLayout* inputLayout = rendres::GetInputLayout(baseColorPass->vs->blob.Get(), VertexPosNormal::inputElementDesc);
          context->IASetInputLayout(inputLayout);
 
          ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
@@ -135,12 +139,42 @@ namespace pbe {
          cb.position = cameraPos;
          cb.nLights = nLights;
 
-         timer.Start();
+         if (useZPass) {
+            {
+               GPU_EVENT("ZPass");
 
-         program->Activate(cmd);
-         program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
-         program->SetSrvBuffer(cmd, "gInstances", *instanceBuffer);
-         program->SetSrvBuffer(cmd, "gLights", *lightBuffer);
+               cmd.SetRenderTargets(nullptr, &depth);
+               cmd.SetDepthStencilState(rendres::depthStencilState);
+               RenderSceneAllObjects(cmd, scene, *baseZPass, cb);
+            }
+
+            {
+               GPU_EVENT("Color Pass");
+
+               cmd.SetRenderTargets(&target, &depth);
+               cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
+               RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
+            }
+         } else {
+            GPU_EVENT("Color Pass (Without ZPass)");
+
+            cmd.SetRenderTargets(&target, &depth);
+            cmd.SetDepthStencilState(rendres::depthStencilState);
+            RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
+         }
+
+         timer.Stop();
+      }
+
+      bool useZPass = false;
+
+      void RenderSceneAllObjects(CommandList& cmd, Scene& scene, GpuProgram& program, const CameraCB& cameraCB) {
+         CameraCB cb = cameraCB;
+
+         program.Activate(cmd);
+         program.SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
+         program.SetSrvBuffer(cmd, "gInstances", *instanceBuffer);
+         program.SetSrvBuffer(cmd, "gLights", *lightBuffer);
 
          int instanceID = 0;
 
@@ -155,11 +189,9 @@ namespace pbe {
 
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
-            // program->DrawInstanced(cmd, mesh.geom.VertexCount());
-            program->DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
+            // baseColorPass->DrawInstanced(cmd, mesh.geom.VertexCount());
+            program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
          }
-
-         timer.Stop();
       }
 
    };
