@@ -45,15 +45,18 @@ namespace pbe {
 
       auto context = sDevice->g_pd3dDeviceContext;
 
-      if (context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_FALSE) {
+      bool dataReady = context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_OK
+                    && context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK
+                    && context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK;
+      if (!dataReady) {
          return false;
       }
 
-      bool dataReady = context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK
-                    && context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK;
-      ASSERT(dataReady && !disjointData.Disjoint);
-
-      time = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
+      if (!disjointData.Disjoint) {
+         time = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
+      } else {
+         WARN("Disjoint!");
+      }
 
       busy = false;
       return true;

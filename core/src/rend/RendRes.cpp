@@ -11,6 +11,7 @@ namespace pbe {
       ID3D11RasterizerState1* rasterizerState;
       ID3D11SamplerState* samplerState;
       ID3D11DepthStencilState* depthStencilState;
+      ID3D11DepthStencilState* depthStencilStateEqual;
 
       void Init() {
          VertexPos::inputElementDesc = {
@@ -49,12 +50,16 @@ namespace pbe {
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
+
+         depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
+         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateEqual);
       }
 
       void Term() {
          SAFE_RELEASE(rasterizerState);
          SAFE_RELEASE(samplerState);
          SAFE_RELEASE(depthStencilState);
+         SAFE_RELEASE(depthStencilStateEqual);
       }
 
       struct InputLayoutEntry {
@@ -73,7 +78,7 @@ namespace pbe {
 
             HRESULT hr = sDevice->g_pd3dDevice->CreateInputLayout(
                inputElementDesc.data(),
-               inputElementDesc.size(),
+               (uint)inputElementDesc.size(),
                vsBlob->GetBufferPointer(),
                vsBlob->GetBufferSize(),
                input_layout_ptr.GetAddressOf());

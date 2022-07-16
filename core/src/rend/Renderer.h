@@ -54,12 +54,50 @@ namespace pbe {
          lightBuffer->SetDbgName("light buffer");
       }
 
+      void RenderDataPrepare(CommandList& cmd, Scene& scene) {
+         if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
+            instanceBuffer = Buffer::Create(bufferDesc);
+            instanceBuffer->SetDbgName("instance buffer");
+         }
+
+         std::vector<Instance> instances;
+         instances.reserve(scene.EntitiesCount());
+         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+            mat4 transform = glm::translate(mat4(1), sceneTrans.position);
+            transform = glm::transpose(transform);
+
+            instances.emplace_back(transform);
+         }
+
+         cmd.UpdateSubresource(*instanceBuffer, instances.data());
+
+         std::vector<Light> lights;
+         lights.resize(nLights); // 4
+
+         lights[0].position = {};
+         lights[0].color = vec3(2, 3, 1);
+
+         lights[1].position = { 1, 2, 5 };
+         lights[1].color = vec3(2, 30, 1);
+
+         lights[2].position = { 10, 1, 5 };
+         lights[2].color = vec3(2, 3, 10);
+
+         lights[3].position = { -10, 2, 5 };
+         lights[3].color = vec3(20, 3, 1);
+
+         cmd.UpdateSubresource(*lightBuffer, lights.data());
+      }
+
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
          if (!program->Valid()) {
             return;
          }
 
          GpuMarker marker{ cmd, "Color Pass" };
+
+         RenderDataPrepare(cmd, scene);
 
          auto context = cmd.pContext;
 
@@ -84,40 +122,6 @@ namespace pbe {
          context->IASetVertexBuffers(0, 1, &vBuffer, &mesh.geom.nVertexByteSize, &offset);
          context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
          //
-
-         if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
-            auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
-            instanceBuffer = Buffer::Create(bufferDesc);
-            instanceBuffer->SetDbgName("instance buffer");
-         }
-
-         std::vector<Instance> instances;
-         instances.reserve(scene.EntitiesCount());
-         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
-            mat4 transform = glm::translate(mat4(1), sceneTrans.position);
-            transform = glm::transpose(transform);
-         
-            instances.emplace_back(transform);
-         }
-
-         cmd.UpdateSubresource(*instanceBuffer, instances.data());
-
-         std::vector<Light> lights;
-         lights.resize(nLights); // 4
-
-         lights[0].position = {};
-         lights[0].color = vec3(2, 3, 1);
-
-         lights[1].position = {1, 2, 5};
-         lights[1].color = vec3(2, 30, 1);
-
-         lights[2].position = { 10, 1, 5 };
-         lights[2].color = vec3(2, 3, 10);
-
-         lights[3].position = { -10, 2, 5 };
-         lights[3].color = vec3(20, 3, 1);
-
-         cmd.UpdateSubresource(*lightBuffer, lights.data());
 
          CameraCB cb;
 
