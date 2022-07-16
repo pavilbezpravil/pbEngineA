@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "GpuTimer.h"
 
+#include "core/Assert.h"
+
+
 namespace pbe {
 
    GpuTimer::GpuTimer() {
@@ -56,19 +59,9 @@ namespace pbe {
       //    return false;
       // }
 
-      if (context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK) {
-         // INFO("Start!");
-      }
-      else {
-         return false;
-      }
-
-      if (context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK) {
-         // INFO("Stop!");
-      }
-      else {
-         return false;
-      }
+      bool dataReady = context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK
+                    && context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK;
+      ASSERT(dataReady && !disjointData.Disjoint);
 
       time = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
 

@@ -101,6 +101,8 @@ namespace pbe {
 
       ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+      std::chrono::time_point tStart = std::chrono::high_resolution_clock::now();
+
       // Main loop
       while (running) {
          OPTICK_FRAME("MainThread");
@@ -110,7 +112,14 @@ namespace pbe {
             ThreadSleepMs(50);
          }
 
-         float dt = 1.f / 60.f; // todo:
+
+         // Framelimit set to 60 fps
+         std::chrono::time_point tEnd = std::chrono::high_resolution_clock::now();
+         float dt = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
+         tStart = tEnd;
+
+         // INFO("DeltaTime: {}", time);
+
          // debug handle
          if (dt > 1.f) {
             dt = 1.f / 60.f;
