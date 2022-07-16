@@ -55,6 +55,10 @@ namespace pbe {
       }
 
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
+         if (!program->Valid()) {
+            return;
+         }
+
          GpuMarker marker{ cmd, "Color Pass" };
 
          auto context = cmd.pContext;

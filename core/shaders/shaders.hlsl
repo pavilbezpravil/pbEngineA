@@ -34,8 +34,11 @@ VsOut vs_main(VsIn input) {
   return output;
 }
 
+struct PsOut {
+  float4 color : SV_Target0;
+};
 
-float4 ps_main(VsOut input) : SV_TARGET {
+PsOut ps_main(VsOut input) : SV_TARGET {
   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
 
   float3 posW = input.posW;
@@ -91,6 +94,9 @@ float4 ps_main(VsOut input) : SV_TARGET {
   color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
 
-  return float4(color, 1);
-  // return float4(normalW * 0.5 + 0.5, 1);
+  PsOut output = (PsOut)0;
+  output.color.rgb = color;
+  // output.color.rgb = normalW * 0.5 + 0.5;
+  output.color.a = 1;
+  return output;
 }

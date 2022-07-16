@@ -257,6 +257,10 @@ namespace pbe {
       cmd.pContext->Dispatch(groups.x, groups.y, groups.z);
    }
 
+   bool GpuProgram::Valid() const {
+      return (!vs || vs->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
+   }
+
    GpuProgram::GpuProgram(ProgramDesc& desc) : desc(desc) {
       vs = ShaderCompile(desc.vs);
       ps = ShaderCompile(desc.ps);

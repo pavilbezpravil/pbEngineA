@@ -51,6 +51,8 @@ namespace pbe {
    public:
       Shader(ShaderDesc& desc);
 
+      bool Valid() const { return compiled; }
+
       bool compiled = false;
       ShaderDesc desc;
 
@@ -101,6 +103,9 @@ namespace pbe {
       void DrawInstanced(CommandList& cmd, int vertCount, int instCount = 1, int startVert = 0);
       void DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount = 1, int indexStart = 0, int startVert = 0);
       void Dispatch(CommandList& cmd, int3 groups);
+
+      operator bool() const;
+      bool Valid() const;
 
       Ref<Shader> vs;
       Ref<Shader> ps;
