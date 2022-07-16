@@ -87,8 +87,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   }
 
-  float ao = 0.1; // todo:
-  float3 ambient = 0.03 * albedo * ao;
+  float ao = 1; // todo:
+  float3 ambient = 0.01 * albedo * ao;
   float3 color = ambient + Lo;
 
   color = color / (color + 1);
