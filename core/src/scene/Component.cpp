@@ -24,6 +24,8 @@ namespace pbe {
 
    TYPER_BEGIN(SimpleMaterialComponent)
       TYPER_FIELD(albedo)
+      TYPER_FIELD(roughness)
+      TYPER_FIELD(metallic)
    TYPER_END(SimpleMaterialComponent)
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(SimpleMaterialComponent)

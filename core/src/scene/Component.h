@@ -67,6 +67,8 @@ namespace pbe {
 
    struct SimpleMaterialComponent {
       vec3 albedo = vec3_One;
+      float roughness = 0.1f;
+      float metallic = 0;
 
       DECL_COMPONENT(SimpleMaterialComponent);
    };

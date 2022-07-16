@@ -101,6 +101,7 @@ namespace pbe {
 
          cb.viewProjection = proj * view;
          cb.viewProjection = glm::transpose(cb.viewProjection);
+         cb.position = cameraPos;
 
          timer.Start();
 
@@ -115,6 +116,8 @@ namespace pbe {
             cb.transform = glm::transpose(cb.transform);
 
             cb.color = material.albedo;
+            cb.roughness = material.roughness;
+            cb.metallic = material.metallic;
             cb.instanceStart = instanceID++;
 
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);

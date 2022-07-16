@@ -1,4 +1,5 @@
 #include "shared/common.hlsli"
+#include "pbr.hlsli"
 
 struct VsIn {
   float3 posL : POSITION;
@@ -32,24 +33,65 @@ VsOut vs_main(VsIn input) {
   return output;
 }
 
+
 float4 ps_main(VsOut input) : SV_TARGET {
-  float3 a = ddx(input.posW);
-  float3 b = ddy(input.posW);
-  float3 normalW = normalize(cross(a, b));
+  float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+
+  float3 posW = input.posW;
 
   Material material = (Material)0;
-  material.albedo = camera.color; 
+  material.albedo = camera.color;
 
-  Light light = (Light)0;
-  light.position = float3(0, 0, -3);
+  float roughness = camera.roughness;
+  float metallic = camera.metallic;
 
-  float3 color = 0;
+  float3 albedo = material.albedo;
 
-  float3 L = normalize(light.position - input.posW);
+  float3 N = normalize(normalW);
+  float3 V = normalize(camera.position - posW);
 
-  float NDotL = dot(L, normalW);
-  color += material.albedo * max(NDotL, 0);
+  float3 F0 = lerp(0.04, albedo, metallic);
+	           
+  // reflectance equation
+  float3 Lo = 0;
+  for(int i = 0; i < 1; ++i) {
+      Light light = (Light)0;
+      light.position = float3(0, 0, 0);
+      light.color = float3(1, 1, 1) * 10;
 
-  // return float4(normalW * 0.5 + 0.5, 1);
+      // calculate per-light radiance
+      float3 L = normalize(light.position - posW);
+      float3 H = normalize(V + L);
+      float distance = length(light.position - posW);
+      float attenuation = 1.0 / (distance * distance);
+      // float attenuation = 1.0 / pow(distance, 1.5);
+      float3 radiance = light.color * attenuation;
+
+      // cook-torrance brdf
+      float NDF = DistributionGGX(N, H, roughness);
+      float G = GeometrySmith(N, V, L, roughness);
+      float3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+      float3 kS = F;
+      float3 kD = 1 - kS;
+      kD *= 1.0 - metallic;
+
+      float3 numerator = NDF * G * F;
+      float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
+      float3 specular = numerator / denominator;
+
+      // add to outgoing radiance Lo
+      float NdotL = max(dot(N, L), 0);
+      Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+  }
+
+  float ao = 0.1; // todo:
+  float3 ambient = 0.03 * albedo * ao;
+  float3 color = ambient + Lo;
+
+  // color = color / (color + 1);
+  color = pow(color, 1.0 / 2.2); // todo: use srgb
+
   return float4(color, 1);
+  // return float4(normalW * 0.5 + 0.5, 1);
 }
