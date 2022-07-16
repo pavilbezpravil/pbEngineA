@@ -10,13 +10,17 @@ struct CameraCB {
   float2 _dymmy3;
 };
 
-struct Instance {
-  float4x4 transform;
-};
-
 struct Material {
   float3 albedo;
-  float _dymmy;
+  float roughness;
+  
+  float metallic;
+  float3 _dymmy;
+};
+
+struct Instance {
+  float4x4 transform;
+  Material material;
 };
 
 struct Light {

@@ -31,6 +31,13 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(SimpleMaterialComponent)
 
+   TYPER_BEGIN(LightComponent)
+      TYPER_FIELD(color)
+      TYPER_FIELD(radius)
+   TYPER_END(LightComponent)
+
+   COMPONENT_EXPLICIT_TEMPLATE_DEF(LightComponent)
+
    ComponentList& ComponentList::Get() {
       static ComponentList cl;
       return cl;
@@ -54,6 +61,13 @@ namespace pbe {
       ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
          if (auto* c = entity.TryGet<SimpleMaterialComponent>()) {
             EditorUI<SimpleMaterialComponent>(c->GetName(), *c);
+         }
+         });
+
+      id = GetTypeID<LightComponent>();
+      ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
+         if (auto* c = entity.TryGet<LightComponent>()) {
+            EditorUI<LightComponent>(c->GetName(), *c);
          }
          });
 

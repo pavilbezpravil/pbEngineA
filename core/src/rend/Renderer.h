@@ -43,9 +43,10 @@ namespace pbe {
       Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
       Ref<Buffer> lightBuffer;
-      int nLights = 4;
+      // int nLights = 4;
 
       bool useZPass = false;
+      bool useInstancedDraw = false;
 
       void Init() {
          rendres::Init(); // todo:
@@ -62,14 +63,10 @@ namespace pbe {
          auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
          cameraCbBuffer = Buffer::Create(bufferDesc);
          cameraCbBuffer->SetDbgName("camera cb");
-
-         bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
-         lightBuffer = Buffer::Create(bufferDesc);
-         lightBuffer->SetDbgName("light buffer");
       }
 
       void RenderDataPrepare(CommandList& cmd, Scene& scene) {
-         if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
+         if (!instanceBuffer || instanceBuffer->ElementsCount() != scene.EntitiesCount()) {
             auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
             instanceBuffer = Buffer::Create(bufferDesc);
             instanceBuffer->SetDbgName("instance buffer");
@@ -83,25 +80,33 @@ namespace pbe {
             transform *= glm::scale(mat4(1), sceneTrans.scale);
             transform = glm::transpose(transform);
 
-            instances.emplace_back(transform);
+            Material m;
+            m.albedo = material.albedo;
+            m.roughness = material.roughness;
+            m.metallic = material.metallic;
+
+            instances.emplace_back(transform, m);
          }
 
          cmd.UpdateSubresource(*instanceBuffer, instances.data());
 
+         auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+         if (!lightBuffer || lightBuffer->ElementsCount() != nLights) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
+            lightBuffer = Buffer::Create(bufferDesc);
+            lightBuffer->SetDbgName("light buffer");
+         }
+
          std::vector<Light> lights;
-         lights.resize(nLights); // 4
+         lights.reserve(nLights);
 
-         lights[0].position = {};
-         lights[0].color = vec3(2, 3, 1);
+         for (auto [e, trans,light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
+            Light l;
+            l.position = trans.position;
+            l.color = light.color;
 
-         lights[1].position = { 1, 2, 5 };
-         lights[1].color = vec3(2, 30, 1);
-
-         lights[2].position = { 10, 1, 5 };
-         lights[2].color = vec3(2, 3, 10);
-
-         lights[3].position = { -10, 2, 5 };
-         lights[3].color = vec3(20, 3, 1);
+            lights.emplace_back(l);
+         }
 
          cmd.UpdateSubresource(*lightBuffer, lights.data());
       }
@@ -142,7 +147,7 @@ namespace pbe {
 
          cb.viewProjection = glm::transpose(camera.GetViewProjection());
          cb.position = camera.position;
-         cb.nLights = nLights;
+         cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
 
          if (useZPass) {
             {
@@ -193,8 +198,15 @@ namespace pbe {
 
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
-            // baseColorPass->DrawInstanced(cmd, mesh.geom.VertexCount());
-            program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
+            if (useInstancedDraw) {
+               // todo: hack
+               auto nGeoms = (int)scene.GetEntitiesWith<SimpleMaterialComponent>().size();
+               program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), nGeoms);
+               break;
+            } else {
+               // program->DrawInstanced(cmd, mesh.geom.VertexCount());
+               program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
+            }
          }
       }
 

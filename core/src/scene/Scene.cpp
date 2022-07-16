@@ -21,7 +21,7 @@ namespace pbe {
       }
 
       e.Add<SceneTransformComponent>();
-      e.Add<SimpleMaterialComponent>();
+      // e.Add<SimpleMaterialComponent>();
 
       return e;
    }
@@ -100,7 +100,7 @@ namespace pbe {
             Typer::Get().Deserialize(it, SceneTransformComponent::GetName(), entity.Get<SceneTransformComponent>());
          }
          if (auto node = it[SimpleMaterialComponent::GetName()]) {
-            Typer::Get().Deserialize(it, SimpleMaterialComponent::GetName(), entity.Get<SimpleMaterialComponent>());
+            Typer::Get().Deserialize(it, SimpleMaterialComponent::GetName(), entity.Add<SimpleMaterialComponent>());
          }
       }
 

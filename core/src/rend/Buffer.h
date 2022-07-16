@@ -58,10 +58,12 @@ namespace pbe {
 
       static Ref<Buffer> Create(Desc& desc, void* data = nullptr);
 
-      ID3D11Buffer* GetBuffer() { return (ID3D11Buffer*)pResource; }
+      ID3D11Buffer* GetBuffer() { return (ID3D11Buffer*)pResource.Get(); }
       Desc GetDesc() const { return desc; }
 
       int ElementsCount() const;
+
+      bool Valid() const { return pResource; }
 
       ComPtr<ID3D11ShaderResourceView> srv;
       ComPtr<ID3D11UnorderedAccessView> uav;

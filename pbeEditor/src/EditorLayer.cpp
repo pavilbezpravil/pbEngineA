@@ -163,11 +163,23 @@ namespace pbe {
       for (int i = 0; i < 200; ++i) {
          Entity e = scene->Create(std::to_string(i));
       
-         e.Get<SceneTransformComponent>().position = Random::Uniform(-cubeSize,cubeSize);
-         e.Get<SceneTransformComponent>().scale = Random::Uniform(vec3{0}, vec3{ 3.f });
-         e.Get<SceneTransformComponent>().rotation = Random::Uniform(vec3{0}, vec3{ 30.f });
+         auto& trans = e.GetOrCreate<SceneTransformComponent>();
+         trans.position = Random::Uniform(-cubeSize,cubeSize);
+         trans.scale = Random::Uniform(vec3{0}, vec3{ 3.f });
+         trans.rotation = Random::Uniform(vec3{0}, vec3{ 30.f });
 
-         e.Get<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
+         e.GetOrCreate<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
+      }
+
+      for (int i = 0; i < 8; ++i) {
+         Entity e = scene->Create("light" + std::to_string(i));
+
+         auto& trans = e.GetOrCreate<SceneTransformComponent>();
+         trans.position = Random::Uniform(-cubeSize, cubeSize);
+
+         auto& light = e.Add<LightComponent>();
+         light.color = Random::Uniform(vec3{ 0 }, vec3{ 20.f });
+         light.radius = Random::Uniform(3, 10);
       }
 
       SetEditorScene(std::move(scene));

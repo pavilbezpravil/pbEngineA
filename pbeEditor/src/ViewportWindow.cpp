@@ -41,6 +41,7 @@ namespace pbe {
       }
 
       ImGui::Checkbox("Use ZPass", &renderer->useZPass);
+      ImGui::Checkbox("Use InstancedDraw", &renderer->useInstancedDraw);
 
       auto size = ImGui::GetContentRegionAvail();
 

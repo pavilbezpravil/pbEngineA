@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string_view>
-
+#include "Common.h"
 #include "core/Ref.h"
 #include "core/Common.h"
 
@@ -18,7 +17,7 @@ namespace pbe {
 
       void SetDbgName(std::string_view dbgName);
 
-      ID3D11Resource* pResource{};
+      ComPtr<ID3D11Resource> pResource;
    };
 
 

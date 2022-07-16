@@ -24,24 +24,27 @@ namespace pbe {
       dxDesc.StructureByteStride = desc.StructureByteStride;
       dxDesc.MiscFlags = desc.MiscFlags;
 
-      ID3D11Device* pDevice = sDevice->g_pd3dDevice;
+      if (desc.Size > 0) {
+         ID3D11Device* pDevice = sDevice->g_pd3dDevice;
 
-      D3D11_SUBRESOURCE_DATA initialData = { data };
+         D3D11_SUBRESOURCE_DATA initialData = { data };
 
-      ID3D11Buffer* pBuffer;
-      pDevice->CreateBuffer(&dxDesc, data ? &initialData : nullptr, &pBuffer);
-      if (!pBuffer) {
-         WARN("Cant create buffer!");
-         return;
+         ID3D11Buffer* pBuffer;
+         pDevice->CreateBuffer(&dxDesc, data ? &initialData : nullptr, &pBuffer);
+         if (!pBuffer) {
+            WARN("Cant create buffer!");
+            return;
+         }
+
+         if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
+            pDevice->CreateShaderResourceView(pBuffer, NULL, srv.GetAddressOf());
+         }
+         if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS) {
+            pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
+         }
+
+         pResource = pBuffer;
+         pBuffer->Release();
       }
-
-      if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
-         pDevice->CreateShaderResourceView(pBuffer, NULL, srv.GetAddressOf());
-      }
-      if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS) {
-         pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
-      }
-
-      pResource = pBuffer;
    }
 }

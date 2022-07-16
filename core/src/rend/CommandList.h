@@ -18,7 +18,9 @@ namespace pbe {
       // }
 
       void UpdateSubresource(Buffer& buffer, void* data) {
-         pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
+         if (buffer.Valid()) {
+            pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
+         }
       }
 
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {

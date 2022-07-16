@@ -75,4 +75,12 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(SimpleMaterialComponent);
 
+   struct LightComponent {
+      vec3 color{1};
+      float radius = 5;
+
+      DECL_COMPONENT(LightComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(LightComponent);
+
 }

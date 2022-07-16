@@ -4,12 +4,14 @@
 struct VsIn {
   float3 posL : POSITION;
   float3 normalL : NORMAL;
+  uint instanceID : SV_InstanceID;
 };
 
 struct VsOut {
   float3 posW : POS_W;
   float3 normalW : NORMAL_W;
   float4 posH : SV_POSITION;
+  uint instanceID : INSTANCE_ID;
 };
 
 cbuffer gCamera {
@@ -22,14 +24,14 @@ StructuredBuffer<Light> gLights;
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
 
-  float4x4 transform = gInstances[camera.instanceStart].transform;
-  // transform = camera.transform;
+  float4x4 transform = gInstances[camera.instanceStart + input.instanceID].transform;
 
   float3 posW = mul(float4(input.posL, 1), transform).xyz;
   float4 posH = mul(float4(posW, 1), camera.viewProjection);
 
   output.posW = posW;
   output.posH = posH;
+  output.instanceID = input.instanceID;
 
   return output;
 }
@@ -43,13 +45,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   float3 posW = input.posW;
 
-  Material material = (Material)0;
-  material.albedo = camera.color;
-
-  float roughness = camera.roughness;
-  float metallic = camera.metallic;
+  Material material = gInstances[camera.instanceStart + input.instanceID].material;
 
   float3 albedo = material.albedo;
+  float roughness = material.roughness;
+  float metallic = material.metallic;
 
   float3 N = normalize(normalW);
   float3 V = normalize(camera.position - posW);

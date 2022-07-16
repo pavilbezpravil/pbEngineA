@@ -13,9 +13,15 @@ namespace pbe {
       Entity(entt::entity id, Scene* scene);
 
       template<typename T, typename...Cs>
-      void Add(Cs&&... cs) {
+      T& Add(Cs&&... cs) {
          ASSERT(!Has<T>());
-         scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+         return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+      }
+
+      template<typename T, typename...Cs>
+      void Remove() {
+         ASSERT(!Has<T>());
+         scene->registry.erase<T>(id);
       }
 
       template<typename T>
@@ -43,6 +49,14 @@ namespace pbe {
       template<typename T>
       const T* TryGet() const {
          return scene->registry.try_get<T>(id);
+      }
+
+      template<typename T>
+      T& GetOrCreate() {
+         if (auto c = TryGet<T>()) {
+            return *c;
+         }
+         return Add<T>();
       }
 
       bool Valid() const {

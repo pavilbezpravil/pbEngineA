@@ -21,7 +21,7 @@ namespace pbe {
 
       ~Texture2D() override;
 
-      ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource; }
+      ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource.Get(); }
       Desc GetDesc() const;
 
       ID3D11RenderTargetView* rtv{};

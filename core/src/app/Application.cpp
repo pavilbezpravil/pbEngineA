@@ -99,8 +99,6 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
       CpuTimer frameTimer{};
 
       // Main loop
@@ -155,14 +153,13 @@ namespace pbe {
          // commandList->Release();
          // context->Release();
 
-         vec4 clearColor = {
-         clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
-         };
-
-         cmd.ClearRenderTarget(sDevice->GetBackBuffer(), clearColor);
-
          {
             OPTICK_EVENT("ImGui Render");
+            GPU_MARKER("ImGui Render");
+
+            vec4 clearColor = {0.45f, 0.55f, 0.60f, 1.00f};
+            cmd.ClearRenderTarget(sDevice->GetBackBuffer(), clearColor);
+
             cmd.SetRenderTargets(&sDevice->GetBackBuffer());
             imguiLayer->Render();
          }

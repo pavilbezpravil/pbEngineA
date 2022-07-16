@@ -8,12 +8,12 @@ namespace pbe {
 
    }
 
-   GPUResource::~GPUResource() {
-      SAFE_RELEASE(pResource);
-   }
+   GPUResource::~GPUResource() {}
 
    void GPUResource::SetDbgName(std::string_view dbgName) {
-      ::pbe::SetDbgName(pResource, dbgName);
+      if (pResource) {
+         ::pbe::SetDbgName(pResource.Get(), dbgName);
+      }
    }
 
 }

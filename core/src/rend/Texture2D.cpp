@@ -27,6 +27,8 @@ namespace pbe {
    }
 
    Texture2D::Texture2D(ID3D11Texture2D* pTexture) : GPUResource(pTexture) {
+      pTexture->Release();
+
       ID3D11Device* pDevice;
       pTexture->GetDevice(&pDevice);
 
@@ -75,6 +77,7 @@ namespace pbe {
       }
 
       pResource = pTexture;
+      pTexture->Release();
    }
 
 }
