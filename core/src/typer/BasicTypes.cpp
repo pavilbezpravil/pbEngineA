@@ -108,7 +108,12 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(quat);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat4(name, (float*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) {
+         auto angles = glm::degrees(glm::eulerAngles(*(quat*)value));
+         if (ImGui::InputFloat3(name, &angles.x)) {
+            *(quat*)value = glm::radians(angles);
+         }
+      };
       DEFAULT_SER_DESER(quat);
       END_DECL_TYPE();
    }

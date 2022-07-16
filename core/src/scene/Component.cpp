@@ -18,6 +18,7 @@ namespace pbe {
    TYPER_BEGIN(SceneTransformComponent)
       TYPER_FIELD(position)
       TYPER_FIELD(rotation)
+      TYPER_FIELD(scale)
    TYPER_END(SceneTransformComponent)
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(SceneTransformComponent)

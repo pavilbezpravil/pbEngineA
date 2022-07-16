@@ -158,13 +158,15 @@ namespace pbe {
       // scene->Create("green");
       // scene->Create("blue");
 
-      int3 cubeSize = {25, 10, 25};
+      int3 cubeSize{25, 10, 25};
 
       for (int i = 0; i < 200; ++i) {
          Entity e = scene->Create(std::to_string(i));
       
-         e.Get<SceneTransformComponent>().position = Random::Uniform(-cubeSize,
-            cubeSize);
+         e.Get<SceneTransformComponent>().position = Random::Uniform(-cubeSize,cubeSize);
+         e.Get<SceneTransformComponent>().scale = Random::Uniform(vec3{0}, vec3{ 3.f });
+         e.Get<SceneTransformComponent>().rotation = Random::Uniform(vec3{0}, vec3{ 30.f });
+
          e.Get<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
       }
 

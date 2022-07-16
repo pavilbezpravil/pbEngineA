@@ -113,7 +113,7 @@ namespace pbe {
          }
 
          float dt = frameTimer.ElapsedMs(true);
-         INFO("DeltaTime: {}", dt);
+         // INFO("DeltaTime: {}", dt);
 
          // debug handle
          if (dt > 1.f) {

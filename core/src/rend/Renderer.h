@@ -79,6 +79,8 @@ namespace pbe {
          instances.reserve(scene.EntitiesCount());
          for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
             mat4 transform = glm::translate(mat4(1), sceneTrans.position);
+            transform *= glm::scale(mat4(1), sceneTrans.scale);
+            transform *= mat4{ sceneTrans.rotation };
             transform = glm::transpose(transform);
 
             instances.emplace_back(transform);

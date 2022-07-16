@@ -60,6 +60,7 @@ namespace pbe {
    struct SceneTransformComponent {
       vec3 position{};
       quat rotation = quat_Identity;
+      vec3 scale{ 1.f };
 
       DECL_COMPONENT(SceneTransformComponent);
    };
