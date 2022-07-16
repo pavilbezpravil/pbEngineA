@@ -29,7 +29,7 @@ namespace pbe {
       sd.SampleDesc.Count = 1;
       sd.SampleDesc.Quality = 0;
       sd.Windowed = TRUE;
-      sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+      sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
       UINT createDeviceFlags = 0;
 #if defined(DEBUG)
@@ -71,7 +71,8 @@ namespace pbe {
    }
 
    Device::~Device() {
-      backBuffer = nullptr;
+      backBuffer[0] = nullptr;
+      backBuffer[1] = nullptr;
 
       SAFE_RELEASE(g_pSwapChain);
       SAFE_RELEASE(g_pd3dDeviceContext);
@@ -87,18 +88,31 @@ namespace pbe {
    void Device::Resize(int2 size) {
       INFO("Device resize {}", size);
 
-      backBuffer = nullptr;
+      backBuffer[0] = nullptr;
+      backBuffer[1] = nullptr;
 
       g_pSwapChain->ResizeBuffers(0, size.x, size.y, DXGI_FORMAT_UNKNOWN, 0);
 
       SetupBackbuffer();
    }
 
+   Texture2D& Device::GetBackBuffer() {
+      return *backBuffer[backBufferIdx];
+   }
+
+   void Device::Present() {
+      sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
+      //g_pSwapChain->Present(0, 0); // Present without vsync
+      // ++backBufferIdx; // todo:
+   }
+
    void Device::SetupBackbuffer() {
-      ID3D11Texture2D* pBackBuffer;
-      g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-      backBuffer = Texture2D::Create(pBackBuffer);
-      backBuffer->SetDbgName("back buffer");
+      for (int i = 0; i < 1; ++i) {
+         ID3D11Texture2D* pBackBuffer;
+         g_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
+         backBuffer[i] = Texture2D::Create(pBackBuffer);
+         backBuffer[i]->SetDbgName(std::string("back buffer ") + std::to_string(i));
+      }
    }
 
 }

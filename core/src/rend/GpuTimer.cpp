@@ -45,19 +45,9 @@ namespace pbe {
 
       auto context = sDevice->g_pd3dDeviceContext;
 
-      // todo:
-      while (context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_FALSE) {
-         Sleep(1);
+      if (context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_FALSE) {
+         return false;
       }
-
-      // if (context->GetData(disjointQuery.Get(), &disjointData, sizeof(disjointData), 0) == S_OK) {
-      //    if (disjointData.Disjoint) {
-      //       INFO("Disjoint!");
-      //       return false;
-      //    }
-      // } else {
-      //    return false;
-      // }
 
       bool dataReady = context->GetData(startQuery.Get(), &start, sizeof(start), 0) == S_OK
                     && context->GetData(stopQuery.Get(), &stop, sizeof(stop), 0) == S_OK;

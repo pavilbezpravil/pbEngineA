@@ -160,19 +160,17 @@ namespace pbe {
          clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w
          };
 
-         cmd.ClearRenderTarget(*sDevice->backBuffer, clearColor);
+         cmd.ClearRenderTarget(sDevice->GetBackBuffer(), clearColor);
 
          {
             OPTICK_EVENT("ImGui Render");
-            cmd.SetRenderTargets(sDevice->backBuffer);
+            cmd.SetRenderTargets(&sDevice->GetBackBuffer());
             imguiLayer->Render();
          }
 
          {
-            OPTICK_EVENT("Swapchain Present");
-            // todo:
-            sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
-            //g_pSwapChain->Present(0, 0); // Present without vsync
+            OPTICK_EVENT("Present");
+            sDevice->Present();
          }
 
          OPTICK_EVENT("Window Update");

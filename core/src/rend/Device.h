@@ -16,13 +16,17 @@ namespace pbe {
       ~Device();
 
       void Resize(int2 size);
+      Texture2D& GetBackBuffer();
+
+      void Present();
 
       ID3D11Device3* g_pd3dDevice{};
       ID3D11DeviceContext3* g_pd3dDeviceContext{};
       IDXGISwapChain* g_pSwapChain{};
       ID3D11Debug* g_d3dDebug{};
 
-      Ref<Texture2D> backBuffer;
+      Ref<Texture2D> backBuffer[2]{};
+      int backBufferIdx = 0;
       bool created = false;
 
    private:
