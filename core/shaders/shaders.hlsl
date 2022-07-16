@@ -17,6 +17,7 @@ cbuffer gCamera {
 }
 
 StructuredBuffer<Instance> gInstances;
+StructuredBuffer<Light> gLights;
 
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
@@ -54,10 +55,8 @@ float4 ps_main(VsOut input) : SV_TARGET {
 	           
   // reflectance equation
   float3 Lo = 0;
-  for(int i = 0; i < 1; ++i) {
-      Light light = (Light)0;
-      light.position = float3(0, 0, 0);
-      light.color = float3(1, 1, 1) * 10;
+  for(int i = 0; i < camera.nLights; ++i) {
+      Light light = gLights[i];
 
       // calculate per-light radiance
       float3 L = normalize(light.position - posW);
@@ -89,7 +88,7 @@ float4 ps_main(VsOut input) : SV_TARGET {
   float3 ambient = 0.03 * albedo * ao;
   float3 color = ambient + Lo;
 
-  // color = color / (color + 1);
+  color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
 
   return float4(color, 1);

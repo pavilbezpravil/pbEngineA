@@ -127,7 +127,7 @@ namespace pbe {
       // scene->Create("green");
       // scene->Create("blue");
 
-      int3 cubeSize = {25, 25, 25};
+      int3 cubeSize = {25, 10, 25};
 
       for (int i = 0; i < 1000; ++i) {
          Entity e = scene->Create(std::to_string(i));

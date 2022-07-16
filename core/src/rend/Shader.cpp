@@ -224,6 +224,16 @@ namespace pbe {
             cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, buffer.srv.GetAddressOf());
          }
       }
+
+      if (ps) {
+         const auto reflection = ps->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, buffer.srv.GetAddressOf());
+         }
+      }
    }
 
    void GpuProgram::SetTexture(CommandList& cmd, std::string_view name, Texture2D& texture) {

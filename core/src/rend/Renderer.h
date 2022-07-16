@@ -29,6 +29,8 @@ namespace pbe {
 
       Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
+      Ref<Buffer> lightBuffer;
+      int nLights = 4;
 
       GpuTimer timer;
 
@@ -46,6 +48,10 @@ namespace pbe {
          auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
          cameraCbBuffer = Buffer::Create(bufferDesc);
          cameraCbBuffer->SetDbgName("camera cb");
+
+         bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
+         lightBuffer = Buffer::Create(bufferDesc);
+         lightBuffer->SetDbgName("light buffer");
       }
 
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
@@ -92,6 +98,23 @@ namespace pbe {
 
          cmd.UpdateSubresource(*instanceBuffer, instances.data());
 
+         std::vector<Light> lights;
+         lights.resize(nLights); // 4
+
+         lights[0].position = {};
+         lights[0].color = vec3(2, 3, 1);
+
+         lights[1].position = {1, 2, 5};
+         lights[1].color = vec3(2, 30, 1);
+
+         lights[2].position = { 10, 1, 5 };
+         lights[2].color = vec3(2, 3, 10);
+
+         lights[3].position = { -10, 2, 5 };
+         lights[3].color = vec3(20, 3, 1);
+
+         cmd.UpdateSubresource(*lightBuffer, lights.data());
+
          CameraCB cb;
 
          float3 direction = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), glm::radians(angle), vec3_Up);
@@ -102,12 +125,14 @@ namespace pbe {
          cb.viewProjection = proj * view;
          cb.viewProjection = glm::transpose(cb.viewProjection);
          cb.position = cameraPos;
+         cb.nLights = nLights;
 
          timer.Start();
 
          program->Activate(cmd);
          program->SetConstantBuffer(cmd, "gCamera", *cameraCbBuffer);
          program->SetSrvBuffer(cmd, "gInstances", *instanceBuffer);
+         program->SetSrvBuffer(cmd, "gLights", *lightBuffer);
 
          int instanceID = 0;
 

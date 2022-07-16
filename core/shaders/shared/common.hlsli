@@ -2,7 +2,7 @@ struct CameraCB {
   float4x4 viewProjection;
   float4x4 transform;
   float3 position;
-  float _dymmy;
+  int nLights;
   float3 color;
   int instanceStart;
   float roughness;
