@@ -1,8 +1,8 @@
 #pragma once
 
 #include "EditorWindow.h"
-#include "app/Layer.h"
 #include "core/Ref.h"
+#include "rend/Renderer.h"
 
 namespace pbe {
    class Scene;
@@ -19,6 +19,8 @@ namespace pbe {
       void OnUpdate(float dt) override;
 
       Scene* scene{};
+      RenderCamera camera;
+      vec2 cameraAngle{};
       Own<Renderer> renderer;
       Ref<Texture2D> colorTexture;
       Ref<Texture2D> depthTexture;

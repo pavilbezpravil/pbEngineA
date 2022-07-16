@@ -27,6 +27,8 @@ namespace pbe {
 
       renderer.reset(new Renderer());
       renderer->Init();
+
+      camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 100.f);
    }
 
    void ViewportWindow::OnImGuiRender() {
@@ -43,7 +45,7 @@ namespace pbe {
       auto size = ImGui::GetContentRegionAvail();
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
-      renderer->RenderScene(*colorTexture, *depthTexture, cmd, *scene);
+      renderer->RenderScene(*colorTexture, *depthTexture, cmd, *scene, camera);
 
       ImGui::Image(colorTexture->srv, size);
 
@@ -54,6 +56,20 @@ namespace pbe {
       if (!windowFocused) {
          return;
       }
+
+      if (Input::IsKeyPressed(VK_RBUTTON)) {
+         float cameraMouseSpeed = 10;
+         cameraAngle += vec2(Input::GetMouseDelta()) * dt * cameraMouseSpeed * vec2(-1, -1);
+
+         cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
+      }
+
+      mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
+      rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
+
+      float3 direction = vec4(0, 0, 1, 1) * rotation;
+
+      camera.view = glm::lookAt(camera.position, camera.position + direction, vec3_Y);
 
       vec3 cameraInput{};
 
@@ -79,13 +95,11 @@ namespace pbe {
       if (cameraInput != vec3{}) {
          cameraInput = glm::normalize(cameraInput);
 
-         // vec3 right = vec3_X;
-         // vec3 up = vec3_Y;
-         // vec3 forward = vec3_Z;
+         mat4 viewTrans = glm::transpose(camera.view);
 
-         vec3 right = vec4(1, 0, 0, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
-         vec3 up = vec4(0, 1, 0, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
-         vec3 forward = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), glm::radians(renderer->angle), vec3_Up);
+         vec3 right = viewTrans[0];
+         vec3 up = viewTrans[1];
+         vec3 forward = viewTrans[2];
 
          vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
 
@@ -94,11 +108,7 @@ namespace pbe {
             cameraSpeed *= 5;
          }
 
-         renderer->cameraPos += cameraOffset * cameraSpeed * dt;
-      }
-
-      if (Input::IsKeyPressed(VK_RBUTTON)) {
-         renderer->angle += float(-Input::GetMouseDelta().x) * dt * 3.f;
+         camera.position += cameraOffset * cameraSpeed * dt;
       }
 
       // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));

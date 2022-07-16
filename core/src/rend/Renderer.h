@@ -18,6 +18,17 @@
 
 namespace pbe {
 
+   struct RenderCamera {
+      vec3 position{};
+
+      mat4 view;
+      mat4 projection;
+
+      mat4 GetViewProjection() const {
+         return projection * view;
+      }
+   };
+
    class Renderer {
    public:
       ~Renderer() {
@@ -34,8 +45,7 @@ namespace pbe {
       Ref<Buffer> lightBuffer;
       int nLights = 4;
 
-      vec3 cameraPos{};
-      float angle = 0;
+      bool useZPass = false;
 
       void Init() {
          rendres::Init(); // todo:
@@ -94,7 +104,7 @@ namespace pbe {
          cmd.UpdateSubresource(*lightBuffer, lights.data());
       }
 
-      void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene) {
+      void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene, const RenderCamera& camera) {
          if (!baseColorPass->Valid() || !baseZPass->Valid()) {
             return;
          }
@@ -128,14 +138,8 @@ namespace pbe {
 
          CameraCB cb;
 
-         float3 direction = vec4(0, 0, 1, 1) * glm::rotate(mat4(1), glm::radians(angle), vec3_Up);
-
-         mat4 view = glm::lookAt(cameraPos, cameraPos + direction, vec3_Y);
-         mat4 proj = glm::perspectiveFov(90.f / (180) * pi, (float)target.GetDesc().size.x, (float)target.GetDesc().size.y, 0.1f, 100.f);
-
-         cb.viewProjection = proj * view;
-         cb.viewProjection = glm::transpose(cb.viewProjection);
-         cb.position = cameraPos;
+         cb.viewProjection = glm::transpose(camera.GetViewProjection());
+         cb.position = camera.position;
          cb.nLights = nLights;
 
          if (useZPass) {
@@ -165,8 +169,6 @@ namespace pbe {
             RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
          }
       }
-
-      bool useZPass = false;
 
       void RenderSceneAllObjects(CommandList& cmd, Scene& scene, GpuProgram& program, const CameraCB& cameraCB) {
          CameraCB cb = cameraCB;
