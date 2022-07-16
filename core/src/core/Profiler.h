@@ -1,9 +1,12 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 
+#include "Assert.h"
 #include "Common.h"
 #include "optick.h"
+#include "rend/GpuTimer.h"
 
 
 namespace pbe {
@@ -34,19 +37,108 @@ namespace pbe {
       Profiler() = default;
       static Profiler& Get();
 
+      struct AverageTime {
+         void Add(float time, int maxValues) {
+            average += time;
+            times.push_back(time);
+            while (times.size() > maxValues) {
+               average -= times.front();
+               times.pop_front();
+            }
+         }
+
+         float GetCur() const {
+            return times.empty() ? 0 : times.back();
+         }
+
+         float GetAverage() const {
+            return times.empty() ? 0 : average / times.size();
+         }
+
+         void Clear() {
+            times.clear();
+         }
+
+      private:
+         std::deque<float> times;
+         float average = 0;
+      };
+
       struct CpuEvent {
          std::string name;
          CpuTimer timer;
          float elapsedMs = 0;
+         float elapsedMsCur = 0;
+
+         AverageTime averageTime;
+
+         bool usedInFrame = false;
 
          void Start() {
+            ASSERT(usedInFrame == false);
+            usedInFrame = true;
             timer.Start();
          }
 
          void Stop() {
-            elapsedMs = timer.ElapsedMs();
+            elapsedMsCur = timer.ElapsedMs();
          }
       };
+
+      struct GpuEvent {
+         std::string name;
+         GpuTimer timer[2];
+         int timerIdx = 0;
+         float elapsedMs = 0;
+
+         AverageTime averageTime;
+
+         bool usedInFrame = false;
+
+         void Start() {
+            ASSERT(usedInFrame == false);
+            usedInFrame = true;
+            timer[timerIdx].Start();
+         }
+
+         void Stop() {
+            timer[timerIdx].Stop();
+         }
+      };
+
+      int historyLength = 30;
+
+      void NextFrame() {
+         for (auto& [name, event] : cpuEvents) {
+            if (event.usedInFrame) {
+               event.usedInFrame = false;
+
+               event.elapsedMs = event.elapsedMsCur;
+               event.averageTime.Add(event.elapsedMsCur, historyLength);
+               event.elapsedMsCur = -1;
+            } else {
+               event.elapsedMs = -1;
+               event.averageTime.Clear();
+            }
+         }
+
+         for (auto& [name, event] : gpuEvents) {
+            if (event.usedInFrame) {
+               event.usedInFrame = false;
+
+               event.timerIdx = 1 - event.timerIdx;
+               event.elapsedMs = event.timer[event.timerIdx].GetData() ?
+                  event.timer[event.timerIdx].GetTimeMs() : -1.f;
+
+               if (event.elapsedMs > 0) {
+                  event.averageTime.Add(event.elapsedMs, historyLength);
+               }
+            } else {
+               event.elapsedMs = -1;
+               event.averageTime.Clear();
+            }
+         }
+      }
 
       CpuEvent& CreateCpuEvent(std::string_view name) {
          if (cpuEvents.find(name) == cpuEvents.end()) {
@@ -57,7 +149,17 @@ namespace pbe {
          return cpuEvent;
       }
 
+      GpuEvent& CreateGpuEvent(std::string_view name) {
+         if (gpuEvents.find(name) == gpuEvents.end()) {
+            gpuEvents[name] = GpuEvent{ name.data() };
+         }
+
+         GpuEvent& gpuEvent = gpuEvents[name];
+         return gpuEvent;
+      }
+
       std::unordered_map<std::string_view, CpuEvent> cpuEvents;
+      std::unordered_map<std::string_view, GpuEvent> gpuEvents;
    };
 
    struct CpuEventGuard {
@@ -73,6 +175,20 @@ namespace pbe {
       Profiler::CpuEvent& cpuEvent;
    };
 
-#define PROFILE_CPU(Name) CpuEventGuard cpuEvent{Profiler::Get().CreateCpuEvent(Name)}
+   struct GpuEventGuard {
+      GpuEventGuard(Profiler::GpuEvent& gpuEvent)
+         : gpuEvent(gpuEvent) {
+         gpuEvent.Start();
+      }
+
+      ~GpuEventGuard() {
+         gpuEvent.Stop();
+      }
+
+      Profiler::GpuEvent& gpuEvent;
+   };
+
+#define PROFILE_CPU(Name) CpuEventGuard cpuEvent{ Profiler::Get().CreateCpuEvent(Name) }
+#define PROFILE_GPU(Name) GpuEventGuard gpuEvent{ Profiler::Get().CreateGpuEvent(Name) }
 
 }

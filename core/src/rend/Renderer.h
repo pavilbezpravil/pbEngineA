@@ -7,6 +7,7 @@
 #include "RendRes.h"
 #include "Texture2D.h"
 #include "Shader.h"
+#include "core/Profiler.h"
 #include "math/Types.h"
 #include "mesh/Mesh.h"
 #include "scene/Component.h"
@@ -32,8 +33,6 @@ namespace pbe {
       Ref<Buffer> instanceBuffer;
       Ref<Buffer> lightBuffer;
       int nLights = 4;
-
-      GpuTimer timer;
 
       vec3 cameraPos{};
       float angle = 0;
@@ -100,8 +99,8 @@ namespace pbe {
             return;
          }
 
-         GpuMarker marker{ cmd, "Render Scene" };
-         timer.Start();
+         GPU_MARKER("Render Scene");
+         PROFILE_GPU("Render Scene");
 
          RenderDataPrepare(cmd, scene);
 
@@ -141,7 +140,8 @@ namespace pbe {
 
          if (useZPass) {
             {
-               GPU_EVENT("ZPass");
+               GPU_MARKER("ZPass");
+               PROFILE_GPU("ZPass");
 
                cmd.SetRenderTargets(nullptr, &depth);
                cmd.SetDepthStencilState(rendres::depthStencilState);
@@ -149,21 +149,21 @@ namespace pbe {
             }
 
             {
-               GPU_EVENT("Color Pass");
+               GPU_MARKER("Color Pass");
+               PROFILE_GPU("Color Pass");
 
                cmd.SetRenderTargets(&target, &depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
                RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
             }
          } else {
-            GPU_EVENT("Color Pass (Without ZPass)");
+            GPU_MARKER("Color Pass (Without ZPass)");
+            PROFILE_GPU("Color Pass (Without ZPass)");
 
             cmd.SetRenderTargets(&target, &depth);
             cmd.SetDepthStencilState(rendres::depthStencilState);
             RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
          }
-
-         timer.Stop();
       }
 
       bool useZPass = false;

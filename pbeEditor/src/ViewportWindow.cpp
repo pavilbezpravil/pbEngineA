@@ -39,8 +39,6 @@ namespace pbe {
       }
 
       ImGui::Checkbox("Use ZPass", &renderer->useZPass);
-      ImGui::Text("ColorPass: %.3f ms", renderer->timer.GetTimeMs());
-      // INFO("ColorPass: {} ms", renderer->timer.GetTimeMs());
 
       auto size = ImGui::GetContentRegionAvail();
 

@@ -111,10 +111,41 @@ namespace pbe {
       Entity entity{};
    };
 
+   class ProfilerWindow : public EditorWindow {
+   public:
+      using EditorWindow::EditorWindow;
+
+      void OnImGuiRender() override {
+         ImGui::Begin(name.c_str(), &show);
+
+         auto& profiler = Profiler::Get();
+
+         ImGui::Text("Profiler Stats");
+         ImGui::Text("Cpu:");
+         for (const auto& [name, cpuEvent] : profiler.cpuEvents) {
+            if (!cpuEvent.usedInFrame) {
+               continue;
+            }
+            ImGui::Text("  %s: %.2f %.2f ms", cpuEvent.name.data(), cpuEvent.averageTime.GetAverage(), cpuEvent.averageTime.GetCur());
+         }
+
+         ImGui::Text("Gpu:");
+         for (const auto& [name, gpuEvent] : profiler.gpuEvents) {
+            if (!gpuEvent.usedInFrame) {
+               continue;
+            }
+            ImGui::Text("  %s: %.2f %.2f ms", gpuEvent.name.data(), gpuEvent.averageTime.GetAverage(), gpuEvent.averageTime.GetCur());
+         }
+
+         ImGui::End();
+      }
+   };
+
    void EditorLayer::OnAttach() {
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
+      AddEditorWindow(new ProfilerWindow("Profiler"), true);
 
       sceneHierarchyWindow->selectedCb = [&](Entity e) { inspectorWindow->SetEntity(e); };
 

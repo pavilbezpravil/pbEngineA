@@ -121,6 +121,8 @@ namespace pbe {
          }
          OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
 
+         Profiler::Get().NextFrame();
+
          Input::OnUpdate(dt);
 
          for (auto* layer : layerStack) {
@@ -138,14 +140,6 @@ namespace pbe {
             }
 
             imguiLayer->EndFrame();
-         }
-
-         {
-            INFO("Profiler Stats");
-            auto& profiler = Profiler::Get();
-            for (auto& [name, cpuEvent] : profiler.cpuEvents) {
-               INFO("\t{}: {} ms", cpuEvent.name, cpuEvent.elapsedMs);
-            }
          }
 
          // ID3D11DeviceContext* context{};

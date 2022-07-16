@@ -38,7 +38,7 @@ namespace pbe {
       context->End(disjointQuery.Get());
    }
 
-   bool GpuTimer::Ready() {
+   bool GpuTimer::GetData() {
       if (!busy) {
          return false;
       }
@@ -53,7 +53,7 @@ namespace pbe {
       }
 
       if (!disjointData.Disjoint) {
-         time = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
+         timeMs = float(double(stop - start) / double(disjointData.Frequency) * 1000.);
       } else {
          WARN("Disjoint!");
       }
@@ -63,8 +63,8 @@ namespace pbe {
    }
 
    float GpuTimer::GetTimeMs() {
-      Ready();
-      return time;
+      GetData();
+      return timeMs;
    }
 
 }

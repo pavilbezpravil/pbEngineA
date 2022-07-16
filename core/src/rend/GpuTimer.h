@@ -13,7 +13,7 @@ namespace pbe {
       void Start();
       void Stop();
 
-      bool Ready();
+      bool GetData();
 
       float GetTimeMs();
 
@@ -23,7 +23,7 @@ namespace pbe {
       uint64 stop = 0;
 
       bool busy = false;
-      float time = 0;
+      float timeMs = 0;
 
       ComPtr<ID3D11Query> disjointQuery;
       ComPtr<ID3D11Query> startQuery;
