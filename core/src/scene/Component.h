@@ -70,6 +70,7 @@ namespace pbe {
       vec3 albedo = vec3_One;
       float roughness = 0.1f;
       float metallic = 0;
+      bool opaque = true;
 
       DECL_COMPONENT(SimpleMaterialComponent);
    };

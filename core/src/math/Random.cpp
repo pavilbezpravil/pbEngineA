@@ -9,6 +9,10 @@ namespace pbe {
       static std::random_device sRandomDevice;
       static std::mt19937_64 sEng(sRandomDevice());
 
+      bool Bool(float trueChange) {
+         return Uniform(0.f, 1.f) < trueChange;
+      }
+
       float Uniform(float min, float max) {
          const std::uniform_real_distribution distribution{ min, max };
          return distribution(sEng);

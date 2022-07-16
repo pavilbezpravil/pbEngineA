@@ -168,7 +168,9 @@ namespace pbe {
          trans.scale = Random::Uniform(vec3{0}, vec3{ 3.f });
          trans.rotation = Random::Uniform(vec3{0}, vec3{ 30.f });
 
-         e.GetOrCreate<SimpleMaterialComponent>().albedo = Random::Uniform(vec3_Zero, vec3_One);
+         auto& material = e.GetOrCreate<SimpleMaterialComponent>();
+         material.albedo = Random::Uniform(vec3_Zero, vec3_One);
+         material.opaque = Random::Bool(0.75);
       }
 
       for (int i = 0; i < 8; ++i) {

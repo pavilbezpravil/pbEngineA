@@ -40,6 +40,7 @@ namespace pbe {
          INFO("Play pressed!");
       }
 
+      ImGui::Checkbox("RenderAsTransparency", &renderer->renderAsTransparency);
       ImGui::Checkbox("Use ZPass", &renderer->useZPass);
       ImGui::Checkbox("Use InstancedDraw", &renderer->useInstancedDraw);
 

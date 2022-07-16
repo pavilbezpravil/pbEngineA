@@ -45,6 +45,7 @@ namespace pbe {
       Ref<Buffer> lightBuffer;
       // int nLights = 4;
 
+      bool renderAsTransparency = false;
       bool useZPass = false;
       bool useInstancedDraw = false;
 
@@ -65,7 +66,26 @@ namespace pbe {
          cameraCbBuffer->SetDbgName("camera cb");
       }
 
+      struct RenderObject {
+         SceneTransformComponent trans;
+         SimpleMaterialComponent material;
+      };
+
+      std::vector<RenderObject> opaqueObjs;
+      std::vector<RenderObject> transparentObjs;
+
       void RenderDataPrepare(CommandList& cmd, Scene& scene) {
+         // opaqueObjs.clear();
+         // transparentObjs.clear();
+         //
+         // for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+         //    if (material.opaque) {
+         //       opaqueObjs.emplace_back(sceneTrans, material);
+         //    } else {
+         //       transparentObjs.emplace_back(sceneTrans, material);
+         //    }
+         // }
+
          if (!instanceBuffer || instanceBuffer->ElementsCount() != scene.EntitiesCount()) {
             auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
             instanceBuffer = Buffer::Create(bufferDesc);
@@ -149,6 +169,19 @@ namespace pbe {
          cb.position = camera.position;
          cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
 
+         if (renderAsTransparency) {
+            GPU_MARKER("Color Pass");
+            PROFILE_GPU("Color Pass");
+
+            cmd.SetRenderTargets(&target, &depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDisable);
+            cmd.SetBlendState(rendres::blendStateTransparency);
+            RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
+
+            return;
+         }
+
+         cmd.SetBlendState(nullptr);
          if (useZPass) {
             {
                GPU_MARKER("ZPass");

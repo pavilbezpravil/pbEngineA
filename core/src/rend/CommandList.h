@@ -43,6 +43,10 @@ namespace pbe {
          pContext->OMSetDepthStencilState(state, stencilRef);
       }
 
+      void SetBlendState(ID3D11BlendState* state, const vec4& blendFactor = vec4{1.f}) {
+         pContext->OMSetBlendState(state, &blendFactor.x, 0xffffffff);
+      }
+
       void SetRasterizerState(ID3D11RasterizerState1* state) {
          pContext->RSSetState(state);
       }

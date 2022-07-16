@@ -97,6 +97,6 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   PsOut output = (PsOut)0;
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
-  output.color.a = 1;
+  output.color.a = 0.75;
   return output;
 }
