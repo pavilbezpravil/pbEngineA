@@ -57,6 +57,7 @@ namespace pbe {
 
          void Clear() {
             times.clear();
+            average = 0;
          }
 
       private:
