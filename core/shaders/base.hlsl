@@ -58,14 +58,25 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 	           
   // reflectance equation
   float3 Lo = 0;
-  for(int i = 0; i < camera.nLights; ++i) {
+  for(int i = 0; i < camera.nLights + 1; ++i) {
+      bool isDirectLight = i == camera.nLights;
+
       Light light = gLights[i];
+      if (isDirectLight) {
+        light = camera.directLight;
+      }
 
       // calculate per-light radiance
       float3 L = normalize(light.position - posW);
+      if (isDirectLight) {
+        L = -light.direction;
+      }
       float3 H = normalize(V + L);
       float distance = length(light.position - posW);
       float attenuation = 1.0 / (distance * distance);
+      if (isDirectLight) {
+        attenuation = 1;
+      }
       // float attenuation = 1.0 / pow(distance, 1.5);
       float3 radiance = light.color * attenuation;
 
@@ -88,7 +99,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   }
 
   float ao = 1; // todo:
-  float3 ambient = 0.02 * albedo * ao;
+  float3 ambient = 0.01 * albedo * ao;
   float3 color = ambient + Lo;
 
   // float3 fogColor = 0.1;

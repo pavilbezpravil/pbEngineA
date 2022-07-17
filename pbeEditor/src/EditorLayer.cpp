@@ -154,9 +154,32 @@ namespace pbe {
       // todo:
       Own<Scene> scene{ new Scene() };
 
-      // scene->Create("red");
-      // scene->Create("green");
-      // scene->Create("blue");
+      {
+         auto e = scene->Create("red");
+         auto& t = e.Get<SceneTransformComponent>();
+         t.position = { 0, 0, 50 };
+         t.scale = { 100, 100, 1 };
+         auto& m = e.Add<SimpleMaterialComponent>();
+         m.albedo = { 1, 0, 0 };
+      }
+
+      {
+         auto e = scene->Create("green");
+         auto& t = e.Get<SceneTransformComponent>();
+         t.position = { 0, -20, 0 };
+         t.scale = { 100, 1, 100 };
+         auto& m = e.Add<SimpleMaterialComponent>();
+         m.albedo = { 0, 1, 0 };
+      }
+
+      {
+         auto e = scene->Create("blue");
+         auto& t = e.Get<SceneTransformComponent>();
+         t.position = { 50, 0, 0 };
+         t.scale = { 1, 100, 100 };
+         auto& m = e.Add<SimpleMaterialComponent>();
+         m.albedo = { 0, 0, 1 };
+      }
 
       int3 cubeSize{25, 10, 25};
 

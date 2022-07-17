@@ -260,10 +260,10 @@ namespace pbe {
             cb.transform = glm::translate(mat4(1), trans.position);
             cb.transform = glm::transpose(cb.transform);
 
-            cb.color = material.albedo;
-            cb.roughness = material.roughness;
-            cb.metallic = material.metallic;
             cb.instanceStart = instanceID++;
+
+            cb.directLight.color = vec3{1} * 0.5f;
+            cb.directLight.direction = glm::normalize(vec3{-1, -1, -1});
 
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 

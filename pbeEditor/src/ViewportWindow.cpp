@@ -28,7 +28,7 @@ namespace pbe {
       renderer.reset(new Renderer());
       renderer->Init();
 
-      camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 100.f);
+      camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 200.f);
    }
 
    void ViewportWindow::OnImGuiRender() {
