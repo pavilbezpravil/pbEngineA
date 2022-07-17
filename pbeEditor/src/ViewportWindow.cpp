@@ -10,25 +10,8 @@
 namespace pbe {
 
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
-      Texture2D::Desc texDesc;
-      texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
-      texDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
-      texDesc.size = { 640, 480 };
-      // texDesc.size *= 3;
-
-      colorTexture = Texture2D::Create(texDesc);
-      colorTexture->SetDbgName("scene color");
-
-      texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-      texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-      depthTexture = Texture2D::Create(texDesc);
-      depthTexture->SetDbgName("scene depth");
-
       renderer.reset(new Renderer());
       renderer->Init();
-
-      camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 200.f);
    }
 
    void ViewportWindow::OnImGuiRender() {
@@ -40,22 +23,46 @@ namespace pbe {
          INFO("Play pressed!");
       }
 
-      ImGui::Checkbox("Render Transparency", &renderer->renderTransparency);
+      static RenderConfing cfg;
+
+      ImGui::Checkbox("Render Transparency", &cfg.renderTransparency);
       ImGui::SameLine();
-      ImGui::Checkbox("Transparency Sorting", &renderer->transparencySorting);
+      ImGui::Checkbox("Transparency Sorting", &cfg.transparencySorting);
 
-      ImGui::Checkbox("Opaque Sorting", &renderer->opaqueSorting);
+      ImGui::Checkbox("Opaque Sorting", &cfg.opaqueSorting);
       ImGui::SameLine();
-      ImGui::Checkbox("Use ZPass", &renderer->useZPass);
+      ImGui::Checkbox("Use ZPass", &cfg.useZPass);
 
-      ImGui::Checkbox("Use InstancedDraw", &renderer->useInstancedDraw);
+      ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
-      auto size = ImGui::GetContentRegionAvail();
+      renderer->cfg = cfg;
 
-      CommandList cmd{ sDevice->g_pd3dDeviceContext };
-      renderer->RenderScene(*colorTexture, *depthTexture, cmd, *scene, camera);
+      auto imSize = ImGui::GetContentRegionAvail();
+      int2 size = { imSize.x, imSize.y };
+      if (size.x > 1 && size.y > 1) {
+         if (!cameraContext.color || cameraContext.color->GetDesc().size != size) {
+            Texture2D::Desc texDesc;
+            texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
+            texDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
+            texDesc.size = size;
 
-      ImGui::Image(colorTexture->srv, size);
+            cameraContext.color = Texture2D::Create(texDesc);
+            cameraContext.color->SetDbgName("scene color");
+
+            texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+            cameraContext.depth = Texture2D::Create(texDesc);
+            cameraContext.depth->SetDbgName("scene depth");
+
+            camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 200.f);
+         }
+
+         CommandList cmd{ sDevice->g_pd3dDeviceContext };
+         renderer->RenderScene(cmd, *scene, camera, cameraContext);
+
+         ImGui::Image(cameraContext.color->srv, imSize);
+      }
 
       ImGui::End();
    }

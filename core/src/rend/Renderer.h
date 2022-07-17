@@ -33,11 +33,26 @@ namespace pbe {
       }
    };
 
+   struct CameraContext {
+      Ref<Texture2D> color;
+      Ref<Texture2D> depth;
+   };
+
+   struct RenderConfing {
+      bool renderTransparency = true;
+      bool transparencySorting = true;
+      bool opaqueSorting = true;
+      bool useZPass = false;
+      bool useInstancedDraw = false;
+   };
+
    class Renderer {
    public:
       ~Renderer() {
          rendres::Term();
       }
+
+      RenderConfing cfg;
 
       Ref<GpuProgram> baseColorPass;
       Ref<GpuProgram> baseZPass;
@@ -47,13 +62,14 @@ namespace pbe {
       Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
       Ref<Buffer> lightBuffer;
-      // int nLights = 4;
 
-      bool renderTransparency = true;
-      bool transparencySorting = true;
-      bool opaqueSorting = true;
-      bool useZPass = false;
-      bool useInstancedDraw = false;
+      struct RenderObject {
+         SceneTransformComponent trans;
+         SimpleMaterialComponent material;
+      };
+
+      std::vector<RenderObject> opaqueObjs;
+      std::vector<RenderObject> transparentObjs;
 
       void Init() {
          rendres::Init(); // todo:
@@ -71,14 +87,6 @@ namespace pbe {
          cameraCbBuffer = Buffer::Create(bufferDesc);
          cameraCbBuffer->SetDbgName("camera cb");
       }
-
-      struct RenderObject {
-         SceneTransformComponent trans;
-         SimpleMaterialComponent material;
-      };
-
-      std::vector<RenderObject> opaqueObjs;
-      std::vector<RenderObject> transparentObjs;
 
       void UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs) {
          if (!instanceBuffer || instanceBuffer->ElementsCount() < renderObjs.size()) {
@@ -145,7 +153,7 @@ namespace pbe {
          cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(Light));
       }
 
-      void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene, const RenderCamera& camera) {
+      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext) {
          if (!baseColorPass->Valid() || !baseZPass->Valid()) {
             return;
          }
@@ -157,13 +165,11 @@ namespace pbe {
 
          auto context = cmd.pContext;
 
-         vec4 background_colour{0};
-         cmd.ClearRenderTarget(target, background_colour);
-         cmd.ClearDepthTarget(depth, 1);
+         cmd.ClearRenderTarget(*cameraContext.color, vec4{0, 0, 0, 1});
+         cmd.ClearDepthTarget(*cameraContext.depth, 1);
 
-         cmd.SetViewport({}, target.GetDesc().size);
+         cmd.SetViewport({}, cameraContext.color->GetDesc().size);
          cmd.SetRasterizerState(rendres::rasterizerState);
-         // context->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 
          // set mesh
          context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -185,7 +191,7 @@ namespace pbe {
 
          cmd.SetBlendState(nullptr);
 
-         if (opaqueSorting) {
+         if (cfg.opaqueSorting) {
             // todo: slow. I assumed
             std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
                float az = glm::dot(camera.Forward(), a.trans.position);
@@ -195,12 +201,12 @@ namespace pbe {
          }
          UpdateInstanceBuffer(cmd, opaqueObjs);
 
-         if (useZPass) {
+         if (cfg.useZPass) {
             {
                GPU_MARKER("ZPass");
                PROFILE_GPU("ZPass");
 
-               cmd.SetRenderTargets(nullptr, &depth);
+               cmd.SetRenderTargets(nullptr, cameraContext.depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
 
                RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cb);
@@ -210,7 +216,7 @@ namespace pbe {
                GPU_MARKER("Color");
                PROFILE_GPU("Color");
 
-               cmd.SetRenderTargets(&target, &depth);
+               cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
                RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
             }
@@ -218,21 +224,21 @@ namespace pbe {
             GPU_MARKER("Color (Without ZPass)");
             PROFILE_GPU("Color (Without ZPass)");
 
-            cmd.SetRenderTargets(&target, &depth);
+            cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
 
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
          }
 
-         if (renderTransparency) {
+         if (cfg.renderTransparency) {
             GPU_MARKER("Transparency");
             PROFILE_GPU("Transparency");
 
-            cmd.SetRenderTargets(&target, &depth);
+            cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
             cmd.SetBlendState(rendres::blendStateTransparency);
 
-            if (transparencySorting) {
+            if (cfg.transparencySorting) {
                // todo: slow. I assumed
                std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
                   float az = glm::dot(camera.Forward(), a.trans.position);
@@ -267,7 +273,7 @@ namespace pbe {
 
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
-            if (useInstancedDraw) {
+            if (cfg.useInstancedDraw) {
                program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());
                break;
             } else {

@@ -22,8 +22,7 @@ namespace pbe {
       RenderCamera camera;
       vec2 cameraAngle{};
       Own<Renderer> renderer;
-      Ref<Texture2D> colorTexture;
-      Ref<Texture2D> depthTexture;
+      CameraContext cameraContext;
 
       bool windowFocused = false;
    };
