@@ -169,7 +169,7 @@ namespace pbe {
       {
          auto e = scene->Create("green");
          auto& t = e.Get<SceneTransformComponent>();
-         t.position = { 0, -20, 0 };
+         t.position = { 0, -10, 0 };
          t.scale = { 100, 1, 100 };
          auto& m = e.Add<SimpleMaterialComponent>();
          m.albedo = { 0, 1, 0 };

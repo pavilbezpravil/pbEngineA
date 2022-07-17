@@ -1,6 +1,7 @@
 #include "shared/common.hlsli"
 #include "common.inl"
 #include "pbr.hlsli"
+#include "noise.inl"
 
 struct VsIn {
   float3 posL : POSITION;
@@ -112,9 +113,31 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   color *= ssaoMask; // todo: applied on transparent too
 
-  // float3 fogColor = 0.1;
-  // float fogCoeff = 1 - exp(-length(posW - gCamera.position) * 0.001);
-  // color = lerp(color, fogColor, fogCoeff);
+  // color = noise(posW * 0.3);
+
+  if (0) {
+    const int maxSteps = 20;
+
+    float stepLength = length(posW - gCamera.position) / maxSteps;
+    float absorb = 1;
+    for(int i = 0; i < maxSteps; ++i) {
+      float t = i / float(maxSteps - 1);
+      float3 fogPosW = lerp(gCamera.position, posW, t);
+
+      float fogDensity = noise(fogPosW * 0.1);
+      // fogDensity = 1;
+
+      absorb *= exp(-stepLength * fogDensity * 0.1);
+    }
+
+    // absorb = exp(-length(posW - gCamera.position) * 0.1);
+
+    float3 fogColor = gCamera.directLight.color;
+    fogColor = float3(76, 104, 199) / 255 * 1;
+    
+    color *= absorb;
+    color += fogColor * (1 - absorb);
+  }
 
   color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
@@ -125,6 +148,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = 0.75;
+  
 
   // output.color.rg = screenUV;
   // output.color.b = 0;

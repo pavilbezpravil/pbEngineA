@@ -49,7 +49,8 @@ namespace pbe {
       bool transparencySorting = true;
       bool opaqueSorting = true;
       bool useZPass = true;
-      bool ssao = true;
+      bool ssao = false;
+      bool fog = false;
       bool useInstancedDraw = true;
    };
 

@@ -95,7 +95,7 @@ namespace pbe {
       }
 
       if (!ssaoRandomDirs) {
-         int nRandomDirs = 64;
+         int nRandomDirs = 32;
          auto bufferDesc = Buffer::Desc::StructureBuffer(nRandomDirs, sizeof(vec3));
          ssaoRandomDirs = Buffer::Create(bufferDesc);
          ssaoRandomDirs->SetDbgName("ssao random dirs");
@@ -157,6 +157,8 @@ namespace pbe {
       cb.rtSize = cameraContext.color->GetDesc().size;
       cb.position = camera.position;
       cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+      cb.directLight.color = vec3{ 1 };
+      cb.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
 
       cmd.SetBlendState(nullptr);
 
@@ -223,6 +225,7 @@ namespace pbe {
 
          cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+         baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
 
          RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
       }
@@ -265,9 +268,6 @@ namespace pbe {
          cb.transform = glm::transpose(cb.transform);
 
          cb.instanceStart = instanceID++;
-
-         cb.directLight.color = vec3{1} * 0.5f;
-         cb.directLight.direction = glm::normalize(vec3{-1, -1, -1});
 
          cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
