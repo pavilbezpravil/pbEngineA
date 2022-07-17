@@ -160,7 +160,7 @@ namespace pbe {
 
       int3 cubeSize{25, 10, 25};
 
-      for (int i = 0; i < 200; ++i) {
+      for (int i = 0; i < 500; ++i) {
          Entity e = scene->Create(std::to_string(i));
       
          auto& trans = e.GetOrCreate<SceneTransformComponent>();
@@ -170,7 +170,9 @@ namespace pbe {
 
          auto& material = e.GetOrCreate<SimpleMaterialComponent>();
          material.albedo = Random::Uniform(vec3_Zero, vec3_One);
-         material.opaque = Random::Bool(0.75);
+         material.metallic = Random::Uniform(0, 1);
+         material.roughness = Random::Uniform(0, 1);
+         material.opaque = Random::Bool(0.75f);
       }
 
       for (int i = 0; i < 8; ++i) {

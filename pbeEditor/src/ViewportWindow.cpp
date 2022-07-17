@@ -40,8 +40,14 @@ namespace pbe {
          INFO("Play pressed!");
       }
 
-      ImGui::Checkbox("RenderAsTransparency", &renderer->renderAsTransparency);
+      ImGui::Checkbox("Render Transparency", &renderer->renderTransparency);
+      ImGui::SameLine();
+      ImGui::Checkbox("Transparency Sorting", &renderer->transparencySorting);
+
+      ImGui::Checkbox("Opaque Sorting", &renderer->opaqueSorting);
+      ImGui::SameLine();
       ImGui::Checkbox("Use ZPass", &renderer->useZPass);
+
       ImGui::Checkbox("Use InstancedDraw", &renderer->useInstancedDraw);
 
       auto size = ImGui::GetContentRegionAvail();
@@ -101,7 +107,8 @@ namespace pbe {
 
          vec3 right = viewTrans[0];
          vec3 up = viewTrans[1];
-         vec3 forward = viewTrans[2];
+         // vec3 forward = viewTrans[2];
+         vec3 forward = camera.Forward();
 
          vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
 

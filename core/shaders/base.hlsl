@@ -88,8 +88,12 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   }
 
   float ao = 1; // todo:
-  float3 ambient = 0.01 * albedo * ao;
+  float3 ambient = 0.02 * albedo * ao;
   float3 color = ambient + Lo;
+
+  // float3 fogColor = 0.1;
+  // float fogCoeff = 1 - exp(-length(posW - camera.position) * 0.001);
+  // color = lerp(color, fogColor, fogCoeff);
 
   color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb

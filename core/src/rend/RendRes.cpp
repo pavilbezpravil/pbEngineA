@@ -11,9 +11,9 @@ namespace pbe {
 
       ID3D11RasterizerState1* rasterizerState;
       ID3D11SamplerState* samplerState;
-      ID3D11DepthStencilState* depthStencilState;
+      ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
+      ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       ID3D11DepthStencilState* depthStencilStateEqual;
-      ID3D11DepthStencilState* depthStencilStateDisable;
       ID3D11BlendState* blendStateTransparency;
 
       void Init() {
@@ -52,16 +52,14 @@ namespace pbe {
          depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
+         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDepthReadWrite);
+
+         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDepthReadNoWrite);
 
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
          depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateEqual);
-
-         // todo: wtf?
-         depthStencilDesc.DepthEnable = false;
-         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDisable);
 
          D3D11_BLEND_DESC transparentDesc = { 0 };
          transparentDesc.AlphaToCoverageEnable = false;
@@ -82,9 +80,9 @@ namespace pbe {
       void Term() {
          SAFE_RELEASE(rasterizerState);
          SAFE_RELEASE(samplerState);
-         SAFE_RELEASE(depthStencilState);
+         SAFE_RELEASE(depthStencilStateDepthReadWrite);
          SAFE_RELEASE(depthStencilStateEqual);
-         SAFE_RELEASE(depthStencilStateDisable);
+         SAFE_RELEASE(depthStencilStateDepthReadNoWrite);
          SAFE_RELEASE(blendStateTransparency);
       }
 

@@ -18,7 +18,7 @@ namespace pbe {
          uint StructureByteStride = 0;
          uint MiscFlags = 0;
 
-         static Desc VertexBuffer(int size) {
+         static Desc VertexBuffer(uint size) {
             Desc desc{};
             desc.Size = size;
             desc.Usage = D3D11_USAGE_DEFAULT;
@@ -26,7 +26,7 @@ namespace pbe {
             return desc;
          }
 
-         static Desc IndexBuffer(int size) {
+         static Desc IndexBuffer(uint size) {
             Desc desc{};
             desc.Size = size;
             desc.Usage = D3D11_USAGE_DEFAULT;
@@ -34,7 +34,7 @@ namespace pbe {
             return desc;
          }
 
-         static Desc ConstantBuffer(int size) {
+         static Desc ConstantBuffer(uint size) {
             Desc desc{};
             desc.Size = size;
             // desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -44,7 +44,7 @@ namespace pbe {
             return desc;
          }
 
-         static Desc StructureBuffer(int count, uint structureByteSize) {
+         static Desc StructureBuffer(uint count, uint structureByteSize) {
             Desc desc{};
             desc.Size = structureByteSize * count;
             desc.Usage = D3D11_USAGE_DEFAULT;

@@ -24,6 +24,10 @@ namespace pbe {
       mat4 view;
       mat4 projection;
 
+      vec3 Forward() const {
+         return vec3{view[0][2], view[1][2] , view[2][2] };
+      }
+
       mat4 GetViewProjection() const {
          return projection * view;
       }
@@ -45,7 +49,9 @@ namespace pbe {
       Ref<Buffer> lightBuffer;
       // int nLights = 4;
 
-      bool renderAsTransparency = false;
+      bool renderTransparency = true;
+      bool transparencySorting = true;
+      bool opaqueSorting = true;
       bool useZPass = false;
       bool useInstancedDraw = false;
 
@@ -74,30 +80,19 @@ namespace pbe {
       std::vector<RenderObject> opaqueObjs;
       std::vector<RenderObject> transparentObjs;
 
-      void RenderDataPrepare(CommandList& cmd, Scene& scene) {
-         // opaqueObjs.clear();
-         // transparentObjs.clear();
-         //
-         // for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
-         //    if (material.opaque) {
-         //       opaqueObjs.emplace_back(sceneTrans, material);
-         //    } else {
-         //       transparentObjs.emplace_back(sceneTrans, material);
-         //    }
-         // }
-
-         if (!instanceBuffer || instanceBuffer->ElementsCount() != scene.EntitiesCount()) {
-            auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
+      void UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs) {
+         if (!instanceBuffer || instanceBuffer->ElementsCount() < renderObjs.size()) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer((uint)renderObjs.size(), sizeof(Instance));
             instanceBuffer = Buffer::Create(bufferDesc);
             instanceBuffer->SetDbgName("instance buffer");
          }
 
          std::vector<Instance> instances;
-         instances.reserve(scene.EntitiesCount());
-         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
-            mat4 transform = glm::translate(mat4(1), sceneTrans.position);
-            transform *= mat4{ sceneTrans.rotation };
-            transform *= glm::scale(mat4(1), sceneTrans.scale);
+         instances.reserve(renderObjs.size());
+         for (auto& [trans, material] : renderObjs) {
+            mat4 transform = glm::translate(mat4(1), trans.position);
+            transform *= mat4{ trans.rotation };
+            transform *= glm::scale(mat4(1), trans.scale);
             transform = glm::transpose(transform);
 
             Material m;
@@ -108,10 +103,29 @@ namespace pbe {
             instances.emplace_back(transform, m);
          }
 
-         cmd.UpdateSubresource(*instanceBuffer, instances.data());
+         cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(Instance));
+      }
+
+      void RenderDataPrepare(CommandList& cmd, Scene& scene) {
+         opaqueObjs.clear();
+         transparentObjs.clear();
+         
+         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+            if (material.opaque) {
+               opaqueObjs.emplace_back(sceneTrans, material);
+            } else {
+               transparentObjs.emplace_back(sceneTrans, material);
+            }
+         }
+
+         if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
+            instanceBuffer = Buffer::Create(bufferDesc);
+            instanceBuffer->SetDbgName("instance buffer");
+         }
 
          auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
-         if (!lightBuffer || lightBuffer->ElementsCount() != nLights) {
+         if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
             auto bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
             lightBuffer = Buffer::Create(bufferDesc);
             lightBuffer->SetDbgName("light buffer");
@@ -128,7 +142,7 @@ namespace pbe {
             lights.emplace_back(l);
          }
 
-         cmd.UpdateSubresource(*lightBuffer, lights.data());
+         cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(Light));
       }
 
       void RenderScene(Texture2D& target, Texture2D& depth, CommandList& cmd, Scene& scene, const RenderCamera& camera) {
@@ -169,48 +183,70 @@ namespace pbe {
          cb.position = camera.position;
          cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
 
-         if (renderAsTransparency) {
-            GPU_MARKER("Color Pass");
-            PROFILE_GPU("Color Pass");
-
-            cmd.SetRenderTargets(&target, &depth);
-            cmd.SetDepthStencilState(rendres::depthStencilStateDisable);
-            cmd.SetBlendState(rendres::blendStateTransparency);
-            RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
-
-            return;
-         }
-
          cmd.SetBlendState(nullptr);
+
+         if (opaqueSorting) {
+            // todo: slow. I assumed
+            std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
+               float az = glm::dot(camera.Forward(), a.trans.position);
+               float bz = glm::dot(camera.Forward(), b.trans.position);
+               return az < bz;
+               });
+         }
+         UpdateInstanceBuffer(cmd, opaqueObjs);
+
          if (useZPass) {
             {
                GPU_MARKER("ZPass");
                PROFILE_GPU("ZPass");
 
                cmd.SetRenderTargets(nullptr, &depth);
-               cmd.SetDepthStencilState(rendres::depthStencilState);
-               RenderSceneAllObjects(cmd, scene, *baseZPass, cb);
+               cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cb);
             }
 
             {
-               GPU_MARKER("Color Pass");
-               PROFILE_GPU("Color Pass");
+               GPU_MARKER("Color");
+               PROFILE_GPU("Color");
 
                cmd.SetRenderTargets(&target, &depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
-               RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
             }
          } else {
-            GPU_MARKER("Color Pass (Without ZPass)");
-            PROFILE_GPU("Color Pass (Without ZPass)");
+            GPU_MARKER("Color (Without ZPass)");
+            PROFILE_GPU("Color (Without ZPass)");
 
             cmd.SetRenderTargets(&target, &depth);
-            cmd.SetDepthStencilState(rendres::depthStencilState);
-            RenderSceneAllObjects(cmd, scene, *baseColorPass, cb);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
+         }
+
+         if (renderTransparency) {
+            GPU_MARKER("Transparency");
+            PROFILE_GPU("Transparency");
+
+            cmd.SetRenderTargets(&target, &depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
+            cmd.SetBlendState(rendres::blendStateTransparency);
+
+            if (transparencySorting) {
+               // todo: slow. I assumed
+               std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
+                  float az = glm::dot(camera.Forward(), a.trans.position);
+                  float bz = glm::dot(camera.Forward(), b.trans.position);
+                  return az > bz;
+                  });
+            }
+
+            UpdateInstanceBuffer(cmd, transparentObjs);
+            RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cb);
          }
       }
 
-      void RenderSceneAllObjects(CommandList& cmd, Scene& scene, GpuProgram& program, const CameraCB& cameraCB) {
+      void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraCB& cameraCB) {
          CameraCB cb = cameraCB;
 
          program.Activate(cmd);
@@ -220,8 +256,8 @@ namespace pbe {
 
          int instanceID = 0;
 
-         for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
-            cb.transform = glm::translate(mat4(1), sceneTrans.position);
+         for (const auto& [trans, material] : renderObjs) {
+            cb.transform = glm::translate(mat4(1), trans.position);
             cb.transform = glm::transpose(cb.transform);
 
             cb.color = material.albedo;
@@ -232,9 +268,7 @@ namespace pbe {
             cmd.UpdateSubresource(*cameraCbBuffer, &cb);
 
             if (useInstancedDraw) {
-               // todo: hack
-               auto nGeoms = (int)scene.GetEntitiesWith<SimpleMaterialComponent>().size();
-               program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), nGeoms);
+               program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());
                break;
             } else {
                // program->DrawInstanced(cmd, mesh.geom.VertexCount());

@@ -25,9 +25,9 @@ namespace pbe {
 
       extern ID3D11RasterizerState1* rasterizerState;
       extern ID3D11SamplerState* samplerState;
-      extern ID3D11DepthStencilState* depthStencilState;
+      extern ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
+      extern ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       extern ID3D11DepthStencilState* depthStencilStateEqual;
-      extern ID3D11DepthStencilState* depthStencilStateDisable;
       extern ID3D11BlendState* blendStateTransparency;
 
       ID3D11InputLayout* GetInputLayout(ID3DBlob* vsBlob, std::vector<D3D11_INPUT_ELEMENT_DESC>& inputElementDesc);

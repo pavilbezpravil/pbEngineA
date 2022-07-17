@@ -17,9 +17,15 @@ namespace pbe {
       //    sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
       // }
 
-      void UpdateSubresource(Buffer& buffer, void* data) {
-         if (buffer.Valid()) {
-            pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
+      void UpdateSubresource(Buffer& buffer, void* data, uint offset = 0, size_t size = -1) {
+         if (buffer.Valid() && size > 0) {
+            D3D11_BOX box{};
+            box.left = offset;
+            box.right = offset + (uint)size;
+            box.bottom = 1;
+            box.back = 1;
+            pContext->UpdateSubresource(buffer.GetBuffer(), 0, size == -1 ? nullptr : &box, data, 0, 0);
+            // pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
          }
       }
 
