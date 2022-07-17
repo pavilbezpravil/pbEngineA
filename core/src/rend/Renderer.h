@@ -71,6 +71,7 @@ namespace pbe {
       Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
       Ref<Buffer> lightBuffer;
+      Ref<Buffer> ssaoRandomDirs;
 
       struct RenderObject {
          SceneTransformComponent trans;

@@ -186,7 +186,7 @@ namespace pbe {
 
       int3 cubeSize{25, 10, 25};
 
-      for (int i = 0; i < 500; ++i) {
+      for (int i = 0; i < 5000; ++i) {
          Entity e = scene->Create(std::to_string(i));
       
          auto& trans = e.GetOrCreate<SceneTransformComponent>();

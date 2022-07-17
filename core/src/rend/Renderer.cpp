@@ -2,6 +2,8 @@
 #include "Renderer.h"
 
 #include "core/Profiler.h"
+#include "math/Random.h"
+
 
 namespace pbe {
 
@@ -70,25 +72,48 @@ namespace pbe {
          instanceBuffer->SetDbgName("instance buffer");
       }
 
-      auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
-      if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
-         auto bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
-         lightBuffer = Buffer::Create(bufferDesc);
-         lightBuffer->SetDbgName("light buffer");
+      {
+         auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+         if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
+            lightBuffer = Buffer::Create(bufferDesc);
+            lightBuffer->SetDbgName("light buffer");
+         }
+
+         std::vector<Light> lights;
+         lights.reserve(nLights);
+
+         for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
+            Light l;
+            l.position = trans.position;
+            l.color = light.color;
+
+            lights.emplace_back(l);
+         }
+
+         cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(Light));
       }
 
-      std::vector<Light> lights;
-      lights.reserve(nLights);
+      if (!ssaoRandomDirs) {
+         int nRandomDirs = 64;
+         auto bufferDesc = Buffer::Desc::StructureBuffer(nRandomDirs, sizeof(vec3));
+         ssaoRandomDirs = Buffer::Create(bufferDesc);
+         ssaoRandomDirs->SetDbgName("ssao random dirs");
 
-      for (auto [e, trans,light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
-         Light l;
-         l.position = trans.position;
-         l.color = light.color;
+         std::vector<vec3> dirs;
+         dirs.reserve(nRandomDirs);
 
-         lights.emplace_back(l);
+         for (int i = 0; i < nRandomDirs; ++i) {
+            vec3 test;
+            do {
+               test = Random::Uniform(vec3{ -1 }, vec3{ 1 });
+            } while (glm::length(test) > 1);
+
+            dirs.emplace_back(test);
+         }
+
+         cmd.UpdateSubresource(*ssaoRandomDirs, dirs.data(), 0, dirs.size() * sizeof(vec3));
       }
-
-      cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(Light));
    }
 
    void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
@@ -166,9 +191,10 @@ namespace pbe {
             ssaoPass->SetCB(cmd, "gCameraCB", *cameraCbBuffer);
             cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
             ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+            ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
             ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
-            // ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
-            ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.position);
+            ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
+            // ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.position);
 
             ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.color->GetDesc().size} / vec2{ 8 }));
 
