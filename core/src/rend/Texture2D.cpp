@@ -5,6 +5,25 @@
 
 namespace pbe {
 
+   static bool IsTypelessFormat(DXGI_FORMAT format) {
+      // todo:
+      return format == DXGI_FORMAT_R24G8_TYPELESS;
+   }
+   
+   static DXGI_FORMAT FormatToDepth(DXGI_FORMAT format) {
+      if (format == DXGI_FORMAT_R24G8_TYPELESS) {
+         return DXGI_FORMAT_D24_UNORM_S8_UINT;
+      }
+      return format;
+   }
+   
+   static DXGI_FORMAT FormatToSrv(DXGI_FORMAT format) {
+      if (format == DXGI_FORMAT_R24G8_TYPELESS) {
+         return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+      }
+      return format;
+   }
+
    template class Ref<Texture2D>;
 
    Ref<Texture2D> Texture2D::Create(ID3D11Texture2D* pTexture) {
@@ -42,6 +61,7 @@ namespace pbe {
 
       dxDesc.Width = desc.size.x;
       dxDesc.Height = desc.size.y;
+      dxDesc.MipLevels = desc.mips;
       dxDesc.ArraySize = 1;
       dxDesc.SampleDesc.Count = 1;
       dxDesc.Format = desc.format;
@@ -60,10 +80,23 @@ namespace pbe {
          pDevice->CreateRenderTargetView(pTexture, NULL, rtv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_SHADER_RESOURCE) {
-         pDevice->CreateShaderResourceView(pTexture, NULL, srv.GetAddressOf());
+         D3D11_SHADER_RESOURCE_VIEW_DESC dxSrv{};
+         dxSrv.Format = FormatToSrv(desc.format);
+         dxSrv.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+         dxSrv.Texture2D.MipLevels = 1; // todo:
+         dxSrv.Texture2D.MostDetailedMip = 0;
+
+         pDevice->CreateShaderResourceView(pTexture, &dxSrv, srv.GetAddressOf());
+         // pDevice->CreateShaderResourceView(pTexture, NULL, srv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_DEPTH_STENCIL) {
-         pDevice->CreateDepthStencilView(pTexture, NULL, dsv.GetAddressOf());
+         D3D11_DEPTH_STENCIL_VIEW_DESC dxDsv{};
+         dxDsv.Format = FormatToDepth(desc.format);
+         dxDsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+         dxDsv.Texture2D.MipSlice = 0;
+
+         pDevice->CreateDepthStencilView(pTexture, &dxDsv, dsv.GetAddressOf());
+         // pDevice->CreateDepthStencilView(pTexture, NULL, dsv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_UNORDERED_ACCESS) {
          pDevice->CreateUnorderedAccessView(pTexture, NULL, uav.GetAddressOf());

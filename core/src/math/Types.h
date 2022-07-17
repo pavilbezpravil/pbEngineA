@@ -21,7 +21,9 @@ namespace pbe {
 
    using uint = uint32_t;
    using int2 = glm::ivec2;
+   using uint2 = glm::uvec2;
    using int3 = glm::ivec3;
+   using uint3 = glm::uvec3;
 
    using glm::vec2;
    using glm::vec3;

@@ -23,6 +23,9 @@ namespace pbe {
       mat4 view;
       mat4 projection;
 
+      float zNear;
+      float zFar;
+
       vec3 Forward() const {
          return vec3{view[0][2], view[1][2] , view[2][2] };
       }
@@ -45,7 +48,7 @@ namespace pbe {
       bool opaqueSorting = true;
       bool useZPass = true;
       bool ssao = true;
-      bool useInstancedDraw = false;
+      bool useInstancedDraw = true;
    };
 
    class Renderer {

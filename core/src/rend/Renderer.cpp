@@ -125,6 +125,8 @@ namespace pbe {
 
       CameraCB cb;
 
+      cb.view = glm::transpose(camera.view);
+      cb.projection = glm::transpose(camera.projection);
       cb.viewProjection = glm::transpose(camera.GetViewProjection());
       cb.position = camera.position;
       cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
@@ -156,6 +158,8 @@ namespace pbe {
             GPU_MARKER("SSAO");
             PROFILE_GPU("SSAO");
 
+            cmd.SetRenderTargets();
+
             ssaoPass->Activate(cmd);
             ssaoPass->SetCB(cmd, "gCameraCB", *cameraCbBuffer);
             cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
@@ -164,6 +168,10 @@ namespace pbe {
             ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
 
             ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.color->GetDesc().size} / vec2{ 8 }));
+
+            // todo:
+            ID3D11ShaderResourceView* views[] = {nullptr};
+            cmd.pContext->CSSetShaderResources(0, 1, views);
          } else {
             cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
          }

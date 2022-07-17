@@ -12,6 +12,7 @@ namespace pbe {
 
       struct Desc {
          int2 size;
+         uint mips = 1;
          DXGI_FORMAT format;
          UINT bindFlags;
       };

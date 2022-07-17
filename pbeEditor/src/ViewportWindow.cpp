@@ -51,8 +51,9 @@ namespace pbe {
             cameraContext.color = Texture2D::Create(texDesc);
             cameraContext.color->SetDbgName("scene color");
 
-            texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-            texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL;
+            // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+            texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
+            texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
             cameraContext.depth = Texture2D::Create(texDesc);
             cameraContext.depth->SetDbgName("scene depth");
@@ -67,7 +68,9 @@ namespace pbe {
             cameraContext.ssao = Texture2D::Create(texDesc);
             cameraContext.ssao->SetDbgName("scene ssao");
 
-            camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 200.f);
+            camera.zNear = 0.1f;
+            camera.zFar = 200.f;
+            camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
          }
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
