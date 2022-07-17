@@ -63,7 +63,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 	           
   // reflectance equation
   float3 Lo = 0;
-  for(int i = 0; i < gCamera.nLights + 1; ++i) {
+  int useDirectionLight = 1;
+  for(int i = 0; i < gCamera.nLights + useDirectionLight; ++i) {
       bool isDirectLight = i == gCamera.nLights;
 
       Light light = gLights[i];
@@ -119,24 +120,49 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     const int maxSteps = 20;
 
     float stepLength = length(posW - gCamera.position) / maxSteps;
-    float absorb = 1;
+
+    float accTransmittance = 1;
+    float3 accScaterring = 0;
+
     for(int i = 0; i < maxSteps; ++i) {
       float t = i / float(maxSteps - 1);
       float3 fogPosW = lerp(gCamera.position, posW, t);
 
-      float fogDensity = noise(fogPosW * 0.1);
-      // fogDensity = 1;
+      float fogDensity = noise(fogPosW * 0.5) * 0.3 * saturate(-fogPosW.y / 5);
 
-      absorb *= exp(-stepLength * fogDensity * 0.1);
+      float3 scattering = 0;
+      for(int i = 0; i < gCamera.nLights + useDirectionLight; ++i) {
+          bool isDirectLight = i == gCamera.nLights;
+
+          Light light = gLights[i];
+          if (isDirectLight) {
+            light = gCamera.directLight;
+          }
+
+          float distance = length(light.position - fogPosW);
+          float attenuation = 1.0 / (distance * distance);
+          if (isDirectLight) {
+            attenuation = 1;
+          }
+          float3 radiance = light.color * attenuation;
+
+          scattering += float3(1, 1, 1) * 0.9 / PI * radiance;
+      }
+
+      float transmittance = exp(-stepLength * fogDensity);
+      scattering *= accTransmittance * (1 - transmittance);
+
+      accScaterring += scattering;
+      accTransmittance *= transmittance;
+
+      if (accTransmittance < 0.01) {
+        accTransmittance = 0;
+        break;
+      }
     }
 
-    // absorb = exp(-length(posW - gCamera.position) * 0.1);
-
-    float3 fogColor = gCamera.directLight.color;
-    fogColor = float3(76, 104, 199) / 255 * 1;
-    
-    color *= absorb;
-    color += fogColor * (1 - absorb);
+    color *= accTransmittance;
+    color += accScaterring;
   }
 
   color = color / (color + 1);
@@ -149,7 +175,6 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = 0.75;
   
-
   // output.color.rg = screenUV;
   // output.color.b = 0;
 
