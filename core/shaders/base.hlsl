@@ -14,8 +14,8 @@ struct VsOut {
   uint instanceID : INSTANCE_ID;
 };
 
-cbuffer gCamera {
-  CameraCB camera;
+cbuffer gCameraCB {
+  CameraCB gCamera;
 }
 
 StructuredBuffer<Instance> gInstances;
@@ -24,10 +24,10 @@ StructuredBuffer<Light> gLights;
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
 
-  float4x4 transform = gInstances[camera.instanceStart + input.instanceID].transform;
+  float4x4 transform = gInstances[gCamera.instanceStart + input.instanceID].transform;
 
   float3 posW = mul(float4(input.posL, 1), transform).xyz;
-  float4 posH = mul(float4(posW, 1), camera.viewProjection);
+  float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
 
   output.posW = posW;
   output.posH = posH;
@@ -45,25 +45,25 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   float3 posW = input.posW;
 
-  Material material = gInstances[camera.instanceStart + input.instanceID].material;
+  Material material = gInstances[gCamera.instanceStart + input.instanceID].material;
 
   float3 albedo = material.albedo;
   float roughness = material.roughness;
   float metallic = material.metallic;
 
   float3 N = normalize(normalW);
-  float3 V = normalize(camera.position - posW);
+  float3 V = normalize(gCamera.position - posW);
 
   float3 F0 = lerp(0.04, albedo, metallic);
 	           
   // reflectance equation
   float3 Lo = 0;
-  for(int i = 0; i < camera.nLights + 1; ++i) {
-      bool isDirectLight = i == camera.nLights;
+  for(int i = 0; i < gCamera.nLights + 1; ++i) {
+      bool isDirectLight = i == gCamera.nLights;
 
       Light light = gLights[i];
       if (isDirectLight) {
-        light = camera.directLight;
+        light = gCamera.directLight;
       }
 
       // calculate per-light radiance
@@ -103,7 +103,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   float3 color = ambient + Lo;
 
   // float3 fogColor = 0.1;
-  // float fogCoeff = 1 - exp(-length(posW - camera.position) * 0.001);
+  // float fogCoeff = 1 - exp(-length(posW - gCamera.position) * 0.001);
   // color = lerp(color, fogColor, fogCoeff);
 
   color = color / (color + 1);
@@ -113,5 +113,10 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = 0.75;
+
+  #ifdef ZPASS
+    output.color.rgb = normalW;
+    output.color.a = 1; // todo:
+  #endif
   return output;
 }

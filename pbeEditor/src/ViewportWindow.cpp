@@ -19,9 +19,9 @@ namespace pbe {
 
       windowFocused = ImGui::IsWindowFocused();
 
-      if (ImGui::Button("Play")) {
-         INFO("Play pressed!");
-      }
+      // if (ImGui::Button("Play")) {
+      //    INFO("Play pressed!");
+      // }
 
       static RenderConfing cfg;
 
@@ -32,7 +32,9 @@ namespace pbe {
       ImGui::Checkbox("Opaque Sorting", &cfg.opaqueSorting);
       ImGui::SameLine();
       ImGui::Checkbox("Use ZPass", &cfg.useZPass);
-
+      ImGui::SameLine();
+      ImGui::Checkbox("SSAO", &cfg.ssao);
+      ImGui::SameLine();
       ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
       renderer->cfg = cfg;
@@ -43,7 +45,7 @@ namespace pbe {
          if (!cameraContext.color || cameraContext.color->GetDesc().size != size) {
             Texture2D::Desc texDesc;
             texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
-            texDesc.bindFlags = D3D10_BIND_RENDER_TARGET | D3D10_BIND_SHADER_RESOURCE;
+            texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             texDesc.size = size;
 
             cameraContext.color = Texture2D::Create(texDesc);
@@ -55,13 +57,28 @@ namespace pbe {
             cameraContext.depth = Texture2D::Create(texDesc);
             cameraContext.depth->SetDbgName("scene depth");
 
+            texDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
+            texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.normal = Texture2D::Create(texDesc);
+            cameraContext.normal->SetDbgName("scene normal");
+
+            texDesc.format = DXGI_FORMAT_R16_UNORM;
+            texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.ssao = Texture2D::Create(texDesc);
+            cameraContext.ssao->SetDbgName("scene ssao");
+
             camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, 0.1f, 200.f);
          }
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
          renderer->RenderScene(cmd, *scene, camera, cameraContext);
+         cmd.pContext->ClearState(); // todo:
 
-         ImGui::Image(cameraContext.color->srv, imSize);
+         const char* items[] = { "Color", "Depth", "Normal", "SSAO"};
+         Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.ssao };
+         static int item_current = 0;
+         ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+         ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
       }
 
       ImGui::End();

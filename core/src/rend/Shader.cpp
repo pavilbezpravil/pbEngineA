@@ -11,6 +11,8 @@
 #include <d3d11shader.h>
 #include <d3dcompiler.h>
 
+#include "core/Profiler.h"
+
 namespace pbe {
 
    size_t StrHash(std::string_view str) {
@@ -50,10 +52,11 @@ namespace pbe {
       flags |= D3DCOMPILE_DEBUG;
 #endif
 
-      // const D3D_SHADER_MACRO defines[] = {"EXAMPLE_DEFINE", "1", NULL, NULL};
       const D3D_SHADER_MACRO* defines = desc.defines.data();
 
       auto wsrcPath = ToWstr(path);
+
+      CpuTimer timer;
 
       ID3DBlob* shaderBlob = nullptr;
       ID3DBlob* errorBlob = nullptr;
@@ -75,7 +78,7 @@ namespace pbe {
          return hr;
       }
 
-      INFO("Successful!");
+      INFO("Successful! Compile time {} ms.", timer.ElapsedMs());
 
       *blob = shaderBlob;
 
@@ -138,7 +141,7 @@ namespace pbe {
          UNIMPLEMENTED();
       }
 
-      INFO("Reflection:");
+      // INFO("Reflection:");
 
       ID3D11ShaderReflection* pReflector = NULL;
       D3DReflect(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection,
@@ -147,7 +150,7 @@ namespace pbe {
       int resourceIdx = 0;
       D3D11_SHADER_INPUT_BIND_DESC bindDesc;
       while (SUCCEEDED(pReflector->GetResourceBindingDesc(resourceIdx++, &bindDesc))) {
-         INFO("\tName: {} Type: {} BindPoint: {}", bindDesc.Name, bindDesc.Type, bindDesc.BindPoint);
+         // INFO("\tName: {} Type: {} BindPoint: {}", bindDesc.Name, bindDesc.Type, bindDesc.BindPoint);
 
          size_t id = StrHash(bindDesc.Name);
          reflection[id] = bindDesc;
@@ -173,7 +176,7 @@ namespace pbe {
       }
    }
 
-   void GpuProgram::SetConstantBuffer(CommandList& cmd, std::string_view name, Buffer& buffer) {
+   void GpuProgram::SetCB(CommandList& cmd, std::string_view name, Buffer& buffer) {
       size_t id = StrHash(name);
 
       ID3D11Buffer* dxBuffer = buffer.GetBuffer();
@@ -209,7 +212,7 @@ namespace pbe {
       }
    }
 
-   void GpuProgram::SetSrvBuffer(CommandList& cmd, std::string_view name, Buffer& buffer) {
+   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource) {
       size_t id = StrHash(name);
 
       if (vs) {
@@ -218,27 +221,41 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, buffer.srv.GetAddressOf());
+            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
          }
       }
-
       if (ps) {
          const auto reflection = ps->reflection;
 
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, buffer.srv.GetAddressOf());
+            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+         }
+      }
+
+      if (cs) {
+         const auto reflection = cs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->CSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
          }
       }
    }
 
-   void GpuProgram::SetTexture(CommandList& cmd, std::string_view name, Texture2D& texture) {
+   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource) {
       size_t id = StrHash(name);
 
-      if (vs) {
-         const auto& bi = vs->reflection[id];
-         // cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, &texture.srv);
+      if (cs) {
+         const auto reflection = cs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, resource.uav.GetAddressOf(), nullptr);
+         }
       }
    }
 

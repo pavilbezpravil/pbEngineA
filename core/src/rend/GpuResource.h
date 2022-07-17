@@ -18,6 +18,8 @@ namespace pbe {
       void SetDbgName(std::string_view dbgName);
 
       ComPtr<ID3D11Resource> pResource;
+      ComPtr<ID3D11ShaderResourceView> srv;
+      ComPtr<ID3D11UnorderedAccessView> uav;
    };
 
 

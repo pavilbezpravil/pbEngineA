@@ -3,6 +3,7 @@
 #include "EditorWindow.h"
 #include "ViewportWindow.h"
 #include "app/Event.h"
+#include "core/Profiler.h"
 #include "gui/Gui.h"
 #include "math/Random.h"
 #include "scene/Scene.h"
@@ -126,7 +127,8 @@ namespace pbe {
             if (!cpuEvent.usedInFrame) {
                continue;
             }
-            ImGui::Text("  %s: %.2f %.2f ms", cpuEvent.name.data(), cpuEvent.averageTime.GetAverage(), cpuEvent.averageTime.GetCur());
+            // ImGui::Text("  %s: %.2f %.2f ms", cpuEvent.name.data(), cpuEvent.averageTime.GetAverage(), cpuEvent.averageTime.GetCur());
+            ImGui::Text("  %s: %.2f ms", cpuEvent.name.data(), cpuEvent.averageTime.GetAverage());
          }
 
          ImGui::Text("Gpu:");
@@ -134,7 +136,8 @@ namespace pbe {
             if (!gpuEvent.usedInFrame) {
                continue;
             }
-            ImGui::Text("  %s: %.2f %.2f ms", gpuEvent.name.data(), gpuEvent.averageTime.GetAverage(), gpuEvent.averageTime.GetCur());
+            // ImGui::Text("  %s: %.2f %.2f ms", gpuEvent.name.data(), gpuEvent.averageTime.GetAverage(), gpuEvent.averageTime.GetCur());
+            ImGui::Text("  %s: %.2f ms", gpuEvent.name.data(), gpuEvent.averageTime.GetAverage());
          }
 
          ImGui::End();

@@ -65,9 +65,6 @@ namespace pbe {
 
       bool Valid() const { return pResource; }
 
-      ComPtr<ID3D11ShaderResourceView> srv;
-      ComPtr<ID3D11UnorderedAccessView> uav;
-
    private:
       friend Ref<Buffer>;
 

@@ -15,13 +15,6 @@ namespace pbe {
       return Ref<Texture2D>::Create(desc);
    }
 
-   Texture2D::~Texture2D() {
-      GPUResource::~GPUResource();
-      SAFE_RELEASE(rtv);
-      SAFE_RELEASE(dsv);
-      SAFE_RELEASE(srv);
-   }
-
    Texture2D::Desc Texture2D::GetDesc() const {
       return desc;
    }
@@ -32,7 +25,7 @@ namespace pbe {
       ID3D11Device* pDevice;
       pTexture->GetDevice(&pDevice);
 
-      pDevice->CreateRenderTargetView(pTexture, NULL, &rtv);
+      pDevice->CreateRenderTargetView(pTexture, NULL, rtv.GetAddressOf());
 
       pDevice->Release();
 
@@ -64,16 +57,16 @@ namespace pbe {
       }
 
       if (desc.bindFlags & D3D11_BIND_RENDER_TARGET) {
-         pDevice->CreateRenderTargetView(pTexture, NULL, &rtv);
+         pDevice->CreateRenderTargetView(pTexture, NULL, rtv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_SHADER_RESOURCE) {
-         pDevice->CreateShaderResourceView(pTexture, NULL, &srv);
+         pDevice->CreateShaderResourceView(pTexture, NULL, srv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_DEPTH_STENCIL) {
-         pDevice->CreateDepthStencilView(pTexture, NULL, &dsv);
+         pDevice->CreateDepthStencilView(pTexture, NULL, dsv.GetAddressOf());
       }
       if (desc.bindFlags & D3D11_BIND_UNORDERED_ACCESS) {
-         pDevice->CreateUnorderedAccessView(pTexture, NULL, &uav);
+         pDevice->CreateUnorderedAccessView(pTexture, NULL, uav.GetAddressOf());
       }
 
       pResource = pTexture;

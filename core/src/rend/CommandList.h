@@ -30,17 +30,17 @@ namespace pbe {
       }
 
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {
-         pContext->ClearDepthStencilView(depth.dsv, clearFlags, depthValue, stencilValue);
+         pContext->ClearDepthStencilView(depth.dsv.Get(), clearFlags, depthValue, stencilValue);
       }
 
       void ClearRenderTarget(Texture2D& rt, const vec4& color) {
-         pContext->ClearRenderTargetView(rt.rtv, &color.x);
+         pContext->ClearRenderTargetView(rt.rtv.Get(), &color.x);
       }
 
-      void SetRenderTargets(Texture2D* rt, Texture2D* depth = nullptr) {
+      void SetRenderTargets(Texture2D* rt = nullptr, Texture2D* depth = nullptr) {
          int nRtvs = rt ? 1 : 0;
-         ID3D11RenderTargetView** rtv = rt ? &rt->rtv : nullptr;
-         ID3D11DepthStencilView* dsv = depth ? depth->dsv : nullptr;
+         ID3D11RenderTargetView** rtv = rt ? rt->rtv.GetAddressOf() : nullptr;
+         ID3D11DepthStencilView* dsv = depth ? depth->dsv.Get() : nullptr;
 
          pContext->OMSetRenderTargets(nRtvs, rtv, dsv);
       }
