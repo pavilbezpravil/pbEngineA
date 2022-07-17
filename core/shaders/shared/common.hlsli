@@ -21,17 +21,19 @@ struct Light {
 };
 
 struct CameraCB {
-  float4x4 viewProjection;
   float4x4 projection;
   float4x4 view;
-  
+  float4x4 viewProjection;
+  float4x4 invViewProjection;
+
   float4x4 transform;
 
   float3 position;
   int nLights;
 
   int instanceStart;
-  float3 _dymmy3;
+  int2 rtSize;
+  float _dymmy3;
   
   Material material;
   Light directLight;

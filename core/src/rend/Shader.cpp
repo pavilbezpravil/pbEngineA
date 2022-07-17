@@ -47,9 +47,9 @@ namespace pbe {
 
       *blob = nullptr;
 
-      UINT flags = D3DCOMPILE_ENABLE_STRICTNESS & D3DCOMPILE_ALL_RESOURCES_BOUND;
+      UINT flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_ALL_RESOURCES_BOUND;
 #if defined(DEBUG)
-      flags |= D3DCOMPILE_DEBUG;
+      flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
       const D3D_SHADER_MACRO* defines = desc.defines.data();

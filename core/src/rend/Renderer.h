@@ -11,6 +11,7 @@
 #include "mesh/Mesh.h"
 #include "scene/Component.h"
 #include "scene/Scene.h"
+#include "math/Types.h"
 
 #include "shared/common.hlsli"
 
@@ -39,6 +40,7 @@ namespace pbe {
       Ref<Texture2D> color;
       Ref<Texture2D> depth;
       Ref<Texture2D> normal;
+      Ref<Texture2D> position;
       Ref<Texture2D> ssao;
    };
 

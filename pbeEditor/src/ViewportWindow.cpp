@@ -63,6 +63,11 @@ namespace pbe {
             cameraContext.normal = Texture2D::Create(texDesc);
             cameraContext.normal->SetDbgName("scene normal");
 
+            texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.position = Texture2D::Create(texDesc);
+            cameraContext.position->SetDbgName("scene position");
+
             texDesc.format = DXGI_FORMAT_R16_UNORM;
             texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
             cameraContext.ssao = Texture2D::Create(texDesc);
@@ -77,8 +82,8 @@ namespace pbe {
          renderer->RenderScene(cmd, *scene, camera, cameraContext);
          cmd.pContext->ClearState(); // todo:
 
-         const char* items[] = { "Color", "Depth", "Normal", "SSAO"};
-         Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.ssao };
+         const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO"};
+         Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
          static int item_current = 0;
          ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);

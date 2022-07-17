@@ -19,12 +19,6 @@ namespace pbe {
       return radians * 180.f / pi;
    }
 
-   using uint = uint32_t;
-   using int2 = glm::ivec2;
-   using uint2 = glm::uvec2;
-   using int3 = glm::ivec3;
-   using uint3 = glm::uvec3;
-
    using glm::vec2;
    using glm::vec3;
    using glm::vec4;
@@ -70,8 +64,20 @@ namespace pbe {
 
 }
 
+// for HLSL
+using uint = uint32_t;
+using int2 = glm::ivec2;
+using uint2 = glm::uvec2;
+using int3 = glm::ivec3;
+using uint3 = glm::uvec3;
+
+using float2 = glm::vec2;
+using float3 = glm::vec3;
+using float4 = glm::vec4;
+using float4x4 = glm::mat4;
+
 template<typename OStream>
-OStream& operator<<(OStream& os, const pbe::int2& v)
+OStream& operator<<(OStream& os, const int2& v)
 {
    return os << "(" << v.x << ", " << v.y << ")";
 }
@@ -93,9 +99,3 @@ OStream& operator<<(OStream& os, const glm::vec4& v)
 {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 }
-
-// for HLSL
-using float2 = glm::vec2;
-using float3 = glm::vec3;
-using float4 = glm::vec4;
-using float4x4 = glm::mat4;

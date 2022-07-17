@@ -128,6 +128,8 @@ namespace pbe {
       cb.view = glm::transpose(camera.view);
       cb.projection = glm::transpose(camera.projection);
       cb.viewProjection = glm::transpose(camera.GetViewProjection());
+      cb.invViewProjection = glm::inverse(cb.viewProjection);
+      cb.rtSize = cameraContext.color->GetDesc().size;
       cb.position = camera.position;
       cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
 
@@ -165,7 +167,8 @@ namespace pbe {
             cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
             ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
-            ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
+            // ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
+            ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.position);
 
             ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.color->GetDesc().size} / vec2{ 8 }));
 
