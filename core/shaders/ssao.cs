@@ -1,4 +1,5 @@
 #include "shared/common.hlsli"
+#include "common.inl"
 
 SamplerState gSamplerPoint;
 
@@ -21,17 +22,6 @@ float LinearizeDepth(float depth) {
    float B = gCamera.projection[2][3];
    // todo: why minus?
    return -B / (depth - A);
-}
-
-float2 TexToNDC(float2 uv) {
-   uv = uv * 2 - 1;
-   uv.y *= -1;
-   return uv;
-}
-
-float2 NDCToTex(float2 ndc) {
-   ndc.y *= -1;
-   return (ndc + 1) * 0.5;
 }
 
 float3 GetWorldPositionFromDepth(float2 uv, float depth ) {

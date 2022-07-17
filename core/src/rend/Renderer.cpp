@@ -170,6 +170,8 @@ namespace pbe {
       }
       UpdateInstanceBuffer(cmd, opaqueObjs);
 
+      cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
+
       if (cfg.useZPass) {
          {
             GPU_MARKER("ZPass");
@@ -194,15 +196,15 @@ namespace pbe {
             ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
             ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
             ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
-            // ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.position);
 
             ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.color->GetDesc().size} / vec2{ 8 }));
 
             // todo:
             ID3D11ShaderResourceView* views[] = {nullptr};
             cmd.pContext->CSSetShaderResources(0, 1, views);
-         } else {
-            cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
+
+            ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+            cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
          }
 
          {
@@ -211,6 +213,8 @@ namespace pbe {
 
             cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
+            cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateLinear); // todo:
+            baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
          }
       } else {

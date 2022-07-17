@@ -1,4 +1,5 @@
 #include "shared/common.hlsli"
+#include "common.inl"
 #include "pbr.hlsli"
 
 struct VsIn {
@@ -11,7 +12,7 @@ struct VsOut {
   float3 posW : POS_W;
   float3 normalW : NORMAL_W;
   float4 posH : SV_POSITION;
-  uint instanceID : INSTANCE_ID;
+  uint instanceID : SV_InstanceID;
 };
 
 cbuffer gCameraCB {
@@ -20,6 +21,9 @@ cbuffer gCameraCB {
 
 StructuredBuffer<Instance> gInstances;
 StructuredBuffer<Light> gLights;
+
+SamplerState gSamplerLinear;
+Texture2D<float> gSsao;
 
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
@@ -98,9 +102,15 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   }
 
+  float2 screenUV = input.posH.xy / gCamera.rtSize;
+  float ssaoMask = gSsao.SampleLevel(gSamplerLinear, screenUV, 0).x;
+
+  // float ao = ssaoMask; // todo:
   float ao = 1; // todo:
-  float3 ambient = 0.01 * albedo * ao;
+  float3 ambient = 0.02 * albedo * ao;
   float3 color = ambient + Lo;
+
+  color *= ssaoMask; // todo: applied on transparent too
 
   // float3 fogColor = 0.1;
   // float fogCoeff = 1 - exp(-length(posW - gCamera.position) * 0.001);
@@ -109,10 +119,15 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
 
+  // color = ssaoMask;
+
   PsOut output = (PsOut)0;
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = 0.75;
+
+  // output.color.rg = screenUV;
+  // output.color.b = 0;
 
   #ifdef ZPASS
     output.color.rgb = normalW;
