@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EditorSelection.h"
 #include "EditorWindow.h"
 #include "core/Ref.h"
 #include "rend/Renderer.h"
@@ -28,7 +29,7 @@ namespace pbe {
       void Gizmo(const ImVec2& contentRegion, const ImVec2& cursorPos);
 
       Scene* scene{};
-      Entity selectedEntity;
+      EditorSelection* selection{};
       RenderCamera camera;
       vec2 cameraAngle{};
       Own<Renderer> renderer;

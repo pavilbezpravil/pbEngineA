@@ -170,7 +170,8 @@ namespace pbe {
             gizmoCfg.space = 1;
          }
 
-         if (Input::IsKeyPressed('F') && selectedEntity) {
+         if (Input::IsKeyPressed('F') && selection->FirstSelected()) {
+            auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.Get<SceneTransformComponent>().position - camera.Forward() * 3.f;
          }
       }
@@ -186,8 +187,8 @@ namespace pbe {
    }
 
    void ViewportWindow::Gizmo(const ImVec2& contentRegion, const ImVec2& cursorPos) {
-      auto selection = selectedEntity;
-      if (!selection.Valid()) {
+      auto selectedEntity = selection->FirstSelected();
+      if (!selectedEntity.Valid()) {
          return;
       }
 
@@ -197,7 +198,7 @@ namespace pbe {
 
       bool snap = Input::IsKeyPressed(VK_LCONTROL);
 
-      mat4 entityTransform = selection.Get<SceneTransformComponent>().GetMatrix();
+      mat4 entityTransform = selectedEntity.Get<SceneTransformComponent>().GetMatrix();
 
       float snapValue = 1;
       float snapValues[3] = { snapValue, snapValue, snapValue };
@@ -211,7 +212,7 @@ namespace pbe {
          snap ? snapValues : nullptr);
 
       if (ImGuizmo::IsUsing()) {
-         selection.Get<SceneTransformComponent>().SetMatrix(entityTransform);
+         selectedEntity.Get<SceneTransformComponent>().SetMatrix(entityTransform);
       }
    }
 }

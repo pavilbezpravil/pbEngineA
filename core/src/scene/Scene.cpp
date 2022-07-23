@@ -18,12 +18,19 @@ namespace pbe {
       e.Add<UUIDComponent>(uuid);
       if (!name.empty()) {
          e.Add<TagComponent>(name.data());
+      } else {
+         // todo:
+         e.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
       }
 
       e.Add<SceneTransformComponent>();
       // e.Add<SimpleMaterialComponent>();
 
       return e;
+   }
+
+   void Scene::DestroyImmediate(Entity entity) {
+      registry.destroy(entity.GetID());
    }
 
    Entity Scene::FindByName(std::string_view name) {

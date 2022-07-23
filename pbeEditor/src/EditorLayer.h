@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "EditorSelection.h"
 #include "EditorWindow.h"
 #include "app/Layer.h"
 #include "core/Ref.h"
@@ -36,6 +37,7 @@ namespace pbe {
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
       Own<Scene> editorScene;
+      EditorSelection selection;
 
       SceneHierarchyWindow* sceneHierarchyWindow{};
       InspectorWindow* inspectorWindow{};

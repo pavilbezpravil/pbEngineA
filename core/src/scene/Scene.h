@@ -15,6 +15,8 @@ namespace pbe {
       Entity Create(std::string_view name = {});
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
 
+      void DestroyImmediate(Entity entity);
+
       template<typename Component, typename... Other>
       auto GetEntitiesWith() {
          return registry.view<Component, Other...>();

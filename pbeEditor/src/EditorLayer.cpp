@@ -25,10 +25,10 @@ namespace pbe {
             ImGui::Text("No scene");
          }
          else {
-            // todo:
-            if (ImGui::BeginPopupContextItem()) {
-               if (ImGui::Selectable("Create new entity")) {
-                  pScene->Create();
+            if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+               if (ImGui::MenuItem("Create Entity")) {
+                  auto createdEntity = pScene->Create();
+                  SelectEntity(createdEntity);
                }
                ImGui::EndPopup();
             }
@@ -45,8 +45,10 @@ namespace pbe {
 
                      ImGui::Separator();
 
-                     if (ImGui::Button("Delete"))
-                        ImGui::Text("sfdsdf");
+                     if (ImGui::Button("Delete")) {
+                        // todo: add to pending
+                        pScene->DestroyImmediate(Entity{e, pScene});
+                     }
 
                      if (ImGui::Button("Close"))
                         ImGui::CloseCurrentPopup();
@@ -59,10 +61,7 @@ namespace pbe {
                   // }
 
                   if (ImGui::IsItemClicked()) {
-                     if (selectedCb) {
-                        Entity entity{ e, pScene };
-                        selectedCb(entity);
-                     }
+                     SelectEntity(Entity{ e, pScene });
                   }
 
                   ImGui::TreePop();
@@ -75,14 +74,18 @@ namespace pbe {
 
       void SetScene(Scene* scene) {
          pScene = scene;
-         if (selectedCb) {
-            selectedCb({});
+      }
+
+      void SelectEntity(Entity entity) {
+         if (selection) {
+            selection->Select(entity);
          }
       }
 
       Scene* pScene{};
+      EditorSelection* selection{};
 
-      std::function<void(Entity)> selectedCb;
+      // std::function<void(Entity)> selectedCb;
    };
 
    class InspectorWindow : public EditorWindow {
@@ -150,10 +153,8 @@ namespace pbe {
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
 
-      sceneHierarchyWindow->selectedCb = [&](Entity e) {
-         inspectorWindow->SetEntity(e);
-         viewportWindow->selectedEntity = e;
-      };
+      sceneHierarchyWindow->selection = &selection;
+      viewportWindow->selection = &selection;
 
       Layer::OnAttach();
 
@@ -324,9 +325,12 @@ namespace pbe {
    }
 
    void EditorLayer::OnEvent(Event& event) {
-
+      if (auto* e = event.GetEvent<KeyPressedEvent>()) {
+         if (e->keyCode == VK_ESCAPE) {
+            selection.ClearSelection();
+         }
+      }
    }
-
 
    void EditorLayer::AddEditorWindow(EditorWindow* window, bool showed) {
       window->show = showed;
@@ -335,6 +339,7 @@ namespace pbe {
 
    void EditorLayer::SetEditorScene(Own<Scene>&& scene) {
       editorScene = std::move(scene);
+      selection.ClearSelection();
 
       sceneHierarchyWindow->SetScene(editorScene.get());
       viewportWindow->scene = editorScene.get();
