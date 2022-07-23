@@ -62,6 +62,9 @@ namespace pbe {
       quat rotation = quat_Identity;
       vec3 scale{ 1.f };
 
+      mat4 GetMatrix() const;
+      void SetMatrix(const mat4& transform);
+
       DECL_COMPONENT(SceneTransformComponent);
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);

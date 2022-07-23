@@ -150,7 +150,10 @@ namespace pbe {
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
 
-      sceneHierarchyWindow->selectedCb = [&](Entity e) { inspectorWindow->SetEntity(e); };
+      sceneHierarchyWindow->selectedCb = [&](Entity e) {
+         inspectorWindow->SetEntity(e);
+         viewportWindow->selectedEntity = e;
+      };
 
       Layer::OnAttach();
 

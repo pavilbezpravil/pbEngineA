@@ -38,10 +38,7 @@ namespace pbe {
       std::vector<Instance> instances;
       instances.reserve(renderObjs.size());
       for (auto& [trans, material] : renderObjs) {
-         mat4 transform = glm::translate(mat4(1), trans.position);
-         transform *= mat4{ trans.rotation };
-         transform *= glm::scale(mat4(1), trans.scale);
-         transform = glm::transpose(transform);
+         mat4 transform = glm::transpose(trans.GetMatrix());
 
          Material m;
          m.albedo = material.albedo;
@@ -129,7 +126,7 @@ namespace pbe {
 
       auto context = cmd.pContext;
 
-      cmd.ClearRenderTarget(*cameraContext.color, vec4{0, 0, 0, 0});
+      cmd.ClearRenderTarget(*cameraContext.color, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.normal, vec4{0, 0, 0, 0});
       cmd.ClearDepthTarget(*cameraContext.depth, 1);
 
@@ -160,7 +157,7 @@ namespace pbe {
       cb.directLight.color = vec3{ 1 };
       cb.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
 
-      cmd.SetBlendState(nullptr);
+      cmd.SetBlendState(rendres::blendStateDefaultRGB);
 
       if (cfg.opaqueSorting) {
          // todo: slow. I assumed

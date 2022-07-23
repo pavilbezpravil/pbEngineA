@@ -5,6 +5,8 @@
 #include "typer/Typer.h"
 #include "scene/Entity.h"
 
+#include <glm/gtx/matrix_decompose.hpp>
+
 namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(UUIDComponent);
@@ -45,6 +47,30 @@ namespace pbe {
 
    void ComponentList::RegisterComponent(ComponentID componentID, ComponentFunc&& func) {
       components2[componentID] = std::move(func);
+   }
+
+   mat4 SceneTransformComponent::GetMatrix() const {
+      mat4 transform = glm::translate(mat4(1), position);
+      transform *= mat4{ rotation };
+      transform *= glm::scale(mat4(1), scale);
+      return transform;
+   }
+
+   std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform) {
+      glm::vec3 scale, translation, skew;
+      glm::vec4 perspective;
+      glm::quat orientation;
+      glm::decompose(transform, scale, orientation, translation, skew, perspective);
+
+      return { translation, orientation, scale };
+   }
+
+   void SceneTransformComponent::SetMatrix(const mat4& transform) {
+      auto [position_, rotation_, scale_] = GetTransformDecomposition(transform);
+
+      position = position_;
+      rotation = rotation_;
+      scale = scale_;
    }
 
    int RegisterComponents() {

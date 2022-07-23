@@ -20,6 +20,8 @@ namespace pbe {
          return registry.view<Component, Other...>();
       }
 
+      Entity FindByName(std::string_view name);
+
       int EntitiesCount() const {
          return (int)registry.size();
       }

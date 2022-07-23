@@ -63,6 +63,8 @@ namespace pbe {
          return id != entt::null;
       }
 
+      operator bool() const { return Valid(); }
+
    private:
       entt::entity id{ entt::null };
       Scene* scene{};

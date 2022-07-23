@@ -3,6 +3,7 @@
 
 #include "EditorWindow.h"
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "app/Input.h"
 #include "scene/Scene.h"
 #include "rend/Renderer.h"
@@ -38,6 +39,12 @@ namespace pbe {
       ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
       renderer->cfg = cfg;
+
+      static int item_current = 0;
+      const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO" };
+
+      ImGui::SetNextItemWidth(70);
+      ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
 
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
@@ -82,11 +89,13 @@ namespace pbe {
          renderer->RenderScene(cmd, *scene, camera, cameraContext);
          cmd.pContext->ClearState(); // todo:
 
-         const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO"};
+         // auto gizmoContentRegion = ImGui::GetContentRegionAvail();
+         auto gizmoCursorPos = ImGui::GetCursorScreenPos();
+
          Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
-         static int item_current = 0;
-         ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
+
+         Gizmo(imSize, gizmoCursorPos);
       }
 
       ImGui::End();
@@ -153,5 +162,35 @@ namespace pbe {
       }
 
       // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
+   }
+
+   void ViewportWindow::Gizmo(const ImVec2& contentRegion, const ImVec2& cursorPos) {
+      auto selection = selectedEntity;
+      if (!selection.Valid()) {
+         return;
+      }
+
+      ImGuizmo::SetOrthographic(false);
+      ImGuizmo::SetDrawlist();
+      ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
+
+      bool snap = Input::IsKeyPressed(VK_LCONTROL);
+
+      mat4 entityTransform = selection.Get<SceneTransformComponent>().GetMatrix();
+
+      float snapValue = 1;
+      float snapValues[3] = { snapValue, snapValue, snapValue };
+
+      ImGuizmo::Manipulate(glm::value_ptr(camera.view),
+         glm::value_ptr(camera.projection),
+         ImGuizmo::OPERATION::TRANSLATE,
+         ImGuizmo::MODE::WORLD,
+         glm::value_ptr(entityTransform),
+         nullptr,
+         snap ? snapValues : nullptr);
+
+      if (ImGuizmo::IsUsing()) {
+         selection.Get<SceneTransformComponent>().SetMatrix(entityTransform);
+      }
    }
 }

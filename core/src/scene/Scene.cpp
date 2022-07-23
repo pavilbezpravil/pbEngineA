@@ -26,6 +26,15 @@ namespace pbe {
       return e;
    }
 
+   Entity Scene::FindByName(std::string_view name) {
+      for (auto [e, tag] : GetEntitiesWith<TagComponent>().each()) {
+         if (tag.tag == name) {
+            return Entity{e, this};
+         }
+      }
+      return {};
+   }
+
    static string gAssetsPath = "../../assets/";
 
    string GetAssetsPath(string_view path) {

@@ -19,6 +19,12 @@
 #include "spdlog/fmt/ostr.h"
 
 #include "imgui.h"
+// todo:
+template<typename OStream>
+OStream& operator<<(OStream& os, const ImVec2& v)
+{
+   return os << "(" << v.x << ", " << v.y << ")";
+}
 
 // todo:
 #define YAML_CPP_STATIC_DEFINE
