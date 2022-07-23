@@ -196,7 +196,7 @@ namespace pbe {
       ImGuizmo::SetDrawlist();
       ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
 
-      bool snap = Input::IsKeyPressed(VK_LCONTROL);
+      bool snap = Input::IsKeyPressed(VK_CONTROL);
 
       mat4 entityTransform = selectedEntity.Get<SceneTransformComponent>().GetMatrix();
 

@@ -33,25 +33,45 @@ namespace pbe {
                ImGui::EndPopup();
             }
 
-            for (auto [e, tag] : pScene->GetEntitiesWith<TagComponent>().each()) {
-               const auto* name = tag.tag.data();
+            for (auto [e, _] : pScene->GetEntitiesWith<UUIDComponent>().each()) {
+               Entity entity{ e, pScene };
 
-               if (ImGui::TreeNodeEx(tag.tag.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+               const auto* name = std::invoke([&] {
+                  auto c = entity.TryGet<TagComponent>();
+                  return c ? c->tag.data() : "Unnamed Entity";
+               });
+
+               // const auto& trans = entity.Get<SceneTransformComponent>();
+               bool hasChilds = false;
+
+               ImGuiTreeNodeFlags nodeFlags =
+                  (entity == selection->FirstSelected() ? ImGuiTreeNodeFlags_Selected : 0)
+                  | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+                  | ImGuiTreeNodeFlags_SpanFullWidth
+                  | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
+
+               if (ImGui::TreeNodeEx((void*)(size_t)entity.GetID(), nodeFlags, name)) {
+                  if (ImGui::IsItemClicked()) {
+                     SelectEntity(entity);
+                  }
+
                   if (ImGui::BeginPopupContextItem()) {
                      ImGui::Text("This a popup for \"%s\"!", name);
 
-                     if (ImGui::Button("Add component"))
-                        ImGui::Text("sfdsdf");
+                     if (ImGui::Button("Add component")) {
+                        INFO("Add component");
+                     }
 
                      ImGui::Separator();
 
                      if (ImGui::Button("Delete")) {
                         // todo: add to pending
-                        pScene->DestroyImmediate(Entity{e, pScene});
+                        pScene->DestroyImmediate(entity);
                      }
 
-                     if (ImGui::Button("Close"))
+                     if (ImGui::Button("Close")) {
                         ImGui::CloseCurrentPopup();
+                     }
 
                      ImGui::EndPopup();
                   }
@@ -59,10 +79,6 @@ namespace pbe {
                   // if (ImGui::IsItemHovered()) {
                   //    ImGui::SetTooltip("Right-click to open popup");
                   // }
-
-                  if (ImGui::IsItemClicked()) {
-                     SelectEntity(Entity{ e, pScene });
-                  }
 
                   ImGui::TreePop();
                }
@@ -162,7 +178,7 @@ namespace pbe {
       Own<Scene> scene{ new Scene() };
 
       {
-         auto e = scene->Create("red");
+         auto e = scene->Create("Red");
          auto& t = e.Get<SceneTransformComponent>();
          t.position = { 0, 0, 50 };
          t.scale = { 100, 100, 1 };
@@ -171,7 +187,7 @@ namespace pbe {
       }
 
       {
-         auto e = scene->Create("green");
+         auto e = scene->Create("Green");
          auto& t = e.Get<SceneTransformComponent>();
          t.position = { 0, -10, 0 };
          t.scale = { 100, 1, 100 };
@@ -180,7 +196,7 @@ namespace pbe {
       }
 
       {
-         auto e = scene->Create("blue");
+         auto e = scene->Create("Blue");
          auto& t = e.Get<SceneTransformComponent>();
          t.position = { 50, 0, 0 };
          t.scale = { 1, 100, 100 };
@@ -191,7 +207,7 @@ namespace pbe {
       int3 cubeSize{25, 10, 25};
 
       for (int i = 0; i < 500; ++i) {
-         Entity e = scene->Create(std::to_string(i));
+         Entity e = scene->Create(std::format("Cube {}", i));
       
          auto& trans = e.GetOrCreate<SceneTransformComponent>();
          trans.position = Random::Uniform(-cubeSize,cubeSize);
@@ -206,7 +222,7 @@ namespace pbe {
       }
 
       for (int i = 0; i < 8; ++i) {
-         Entity e = scene->Create("light" + std::to_string(i));
+         Entity e = scene->Create(std::format("Light {}", i));
 
          auto& trans = e.GetOrCreate<SceneTransformComponent>();
          trans.position = Random::Uniform(-cubeSize, cubeSize);

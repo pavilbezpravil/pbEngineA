@@ -64,6 +64,7 @@ namespace pbe {
       }
 
       operator bool() const { return Valid(); }
+      bool operator==(const Entity&) const = default;
 
       entt::entity GetID() const { return id; }
 
