@@ -89,7 +89,6 @@ namespace pbe {
          renderer->RenderScene(cmd, *scene, camera, cameraContext);
          cmd.pContext->ClearState(); // todo:
 
-         // auto gizmoContentRegion = ImGui::GetContentRegionAvail();
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();
 
          Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
@@ -109,8 +108,72 @@ namespace pbe {
       if (Input::IsKeyPressed(VK_RBUTTON)) {
          float cameraMouseSpeed = 10;
          cameraAngle += vec2(Input::GetMouseDelta()) * dt * cameraMouseSpeed * vec2(-1, -1);
-
          cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
+
+         // todo: update use prev view matrix
+         vec3 cameraInput{};
+         if (Input::IsKeyPressed('A')) {
+            cameraInput.x = -1;
+         }
+         if (Input::IsKeyPressed('D')) {
+            cameraInput.x = 1;
+         }
+         if (Input::IsKeyPressed('Q')) {
+            cameraInput.y = -1;
+         }
+         if (Input::IsKeyPressed('E')) {
+            cameraInput.y = 1;
+         }
+         if (Input::IsKeyPressed('W')) {
+            cameraInput.z = 1;
+         }
+         if (Input::IsKeyPressed('S')) {
+            cameraInput.z = -1;
+         }
+
+         if (cameraInput != vec3{}) {
+            cameraInput = glm::normalize(cameraInput);
+
+            mat4 viewTrans = glm::transpose(camera.view);
+
+            vec3 right = viewTrans[0];
+            vec3 up = viewTrans[1];
+            vec3 forward = camera.Forward();
+
+            vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
+
+            float cameraSpeed = 5;
+            if (Input::IsKeyPressed(VK_SHIFT)) {
+               cameraSpeed *= 5;
+            }
+
+            camera.position += cameraOffset * cameraSpeed * dt;
+         }
+      } else {
+         if (Input::IsKeyPressed('W')) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
+         }
+         if (Input::IsKeyPressed('R')) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
+         }
+         if (Input::IsKeyPressed('S')) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
+         }
+
+         // todo: IsKeyDown
+         // if (Input::IsKeyPressed('Q')) {
+         //    gizmoCfg.space = 1 - gizmoCfg.space;
+         // }
+         if (Input::IsKeyPressed('Q')) {
+            gizmoCfg.space = 0;
+         }
+         if (Input::IsKeyPressed('A')) {
+            gizmoCfg.space = 1;
+         }
+
+         if (Input::IsKeyPressed('F') && selectedEntity) {
+            camera.position = selectedEntity.Get<SceneTransformComponent>().position - camera.Forward() * 3.f;
+         }
       }
 
       mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
@@ -119,47 +182,6 @@ namespace pbe {
       float3 direction = vec4(0, 0, 1, 1) * rotation;
 
       camera.view = glm::lookAt(camera.position, camera.position + direction, vec3_Y);
-
-      vec3 cameraInput{};
-
-      if (Input::IsKeyPressed('A')) {
-         cameraInput.x = -1;
-      }
-      if (Input::IsKeyPressed('D')) {
-         cameraInput.x = 1;
-      }
-      if (Input::IsKeyPressed('Q')) {
-         cameraInput.y = -1;
-      }
-      if (Input::IsKeyPressed('E')) {
-         cameraInput.y = 1;
-      }
-      if (Input::IsKeyPressed('W')) {
-         cameraInput.z = 1;
-      }
-      if (Input::IsKeyPressed('S')) {
-         cameraInput.z = -1;
-      }
-
-      if (cameraInput != vec3{}) {
-         cameraInput = glm::normalize(cameraInput);
-
-         mat4 viewTrans = glm::transpose(camera.view);
-
-         vec3 right = viewTrans[0];
-         vec3 up = viewTrans[1];
-         // vec3 forward = viewTrans[2];
-         vec3 forward = camera.Forward();
-
-         vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
-
-         float cameraSpeed = 5;
-         if (Input::IsKeyPressed(VK_SHIFT)) {
-            cameraSpeed *= 5;
-         }
-
-         camera.position += cameraOffset * cameraSpeed * dt;
-      }
 
       // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
    }
@@ -183,8 +205,8 @@ namespace pbe {
 
       ImGuizmo::Manipulate(glm::value_ptr(camera.view),
          glm::value_ptr(camera.projection),
-         ImGuizmo::OPERATION::TRANSLATE,
-         ImGuizmo::MODE::WORLD,
+         (ImGuizmo::OPERATION)gizmoCfg.operation,
+         (ImGuizmo::MODE)gizmoCfg.space,
          glm::value_ptr(entityTransform),
          nullptr,
          snap ? snapValues : nullptr);

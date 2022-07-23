@@ -11,6 +11,12 @@ namespace pbe {
    class Renderer;
    class Texture2D;
 
+   struct GizmoCfg {
+      int operation = 7; // translate
+      int space = 1; // world
+      float snap = 1;
+   };
+
    class ViewportWindow : public EditorWindow {
    public:
       // using EditorWindow::EditorWindow;
@@ -29,6 +35,8 @@ namespace pbe {
       CameraContext cameraContext;
 
       bool windowFocused = false;
+
+      GizmoCfg gizmoCfg;
    };
 
 }

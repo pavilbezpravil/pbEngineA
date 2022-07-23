@@ -18,6 +18,8 @@ namespace pbe {
       ID3D11BlendState* blendStateDefaultRGB;
       ID3D11BlendState* blendStateTransparency;
 
+      static std::vector<ID3D11DeviceChild*> resourses;
+
       void Init() {
          VertexPos::inputElementDesc = {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -35,6 +37,7 @@ namespace pbe {
          rasterizerDesc.CullMode = D3D11_CULL_BACK;
 
          device->CreateRasterizerState1(&rasterizerDesc, &rasterizerState);
+         resourses.push_back(rasterizerState);
 
          ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -46,9 +49,11 @@ namespace pbe {
          samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
          device->CreateSamplerState(&samplerDesc, &samplerStatePoint);
+         resourses.push_back(samplerStatePoint);
 
          samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
          device->CreateSamplerState(&samplerDesc, &samplerStateLinear);
+         resourses.push_back(samplerStateLinear);
 
          ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,13 +63,16 @@ namespace pbe {
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDepthReadWrite);
+         resourses.push_back(depthStencilStateDepthReadWrite);
 
          depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDepthReadNoWrite);
+         resourses.push_back(depthStencilStateDepthReadNoWrite);
 
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
          depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateEqual);
+         resourses.push_back(depthStencilStateEqual);
 
          D3D11_BLEND_DESC transparentDesc = { 0 };
          transparentDesc.AlphaToCoverageEnable = false;
@@ -74,6 +82,7 @@ namespace pbe {
          transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
 
          device->CreateBlendState(&transparentDesc, &blendStateDefaultRGB);
+         resourses.push_back(blendStateDefaultRGB);
 
          transparentDesc.RenderTarget[0].BlendEnable = true;
          transparentDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -85,16 +94,14 @@ namespace pbe {
          transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
          device->CreateBlendState(&transparentDesc, &blendStateTransparency);
+         resourses.push_back(blendStateTransparency);
       }
 
       void Term() {
-         SAFE_RELEASE(rasterizerState);
-         SAFE_RELEASE(samplerStatePoint);
-         SAFE_RELEASE(samplerStateLinear);
-         SAFE_RELEASE(depthStencilStateDepthReadWrite);
-         SAFE_RELEASE(depthStencilStateEqual);
-         SAFE_RELEASE(depthStencilStateDepthReadNoWrite);
-         SAFE_RELEASE(blendStateTransparency);
+         for (auto* resourse : resourses) {
+            SAFE_RELEASE(resourse);
+         }
+         resourses.clear();
       }
 
       struct InputLayoutEntry {
