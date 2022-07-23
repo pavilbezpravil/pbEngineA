@@ -34,7 +34,7 @@ namespace pbe {
       Own<Renderer> renderer;
       CameraContext cameraContext;
 
-      bool windowFocused = false;
+      bool enableInput = false;
 
       GizmoCfg gizmoCfg;
    };
