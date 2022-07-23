@@ -37,7 +37,7 @@ namespace pbe {
    };
 
    struct CameraContext {
-      Ref<Texture2D> color;
+      Ref<Texture2D> colorHDR;
       Ref<Texture2D> depth;
       Ref<Texture2D> normal;
       Ref<Texture2D> position;

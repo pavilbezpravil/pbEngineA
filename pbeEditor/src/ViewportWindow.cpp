@@ -5,7 +5,6 @@
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "app/Input.h"
-#include "scene/Scene.h"
 #include "rend/Renderer.h"
 
 namespace pbe {
@@ -18,7 +17,7 @@ namespace pbe {
    void ViewportWindow::OnImGuiRender() {
       ImGui::Begin(name.c_str(), &show);
 
-      windowFocused = ImGui::IsWindowFocused();
+      enableInput = ImGui::IsWindowHovered();
 
       // if (ImGui::Button("Play")) {
       //    INFO("Play pressed!");
@@ -49,14 +48,14 @@ namespace pbe {
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
       if (size.x > 1 && size.y > 1) {
-         if (!cameraContext.color || cameraContext.color->GetDesc().size != size) {
+         if (!cameraContext.colorHDR || cameraContext.colorHDR->GetDesc().size != size) {
             Texture2D::Desc texDesc;
             texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             texDesc.size = size;
 
-            cameraContext.color = Texture2D::Create(texDesc);
-            cameraContext.color->SetDbgName("scene color");
+            cameraContext.colorHDR = Texture2D::Create(texDesc);
+            cameraContext.colorHDR->SetDbgName("scene colorHDR");
 
             // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
             texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
@@ -91,7 +90,7 @@ namespace pbe {
 
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();
 
-         Texture2D* sceneRTs[] = { cameraContext.color, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
+         Texture2D* sceneRTs[] = { cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
 
          Gizmo(imSize, gizmoCursorPos);
@@ -101,7 +100,7 @@ namespace pbe {
    }
 
    void ViewportWindow::OnUpdate(float dt) {
-      if (!windowFocused) {
+      if (!enableInput) {
          return;
       }
 

@@ -126,11 +126,11 @@ namespace pbe {
 
       auto context = cmd.pContext;
 
-      cmd.ClearRenderTarget(*cameraContext.color, vec4{0, 0, 0, 1});
+      cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.normal, vec4{0, 0, 0, 0});
       cmd.ClearDepthTarget(*cameraContext.depth, 1);
 
-      cmd.SetViewport({}, cameraContext.color->GetDesc().size);
+      cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size);
       cmd.SetRasterizerState(rendres::rasterizerState);
 
       // set mesh
@@ -151,7 +151,7 @@ namespace pbe {
       cb.projection = glm::transpose(camera.projection);
       cb.viewProjection = glm::transpose(camera.GetViewProjection());
       cb.invViewProjection = glm::inverse(cb.viewProjection);
-      cb.rtSize = cameraContext.color->GetDesc().size;
+      cb.rtSize = cameraContext.colorHDR->GetDesc().size;
       cb.position = camera.position;
       cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       cb.directLight.color = vec3{ 1 };
@@ -196,7 +196,7 @@ namespace pbe {
             ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
             ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
 
-            ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.color->GetDesc().size} / vec2{ 8 }));
+            ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.colorHDR->GetDesc().size} / vec2{ 8 }));
 
             // todo:
             ID3D11ShaderResourceView* views[] = {nullptr};
@@ -210,7 +210,7 @@ namespace pbe {
             GPU_MARKER("Color");
             PROFILE_GPU("Color");
 
-            cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
+            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
             cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateLinear); // todo:
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
@@ -220,7 +220,7 @@ namespace pbe {
          GPU_MARKER("Color (Without ZPass)");
          PROFILE_GPU("Color (Without ZPass)");
 
-         cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
+         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
          baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
 
@@ -231,7 +231,7 @@ namespace pbe {
          GPU_MARKER("Transparency");
          PROFILE_GPU("Transparency");
 
-         cmd.SetRenderTargets(cameraContext.color, cameraContext.depth);
+         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
          cmd.SetBlendState(rendres::blendStateTransparency);
 
