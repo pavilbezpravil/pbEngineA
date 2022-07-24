@@ -37,12 +37,10 @@ namespace pbe {
 
       auto profile = gShaderProfile[(int)desc.type];
 
-      INFO("Compile shader '{}' entryPoint: '{}' profile: '{}'", desc.path, desc.entryPoint, profile);
-
       auto path = GetShadersPath(desc.path);
 
       if (!fs::exists(path)) {
-         WARN("Cant find file '{}'", desc.path);
+         WARN("Cant find file '{}' for compilation", desc.path);
       }
 
       *blob = nullptr;
@@ -79,7 +77,7 @@ namespace pbe {
          return hr;
       }
 
-      INFO("Successful! Compile time {} ms.", timer.ElapsedMs());
+      INFO("Compiled shader '{}' entryPoint: '{}'. Compile time {} ms.", desc.path, desc.entryPoint, timer.ElapsedMs());
 
       *blob = shaderBlob;
 

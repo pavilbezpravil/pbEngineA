@@ -77,6 +77,9 @@ namespace pbe {
                   if (const auto* c = entity.TryGet<SimpleMaterialComponent>()) {
                      Typer::Get().Serialize(out, SimpleMaterialComponent::GetName(), *c);
                   }
+                  if (const auto* c = entity.TryGet<LightComponent>()) {
+                     Typer::Get().Serialize(out, LightComponent::GetName(), *c);
+                  }
                }
                out << YAML::EndMap;
             }
@@ -106,7 +109,6 @@ namespace pbe {
       YAML::Node root = YAML::LoadFile(path.data());
 
       auto name = root["sceneName"].as<string>();
-      INFO("sceneName {}", name);
 
       YAML::Node entitiesNode = root["entities"];
       
@@ -127,6 +129,9 @@ namespace pbe {
          }
          if (auto node = it[SimpleMaterialComponent::GetName()]) {
             Typer::Get().Deserialize(it, SimpleMaterialComponent::GetName(), entity.Add<SimpleMaterialComponent>());
+         }
+         if (auto node = it[LightComponent::GetName()]) {
+            Typer::Get().Deserialize(it, LightComponent::GetName(), entity.Add<LightComponent>());
          }
       }
 

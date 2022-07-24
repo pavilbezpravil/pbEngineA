@@ -271,6 +271,7 @@ namespace pbe {
       if (ImGui::BeginMenuBar()) {
          if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene")) {
+               editorSettings.scenePath = {};
                Own<Scene> scene{ new Scene() };
                SetEditorScene(std::move(scene));
             }
