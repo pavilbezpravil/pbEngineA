@@ -1,7 +1,7 @@
 sceneName: test_scene
 entities:
   - uuid: 5113038764324791803
-    tag: Entity 2
+    tag: Decal
     SceneTransformComponent:
       position: [0, -0.278346717, 0]
       rotation: [0, -0, 0]
@@ -9,7 +9,7 @@ entities:
     DecalComponent:
       {}
   - uuid: 4049793853344634632
-    tag: Entity 1
+    tag: Ground
     SceneTransformComponent:
       position: [0, -1.02307725, 0]
       rotation: [0, -0, 0]

@@ -239,8 +239,10 @@ namespace pbe {
          for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, DecalComponent>().each()) {
             decalObjs.emplace_back(trans, decalDefault);
 
+            vec3 size = trans.scale * 0.5f;
+
             mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
-            mat4 projection = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
+            mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
             mat4 viewProjection = glm::transpose(projection * view);
             decals.emplace_back(viewProjection);
          }

@@ -72,9 +72,18 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       discard;
     }
 
+    // float3 decalForward = float3(0, 0, 1);
+    // float alpha = dot(decalForward, sceneNormalW);
+    // if (alpha < 0) {
+    //   discard;
+    // }
+
+    float alpha = 1;
+
     float3 albedo = 1;
     // albedo = frac(scenePosW);
-    albedo = float3(NDCToTex(posDecalSpace.xy), 0);
+    float2 decalUV = NDCToTex(posDecalSpace.xy);
+    albedo = float3(frac(decalUV * 3), 0);
     float roughness = 0.2;
     float metallic = 0;
   #else
@@ -83,6 +92,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     float3 albedo = material.albedo;
     float roughness = material.roughness;
     float metallic = material.metallic;
+
+    float alpha = 0.75;
   #endif
 
   float3 N = normalize(normalW);
@@ -201,7 +212,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   PsOut output = (PsOut)0;
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
-  output.color.a = 0.75;
+  output.color.a = alpha;
   // output.color.a = 1;
   
   // output.color.rg = screenUV;
