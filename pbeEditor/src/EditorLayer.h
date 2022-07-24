@@ -16,6 +16,9 @@ namespace pbe {
    class Scene;
    struct Event;
 
+   struct EditorSettings {
+      std::string scenePath;
+   };
 
    class EditorLayer : public Layer {
    public:
@@ -37,7 +40,8 @@ namespace pbe {
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
       Own<Scene> editorScene;
-      EditorSelection selection;
+      EditorSelection editorSelection;
+      EditorSettings editorSettings;
 
       SceneHierarchyWindow* sceneHierarchyWindow{};
       InspectorWindow* inspectorWindow{};

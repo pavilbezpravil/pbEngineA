@@ -1,0 +1,32 @@
+sceneName: test_scene
+entities:
+  - uuid: 16365464828659249094
+    tag: red
+    SceneTransformComponent:
+      position: [-1, 0, 1]
+      rotation: [0, 42.1929283, 0]
+      scale: [0.999999464, 1, 0.999999464]
+    SimpleMaterialComponent:
+      albedo: [1, 0, 0]
+      roughness: 0.100000001
+      metallic: 0
+  - uuid: 12468854452323807279
+    tag: green
+    SceneTransformComponent:
+      position: [0, -0.270727128, 1]
+      rotation: [0, -0, 35.7865944]
+      scale: [0.999999821, 0.999999821, 1]
+    SimpleMaterialComponent:
+      albedo: [0, 1, 0]
+      roughness: 0.100000001
+      metallic: 0
+  - uuid: 8246439013926450448
+    tag: blue
+    SceneTransformComponent:
+      position: [1, 0.500457227, 1]
+      rotation: [11.6504736, -22.3420715, 22.049118]
+      scale: [0.999999702, 0.999999702, 0.999999702]
+    SimpleMaterialComponent:
+      albedo: [0, 0, 1]
+      roughness: 0.100000001
+      metallic: 0

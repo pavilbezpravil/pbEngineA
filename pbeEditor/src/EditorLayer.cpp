@@ -4,15 +4,23 @@
 #include "ViewportWindow.h"
 #include "app/Event.h"
 #include "core/Profiler.h"
+#include "fs/FileSystem.h"
 #include "gui/Gui.h"
 #include "math/Random.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
 #include "rend/Renderer.h"
+#include "typer/Typer.h"
 
 
 namespace pbe {
+
+   constexpr char editorSettingPath[] = "editor.yaml";
+
+   TYPER_BEGIN(EditorSettings)
+      TYPER_FIELD(scenePath)
+   TYPER_END(EditorSettings)
 
    class SceneHierarchyWindow : public EditorWindow {
    public:
@@ -111,6 +119,8 @@ namespace pbe {
       void OnImGuiRender() override {
          ImGui::Begin(name.c_str(), &show);
 
+         Entity entity = selection ? selection->FirstSelected() : Entity{};
+
          if (!entity.Valid()) {
             ImGui::Text("No entity");
          } else {
@@ -123,12 +133,8 @@ namespace pbe {
 
          ImGui::End();
       }
-
-      void SetEntity(Entity e) {
-         entity = e;
-      }
-
-      Entity entity{};
+      
+      EditorSelection* selection{};
    };
 
    class ProfilerWindow : public EditorWindow {
@@ -164,78 +170,42 @@ namespace pbe {
    };
 
    void EditorLayer::OnAttach() {
+      // todo:
+      if (fs::exists(editorSettingPath)) {
+         YAML::Node node = YAML::LoadFile(editorSettingPath);
+         Typer::Get().Deserialize(node, "settings", editorSettings);
+      }
+
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
 
-      sceneHierarchyWindow->selection = &selection;
-      viewportWindow->selection = &selection;
+      sceneHierarchyWindow->selection = &editorSelection;
+      viewportWindow->selection = &editorSelection;
+      inspectorWindow->selection = &editorSelection;
+
+      if (!editorSettings.scenePath.empty()) {
+         auto s = SceneDeserialize(editorSettings.scenePath);
+         SetEditorScene(std::move(s));
+      }
 
       Layer::OnAttach();
-
-      // todo:
-      Own<Scene> scene{ new Scene() };
-
-      {
-         auto e = scene->Create("Red");
-         auto& t = e.Get<SceneTransformComponent>();
-         t.position = { 0, 0, 50 };
-         t.scale = { 100, 100, 1 };
-         auto& m = e.Add<SimpleMaterialComponent>();
-         m.albedo = { 1, 0, 0 };
-      }
-
-      {
-         auto e = scene->Create("Green");
-         auto& t = e.Get<SceneTransformComponent>();
-         t.position = { 0, -10, 0 };
-         t.scale = { 100, 1, 100 };
-         auto& m = e.Add<SimpleMaterialComponent>();
-         m.albedo = { 0, 1, 0 };
-      }
-
-      {
-         auto e = scene->Create("Blue");
-         auto& t = e.Get<SceneTransformComponent>();
-         t.position = { 50, 0, 0 };
-         t.scale = { 1, 100, 100 };
-         auto& m = e.Add<SimpleMaterialComponent>();
-         m.albedo = { 0, 0, 1 };
-      }
-
-      int3 cubeSize{25, 10, 25};
-
-      for (int i = 0; i < 500; ++i) {
-         Entity e = scene->Create(std::format("Cube {}", i));
-      
-         auto& trans = e.GetOrCreate<SceneTransformComponent>();
-         trans.position = Random::Uniform(-cubeSize,cubeSize);
-         trans.scale = Random::Uniform(vec3{0}, vec3{ 3.f });
-         trans.rotation = Random::Uniform(vec3{0}, vec3{ 30.f });
-
-         auto& material = e.GetOrCreate<SimpleMaterialComponent>();
-         material.albedo = Random::Uniform(vec3_Zero, vec3_One);
-         material.metallic = Random::Uniform(0, 1);
-         material.roughness = Random::Uniform(0, 1);
-         material.opaque = Random::Bool(0.75f);
-      }
-
-      for (int i = 0; i < 8; ++i) {
-         Entity e = scene->Create(std::format("Light {}", i));
-
-         auto& trans = e.GetOrCreate<SceneTransformComponent>();
-         trans.position = Random::Uniform(-cubeSize, cubeSize);
-
-         auto& light = e.Add<LightComponent>();
-         light.color = Random::Uniform(vec3{ 0 }, vec3{ 20.f });
-         light.radius = Random::Uniform(3, 10);
-      }
-
-      SetEditorScene(std::move(scene));
    }
 
    void EditorLayer::OnDetach() {
+      // todo:
+      {
+         YAML::Emitter out;
+
+         out << YAML::BeginMap;
+         Typer::Get().Serialize(out, "settings", editorSettings);
+         out << YAML::EndMap;
+
+         std::ofstream fout{ editorSettingPath };
+         fout << out.c_str();
+      }
+
       Layer::OnDetach();
    }
 
@@ -301,15 +271,91 @@ namespace pbe {
       if (ImGui::BeginMenuBar()) {
          if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene")) {
-               INFO("New Scene");
+               Own<Scene> scene{ new Scene() };
+               SetEditorScene(std::move(scene));
             }
+
             if (ImGui::MenuItem("Open Scene")) {
-               auto s = SceneDeserialize("scene.scn");
-               SetEditorScene(std::move(s));
+               auto path = OpenFileDialog({"Scene", "*.scn"});
+               if (!path.empty()) {
+                  editorSettings.scenePath = path;
+                  auto s = SceneDeserialize(editorSettings.scenePath);
+                  SetEditorScene(std::move(s));
+               }
             }
-            if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, !editorSettings.scenePath.empty())) {
                if (editorScene) {
-                  SceneSerialize("scene.scn", *editorScene);
+                  SceneSerialize(editorSettings.scenePath, *editorScene);
+               }
+            }
+
+            if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S", false, !!editorScene)) {
+               auto path = OpenFileDialog({ "Scene", "*.scn", true });
+               if (!path.empty()) {
+                  editorSettings.scenePath = path;
+                  SceneSerialize(editorSettings.scenePath, *editorScene);
+               }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Scene Random", nullptr, false, !!editorScene)) {
+               auto& scene = editorScene;
+
+               {
+                  auto e = scene->Create("Red");
+                  auto& t = e.Get<SceneTransformComponent>();
+                  t.position = { 0, 0, 50 };
+                  t.scale = { 100, 100, 1 };
+                  auto& m = e.Add<SimpleMaterialComponent>();
+                  m.albedo = { 1, 0, 0 };
+               }
+
+               {
+                  auto e = scene->Create("Green");
+                  auto& t = e.Get<SceneTransformComponent>();
+                  t.position = { 0, -10, 0 };
+                  t.scale = { 100, 1, 100 };
+                  auto& m = e.Add<SimpleMaterialComponent>();
+                  m.albedo = { 0, 1, 0 };
+               }
+
+               {
+                  auto e = scene->Create("Blue");
+                  auto& t = e.Get<SceneTransformComponent>();
+                  t.position = { 50, 0, 0 };
+                  t.scale = { 1, 100, 100 };
+                  auto& m = e.Add<SimpleMaterialComponent>();
+                  m.albedo = { 0, 0, 1 };
+               }
+
+               int3 cubeSize{ 25, 10, 25 };
+
+               for (int i = 0; i < 500; ++i) {
+                  Entity e = scene->Create(std::format("Cube {}", i));
+
+                  auto& trans = e.GetOrCreate<SceneTransformComponent>();
+                  trans.position = Random::Uniform(-cubeSize, cubeSize);
+                  trans.scale = Random::Uniform(vec3{ 0 }, vec3{ 3.f });
+                  trans.rotation = Random::Uniform(vec3{ 0 }, vec3{ 30.f });
+
+                  auto& material = e.GetOrCreate<SimpleMaterialComponent>();
+                  material.albedo = Random::Uniform(vec3_Zero, vec3_One);
+                  material.metallic = Random::Uniform(0, 1);
+                  material.roughness = Random::Uniform(0, 1);
+                  material.opaque = Random::Bool(0.75f);
+               }
+
+               for (int i = 0; i < 8; ++i) {
+                  Entity e = scene->Create(std::format("Light {}", i));
+
+                  auto& trans = e.GetOrCreate<SceneTransformComponent>();
+                  trans.position = Random::Uniform(-cubeSize, cubeSize);
+
+                  auto& light = e.Add<LightComponent>();
+                  light.color = Random::Uniform(vec3{ 0 }, vec3{ 20.f });
+                  light.radius = Random::Uniform(3, 10);
                }
             }
 
@@ -343,7 +389,7 @@ namespace pbe {
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyPressedEvent>()) {
          if (e->keyCode == VK_ESCAPE) {
-            selection.ClearSelection();
+            editorSelection.ClearSelection();
          }
       }
    }
@@ -355,7 +401,7 @@ namespace pbe {
 
    void EditorLayer::SetEditorScene(Own<Scene>&& scene) {
       editorScene = std::move(scene);
-      selection.ClearSelection();
+      editorSelection.ClearSelection();
 
       sceneHierarchyWindow->SetScene(editorScene.get());
       viewportWindow->scene = editorScene.get();

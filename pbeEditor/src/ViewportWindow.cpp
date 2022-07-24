@@ -85,7 +85,9 @@ namespace pbe {
          }
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
-         renderer->RenderScene(cmd, *scene, camera, cameraContext);
+         if (scene) {
+            renderer->RenderScene(cmd, *scene, camera, cameraContext);
+         }
          cmd.pContext->ClearState(); // todo:
 
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();

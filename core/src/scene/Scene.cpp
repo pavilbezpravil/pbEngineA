@@ -4,6 +4,7 @@
 #include "Component.h"
 #include "Entity.h"
 #include "typer/Typer.h"
+#include "fs/FileSystem.h"
 
 namespace pbe {
 
@@ -84,16 +85,25 @@ namespace pbe {
       }
       out << YAML::EndMap;
 
-      std::ofstream fout{ GetAssetsPath(path)};
+      // todo:
+      // std::ofstream fout{ GetAssetsPath(path)};
+      std::ofstream fout{ path.data() };
       fout << out.c_str();
    }
 
    Own<Scene> SceneDeserialize(std::string_view path) {
       INFO("Deserialize scene '{}'", path);
 
+      if (!fs::exists(path)) {
+         WARN("Cant find file '{}'", path);
+         return {};
+      }
+
       Own<Scene> scene{ new Scene() };
 
-      YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
+      // todo:
+      // YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
+      YAML::Node root = YAML::LoadFile(path.data());
 
       auto name = root["sceneName"].as<string>();
       INFO("sceneName {}", name);
