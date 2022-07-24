@@ -87,4 +87,10 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(LightComponent);
 
+   struct DecalComponent {
+      float alpha = 1;
+      DECL_COMPONENT(DecalComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(DecalComponent);
+
 }

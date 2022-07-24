@@ -34,8 +34,18 @@ namespace pbe {
          }
          else {
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
-               if (ImGui::MenuItem("Create Entity")) {
+               if (ImGui::MenuItem("Create Empty Entity")) {
                   auto createdEntity = pScene->Create();
+                  SelectEntity(createdEntity);
+               }
+               if (ImGui::MenuItem("Create Decal")) {
+                  auto createdEntity = pScene->Create();
+                  createdEntity.Add<DecalComponent>();
+                  SelectEntity(createdEntity);
+               }
+               if (ImGui::MenuItem("Create Cube")) {
+                  auto createdEntity = pScene->Create();
+                  createdEntity.Add<SimpleMaterialComponent>();
                   SelectEntity(createdEntity);
                }
                ImGui::EndPopup();

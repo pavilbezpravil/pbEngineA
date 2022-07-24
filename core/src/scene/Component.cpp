@@ -41,6 +41,11 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(LightComponent)
 
+   TYPER_BEGIN(DecalComponent)
+   TYPER_END(DecalComponent)
+
+   COMPONENT_EXPLICIT_TEMPLATE_DEF(DecalComponent)
+
    ComponentList& ComponentList::Get() {
       static ComponentList cl;
       return cl;
@@ -95,6 +100,13 @@ namespace pbe {
       ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
          if (auto* c = entity.TryGet<LightComponent>()) {
             EditorUI<LightComponent>(c->GetName(), *c);
+         }
+         });
+
+      id = GetTypeID<DecalComponent>();
+      ComponentList::Get().RegisterComponent(id, [](Entity& entity) {
+         if (auto* c = entity.TryGet<DecalComponent>()) {
+            EditorUI<DecalComponent>(c->GetName(), *c);
          }
          });
 
