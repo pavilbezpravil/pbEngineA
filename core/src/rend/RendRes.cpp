@@ -16,6 +16,7 @@ namespace pbe {
       ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       ID3D11DepthStencilState* depthStencilStateEqual;
       ID3D11BlendState* blendStateDefaultRGB;
+      ID3D11BlendState* blendStateDefaultRGBA;
       ID3D11BlendState* blendStateTransparency;
 
       static std::vector<ID3D11DeviceChild*> resourses;
@@ -83,6 +84,10 @@ namespace pbe {
 
          device->CreateBlendState(&transparentDesc, &blendStateDefaultRGB);
          resourses.push_back(blendStateDefaultRGB);
+
+         transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+         device->CreateBlendState(&transparentDesc, &blendStateDefaultRGBA);
+         resourses.push_back(blendStateDefaultRGBA);
 
          transparentDesc.RenderTarget[0].BlendEnable = true;
          transparentDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;

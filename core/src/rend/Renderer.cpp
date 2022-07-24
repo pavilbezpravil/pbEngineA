@@ -161,8 +161,6 @@ namespace pbe {
       cb.directLight.color = vec3{ 1 };
       cb.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
 
-      cmd.SetBlendState(rendres::blendStateDefaultRGB);
-
       if (cfg.opaqueSorting) {
          // todo: slow. I assumed
          std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
@@ -182,6 +180,7 @@ namespace pbe {
 
             cmd.SetRenderTargets(cameraContext.normal, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
             RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cb);
          }
@@ -216,6 +215,7 @@ namespace pbe {
 
             cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
+            cmd.SetBlendState(rendres::blendStateDefaultRGB);
             cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
@@ -226,6 +226,7 @@ namespace pbe {
 
          cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+         cmd.SetBlendState(rendres::blendStateDefaultRGB);
          baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
 
          RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
@@ -269,7 +270,8 @@ namespace pbe {
 
          UpdateInstanceBuffer(cmd, decalObjs);
          baseDecal->SetSRV(cmd, "gDecals", *decalBuffer);
-         baseDecal->SetSRV(cmd, "gDepth", *cameraContext.depthCopy);
+         baseDecal->SetSRV(cmd, "gSceneDepth", *cameraContext.depthCopy);
+         baseDecal->SetSRV(cmd, "gSceneNormal", *cameraContext.normal);
          baseDecal->SetSRV(cmd, "gSsao", *cameraContext.ssao);
          RenderSceneAllObjects(cmd, decalObjs, *baseDecal, cb);
       }

@@ -27,7 +27,8 @@ StructuredBuffer<Light> gLights;
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);
 
-Texture2D<float> gDepth;
+Texture2D<float> gSceneDepth;
+Texture2D<float> gSceneNormal;
 Texture2D<float> gSsao;
 
 // todo: copy paste from ssao.cs
@@ -63,8 +64,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   float3 posW = input.posW;
 
   #ifdef DECAL
-    float sceneDepth = gDepth.SampleLevel(gSamplerPoint, screenUV, 0);
+    float sceneDepth = gSceneDepth.SampleLevel(gSamplerPoint, screenUV, 0);
     float3 scenePosW = GetWorldPositionFromDepth(screenUV, sceneDepth);
+    posW = scenePosW;
+
+    normalW = gSceneNormal.SampleLevel(gSamplerPoint, screenUV, 0);
 
     float4x4 decalViewProjection = gDecals[gCamera.instanceStart + input.instanceID].viewProjection;
     float3 posDecalSpace = mul(float4(scenePosW, 1), decalViewProjection).xyz;
