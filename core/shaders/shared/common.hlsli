@@ -11,6 +11,10 @@ struct Instance {
   Material material;
 };
 
+struct Decal {
+  float4x4 viewProjection;
+};
+
 struct Light {
   float3 position;
   int type;

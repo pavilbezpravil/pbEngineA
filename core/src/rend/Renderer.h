@@ -39,13 +39,15 @@ namespace pbe {
    struct CameraContext {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> depth;
+      Ref<Texture2D> depthCopy;
       Ref<Texture2D> normal;
       Ref<Texture2D> position;
       Ref<Texture2D> ssao;
    };
 
    struct RenderConfing {
-      bool renderTransparency = true;
+      bool transparency = true;
+      bool decals = true;
       bool transparencySorting = true;
       bool opaqueSorting = true;
       bool useZPass = true;
@@ -64,6 +66,7 @@ namespace pbe {
 
       Ref<GpuProgram> baseColorPass;
       Ref<GpuProgram> baseZPass;
+      Ref<GpuProgram> baseDecal;
 
       Ref<GpuProgram> ssaoPass;
 
@@ -71,6 +74,7 @@ namespace pbe {
 
       Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
+      Ref<Buffer> decalBuffer;
       Ref<Buffer> lightBuffer;
       Ref<Buffer> ssaoRandomDirs;
 
@@ -81,6 +85,7 @@ namespace pbe {
 
       std::vector<RenderObject> opaqueObjs;
       std::vector<RenderObject> transparentObjs;
+      std::vector<RenderObject> decalObjs;
 
       void Init();
 

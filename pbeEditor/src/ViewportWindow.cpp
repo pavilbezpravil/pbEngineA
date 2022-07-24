@@ -25,12 +25,17 @@ namespace pbe {
 
       static RenderConfing cfg;
 
-      ImGui::Checkbox("Render Transparency", &cfg.renderTransparency);
+      ImGui::Checkbox("Transparency", &cfg.transparency);
       ImGui::SameLine();
       ImGui::Checkbox("Transparency Sorting", &cfg.transparencySorting);
+      ImGui::SameLine();
 
       ImGui::Checkbox("Opaque Sorting", &cfg.opaqueSorting);
       ImGui::SameLine();
+
+      ImGui::Checkbox("Decals", &cfg.decals);
+      ImGui::SameLine();
+
       ImGui::Checkbox("Use ZPass", &cfg.useZPass);
       ImGui::SameLine();
       ImGui::Checkbox("SSAO", &cfg.ssao);
@@ -42,7 +47,7 @@ namespace pbe {
       static int item_current = 0;
       const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO" };
 
-      ImGui::SetNextItemWidth(70);
+      ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
 
       auto imSize = ImGui::GetContentRegionAvail();
@@ -63,6 +68,10 @@ namespace pbe {
 
             cameraContext.depth = Texture2D::Create(texDesc);
             cameraContext.depth->SetDbgName("scene depth");
+
+            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.depthCopy = Texture2D::Create(texDesc);
+            cameraContext.depthCopy->SetDbgName("scene depth copy");
 
             texDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;

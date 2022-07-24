@@ -43,6 +43,10 @@ namespace pbe {
       return {};
    }
 
+   int Scene::EntitiesCount() const {
+      return (int)registry.alive();
+   }
+
    static string gAssetsPath = "../../assets/";
 
    string GetAssetsPath(string_view path) {

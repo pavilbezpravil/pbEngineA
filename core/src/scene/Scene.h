@@ -24,9 +24,7 @@ namespace pbe {
 
       Entity FindByName(std::string_view name);
 
-      int EntitiesCount() const {
-         return (int)registry.size();
-      }
+      int EntitiesCount() const;
 
    private:
       entt::registry registry;

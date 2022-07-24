@@ -29,6 +29,10 @@ namespace pbe {
          }
       }
 
+      void CopyResource(GPUResource& dst, GPUResource& src) {
+         pContext->CopyResource(dst.pResource.Get(), src.pResource.Get());
+      }
+
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {
          pContext->ClearDepthStencilView(depth.dsv.Get(), clearFlags, depthValue, stencilValue);
       }

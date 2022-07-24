@@ -1,0 +1,21 @@
+sceneName: test_scene
+entities:
+  - uuid: 5113038764324791803
+    tag: Entity 2
+    SceneTransformComponent:
+      position: [0, -0.278346717, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    DecalComponent:
+      {}
+  - uuid: 4049793853344634632
+    tag: Entity 1
+    SceneTransformComponent:
+      position: [0, -1.02307725, 0]
+      rotation: [0, -0, 0]
+      scale: [12.3530703, 1, 14.8547649]
+    SimpleMaterialComponent:
+      albedo: [0, 1, 0]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true

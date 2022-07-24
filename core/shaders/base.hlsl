@@ -21,10 +21,21 @@ cbuffer gCameraCB {
 }
 
 StructuredBuffer<Instance> gInstances;
+StructuredBuffer<Decal> gDecals;
 StructuredBuffer<Light> gLights;
 
-SamplerState gSamplerLinear;
+SamplerState gSamplerPoint : register(s0);
+SamplerState gSamplerLinear : register(s1);
+
+Texture2D<float> gDepth;
 Texture2D<float> gSsao;
+
+// todo: copy paste from ssao.cs
+float3 GetWorldPositionFromDepth(float2 uv, float depth ) {
+	float4 ndc = float4(TexToNDC(uv), depth, 1);
+	float4 wp = mul(ndc, gCamera.invViewProjection);
+	return (wp / wp.w).xyz;
+}
 
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
@@ -46,15 +57,33 @@ struct PsOut {
 };
 
 PsOut ps_main(VsOut input) : SV_TARGET {
-  float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+  float2 screenUV = input.posH.xy / gCamera.rtSize;
 
+  float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
   float3 posW = input.posW;
 
-  Material material = gInstances[gCamera.instanceStart + input.instanceID].material;
+  #ifdef DECAL
+    float sceneDepth = gDepth.SampleLevel(gSamplerPoint, screenUV, 0);
+    float3 scenePosW = GetWorldPositionFromDepth(screenUV, sceneDepth);
 
-  float3 albedo = material.albedo;
-  float roughness = material.roughness;
-  float metallic = material.metallic;
+    float4x4 decalViewProjection = gDecals[gCamera.instanceStart + input.instanceID].viewProjection;
+    float3 posDecalSpace = mul(float4(scenePosW, 1), decalViewProjection).xyz;
+    if (any(posDecalSpace > float3(1, 1, 1) || posDecalSpace < float3(-1, -1, 0))) {
+      discard;
+    }
+
+    float3 albedo = 1;
+    // albedo = frac(scenePosW);
+    albedo = float3(NDCToTex(posDecalSpace.xy), 0);
+    float roughness = 0.2;
+    float metallic = 0;
+  #else
+    Material material = gInstances[gCamera.instanceStart + input.instanceID].material;
+
+    float3 albedo = material.albedo;
+    float roughness = material.roughness;
+    float metallic = material.metallic;
+  #endif
 
   float3 N = normalize(normalW);
   float3 V = normalize(gCamera.position - posW);
@@ -104,7 +133,6 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       Lo += (kD * albedo / PI + specular) * radiance * NdotL;
   }
 
-  float2 screenUV = input.posH.xy / gCamera.rtSize;
   float ssaoMask = gSsao.SampleLevel(gSamplerLinear, screenUV, 0).x;
 
   // float ao = ssaoMask; // todo:
@@ -174,6 +202,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   output.color.rgb = color;
   // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = 0.75;
+  // output.color.a = 1;
   
   // output.color.rg = screenUV;
   // output.color.b = 0;

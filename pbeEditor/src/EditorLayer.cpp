@@ -3,6 +3,7 @@
 #include "EditorWindow.h"
 #include "ViewportWindow.h"
 #include "app/Event.h"
+#include "app/Input.h"
 #include "core/Profiler.h"
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
@@ -36,17 +37,17 @@ namespace pbe {
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
                if (ImGui::MenuItem("Create Empty Entity")) {
                   auto createdEntity = pScene->Create();
-                  SelectEntity(createdEntity);
+                  ToggleSelectEntity(createdEntity);
                }
                if (ImGui::MenuItem("Create Decal")) {
                   auto createdEntity = pScene->Create();
                   createdEntity.Add<DecalComponent>();
-                  SelectEntity(createdEntity);
+                  ToggleSelectEntity(createdEntity);
                }
                if (ImGui::MenuItem("Create Cube")) {
                   auto createdEntity = pScene->Create();
                   createdEntity.Add<SimpleMaterialComponent>();
-                  SelectEntity(createdEntity);
+                  ToggleSelectEntity(createdEntity);
                }
                ImGui::EndPopup();
             }
@@ -63,14 +64,14 @@ namespace pbe {
                bool hasChilds = false;
 
                ImGuiTreeNodeFlags nodeFlags =
-                  (entity == selection->FirstSelected() ? ImGuiTreeNodeFlags_Selected : 0)
+                  (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
                   | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
                   | ImGuiTreeNodeFlags_SpanFullWidth
                   | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
                if (ImGui::TreeNodeEx((void*)(size_t)entity.GetID(), nodeFlags, name)) {
                   if (ImGui::IsItemClicked()) {
-                     SelectEntity(entity);
+                     ToggleSelectEntity(entity);
                   }
 
                   if (ImGui::BeginPopupContextItem()) {
@@ -85,6 +86,9 @@ namespace pbe {
                      if (ImGui::Button("Delete")) {
                         // todo: add to pending
                         pScene->DestroyImmediate(entity);
+                        if (selection) {
+                           selection->Unselect(entity);
+                        }
                      }
 
                      if (ImGui::Button("Close")) {
@@ -110,9 +114,10 @@ namespace pbe {
          pScene = scene;
       }
 
-      void SelectEntity(Entity entity) {
+      void ToggleSelectEntity(Entity entity) {
          if (selection) {
-            selection->Select(entity);
+            bool clearPrevSelection = !Input::IsKeyPressed(VK_CONTROL);
+            selection->ToggleSelect(entity, clearPrevSelection);
          }
       }
 
@@ -400,6 +405,12 @@ namespace pbe {
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyPressedEvent>()) {
          if (e->keyCode == VK_ESCAPE) {
+            editorSelection.ClearSelection();
+         }
+         if (e->keyCode == VK_DELETE) {
+            for (auto entity : editorSelection.selected) {
+               editorScene->DestroyImmediate(entity);
+            }
             editorSelection.ClearSelection();
          }
       }

@@ -55,6 +55,14 @@ namespace pbe {
       components2[componentID] = std::move(func);
    }
 
+   vec3 SceneTransformComponent::Up() const {
+      return rotation * vec3_Up;
+   }
+
+   vec3 SceneTransformComponent::Forward() const {
+      return rotation * vec3_Forward;
+   }
+
    mat4 SceneTransformComponent::GetMatrix() const {
       mat4 transform = glm::translate(mat4(1), position);
       transform *= mat4{ rotation };

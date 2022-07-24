@@ -11,12 +11,16 @@ namespace pbe {
       rendres::Init(); // todo:
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-      baseColorPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       programDesc.vs.defines.AddDefine("ZPASS");
       programDesc.ps.defines.AddDefine("ZPASS");
       baseZPass = GpuProgram::Create(programDesc);
+
+      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+      baseColorPass = GpuProgram::Create(programDesc);
+
+      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+      programDesc.ps.defines.AddDefine("DECAL");
+      baseDecal = GpuProgram::Create(programDesc);
 
       programDesc = ProgramDesc::Cs("ssao.cs", "main");
       ssaoPass = GpuProgram::Create(programDesc);
@@ -54,7 +58,7 @@ namespace pbe {
    void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene) {
       opaqueObjs.clear();
       transparentObjs.clear();
-         
+
       for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
          if (material.opaque) {
             opaqueObjs.emplace_back(sceneTrans, material);
@@ -212,7 +216,7 @@ namespace pbe {
 
             cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
-            cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateLinear); // todo:
+            cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
          }
@@ -227,7 +231,48 @@ namespace pbe {
          RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
       }
 
-      if (cfg.renderTransparency) {
+      if (cfg.decals) {
+         decalObjs.clear();
+         std::vector<Decal> decals;
+
+         SimpleMaterialComponent decalDefault{}; // todo:
+         for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, DecalComponent>().each()) {
+            decalObjs.emplace_back(trans, decalDefault);
+
+            mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
+            mat4 projection = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f);
+            mat4 viewProjection = glm::transpose(projection * view);
+            decals.emplace_back(viewProjection);
+         }
+
+         if (!decalBuffer || decalBuffer->ElementsCount() < decalObjs.size()) {
+            auto bufferDesc = Buffer::Desc::StructureBuffer((uint)decalObjs.size(), sizeof(Decal));
+            decalBuffer = Buffer::Create(bufferDesc);
+            decalBuffer->SetDbgName("decal buffer");
+         }
+
+         cmd.UpdateSubresource(*decalBuffer, decals.data(), 0, decals.size() * sizeof(Decal));
+
+         GPU_MARKER("Decal");
+         PROFILE_GPU("Decal");
+
+         cmd.CopyResource(*cameraContext.depthCopy, *cameraContext.depth);
+
+         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
+         cmd.SetBlendState(rendres::blendStateTransparency);
+
+         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
+         cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
+
+         UpdateInstanceBuffer(cmd, decalObjs);
+         baseDecal->SetSRV(cmd, "gDecals", *decalBuffer);
+         baseDecal->SetSRV(cmd, "gDepth", *cameraContext.depthCopy);
+         baseDecal->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+         RenderSceneAllObjects(cmd, decalObjs, *baseDecal, cb);
+      }
+
+      if (cfg.transparency && !transparentObjs.empty()) {
          GPU_MARKER("Transparency");
          PROFILE_GPU("Transparency");
 

@@ -62,6 +62,10 @@ namespace pbe {
       quat rotation = quat_Identity;
       vec3 scale{ 1.f };
 
+      vec3 Right() const;
+      vec3 Up() const;
+      vec3 Forward() const;
+
       mat4 GetMatrix() const;
       void SetMatrix(const mat4& transform);
 
