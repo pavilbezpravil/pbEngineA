@@ -26,17 +26,12 @@ namespace pbe {
       ssaoPass = GpuProgram::Create(programDesc);
 
       mesh = Mesh::Create(MeshGeomCube());
-
-      auto bufferDesc = Buffer::Desc::ConstantBuffer(sizeof(CameraCB));
-      cameraCbBuffer = Buffer::Create(bufferDesc);
-      cameraCbBuffer->SetDbgName("camera cb");
    }
 
    void Renderer::UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs) {
       if (!instanceBuffer || instanceBuffer->ElementsCount() < renderObjs.size()) {
-         auto bufferDesc = Buffer::Desc::StructureBuffer((uint)renderObjs.size(), sizeof(Instance));
+         auto bufferDesc = Buffer::Desc::Structured("instance buffer", (uint)renderObjs.size(), sizeof(Instance));
          instanceBuffer = Buffer::Create(bufferDesc);
-         instanceBuffer->SetDbgName("instance buffer");
       }
 
       std::vector<Instance> instances;
@@ -68,17 +63,15 @@ namespace pbe {
       }
 
       if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
-         auto bufferDesc = Buffer::Desc::StructureBuffer(scene.EntitiesCount(), sizeof(Instance));
+         auto bufferDesc = Buffer::Desc::Structured("instance buffer", scene.EntitiesCount(), sizeof(Instance));
          instanceBuffer = Buffer::Create(bufferDesc);
-         instanceBuffer->SetDbgName("instance buffer");
       }
 
       {
          auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
-            auto bufferDesc = Buffer::Desc::StructureBuffer(nLights, sizeof(Light));
+            auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(Light));
             lightBuffer = Buffer::Create(bufferDesc);
-            lightBuffer->SetDbgName("light buffer");
          }
 
          std::vector<Light> lights;
@@ -97,9 +90,8 @@ namespace pbe {
 
       if (!ssaoRandomDirs) {
          int nRandomDirs = 32;
-         auto bufferDesc = Buffer::Desc::StructureBuffer(nRandomDirs, sizeof(vec3));
+         auto bufferDesc = Buffer::Desc::Structured("ssao random dirs", nRandomDirs, sizeof(vec3));
          ssaoRandomDirs = Buffer::Create(bufferDesc);
-         ssaoRandomDirs->SetDbgName("ssao random dirs");
 
          std::vector<vec3> dirs;
          dirs.reserve(nRandomDirs);
@@ -192,7 +184,10 @@ namespace pbe {
             cmd.SetRenderTargets();
 
             ssaoPass->Activate(cmd);
-            ssaoPass->SetCB(cmd, "gCameraCB", *cameraCbBuffer);
+
+            auto dynCB = cmd.GetDynConstantBuffer(cb);
+            ssaoPass->SetCB<CameraCB>(cmd, "gCameraCB", *dynCB.buffer, dynCB.offset);
+
             cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
             ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
@@ -249,9 +244,8 @@ namespace pbe {
          }
 
          if (!decalBuffer || decalBuffer->ElementsCount() < decalObjs.size()) {
-            auto bufferDesc = Buffer::Desc::StructureBuffer((uint)decalObjs.size(), sizeof(Decal));
+            auto bufferDesc = Buffer::Desc::Structured("Decals", (uint)decalObjs.size(), sizeof(Decal));
             decalBuffer = Buffer::Create(bufferDesc);
-            decalBuffer->SetDbgName("decal buffer");
          }
 
          cmd.UpdateSubresource(*decalBuffer, decals.data(), 0, decals.size() * sizeof(Decal));
@@ -303,7 +297,6 @@ namespace pbe {
       CameraCB cb = cameraCB;
 
       program.Activate(cmd);
-      program.SetCB(cmd, "gCameraCB", *cameraCbBuffer);
       program.SetSRV(cmd, "gInstances", *instanceBuffer);
       program.SetSRV(cmd, "gLights", *lightBuffer);
 
@@ -315,7 +308,8 @@ namespace pbe {
 
          cb.instanceStart = instanceID++;
 
-         cmd.UpdateSubresource(*cameraCbBuffer, &cb);
+         auto dynCB = cmd.GetDynConstantBuffer(cb);
+         program.SetCB<CameraCB>(cmd, "gCameraCB", *dynCB.buffer, dynCB.offset);
 
          if (cfg.useInstancedDraw) {
             program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());

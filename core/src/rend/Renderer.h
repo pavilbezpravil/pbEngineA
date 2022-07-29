@@ -72,7 +72,6 @@ namespace pbe {
 
       Mesh mesh;
 
-      Ref<Buffer> cameraCbBuffer;
       Ref<Buffer> instanceBuffer;
       Ref<Buffer> decalBuffer;
       Ref<Buffer> lightBuffer;

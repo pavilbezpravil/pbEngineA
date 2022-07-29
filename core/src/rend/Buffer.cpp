@@ -36,6 +36,8 @@ namespace pbe {
             return;
          }
 
+         SetDbgName(desc.name);
+
          if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE) {
             pDevice->CreateShaderResourceView(pBuffer, NULL, srv.GetAddressOf());
          }

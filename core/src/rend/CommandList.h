@@ -3,29 +3,64 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "Texture2D.h"
+#include "core/Assert.h"
 #include "core/Core.h"
 
 namespace pbe {
 
+   struct DynConstantBuffer {
+      Buffer* buffer{};
+      uint offset = 0;
+   };
+
    class CommandList {
    public:
-      CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
+      static constexpr int DYN_CONST_BUFFER_SIZE = 256 * 512;
 
+      CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
+         auto bufferDesc = Buffer::Desc::Constant("cmdList dynConstBuffer", DYN_CONST_BUFFER_SIZE);
+         dynConstBuffer = Buffer::Create(bufferDesc);
       }
 
       // CommandList() {
       //    sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
       // }
 
-      void UpdateSubresource(Buffer& buffer, void* data, uint offset = 0, size_t size = -1) {
+      template<typename T>
+      DynConstantBuffer GetDynConstantBuffer(const T& data) {
+         return GetDynConstantBuffer((const void*) & data, sizeof(T));
+      }
+
+      DynConstantBuffer GetDynConstantBuffer(const void* data, uint size) {
+         size = ((size - 1) / 256 + 1) * 256; // todo:
+
+         if (dynConstBufferOffset + size >= DYN_CONST_BUFFER_SIZE) {
+            ASSERT(false);
+            return {};
+         }
+
+         uint oldOffset = dynConstBufferOffset;
+         dynConstBufferOffset += size;
+
+         UpdateSubresource(*dynConstBuffer, data, oldOffset, size);
+
+         return {dynConstBuffer, oldOffset };
+      }
+
+      template<typename T>
+      void UpdateSubresource(Buffer& buffer, const T& data, uint offset = 0) {
+         UpdateSubresource(buffer, (const void*)&data, offset, sizeof(T));
+      }
+
+      void UpdateSubresource(Buffer& buffer, const void* data, uint offset = 0, size_t size = -1) {
          if (buffer.Valid() && size > 0) {
             D3D11_BOX box{};
             box.left = offset;
             box.right = offset + (uint)size;
             box.bottom = 1;
             box.back = 1;
-            pContext->UpdateSubresource(buffer.GetBuffer(), 0, size == -1 ? nullptr : &box, data, 0, 0);
-            // pContext->UpdateSubresource(buffer.GetBuffer(), 0, nullptr, data, 0, 0);
+
+            pContext->UpdateSubresource1(buffer.GetBuffer(), 0, size == -1 ? nullptr : &box, data, 0, 0, D3D11_COPY_DISCARD);
          }
       }
 
@@ -83,6 +118,10 @@ namespace pbe {
 
 
       ID3D11DeviceContext3* pContext{};
+
+   private:
+      Ref<Buffer> dynConstBuffer;
+      uint dynConstBufferOffset = 0;
    };
 
    struct GpuMarker {

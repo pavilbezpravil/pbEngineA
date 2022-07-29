@@ -107,7 +107,11 @@ namespace pbe {
 
       void Activate(CommandList& cmd);
 
-      void SetCB(CommandList& cmd, std::string_view name, Buffer& buffer);
+      template<typename T>
+      void SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes = 0) {
+         SetCB(cmd, name, buffer, offsetInBytes, sizeof(T));
+      }
+      void SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes, uint size);
 
       void SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource);
       void SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource);

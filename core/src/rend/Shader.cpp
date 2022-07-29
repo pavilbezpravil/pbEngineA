@@ -175,10 +175,12 @@ namespace pbe {
       }
    }
 
-   void GpuProgram::SetCB(CommandList& cmd, std::string_view name, Buffer& buffer) {
+   void GpuProgram::SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes, uint size) {
       size_t id = StrHash(name);
 
       ID3D11Buffer* dxBuffer = buffer.GetBuffer();
+
+      offsetInBytes /= 16;
 
       if (vs) {
          const auto reflection = vs->reflection;
@@ -186,7 +188,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->VSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+            cmd.pContext->VSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
          }
       }
 
@@ -196,7 +198,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->PSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+            cmd.pContext->PSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
          }
       }
 
@@ -206,7 +208,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->CSSetConstantBuffers(bi.BindPoint, 1, &dxBuffer);
+            cmd.pContext->CSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
          }
       }
    }

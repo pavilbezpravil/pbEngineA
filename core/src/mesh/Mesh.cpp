@@ -47,13 +47,11 @@ namespace pbe {
    Mesh Mesh::Create(MeshGeom&& geom) {
       Mesh mesh{ std::move(geom) };
 
-      auto bufferDesc = Buffer::Desc::VertexBuffer(mesh.geom.VertexesBytes());
+      auto bufferDesc = Buffer::Desc::Vertex("vertex buf", mesh.geom.VertexesBytes());
       mesh.vertexBuffer = Buffer::Create(bufferDesc, mesh.geom.vertexes.data());
-      mesh.vertexBuffer->SetDbgName("vertex buf");
 
-      bufferDesc = Buffer::Desc::IndexBuffer(mesh.geom.IndexesBytes());
+      bufferDesc = Buffer::Desc::Index("index buf", mesh.geom.IndexesBytes());
       mesh.indexBuffer = Buffer::Create(bufferDesc, mesh.geom.indexes.data());
-      mesh.indexBuffer->SetDbgName("index buf");
 
       return mesh;
    }

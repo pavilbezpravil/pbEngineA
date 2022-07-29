@@ -5,7 +5,9 @@
 namespace pbe {
 
    void SetDbgName(ID3D11DeviceChild* obj, std::string_view name) {
-      obj->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.data());
+      if (!name.empty()) {
+         obj->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)name.size(), name.data());
+      }
    }
 
 }
