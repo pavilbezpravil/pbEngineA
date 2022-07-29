@@ -8,7 +8,7 @@
 
 namespace pbe {
 
-   struct DynConstantBuffer {
+   struct OffsetedBuffer {
       Buffer* buffer{};
       uint offset = 0;
    };
@@ -27,11 +27,11 @@ namespace pbe {
       // }
 
       template<typename T>
-      DynConstantBuffer GetDynConstantBuffer(const T& data) {
-         return GetDynConstantBuffer((const void*) & data, sizeof(T));
+      OffsetedBuffer AllocDynConstantBuffer(const T& data) {
+         return AllocDynConstantBuffer((const void*) & data, sizeof(T));
       }
 
-      DynConstantBuffer GetDynConstantBuffer(const void* data, uint size) {
+      OffsetedBuffer AllocDynConstantBuffer(const void* data, uint size) {
          size = ((size - 1) / 256 + 1) * 256; // todo:
 
          if (dynConstBufferOffset + size >= DYN_CONST_BUFFER_SIZE) {
@@ -60,7 +60,8 @@ namespace pbe {
             box.bottom = 1;
             box.back = 1;
 
-            pContext->UpdateSubresource1(buffer.GetBuffer(), 0, size == -1 ? nullptr : &box, data, 0, 0, D3D11_COPY_DISCARD);
+            pContext->UpdateSubresource1(buffer.GetBuffer(), 0,
+               size == -1 ? nullptr : &box, data, 0, 0, D3D11_COPY_NO_OVERWRITE);
          }
       }
 

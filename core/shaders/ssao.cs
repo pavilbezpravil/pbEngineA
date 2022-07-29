@@ -8,7 +8,7 @@ Texture2D<float3> gNormal;
 RWTexture2D<float> gSsao;
 
 cbuffer gCameraCB {
-  CameraCB gCamera;
+  SCameraCB gCamera;
 }
 
 StructuredBuffer<float3> gRandomDirs;

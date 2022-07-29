@@ -17,7 +17,15 @@ struct VsOut {
 };
 
 cbuffer gCameraCB {
-  CameraCB gCamera;
+  SCameraCB gCamera;
+}
+
+cbuffer gSceneCB {
+  SSceneCB gScene;
+}
+
+cbuffer gDrawCallCB {
+  SDrawCallCB gDrawCall;
 }
 
 StructuredBuffer<Instance> gInstances;
@@ -41,7 +49,7 @@ float3 GetWorldPositionFromDepth(float2 uv, float depth ) {
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
 
-  float4x4 transform = gInstances[gCamera.instanceStart + input.instanceID].transform;
+  float4x4 transform = gInstances[gDrawCall.instanceStart + input.instanceID].transform;
 
   float3 posW = mul(float4(input.posL, 1), transform).xyz;
   float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
@@ -70,7 +78,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
     normalW = gSceneNormal.SampleLevel(gSamplerPoint, screenUV, 0);
 
-    float4x4 decalViewProjection = gDecals[gCamera.instanceStart + input.instanceID].viewProjection;
+    float4x4 decalViewProjection = gDecals[gDrawCall.instanceStart + input.instanceID].viewProjection;
     float3 posDecalSpace = mul(float4(scenePosW, 1), decalViewProjection).xyz;
     if (any(posDecalSpace > float3(1, 1, 1) || posDecalSpace < float3(-1, -1, 0))) {
       discard;
@@ -91,7 +99,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     float roughness = 0.2;
     float metallic = 0;
   #else
-    Material material = gInstances[gCamera.instanceStart + input.instanceID].material;
+    Material material = gInstances[gDrawCall.instanceStart + input.instanceID].material;
 
     float3 albedo = material.albedo;
     float roughness = material.roughness;
@@ -108,12 +116,12 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   // reflectance equation
   float3 Lo = 0;
   int useDirectionLight = 1;
-  for(int i = 0; i < gCamera.nLights + useDirectionLight; ++i) {
-      bool isDirectLight = i == gCamera.nLights;
+  for(int i = 0; i < gScene.nLights + useDirectionLight; ++i) {
+      bool isDirectLight = i == gScene.nLights;
 
       Light light = gLights[i];
       if (isDirectLight) {
-        light = gCamera.directLight;
+        light = gScene.directLight;
       }
 
       // calculate per-light radiance
@@ -174,12 +182,12 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       float fogDensity = noise(fogPosW * 0.5) * 0.3 * saturate(-fogPosW.y / 5);
 
       float3 scattering = 0;
-      for(int i = 0; i < gCamera.nLights + useDirectionLight; ++i) {
-          bool isDirectLight = i == gCamera.nLights;
+      for(int i = 0; i < gScene.nLights + useDirectionLight; ++i) {
+          bool isDirectLight = i == gScene.nLights;
 
           Light light = gLights[i];
           if (isDirectLight) {
-            light = gCamera.directLight;
+            light = gScene.directLight;
           }
 
           float distance = length(light.position - fogPosW);

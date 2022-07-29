@@ -4,6 +4,8 @@
 #include "core/Profiler.h"
 #include "math/Random.h"
 
+#include "shared/common.hlsli"
+
 
 namespace pbe {
 
@@ -141,17 +143,20 @@ namespace pbe {
       context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
       //
 
-      CameraCB cb;
+      SSceneCB sceneCB;
+      sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+      sceneCB.directLight.color = vec3{ 1 };
+      sceneCB.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
+      cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
 
-      cb.view = glm::transpose(camera.view);
-      cb.projection = glm::transpose(camera.projection);
-      cb.viewProjection = glm::transpose(camera.GetViewProjection());
-      cb.invViewProjection = glm::inverse(cb.viewProjection);
-      cb.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cb.position = camera.position;
-      cb.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
-      cb.directLight.color = vec3{ 1 };
-      cb.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
+      SCameraCB cameraCB;
+      cameraCB.view = glm::transpose(camera.view);
+      cameraCB.projection = glm::transpose(camera.projection);
+      cameraCB.viewProjection = glm::transpose(camera.GetViewProjection());
+      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+      cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+      cameraCB.position = camera.position;
+      cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
 
       if (cfg.opaqueSorting) {
          // todo: slow. I assumed
@@ -174,7 +179,7 @@ namespace pbe {
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
             cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cb);
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
          }
 
          if (cfg.ssao) {
@@ -185,8 +190,8 @@ namespace pbe {
 
             ssaoPass->Activate(cmd);
 
-            auto dynCB = cmd.GetDynConstantBuffer(cb);
-            ssaoPass->SetCB<CameraCB>(cmd, "gCameraCB", *dynCB.buffer, dynCB.offset);
+            const auto& cameraCB = cameraContext.cameraCB;
+            ssaoPass->SetCB<SCameraCB>(cmd, "gCameraCB", *cameraCB.buffer, cameraCB.offset);
 
             cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
             ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
@@ -213,7 +218,7 @@ namespace pbe {
             cmd.SetBlendState(rendres::blendStateDefaultRGB);
             cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
       } else {
          GPU_MARKER("Color (Without ZPass)");
@@ -224,7 +229,7 @@ namespace pbe {
          cmd.SetBlendState(rendres::blendStateDefaultRGB);
          baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
 
-         RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cb);
+         RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
       }
 
       if (cfg.decals) {
@@ -267,7 +272,7 @@ namespace pbe {
          baseDecal->SetSRV(cmd, "gSceneDepth", *cameraContext.depthCopy);
          baseDecal->SetSRV(cmd, "gSceneNormal", *cameraContext.normal);
          baseDecal->SetSRV(cmd, "gSsao", *cameraContext.ssao);
-         RenderSceneAllObjects(cmd, decalObjs, *baseDecal, cb);
+         RenderSceneAllObjects(cmd, decalObjs, *baseDecal, cameraContext);
       }
 
       if (cfg.transparency && !transparentObjs.empty()) {
@@ -288,28 +293,32 @@ namespace pbe {
          }
 
          UpdateInstanceBuffer(cmd, transparentObjs);
-         RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cb);
+         RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
       }
    }
 
    void Renderer::RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs,
-      GpuProgram& program, const CameraCB& cameraCB) {
-      CameraCB cb = cameraCB;
-
+      GpuProgram& program, const CameraContext& cameraContext) {
       program.Activate(cmd);
       program.SetSRV(cmd, "gInstances", *instanceBuffer);
       program.SetSRV(cmd, "gLights", *lightBuffer);
 
+      program.SetCB<SCameraCB>(cmd, "gCameraCB", *cameraContext.cameraCB.buffer, cameraContext.cameraCB.offset);
+      program.SetCB<SSceneCB>(cmd, "gSceneCB", *cameraContext.sceneCB.buffer, cameraContext.sceneCB.offset);
+
       int instanceID = 0;
 
       for (const auto& [trans, material] : renderObjs) {
+         SDrawCallCB cb;
          cb.transform = glm::translate(mat4(1), trans.position);
          cb.transform = glm::transpose(cb.transform);
-
+         cb.material.roughness = material.roughness;
+         cb.material.albedo = material.albedo;
+         cb.material.metallic = material.metallic;
          cb.instanceStart = instanceID++;
 
-         auto dynCB = cmd.GetDynConstantBuffer(cb);
-         program.SetCB<CameraCB>(cmd, "gCameraCB", *dynCB.buffer, dynCB.offset);
+         auto dynCB = cmd.AllocDynConstantBuffer(cb);
+         program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
 
          if (cfg.useInstancedDraw) {
             program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());

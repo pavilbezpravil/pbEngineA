@@ -11,9 +11,6 @@
 #include "mesh/Mesh.h"
 #include "scene/Component.h"
 #include "scene/Scene.h"
-#include "math/Types.h"
-
-#include "shared/common.hlsli"
 
 
 namespace pbe {
@@ -43,6 +40,10 @@ namespace pbe {
       Ref<Texture2D> normal;
       Ref<Texture2D> position;
       Ref<Texture2D> ssao;
+
+      // todo:
+      OffsetedBuffer cameraCB;
+      OffsetedBuffer sceneCB;
    };
 
    struct RenderConfing {
@@ -92,7 +93,7 @@ namespace pbe {
       void RenderDataPrepare(CommandList& cmd, Scene& scene);
 
       void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
-      void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraCB& cameraCB);
+      void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraContext& cameraContext);
 
    };
 

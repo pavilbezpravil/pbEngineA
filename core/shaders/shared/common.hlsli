@@ -24,21 +24,30 @@ struct Light {
   float _dymmy2;
 };
 
-struct CameraCB {
+struct SSceneCB {
+  int nLights;
+  float3 _sdfasdf;
+
+  Light directLight;
+};
+
+struct SCameraCB {
   float4x4 projection;
   float4x4 view;
   float4x4 viewProjection;
   float4x4 invViewProjection;
 
-  float4x4 transform;
-
   float3 position;
-  int nLights;
+  int _dsfdsfdsfdsf;
+
+  int2 rtSize;
+  float2 _dymmy3;
+};
+
+struct SDrawCallCB {
+  float4x4 transform;
+  Material material;
 
   int instanceStart;
-  int2 rtSize;
-  float _dymmy3;
-  
-  Material material;
-  Light directLight;
+  float3 _dymmy3;
 };
