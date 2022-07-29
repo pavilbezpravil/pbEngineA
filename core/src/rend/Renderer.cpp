@@ -284,6 +284,9 @@ namespace pbe {
          UpdateInstanceBuffer(cmd, transparentObjs);
          RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
       }
+
+      cameraContext.cameraCB = {};
+      cameraContext.sceneCB = {};
    }
 
    void Renderer::RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs,

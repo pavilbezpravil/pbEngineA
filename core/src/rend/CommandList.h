@@ -18,8 +18,7 @@ namespace pbe {
       static constexpr int DYN_CONST_BUFFER_SIZE = 256 * 512;
 
       CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
-         auto bufferDesc = Buffer::Desc::Constant("cmdList dynConstBuffer", DYN_CONST_BUFFER_SIZE);
-         dynConstBuffer = Buffer::Create(bufferDesc);
+
       }
 
       // CommandList() {
@@ -34,17 +33,21 @@ namespace pbe {
       OffsetedBuffer AllocDynConstantBuffer(const void* data, uint size) {
          size = ((size - 1) / 256 + 1) * 256; // todo:
 
-         if (dynConstBufferOffset + size >= DYN_CONST_BUFFER_SIZE) {
-            ASSERT(false);
-            return {};
+         if (dynConstBuffers.empty() || dynConstBufferOffset + size >= DYN_CONST_BUFFER_SIZE) {
+            auto bufferDesc = Buffer::Desc::Constant("cmdList dynConstBuffer", DYN_CONST_BUFFER_SIZE);
+            dynConstBuffers.emplace_back(Buffer::Create(bufferDesc));
+
+            dynConstBufferOffset = 0;
          }
 
          uint oldOffset = dynConstBufferOffset;
          dynConstBufferOffset += size;
 
-         UpdateSubresource(*dynConstBuffer, data, oldOffset, size);
+         auto& curDynConstBuffer = *dynConstBuffers.back();
 
-         return {dynConstBuffer, oldOffset };
+         UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
+
+         return { &curDynConstBuffer, oldOffset };
       }
 
       template<typename T>
@@ -121,7 +124,7 @@ namespace pbe {
       ID3D11DeviceContext3* pContext{};
 
    private:
-      Ref<Buffer> dynConstBuffer;
+      std::vector<Ref<Buffer>> dynConstBuffers;
       uint dynConstBufferOffset = 0;
    };
 
