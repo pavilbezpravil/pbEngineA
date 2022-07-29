@@ -10,7 +10,7 @@ namespace pbe {
       return Ref<Buffer>::Create(desc, data);
    }
 
-   int Buffer::ElementsCount() const {
+   uint Buffer::ElementsCount() const {
       return desc.Size / desc.StructureByteStride;
    }
 

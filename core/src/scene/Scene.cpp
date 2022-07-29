@@ -43,8 +43,8 @@ namespace pbe {
       return {};
    }
 
-   int Scene::EntitiesCount() const {
-      return (int)registry.alive();
+   uint Scene::EntitiesCount() const {
+      return (uint)registry.alive();
    }
 
    static string gAssetsPath = "../../assets/";

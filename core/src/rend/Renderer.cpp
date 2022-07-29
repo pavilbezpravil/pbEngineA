@@ -70,24 +70,26 @@ namespace pbe {
       }
 
       {
-         auto nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+         auto nLights = (uint)scene.GetEntitiesWith<LightComponent>().size();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
-            auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(Light));
+            auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(SLight));
             lightBuffer = Buffer::Create(bufferDesc);
          }
 
-         std::vector<Light> lights;
+         std::vector<SLight> lights;
          lights.reserve(nLights);
 
          for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
-            Light l;
+            SLight l;
             l.position = trans.position;
             l.color = light.color;
+            l.radius = light.radius;
+            l.type = SLIGHT_TYPE_POINT;
 
             lights.emplace_back(l);
          }
 
-         cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(Light));
+         cmd.UpdateSubresource(*lightBuffer, lights.data(), 0, lights.size() * sizeof(SLight));
       }
 
       if (!ssaoRandomDirs) {
@@ -143,10 +145,38 @@ namespace pbe {
       context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
       //
 
+      uint nDecals = 0;
+      if (cfg.decals) {
+         std::vector<SDecal> decals;
+
+         SimpleMaterialComponent decalDefault{}; // todo:
+         for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, DecalComponent>().each()) {
+            decalObjs.emplace_back(trans, decalDefault);
+
+            vec3 size = trans.scale * 0.5f;
+
+            mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
+            mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
+            mat4 viewProjection = glm::transpose(projection * view);
+            decals.emplace_back(viewProjection, decal.albedo, decal.metallic, decal.roughness);
+         }
+
+         nDecals = (uint)decals.size();
+
+         if (!decalBuffer || decalBuffer->ElementsCount() < nDecals) {
+            auto bufferDesc = Buffer::Desc::Structured("Decals", nDecals, sizeof(SDecal));
+            decalBuffer = Buffer::Create(bufferDesc);
+         }
+
+         cmd.UpdateSubresource(*decalBuffer, decals.data(), 0, nDecals * sizeof(SDecal));
+      }
+
       SSceneCB sceneCB;
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+      sceneCB.nDecals = (int)nDecals;
       sceneCB.directLight.color = vec3{ 1 };
       sceneCB.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
+      sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
       cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
 
       SCameraCB cameraCB;
@@ -218,6 +248,7 @@ namespace pbe {
             cmd.SetBlendState(rendres::blendStateDefaultRGB);
             cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+            baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
       } else {
@@ -228,51 +259,9 @@ namespace pbe {
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
          cmd.SetBlendState(rendres::blendStateDefaultRGB);
          baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+         baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
 
          RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
-      }
-
-      if (cfg.decals) {
-         decalObjs.clear();
-         std::vector<Decal> decals;
-
-         SimpleMaterialComponent decalDefault{}; // todo:
-         for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, DecalComponent>().each()) {
-            decalObjs.emplace_back(trans, decalDefault);
-
-            vec3 size = trans.scale * 0.5f;
-
-            mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
-            mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
-            mat4 viewProjection = glm::transpose(projection * view);
-            decals.emplace_back(viewProjection);
-         }
-
-         if (!decalBuffer || decalBuffer->ElementsCount() < decalObjs.size()) {
-            auto bufferDesc = Buffer::Desc::Structured("Decals", (uint)decalObjs.size(), sizeof(Decal));
-            decalBuffer = Buffer::Create(bufferDesc);
-         }
-
-         cmd.UpdateSubresource(*decalBuffer, decals.data(), 0, decals.size() * sizeof(Decal));
-
-         GPU_MARKER("Decal");
-         PROFILE_GPU("Decal");
-
-         cmd.CopyResource(*cameraContext.depthCopy, *cameraContext.depth);
-
-         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
-         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
-         cmd.SetBlendState(rendres::blendStateTransparency);
-
-         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
-         cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
-
-         UpdateInstanceBuffer(cmd, decalObjs);
-         baseDecal->SetSRV(cmd, "gDecals", *decalBuffer);
-         baseDecal->SetSRV(cmd, "gSceneDepth", *cameraContext.depthCopy);
-         baseDecal->SetSRV(cmd, "gSceneNormal", *cameraContext.normal);
-         baseDecal->SetSRV(cmd, "gSsao", *cameraContext.ssao);
-         RenderSceneAllObjects(cmd, decalObjs, *baseDecal, cameraContext);
       }
 
       if (cfg.transparency && !transparentObjs.empty()) {

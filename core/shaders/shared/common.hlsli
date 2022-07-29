@@ -11,24 +11,44 @@ struct Instance {
   Material material;
 };
 
-struct Decal {
+struct SDecal {
   float4x4 viewProjection;
+  float4 albedo;
+
+  float metallic;
+  float roughness;
+  float2 _sdfdsf;
 };
 
-struct Light {
+#define SLIGHT_TYPE_DIRECT (1)
+#define SLIGHT_TYPE_POINT (2)
+
+struct SLight {
   float3 position;
   int type;
   float3 direction;
   float _dymmy;
   float3 color;
-  float _dymmy2;
+  float radius;
+
+  // todo: dont work
+  float3 DirectionToLight(float3 posW) { // L
+    if (type == SLIGHT_TYPE_DIRECT) {
+      return -direction;
+    } else if (type == SLIGHT_TYPE_POINT) {
+      float3 L = normalize(position - posW);
+      return L;
+    }
+    return float3(0, 0, 0);
+  }
 };
 
 struct SSceneCB {
   int nLights;
-  float3 _sdfasdf;
+  int nDecals;
+  float2 _sdfasdf;
 
-  Light directLight;
+  SLight directLight;
 };
 
 struct SCameraCB {

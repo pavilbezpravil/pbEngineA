@@ -29,8 +29,8 @@ cbuffer gDrawCallCB {
 }
 
 StructuredBuffer<Instance> gInstances;
-StructuredBuffer<Decal> gDecals;
-StructuredBuffer<Light> gLights;
+StructuredBuffer<SDecal> gDecals;
+StructuredBuffer<SLight> gLights;
 
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);
@@ -61,6 +61,89 @@ VsOut vs_main(VsIn input) {
   return output;
 }
 
+float3 LightGetL(SLight light, float3 posW) { // L
+  if (light.type == SLIGHT_TYPE_DIRECT) {
+    return -light.direction;
+  } else if (light.type == SLIGHT_TYPE_POINT) {
+    float3 L = normalize(light.position - posW);
+    return L;
+  }
+  return float3(0, 0, 0);
+}
+
+float lengthSq(float3 v) {
+  return dot(v, v);
+}
+
+float LightAttenuation(SLight light, float3 posW) {
+  float attenuation = 1;
+
+  if (light.type == SLIGHT_TYPE_POINT) {
+    float distance = length(light.position - posW);
+    // attenuation = 1 / (distance * distance);
+    attenuation = smoothstep(1, 0, distance / light.radius);
+  }
+
+  return attenuation;
+}
+
+struct Surface {
+  float3 posW;
+  float3 normalW;
+  float roughness;
+  float metallic;
+  float3 albedo;
+  float3 F0;
+};
+
+float3 LightRadiance(SLight light, float3 posW) {
+  float attenuation = LightAttenuation(light, posW);
+  float3 radiance = light.color * attenuation;
+  return radiance;
+}
+
+float3 LightShadeLo(SLight light, Surface surface, float3 V) {
+  float attenuation = LightAttenuation(light, surface.posW);
+  if (attenuation <= 0.0001) {
+    return 0;
+  }
+  float3 radiance = light.color * attenuation;
+
+  float3 L = LightGetL(light, surface.posW);
+
+  float3 H = normalize(V + L);
+  float3 N = surface.normalW;
+
+  // cook-torrance brdf
+  float NDF = DistributionGGX(N, H, surface.roughness);
+  float G = GeometrySmith(N, V, L, surface.roughness);
+  float3 F = fresnelSchlick(max(dot(H, V), 0.0), surface.F0);
+
+  float3 kS = F;
+  float3 kD = 1 - kS;
+  kD *= 1.0 - surface.metallic;
+
+  float3 numerator = NDF * G * F;
+  float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
+  float3 specular = numerator / denominator;
+
+  // add to outgoing radiance Lo
+  float NdotL = max(dot(N, L), 0);
+  return (kD * surface.albedo / PI + specular) * radiance * NdotL;  
+}
+
+float3 Shade(Surface surface, float3 V) {
+  float3 Lo = 0;
+
+  Lo += LightShadeLo(gScene.directLight, surface, V);
+
+  for(int i = 0; i < gScene.nLights; ++i) {
+      Lo += LightShadeLo(gLights[i], surface, V);
+  }
+
+  return Lo;
+}
+
 struct PsOut {
   float4 color : SV_Target0;
 };
@@ -71,96 +154,51 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
   float3 posW = input.posW;
 
-  #ifdef DECAL
-    float sceneDepth = gSceneDepth.SampleLevel(gSamplerPoint, screenUV, 0);
-    float3 scenePosW = GetWorldPositionFromDepth(screenUV, sceneDepth);
-    posW = scenePosW;
+  float alpha = 0.75;
 
-    normalW = gSceneNormal.SampleLevel(gSamplerPoint, screenUV, 0);
+  Material material = gInstances[gDrawCall.instanceStart + input.instanceID].material;
+  
+  Surface surface;
+  surface.albedo = material.albedo;
+  surface.metallic = material.metallic;
+  surface.roughness = material.roughness;
 
-    float4x4 decalViewProjection = gDecals[gDrawCall.instanceStart + input.instanceID].viewProjection;
-    float3 posDecalSpace = mul(float4(scenePosW, 1), decalViewProjection).xyz;
+  surface.posW = posW;
+  surface.normalW = normalW;
+
+  for (int iDecal = 0; iDecal < gScene.nDecals; ++iDecal) {
+    SDecal decal = gDecals[iDecal];
+
+    float3 posDecalSpace = mul(float4(posW, 1), decal.viewProjection).xyz;
     if (any(posDecalSpace > float3(1, 1, 1) || posDecalSpace < float3(-1, -1, 0))) {
-      discard;
+      continue;
     }
 
-    // float3 decalForward = float3(0, 0, 1);
-    // float alpha = dot(decalForward, sceneNormalW);
+    float alpha = decal.albedo.a;
+
+    // float3 decalForward = float3(0, -1, 0);
+    // alpha *= lerp(-3, 1, dot(decalForward, -surface.normalW));
     // if (alpha < 0) {
-    //   discard;
+    //   continue;
     // }
 
-    float alpha = 1;
-
-    float3 albedo = 1;
-    // albedo = frac(scenePosW);
     float2 decalUV = NDCToTex(posDecalSpace.xy);
-    albedo = float3(frac(decalUV * 3), 0);
-    float roughness = 0.2;
-    float metallic = 0;
-  #else
-    Material material = gInstances[gDrawCall.instanceStart + input.instanceID].material;
 
-    float3 albedo = material.albedo;
-    float roughness = material.roughness;
-    float metallic = material.metallic;
-
-    float alpha = 0.75;
-  #endif
-
-  float3 N = normalize(normalW);
-  float3 V = normalize(gCamera.position - posW);
-
-  float3 F0 = lerp(0.04, albedo, metallic);
-	           
-  // reflectance equation
-  float3 Lo = 0;
-  int useDirectionLight = 1;
-  for(int i = 0; i < gScene.nLights + useDirectionLight; ++i) {
-      bool isDirectLight = i == gScene.nLights;
-
-      Light light = gLights[i];
-      if (isDirectLight) {
-        light = gScene.directLight;
-      }
-
-      // calculate per-light radiance
-      float3 L = normalize(light.position - posW);
-      if (isDirectLight) {
-        L = -light.direction;
-      }
-      float3 H = normalize(V + L);
-      float distance = length(light.position - posW);
-      float attenuation = 1.0 / (distance * distance);
-      if (isDirectLight) {
-        attenuation = 1;
-      }
-      // float attenuation = 1.0 / pow(distance, 1.5);
-      float3 radiance = light.color * attenuation;
-
-      // cook-torrance brdf
-      float NDF = DistributionGGX(N, H, roughness);
-      float G = GeometrySmith(N, V, L, roughness);
-      float3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
-
-      float3 kS = F;
-      float3 kD = 1 - kS;
-      kD *= 1.0 - metallic;
-
-      float3 numerator = NDF * G * F;
-      float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
-      float3 specular = numerator / denominator;
-
-      // add to outgoing radiance Lo
-      float NdotL = max(dot(N, L), 0);
-      Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+    surface.albedo = lerp(surface.albedo, decal.albedo.rgb, alpha);
+    surface.metallic = lerp(surface.metallic, decal.metallic, alpha);
+    surface.roughness = lerp(surface.roughness, decal.roughness, alpha);
   }
+
+  surface.F0 = lerp(0.04, surface.albedo, surface.metallic);
+
+  float3 V = normalize(gCamera.position - posW);
+  float3 Lo = Shade(surface, V);
 
   float ssaoMask = gSsao.SampleLevel(gSamplerLinear, screenUV, 0).x;
 
   // float ao = ssaoMask; // todo:
   float ao = 1; // todo:
-  float3 ambient = 0.02 * albedo * ao;
+  float3 ambient = 0.02 * surface.albedo * ao;
   float3 color = ambient + Lo;
 
   color *= ssaoMask; // todo: applied on transparent too
@@ -175,29 +213,24 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     float accTransmittance = 1;
     float3 accScaterring = 0;
 
+    float3 fogColor = float3(1, 1, 1) * 0.7;
+
     for(int i = 0; i < maxSteps; ++i) {
       float t = i / float(maxSteps - 1);
       float3 fogPosW = lerp(gCamera.position, posW, t);
 
-      float fogDensity = noise(fogPosW * 0.5) * 0.3 * saturate(-fogPosW.y / 5);
+      float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
+      fogDensity *= saturate(-fogPosW.y / 3);
+      fogDensity *= 0.3;
 
       float3 scattering = 0;
-      for(int i = 0; i < gScene.nLights + useDirectionLight; ++i) {
-          bool isDirectLight = i == gScene.nLights;
 
-          Light light = gLights[i];
-          if (isDirectLight) {
-            light = gScene.directLight;
-          }
+      float3 radiance = LightRadiance(gScene.directLight, fogPosW);
+      scattering += fogColor / PI * radiance;
 
-          float distance = length(light.position - fogPosW);
-          float attenuation = 1.0 / (distance * distance);
-          if (isDirectLight) {
-            attenuation = 1;
-          }
-          float3 radiance = light.color * attenuation;
-
-          scattering += float3(1, 1, 1) * 0.9 / PI * radiance;
+      for(int i = 0; i < gScene.nLights; ++i) {
+          float3 radiance = LightRadiance(gLights[i], fogPosW);
+          scattering += fogColor / PI * radiance;
       }
 
       float transmittance = exp(-stepLength * fogDensity);

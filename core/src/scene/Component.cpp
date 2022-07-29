@@ -42,6 +42,9 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATE_DEF(LightComponent)
 
    TYPER_BEGIN(DecalComponent)
+      TYPER_FIELD(albedo)
+      TYPER_FIELD(metallic)
+      TYPER_FIELD(roughness)
    TYPER_END(DecalComponent)
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DecalComponent)

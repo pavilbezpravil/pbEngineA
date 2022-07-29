@@ -64,7 +64,7 @@ namespace pbe {
       ID3D11Buffer* GetBuffer() { return (ID3D11Buffer*)pResource.Get(); }
       Desc GetDesc() const { return desc; }
 
-      int ElementsCount() const;
+      uint ElementsCount() const;
 
       bool Valid() const { return pResource; }
 

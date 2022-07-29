@@ -3,6 +3,8 @@
 #include <entt/entt.hpp>
 
 #include "core/Ref.h"
+#include "math/Types.h"
+
 
 namespace pbe {
    class UUID;
@@ -24,7 +26,7 @@ namespace pbe {
 
       Entity FindByName(std::string_view name);
 
-      int EntitiesCount() const;
+      uint EntitiesCount() const;
 
    private:
       entt::registry registry;

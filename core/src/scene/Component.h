@@ -92,7 +92,9 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATES_DECL(LightComponent);
 
    struct DecalComponent {
-      float alpha = 1;
+      vec4 albedo = vec4_One;
+      float metallic = 0.f;
+      float roughness = 0.1f;
       DECL_COMPONENT(DecalComponent);
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(DecalComponent);
