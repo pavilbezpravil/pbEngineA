@@ -21,4 +21,4 @@ project "core"
 
    links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 
-   files { "**.h", "**.cpp" }
+   files { "**.h", "**.cpp", "natvis/glm.natvis" }
