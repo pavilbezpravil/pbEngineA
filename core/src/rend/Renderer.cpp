@@ -9,6 +9,14 @@
 
 namespace pbe {
 
+   void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
+      cameraCB.view = glm::transpose(view);
+      cameraCB.projection = glm::transpose(projection);
+      cameraCB.viewProjection = glm::transpose(GetViewProjection());
+      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+      cameraCB.position = position;
+   }
+
    void Renderer::Init() {
       rendres::Init(); // todo:
 
@@ -16,6 +24,10 @@ namespace pbe {
       programDesc.vs.defines.AddDefine("ZPASS");
       programDesc.ps.defines.AddDefine("ZPASS");
       baseZPass = GpuProgram::Create(programDesc);
+
+      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
+      programDesc.vs.defines.AddDefine("ZPASS");
+      shadowMapPass = GpuProgram::Create(programDesc);
 
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
@@ -176,16 +188,33 @@ namespace pbe {
       sceneCB.nDecals = (int)nDecals;
       sceneCB.directLight.color = vec3{ 1 };
       sceneCB.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
+      // sceneCB.directLight.direction = glm::normalize(vec3{ -0.1, -1, 0 });
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
       cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
 
+      RenderCamera shadowCamera;
+      {
+         float halfSize = 25;
+         float halfDepth = 50;
+
+         // shadowCamera.position = camera.position - sceneCB.directLight.direction * 10.f;
+         shadowCamera.position = camera.position;
+
+         // vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
+         // vec3 shadowTexelSize = vec3{ halfSize / shadowMapTexels * 2.f, 0.01f};
+         // shadowCamera.position = glm::ceil(shadowCamera.position / shadowTexelSize) * shadowTexelSize;
+
+         shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
+
+         auto right = glm::cross(sceneCB.directLight.direction, vec3_Up);
+         auto up = glm::cross(right, sceneCB.directLight.direction);
+         shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, up);
+      }
+
       SCameraCB cameraCB;
-      cameraCB.view = glm::transpose(camera.view);
-      cameraCB.projection = glm::transpose(camera.projection);
-      cameraCB.viewProjection = glm::transpose(camera.GetViewProjection());
-      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+      camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cameraCB.position = camera.position;
+      cameraCB.toShadowSpace = glm::transpose(shadowCamera.GetViewProjection()); // todo:
       cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
 
       if (cfg.opaqueSorting) {
@@ -199,6 +228,35 @@ namespace pbe {
       UpdateInstanceBuffer(cmd, opaqueObjs);
 
       cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
+
+      cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
+      cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
+      cmd.pContext->PSSetSamplers(2, 1, &rendres::samplerStateShadow); // todo:
+
+      if (cfg.useShadowPass) {
+         GPU_MARKER("Shadow Map");
+         PROFILE_GPU("Shadow Map");
+
+         cmd.ClearDepthTarget(*cameraContext.shadowMap, 1);
+
+         cmd.SetRenderTargets(nullptr, cameraContext.shadowMap);
+         cmd.SetViewport({}, cameraContext.shadowMap->GetDesc().size);
+         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+         cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
+
+         SCameraCB shadowCameraCB;
+         shadowCamera.FillSCameraCB(shadowCameraCB);
+         // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+
+         auto oldCameraCB = cameraContext.cameraCB; // todo:
+         cameraContext.cameraCB = cmd.AllocDynConstantBuffer(shadowCameraCB);
+         RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
+         cameraContext.cameraCB = oldCameraCB;
+
+         cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
+      }
 
       if (cfg.useZPass) {
          {
@@ -246,9 +304,10 @@ namespace pbe {
             cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
             cmd.SetBlendState(rendres::blendStateDefaultRGB);
-            cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
+
             baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
             baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
+            baseColorPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
       } else {

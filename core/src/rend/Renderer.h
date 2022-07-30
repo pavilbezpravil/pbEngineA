@@ -13,6 +13,8 @@
 #include "scene/Scene.h"
 
 
+struct SCameraCB;
+
 namespace pbe {
 
    struct RenderCamera {
@@ -24,6 +26,10 @@ namespace pbe {
       float zNear;
       float zFar;
 
+      vec3 Up() const {
+         return vec3{ view[0][1], view[1][1] , view[2][1] };
+      }
+
       vec3 Forward() const {
          return vec3{view[0][2], view[1][2] , view[2][2] };
       }
@@ -31,6 +37,8 @@ namespace pbe {
       mat4 GetViewProjection() const {
          return projection * view;
       }
+
+      void FillSCameraCB(SCameraCB& cameraCB) const;
    };
 
    struct CameraContext {
@@ -40,6 +48,8 @@ namespace pbe {
       Ref<Texture2D> normal;
       Ref<Texture2D> position;
       Ref<Texture2D> ssao;
+
+      Ref<Texture2D> shadowMap;
 
       // todo:
       OffsetedBuffer cameraCB;
@@ -52,6 +62,7 @@ namespace pbe {
       bool transparencySorting = true;
       bool opaqueSorting = true;
       bool useZPass = true;
+      bool useShadowPass = true;
       bool ssao = false;
       bool fog = false;
       bool useInstancedDraw = true;
@@ -67,6 +78,7 @@ namespace pbe {
 
       Ref<GpuProgram> baseColorPass;
       Ref<GpuProgram> baseZPass;
+      Ref<GpuProgram> shadowMapPass;
       Ref<GpuProgram> baseDecal;
 
       Ref<GpuProgram> ssaoPass;

@@ -15,6 +15,8 @@ namespace pbe {
          uint mips = 1;
          DXGI_FORMAT format;
          UINT bindFlags;
+
+         std::string name;
       };
 
       static Ref<Texture2D> Create(ID3D11Texture2D* pTexture);

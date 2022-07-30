@@ -34,9 +34,9 @@ StructuredBuffer<SLight> gLights;
 
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);
+SamplerState gSamplerShadow : register(s2);
 
-Texture2D<float> gSceneDepth;
-Texture2D<float> gSceneNormal;
+Texture2D<float> gShadowMap;
 Texture2D<float> gSsao;
 
 // todo: copy paste from ssao.cs
@@ -75,10 +75,21 @@ float lengthSq(float3 v) {
   return dot(v, v);
 }
 
+float SunShadowAttenuation(float3 posW) {
+  float3 posShadowSpace = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
+  float2 shadowUV = posShadowSpace.xy;
+  shadowUV = NDCToTex(shadowUV);
+
+  float shadowDepth = gShadowMap.SampleLevel(gSamplerShadow, shadowUV, 0);
+  return shadowDepth + 0.01 > posShadowSpace.z; // todo:
+}
+
 float LightAttenuation(SLight light, float3 posW) {
   float attenuation = 1;
 
-  if (light.type == SLIGHT_TYPE_POINT) {
+  if (light.type == SLIGHT_TYPE_DIRECT) {
+    attenuation = SunShadowAttenuation(posW);
+  } else if (light.type == SLIGHT_TYPE_POINT) {
     float distance = length(light.position - posW);
     // attenuation = 1 / (distance * distance);
     attenuation = smoothstep(1, 0, distance / light.radius);
@@ -221,7 +232,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
       float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
       fogDensity *= saturate(-fogPosW.y / 3);
-      fogDensity *= 0.3;
+      fogDensity *= 0.5;
 
       float3 scattering = 0;
 
@@ -252,16 +263,9 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
 
-  // color = ssaoMask;
-
   PsOut output = (PsOut)0;
   output.color.rgb = color;
-  // output.color.rgb = normalW * 0.5 + 0.5;
   output.color.a = alpha;
-  // output.color.a = 1;
-  
-  // output.color.rg = screenUV;
-  // output.color.b = 0;
 
   #ifdef ZPASS
     output.color.rgb = normalW;

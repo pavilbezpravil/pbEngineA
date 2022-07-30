@@ -12,6 +12,7 @@ namespace pbe {
       ID3D11RasterizerState1* rasterizerState;
       ID3D11SamplerState* samplerStatePoint;
       ID3D11SamplerState* samplerStateLinear;
+      ID3D11SamplerState* samplerStateShadow;
       ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       ID3D11DepthStencilState* depthStencilStateEqual;
@@ -55,6 +56,15 @@ namespace pbe {
          samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
          device->CreateSamplerState(&samplerDesc, &samplerStateLinear);
          resourses.push_back(samplerStateLinear);
+
+         samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+         samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+         samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+         samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+         samplerDesc.BorderColor[0] = samplerDesc.BorderColor[1] =
+            samplerDesc.BorderColor[2] = samplerDesc.BorderColor[3] = 1;
+         device->CreateSamplerState(&samplerDesc, &samplerStateShadow);
+         resourses.push_back(samplerStateShadow);
 
          ///////////////////////////////////////////////////////////////////////////////////////////////
 

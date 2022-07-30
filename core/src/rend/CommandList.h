@@ -3,7 +3,6 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "Texture2D.h"
-#include "core/Assert.h"
 #include "core/Core.h"
 
 namespace pbe {

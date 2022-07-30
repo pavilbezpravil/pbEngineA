@@ -36,6 +36,9 @@ namespace pbe {
       ImGui::Checkbox("Decals", &cfg.decals);
       ImGui::SameLine();
 
+      ImGui::Checkbox("Shadow", &cfg.useShadowPass);
+      ImGui::SameLine();
+
       ImGui::Checkbox("Use ZPass", &cfg.useZPass);
       ImGui::SameLine();
       ImGui::Checkbox("SSAO", &cfg.ssao);
@@ -45,7 +48,7 @@ namespace pbe {
       renderer->cfg = cfg;
 
       static int item_current = 0;
-      const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO" };
+      const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO", "ShadowMap"};
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -59,34 +62,47 @@ namespace pbe {
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             texDesc.size = size;
 
+            texDesc.name = "scene colorHDR";
             cameraContext.colorHDR = Texture2D::Create(texDesc);
-            cameraContext.colorHDR->SetDbgName("scene colorHDR");
 
             // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
             texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
             texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 
+            texDesc.name = "scene depth";
             cameraContext.depth = Texture2D::Create(texDesc);
-            cameraContext.depth->SetDbgName("scene depth");
 
             texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+            texDesc.name = "scene depth copy";
             cameraContext.depthCopy = Texture2D::Create(texDesc);
-            cameraContext.depthCopy->SetDbgName("scene depth copy");
 
             texDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+            texDesc.name = "scene normal";
             cameraContext.normal = Texture2D::Create(texDesc);
-            cameraContext.normal->SetDbgName("scene normal");
 
             texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
             texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+
+            texDesc.name = "scene position";
             cameraContext.position = Texture2D::Create(texDesc);
-            cameraContext.position->SetDbgName("scene position");
 
             texDesc.format = DXGI_FORMAT_R16_UNORM;
             texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+
+            texDesc.name = "scene ssao";
             cameraContext.ssao = Texture2D::Create(texDesc);
-            cameraContext.ssao->SetDbgName("scene ssao");
+
+            {
+               Texture2D::Desc texDesc;
+               // texDesc.format = DXGI_FORMAT_D16_UNORM;
+               texDesc.format = DXGI_FORMAT_R16_TYPELESS;
+               texDesc.size = {1024, 1024};
+               texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+               texDesc.name = "shadow map";
+               cameraContext.shadowMap = Texture2D::Create(texDesc);
+            }
 
             camera.zNear = 0.1f;
             camera.zFar = 200.f;
@@ -101,7 +117,7 @@ namespace pbe {
 
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();
 
-         Texture2D* sceneRTs[] = { cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao };
+         Texture2D* sceneRTs[] = { cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
 
          Gizmo(imSize, gizmoCursorPos);

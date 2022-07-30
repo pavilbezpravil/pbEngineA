@@ -14,12 +14,18 @@ namespace pbe {
       if (format == DXGI_FORMAT_R24G8_TYPELESS) {
          return DXGI_FORMAT_D24_UNORM_S8_UINT;
       }
+      if (format == DXGI_FORMAT_R16_TYPELESS) {
+         return DXGI_FORMAT_D16_UNORM;
+      }
       return format;
    }
    
    static DXGI_FORMAT FormatToSrv(DXGI_FORMAT format) {
       if (format == DXGI_FORMAT_R24G8_TYPELESS) {
          return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+      }
+      if (format == DXGI_FORMAT_R16_TYPELESS) {
+         return DXGI_FORMAT_R16_UNORM;
       }
       return format;
    }
@@ -75,6 +81,8 @@ namespace pbe {
          WARN("Cant create texture!");
          return;
       }
+
+      SetDbgName(desc.name);
 
       if (desc.bindFlags & D3D11_BIND_RENDER_TARGET) {
          pDevice->CreateRenderTargetView(pTexture, NULL, rtv.GetAddressOf());
