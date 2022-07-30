@@ -76,12 +76,10 @@ float lengthSq(float3 v) {
 }
 
 float SunShadowAttenuation(float3 posW) {
-  float3 posShadowSpace = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
-  float2 shadowUV = posShadowSpace.xy;
-  shadowUV = NDCToTex(shadowUV);
+  float3 shadowUVZ = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
 
-  float shadowDepth = gShadowMap.SampleLevel(gSamplerShadow, shadowUV, 0);
-  return shadowDepth + 0.01 > posShadowSpace.z; // todo:
+  float shadowDepth = gShadowMap.SampleLevel(gSamplerShadow, shadowUVZ.xy, 0);
+  return shadowDepth + 0.01 > shadowUVZ.z; // todo:
 }
 
 float LightAttenuation(SLight light, float3 posW) {

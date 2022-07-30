@@ -9,6 +9,13 @@
 
 namespace pbe {
 
+   static mat4 NDCToTexSpaceMat4() {
+      mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
+      mat4 translate = glm::translate(mat4{1.f}, {0.5f, 0.5f, 0.f});
+
+      return translate * scale;
+   }
+
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
       cameraCB.view = glm::transpose(view);
       cameraCB.projection = glm::transpose(projection);
@@ -214,7 +221,7 @@ namespace pbe {
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cameraCB.toShadowSpace = glm::transpose(shadowCamera.GetViewProjection()); // todo:
+      cameraCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
       cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
 
       if (cfg.opaqueSorting) {
