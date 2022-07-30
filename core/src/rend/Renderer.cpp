@@ -209,11 +209,16 @@ namespace pbe {
          const float halfSize = 25;
          const float halfDepth = 50;
 
-         shadowCamera.position = camera.position;
+         auto shadowSpace = glm::lookAt({}, sceneCB.directLight.direction, trans.Up());
+         vec3 posShadowSpace = shadowSpace * vec4(camera.position, 1);
 
-         // vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
-         // vec3 shadowTexelSize = vec3{ halfSize / shadowMapTexels * 2.f, 0.01f};
-         // shadowCamera.position = glm::ceil(shadowCamera.position / shadowTexelSize) * shadowTexelSize;
+         vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
+         vec3 shadowTexelSize = vec3{ 2.f * halfSize / shadowMapTexels, 2.f * halfDepth / (1 << 16)};
+         vec3 snappedPosShadowSpace = glm::ceil(posShadowSpace / shadowTexelSize) * shadowTexelSize;
+
+         vec3 snappedPosW = glm::inverse(shadowSpace) * vec4(snappedPosShadowSpace, 1);
+
+         shadowCamera.position = snappedPosW;
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
