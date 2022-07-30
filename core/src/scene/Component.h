@@ -91,6 +91,13 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(LightComponent);
 
+   struct DirectLightComponent {
+      vec3 color{ 1 };
+
+      DECL_COMPONENT(DirectLightComponent);
+   };
+   COMPONENT_EXPLICIT_TEMPLATES_DECL(DirectLightComponent);
+
    struct DecalComponent {
       vec4 albedo = vec4_One;
       float metallic = 0.f;

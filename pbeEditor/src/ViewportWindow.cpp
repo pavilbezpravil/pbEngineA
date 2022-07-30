@@ -106,7 +106,7 @@ namespace pbe {
 
             camera.zNear = 0.1f;
             camera.zFar = 200.f;
-            camera.projection = glm::perspectiveFov(90.f / (180) * pi, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
+            camera.projection = glm::perspectiveFov(90.f / (180) * PI, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
          }
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };

@@ -41,6 +41,12 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(LightComponent)
 
+   TYPER_BEGIN(DirectLightComponent)
+      TYPER_FIELD(color)
+   TYPER_END(DirectLightComponent)
+
+   COMPONENT_EXPLICIT_TEMPLATE_DEF(DirectLightComponent)
+
    TYPER_BEGIN(DecalComponent)
       TYPER_FIELD(albedo)
       TYPER_FIELD(metallic)

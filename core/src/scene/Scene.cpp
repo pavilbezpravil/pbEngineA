@@ -84,6 +84,9 @@ namespace pbe {
                   if (const auto* c = entity.TryGet<LightComponent>()) {
                      Typer::Get().Serialize(out, LightComponent::GetName(), *c);
                   }
+                  if (const auto* c = entity.TryGet<DirectLightComponent>()) {
+                     Typer::Get().Serialize(out, DirectLightComponent::GetName(), *c);
+                  }
                   if (const auto* c = entity.TryGet<DecalComponent>()) {
                      Typer::Get().Serialize(out, DecalComponent::GetName(), *c);
                   }
@@ -139,6 +142,9 @@ namespace pbe {
          }
          if (auto node = it[LightComponent::GetName()]) {
             Typer::Get().Deserialize(it, LightComponent::GetName(), entity.Add<LightComponent>());
+         }
+         if (auto node = it[DirectLightComponent::GetName()]) {
+            Typer::Get().Deserialize(it, DirectLightComponent::GetName(), entity.Add<DirectLightComponent>());
          }
          if (auto node = it[DecalComponent::GetName()]) {
             Typer::Get().Deserialize(it, DecalComponent::GetName(), entity.Add<DecalComponent>());

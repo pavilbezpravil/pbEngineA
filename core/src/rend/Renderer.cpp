@@ -190,21 +190,25 @@ namespace pbe {
          cmd.UpdateSubresource(*decalBuffer, decals.data(), 0, nDecals * sizeof(SDecal));
       }
 
+      RenderCamera shadowCamera;
+
       SSceneCB sceneCB;
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
-      sceneCB.directLight.color = vec3{ 1 };
-      sceneCB.directLight.direction = glm::normalize(vec3{ -1, -1, -1 });
-      // sceneCB.directLight.direction = glm::normalize(vec3{ -0.1, -1, 0 });
+
+      sceneCB.directLight.color = {};
+      sceneCB.directLight.direction = vec3{1, 0, 0};
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
-      cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
 
-      RenderCamera shadowCamera;
-      {
-         float halfSize = 25;
-         float halfDepth = 50;
+      bool hasDirectLight = false;
 
-         // shadowCamera.position = camera.position - sceneCB.directLight.direction * 10.f;
+      for (auto [_, trans, directLight] : scene.GetEntitiesWith<SceneTransformComponent, DirectLightComponent>().each()) {
+         sceneCB.directLight.color = directLight.color;
+         sceneCB.directLight.direction = trans.Forward();
+
+         const float halfSize = 25;
+         const float halfDepth = 50;
+
          shadowCamera.position = camera.position;
 
          // vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
@@ -212,11 +216,14 @@ namespace pbe {
          // shadowCamera.position = glm::ceil(shadowCamera.position / shadowTexelSize) * shadowTexelSize;
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
+         shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
 
-         auto right = glm::cross(sceneCB.directLight.direction, vec3_Up);
-         auto up = glm::cross(right, sceneCB.directLight.direction);
-         shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, up);
+         hasDirectLight = true;
+         break;
       }
+
+      cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
+
 
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
@@ -240,7 +247,7 @@ namespace pbe {
       cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
       cmd.pContext->PSSetSamplers(2, 1, &rendres::samplerStateShadow); // todo:
 
-      if (cfg.useShadowPass) {
+      if (cfg.useShadowPass && hasDirectLight) {
          GPU_MARKER("Shadow Map");
          PROFILE_GPU("Shadow Map");
 

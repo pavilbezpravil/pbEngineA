@@ -9,15 +9,16 @@
 
 namespace pbe {
 
-   constexpr float pi = glm::pi<float>();
-   constexpr float pi2 = pi * 2.f;
+   constexpr float PI = glm::pi<float>();
+   constexpr float PI2 = PI * 2.f;
+   constexpr float PIHalf = PI * 0.5f;
 
    constexpr float ToRadians(float degrees) {
-      return degrees / 180.f * pi;
+      return degrees / 180.f * PI;
    }
 
    constexpr float ToDegrees(float radians) {
-      return radians * 180.f / pi;
+      return radians * 180.f / PI;
    }
 
    using glm::vec2;

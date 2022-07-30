@@ -49,6 +49,12 @@ namespace pbe {
                   createdEntity.Add<SimpleMaterialComponent>();
                   ToggleSelectEntity(createdEntity);
                }
+               if (ImGui::MenuItem("Direct Light")) {
+                  auto createdEntity = pScene->Create();
+                  createdEntity.Get<SceneTransformComponent>().rotation = quat{vec3{PIHalf, 0, 0}};
+                  createdEntity.Add<DirectLightComponent>();
+                  ToggleSelectEntity(createdEntity);
+               }
                ImGui::EndPopup();
             }
 
