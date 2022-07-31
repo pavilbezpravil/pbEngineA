@@ -1,15 +1,24 @@
 sceneName: test_scene
 entities:
-  - uuid: 16365464828659249094
-    tag: red
+  - uuid: 5536664833689235849
+    tag: Entity 4
     SceneTransformComponent:
-      position: [-1, 0, 1]
-      rotation: [0, 42.1929283, 0]
-      scale: [0.999999464, 1, 0.999999464]
+      position: [0, 0, 0]
+      rotation: [90, -0, 0]
+      scale: [1, 1, 1]
+    DirectLightComponent:
+      color: [1, 1, 1]
+  - uuid: 8246439013926450448
+    tag: blue
+    SceneTransformComponent:
+      position: [1, 0.500457227, 1]
+      rotation: [11.6504745, -22.3420715, 22.0491161]
+      scale: [0.999999702, 0.999999702, 0.999999702]
     SimpleMaterialComponent:
-      albedo: [1, 0, 0]
+      albedo: [0, 0, 1]
       roughness: 0.100000001
       metallic: 0
+      opaque: true
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:
@@ -20,13 +29,15 @@ entities:
       albedo: [0, 1, 0]
       roughness: 0.100000001
       metallic: 0
-  - uuid: 8246439013926450448
-    tag: blue
+      opaque: true
+  - uuid: 16365464828659249094
+    tag: red
     SceneTransformComponent:
-      position: [1, 0.500457227, 1]
-      rotation: [11.6504736, -22.3420715, 22.049118]
-      scale: [0.999999702, 0.999999702, 0.999999702]
+      position: [-0.716355324, 0.955370188, 1.39322114]
+      rotation: [0, 42.1929283, 0]
+      scale: [0.999999464, 1, 0.999999464]
     SimpleMaterialComponent:
-      albedo: [0, 0, 1]
+      albedo: [1, 0, 0]
       roughness: 0.100000001
       metallic: 0
+      opaque: true

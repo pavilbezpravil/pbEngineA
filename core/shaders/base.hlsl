@@ -34,7 +34,7 @@ StructuredBuffer<SLight> gLights;
 
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);
-SamplerState gSamplerShadow : register(s2);
+SamplerComparisonState gSamplerShadow : register(s2);
 
 Texture2D<float> gShadowMap;
 Texture2D<float> gSsao;
@@ -75,11 +75,42 @@ float lengthSq(float3 v) {
   return dot(v, v);
 }
 
-float SunShadowAttenuation(float3 posW) {
+float ComponentSum(float4 v) {
+  return v.x + v.y + v.z + v.w;
+}
+
+float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
+  if (1) {
+    jitter = (rand3dTo2d(posW) - 0.5) * 0.005;
+  }
+
   float3 shadowUVZ = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
 
-  float shadowDepth = gShadowMap.SampleLevel(gSamplerShadow, shadowUVZ.xy, 0);
-  return shadowDepth + 0.01 > shadowUVZ.z; // todo:
+  float2 shadowUV = shadowUVZ.xy + jitter;
+  float z = shadowUVZ.z;
+
+  float bias = 0.01;
+
+  if (0) {
+    return gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias);
+  } else {
+    float sum = 0;
+
+    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, float2(0, 0)));
+
+    int offset = 2;
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, offset)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, -offset)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, offset)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, -offset)));
+
+    // offset = 3;
+    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, 0)));
+    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, 0)));
+    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, -offset)));
+    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, offset)));
+    return sum / (4 * 5);
+  }
 }
 
 float LightAttenuation(SLight light, float3 posW) {
@@ -263,6 +294,9 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   PsOut output = (PsOut)0;
   output.color.rgb = color;
+
+  // float2 jitter = rand3dTo2d(posW);
+  // output.color.rgb = SunShadowAttenuation(posW, jitter * 0.005);
   output.color.a = alpha;
 
   #ifdef ZPASS
