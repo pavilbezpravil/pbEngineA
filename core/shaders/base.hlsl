@@ -80,8 +80,8 @@ float ComponentSum(float4 v) {
 }
 
 float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
-  if (1) {
-    jitter = (rand3dTo2d(posW) - 0.5) * 0.005;
+  if (0) {
+    jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
   }
 
   float3 shadowUVZ = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;

@@ -84,6 +84,8 @@ namespace pbe {
 
       SetDbgName(desc.name);
 
+      INFO("Created texture '{}': {}", desc.name, desc.size);
+
       if (desc.bindFlags & D3D11_BIND_RENDER_TARGET) {
          pDevice->CreateRenderTargetView(pTexture, NULL, rtv.GetAddressOf());
       }
