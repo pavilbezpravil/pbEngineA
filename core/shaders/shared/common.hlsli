@@ -60,7 +60,7 @@ struct SCameraCB {
   float4x4 toShadowSpace;
 
   float3 position;
-  int _dsfdsfdsfdsf;
+  int iFrame;
 
   int2 rtSize;
   float2 _dymmy3;

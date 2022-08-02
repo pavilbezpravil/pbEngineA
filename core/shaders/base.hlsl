@@ -96,20 +96,31 @@ float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
   } else {
     float sum = 0;
 
-    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, float2(0, 0)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, float2(0, 0)));
 
-    int offset = 2;
-    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, offset)));
-    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, -offset)));
-    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, offset)));
-    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, -offset)));
+    // int offset = 2;
+    // // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, offset)));
+    // // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, -offset)));
+    // // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, offset)));
+    // // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, -offset)));
 
-    // offset = 3;
-    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, 0)));
-    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, 0)));
-    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, -offset)));
-    sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, offset)));
-    return sum / (4 * 5);
+    // // offset = 3;
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(-offset, 0)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(offset, 0)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, -offset)));
+    // sum += ComponentSum(gShadowMap.GatherCmpRed(gSamplerShadow, shadowUV, z - bias, int2(0, offset)));
+    // return sum / (4 * 5);
+
+    sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, float2(0, 0));
+
+    int offset = 1;
+
+    sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(-offset, 0));
+    sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(offset, 0));
+    sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(0, -offset));
+    sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(0, offset));
+
+    return sum / (5);
   }
 }
 
@@ -184,6 +195,18 @@ float3 Shade(Surface surface, float3 V) {
   return Lo;
 }
 
+// ACES tone mapping curve fit to go from HDR to LDR
+//https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+float3 ACESFilm(float3 x)
+{
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return clamp((x*(a*x + b)) / (x*(c*x + d) + e), 0.0f, 1.0f);
+}
+
 struct PsOut {
   float4 color : SV_Target0;
 };
@@ -250,6 +273,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
     float stepLength = length(posW - gCamera.position) / maxSteps;
 
+    float3 startPosW = lerp(gCamera.position, posW, rand2(screenUV * 1000 + gCamera.iFrame) / maxSteps);
+
     float accTransmittance = 1;
     float3 accScaterring = 0;
 
@@ -257,7 +282,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
     for(int i = 0; i < maxSteps; ++i) {
       float t = i / float(maxSteps - 1);
-      float3 fogPosW = lerp(gCamera.position, posW, t);
+      float3 fogPosW = lerp(startPosW, posW, t);
 
       float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
       fogDensity *= saturate(-fogPosW.y / 3);
@@ -289,7 +314,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     color += accScaterring;
   }
 
-  color = color / (color + 1);
+  color = ACESFilm(color);
+  // color = color / (color + 1);
   color = pow(color, 1.0 / 2.2); // todo: use srgb
 
   PsOut output = (PsOut)0;

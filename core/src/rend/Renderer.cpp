@@ -234,6 +234,10 @@ namespace pbe {
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
       cameraCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
+
+      static int iFrame = 0; // todo:
+      ++iFrame;
+      cameraCB.iFrame = iFrame;
       cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
 
       if (cfg.opaqueSorting) {

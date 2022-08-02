@@ -58,7 +58,7 @@ namespace pbe {
          resourses.push_back(samplerStateLinear);
 
          // samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-         samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+         samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
          samplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
          samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
          samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
