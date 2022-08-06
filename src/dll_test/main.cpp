@@ -6,6 +6,10 @@ using scriptFunc = int(__stdcall *)();
 
 int main() {
    coreFunc();
+   core::namespaceFunc();
+
+   Engine e;
+   e.helloStatic();
 
    HINSTANCE hGetProcIDDLL = LoadLibrary(L"scriptDll.dll");
 
