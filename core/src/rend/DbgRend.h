@@ -4,6 +4,8 @@
 #include "core/Ref.h"
 
 namespace pbe {
+   struct AABB;
+   struct Sphere;
    struct RenderCamera;
    struct VertexPosColor;
    class GpuProgram;
@@ -14,7 +16,10 @@ namespace pbe {
    public:
       DbgRend();
 
-      void Line(const vec3& start, const vec3& end, const vec4& color = vec4_One);
+      void DrawLine(const vec3& start, const vec3& end, const vec4& color = vec4_One);
+      void DrawSphere(const Sphere& sphere, const vec4& color = vec4_One);
+      void DrawAABB(const AABB& aabb, const vec4& color = vec4_One);
+
       void Clear();
 
       void Render(CommandList& cmd, const RenderCamera& camera);

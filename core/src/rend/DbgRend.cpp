@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "CommandList.h"
 #include "Renderer.h"
+#include "math/Shape.h"
 
 #include "shared/common.hlsli"
 
@@ -16,9 +17,48 @@ namespace pbe {
       program = GpuProgram::Create(programDesc);
    }
 
-   void DbgRend::Line(const vec3& start, const vec3& end, const vec4& color) {
+   void DbgRend::DrawLine(const vec3& start, const vec3& end, const vec4& color) {
       lines.emplace_back(start, color);
       lines.emplace_back(end, color);
+   }
+
+   void DbgRend::DrawAABB(const AABB& aabb, const vec4& color) {
+      vec3 a = aabb.min;
+      vec3 b = aabb.max;
+
+      vec3 points[8];
+
+      points[0] = points[1] = points[2] = points[3] = a;
+
+      points[1].x = b.x;
+      points[2].z = b.z;
+      points[3].x = b.x;
+      points[3].z = b.z;
+
+      DrawLine(points[0], points[1], color);
+      DrawLine(points[0], points[2], color);
+      DrawLine(points[1], points[3], color);
+      DrawLine(points[2], points[3], color);
+
+      points[4] = points[0];
+      points[5] = points[1];
+      points[6] = points[2];
+      points[7] = points[3];
+
+      points[4].y = b.y;
+      points[5].y = b.y;
+      points[6].y = b.y;
+      points[7].y = b.y;
+
+      DrawLine(points[4], points[5], color);
+      DrawLine(points[4], points[6], color);
+      DrawLine(points[5], points[7], color);
+      DrawLine(points[6], points[7], color);
+
+      DrawLine(points[0], points[4], color);
+      DrawLine(points[1], points[5], color);
+      DrawLine(points[2], points[6], color);
+      DrawLine(points[3], points[7], color);
    }
 
    void DbgRend::Clear() {

@@ -4,6 +4,7 @@
 #include "DbgRend.h"
 #include "core/Profiler.h"
 #include "math/Random.h"
+#include "math/Shape.h"
 
 #include "shared/common.hlsli"
 
@@ -357,12 +358,15 @@ namespace pbe {
          int size = 20;
 
          for (int i = -size; i <= size; ++i) {
-            dbgRend.Line(vec3{i, 0, -size}, vec3{ i, 0, size });
+            dbgRend.DrawLine(vec3{i, 0, -size}, vec3{ i, 0, size });
          }
 
          for (int i = -size; i <= size; ++i) {
-            dbgRend.Line(vec3{ -size, 0, i }, vec3{ size, 0, i });
+            dbgRend.DrawLine(vec3{ -size, 0, i }, vec3{ size, 0, i });
          }
+
+         AABB aabb{vec3_One, vec3_One * 3.f};
+         dbgRend.DrawAABB(aabb);
 
          dbgRend.Render(cmd, camera);
       }
