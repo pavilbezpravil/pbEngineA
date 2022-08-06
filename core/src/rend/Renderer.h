@@ -66,6 +66,7 @@ namespace pbe {
       bool ssao = false;
       bool fog = false;
       bool useInstancedDraw = true;
+      bool superSampling = false;
    };
 
    class Renderer {

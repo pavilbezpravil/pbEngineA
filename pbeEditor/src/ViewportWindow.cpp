@@ -45,6 +45,8 @@ namespace pbe {
       ImGui::SameLine();
       ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
+      ImGui::Checkbox("Super Sampling", &cfg.superSampling);
+
       renderer->cfg = cfg;
 
       static int item_current = 0;
@@ -55,6 +57,10 @@ namespace pbe {
 
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
+      if (cfg.superSampling) {
+         size *= 2;
+      }
+
       if (size.x > 1 && size.y > 1) {
          if (!cameraContext.colorHDR || cameraContext.colorHDR->GetDesc().size != size) {
             Texture2D::Desc texDesc;
@@ -94,7 +100,7 @@ namespace pbe {
             texDesc.name = "scene ssao";
             cameraContext.ssao = Texture2D::Create(texDesc);
 
-            {
+            if (!cameraContext.shadowMap) {
                Texture2D::Desc texDesc;
                // texDesc.format = DXGI_FORMAT_D16_UNORM;
                texDesc.format = DXGI_FORMAT_R16_TYPELESS;
