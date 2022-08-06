@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Renderer.h"
 
+#include "DbgRend.h"
 #include "core/Profiler.h"
 #include "math/Random.h"
 
@@ -344,6 +345,26 @@ namespace pbe {
          baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
 
          RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
+      }
+
+      {
+         GPU_MARKER("Dbg Rend");
+         PROFILE_GPU("Dbg Rend");
+
+         static DbgRend dbgRend;
+         dbgRend.Clear();
+
+         int size = 20;
+
+         for (int i = -size; i <= size; ++i) {
+            dbgRend.Line(vec3{i, 0, -size}, vec3{ i, 0, size });
+         }
+
+         for (int i = -size; i <= size; ++i) {
+            dbgRend.Line(vec3{ -size, 0, i }, vec3{ size, 0, i });
+         }
+
+         dbgRend.Render(cmd, camera);
       }
 
       if (cfg.transparency && !transparentObjs.empty()) {

@@ -15,6 +15,7 @@ namespace pbe {
    class CommandList {
    public:
       static constexpr int DYN_CONST_BUFFER_SIZE = 256 * 512;
+      static constexpr int DYN_VERT_BUFFER_SIZE = 256 * 512;
 
       CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
 
@@ -43,6 +44,26 @@ namespace pbe {
          dynConstBufferOffset += size;
 
          auto& curDynConstBuffer = *dynConstBuffers.back();
+
+         UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
+
+         return { &curDynConstBuffer, oldOffset };
+      }
+
+      OffsetedBuffer AllocDynVertBuffer(const void* data, uint size) {
+         size = ((size - 1) / 256 + 1) * 256; // todo:
+
+         if (dynVertBuffers.empty() || dynVertBufferOffset + size >= DYN_VERT_BUFFER_SIZE) {
+            auto bufferDesc = Buffer::Desc::Vertex("cmdList dynVertBuffer", DYN_VERT_BUFFER_SIZE);
+            dynVertBuffers.emplace_back(Buffer::Create(bufferDesc));
+
+            dynVertBufferOffset = 0;
+         }
+
+         uint oldOffset = dynVertBufferOffset;
+         dynVertBufferOffset += size;
+
+         auto& curDynConstBuffer = *dynVertBuffers.back();
 
          UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
 
@@ -125,6 +146,9 @@ namespace pbe {
    private:
       std::vector<Ref<Buffer>> dynConstBuffers;
       uint dynConstBufferOffset = 0;
+
+      std::vector<Ref<Buffer>> dynVertBuffers;
+      uint dynVertBufferOffset = 0;
    };
 
    struct GpuMarker {

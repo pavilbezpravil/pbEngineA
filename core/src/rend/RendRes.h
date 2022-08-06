@@ -18,6 +18,13 @@ namespace pbe {
       static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
    };
 
+   struct VertexPosColor {
+      vec3 position;
+      vec4 color;
+
+      static inline std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+   };
+
    namespace rendres {
 
       void Init();
