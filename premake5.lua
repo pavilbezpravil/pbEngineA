@@ -35,6 +35,14 @@ function staticCppLib()
    setBuildDirs()
 end
 
+function sharedCppLib()
+   kind "SharedLib"
+   language "C++"
+   cppdialect "C++20"
+
+   setBuildDirs()
+end
+
 function consoleCppApp()
    kind "ConsoleApp"
    language "C++"
@@ -51,6 +59,10 @@ end
 -- include "src/imgui_test/premake5.lua"
 -- include "src/core/premake5.lua"
 -- include "src/pbeEditor/premake5.lua"
+
+group "tests"
+   include "src/dll_test/premake5.lua"
+group ""
 
 include "deps/deps.lua"
 
