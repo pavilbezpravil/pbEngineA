@@ -273,7 +273,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
     float stepLength = length(posW - gCamera.position) / maxSteps;
 
-    float3 startPosW = lerp(gCamera.position, posW, rand2(screenUV * 1000 + gCamera.iFrame) / maxSteps);
+    float randomOffset = rand2(screenUV * 100 + rand1dTo2d(gCamera.iFrame % 64));
+    float3 startPosW = lerp(gCamera.position, posW, randomOffset / maxSteps);
+
+    // float3 randomOffset = rand2dTo3d(screenUV * 100 + rand1dTo2d(gCamera.iFrame % 64));
+    // float3 startPosW = gCamera.position + randomOffset * stepLength;
 
     float accTransmittance = 1;
     float3 accScaterring = 0;
@@ -287,6 +291,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
       fogDensity *= saturate(-fogPosW.y / 3);
       fogDensity *= 0.5;
+
+      // fogDensity = 0.2;
 
       float3 scattering = 0;
 
