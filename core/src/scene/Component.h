@@ -85,6 +85,7 @@ namespace pbe {
 
    struct LightComponent {
       vec3 color{1};
+      float intensity = 1;
       float radius = 5;
 
       DECL_COMPONENT(LightComponent);
@@ -93,6 +94,7 @@ namespace pbe {
 
    struct DirectLightComponent {
       vec3 color{ 1 };
+      float intensity = 1;
 
       DECL_COMPONENT(DirectLightComponent);
    };

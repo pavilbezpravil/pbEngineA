@@ -19,6 +19,8 @@ namespace pbe {
       void DrawLine(const vec3& start, const vec3& end, const vec4& color = vec4_One);
       void DrawSphere(const Sphere& sphere, const vec4& color = vec4_One);
       void DrawAABB(const AABB& aabb, const vec4& color = vec4_One);
+      void DrawAABBOrderPoints(const vec3 points[8], const vec4& color = vec4_One);
+      void DrawViewProjection(const mat4& invViewProjection, const vec4& color = vec4_One);
 
       void Clear();
 

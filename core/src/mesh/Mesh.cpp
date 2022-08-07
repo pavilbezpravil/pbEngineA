@@ -9,22 +9,14 @@ namespace pbe {
    MeshGeom MeshGeomCube() {
       MeshGeom cube{ sizeof(VertexPosNormal) };
 
-      // todo: super dirty
-      cube.vertexes.resize(sizeof(VertexPosNormal) * 8);
-
-      // auto a = cube.VertexesAs<VertexPosNormal>();
-      // a =
-      cube.VertexesAs<VertexPosNormal>() =
-      {
-         {{ -0.5f, 0.5f, -0.5f}, {0, 0, 255}, },
-         {{ 0.5f, 0.5f, -0.5f}, {0, 255, 0}, },
-         {{ -0.5f, -0.5f, -0.5f}, {255, 0, 0}, },
-         {{ 0.5f, -0.5f, -0.5f}, {0, 255, 255}, },
-         {{ -0.5f, 0.5f, 0.5f}, {0, 0, 255}, },
-         {{ 0.5f, 0.5f, 0.5f}, {255, 0, 0}, },
-         {{ -0.5f, -0.5f, 0.5f}, {0, 255, 0}, },
-         {{ 0.5f, -0.5f, 0.5f}, {0, 255, 255}, },
-      };
+      cube.AddVertex(VertexPosNormal{ { -0.5f, 0.5f, -0.5f}, {0, 0, 255}, });
+      cube.AddVertex(VertexPosNormal{ { 0.5f, 0.5f, -0.5f}, {0, 255, 0}, });
+      cube.AddVertex(VertexPosNormal{ { -0.5f, -0.5f, -0.5f}, {255, 0, 0}, });
+      cube.AddVertex(VertexPosNormal{ { 0.5f, -0.5f, -0.5f}, {0, 255, 255}, });
+      cube.AddVertex(VertexPosNormal{ { -0.5f, 0.5f, 0.5f}, {0, 0, 255}, });
+      cube.AddVertex(VertexPosNormal{ { 0.5f, 0.5f, 0.5f}, {255, 0, 0}, });
+      cube.AddVertex(VertexPosNormal{ { -0.5f, -0.5f, 0.5f}, {0, 255, 0}, });
+      cube.AddVertex(VertexPosNormal{ { 0.5f, -0.5f, 0.5f}, {0, 255, 255}, });
 
       cube.indexes = {
          0, 1, 2,    // side 1

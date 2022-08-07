@@ -36,6 +36,7 @@ namespace pbe {
 
    TYPER_BEGIN(LightComponent)
       TYPER_FIELD(color)
+      TYPER_FIELD(intensity)
       TYPER_FIELD(radius)
    TYPER_END(LightComponent)
 
@@ -43,6 +44,7 @@ namespace pbe {
 
    TYPER_BEGIN(DirectLightComponent)
       TYPER_FIELD(color)
+      TYPER_FIELD(intensity)
    TYPER_END(DirectLightComponent)
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DirectLightComponent)

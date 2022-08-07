@@ -11,7 +11,7 @@ namespace pbe {
    class MeshGeom {
    public:
       std::vector<byte> vertexes;
-      std::vector<int16> indexes;
+      std::vector<uint16> indexes;
 
       uint nVertexByteSize = 0;
 
@@ -22,6 +22,19 @@ namespace pbe {
       int IndexesBytes() const { return IndexCount() * sizeof(uint16); }
       int VertexCount() const { return int(vertexes.size() / nVertexByteSize); }
       int IndexCount() const { return (int)indexes.size(); }
+
+      template<typename T>
+      void AddVertex(const T& v) {
+         auto prevSize = vertexes.size();
+         vertexes.resize(prevSize + sizeof(T));
+         memcpy(&vertexes[prevSize], &v, sizeof(T));
+      }
+
+      void AddTriangle(uint16 a, uint16 b, uint16 c) {
+         indexes.push_back(a);
+         indexes.push_back(b);
+         indexes.push_back(c);
+      }
 
       template<typename T>
       std::vector<T>& VertexesAs() {

@@ -376,7 +376,8 @@ namespace pbe {
                   trans.position = Random::Uniform(-cubeSize, cubeSize);
 
                   auto& light = e.Add<LightComponent>();
-                  light.color = Random::Uniform(vec3{ 0 }, vec3{ 20.f });
+                  light.color = Random::Uniform(vec3{ 0 }, vec3{ 1.f });
+                  light.intensity = Random::Uniform(0.f, 20.f);
                   light.radius = Random::Uniform(3, 10);
                }
             }
