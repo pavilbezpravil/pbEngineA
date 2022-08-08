@@ -129,6 +129,45 @@ namespace pbe {
          }
          });
 
+      using namespace entt::literals;
+
+      auto& components = ComponentList::Get();
+
+      components.components3.push_back(entt::type_hash<SceneTransformComponent>::value());
+      entt::meta<SceneTransformComponent>()
+         .prop(meta::Name, (const char*)"SceneTransformComponent")
+         .func < [](Entity& e) { return (void*)e.TryGet<SceneTransformComponent>(); } > (meta::GetComponent)
+         .func < [](Entity& e) { return (void*)&e.GetOrCreate<SceneTransformComponent>(); } > (meta::GetOrCreateComponent)
+         .type();
+
+      components.components3.push_back(entt::type_hash<SimpleMaterialComponent>::value());
+      entt::meta<SimpleMaterialComponent>()
+         .prop(meta::Name, (const char*)"SimpleMaterialComponent")
+         .func < [](Entity& e) { return (void*)e.TryGet<SimpleMaterialComponent>(); } > (meta::GetComponent)
+         .func < [](Entity& e) { return (void*)&e.GetOrCreate<SimpleMaterialComponent>(); } > (meta::GetOrCreateComponent)
+         .type();
+
+      components.components3.push_back(entt::type_hash<LightComponent>::value());
+      entt::meta<LightComponent>()
+         .prop(meta::Name, (const char*)"LightComponent")
+         .func < [](Entity& e) { return (void*)e.TryGet<LightComponent>(); } > (meta::GetComponent)
+         .func < [](Entity& e) { return (void*)&e.GetOrCreate<LightComponent>(); } > (meta::GetOrCreateComponent)
+         .type();
+
+      components.components3.push_back(entt::type_hash<DirectLightComponent>::value());
+      entt::meta<DirectLightComponent>()
+         .prop(meta::Name, (const char*)"DirectLightComponent")
+         .func < [](Entity& e) { return (void*)e.TryGet<DirectLightComponent>(); } > (meta::GetComponent)
+         .func < [](Entity& e) { return (void*)&e.GetOrCreate<DirectLightComponent>(); } > (meta::GetOrCreateComponent)
+         .type();
+
+      components.components3.push_back(entt::type_hash<DecalComponent>::value());
+      entt::meta<DecalComponent>()
+         .prop(meta::Name, (const char*)"DecalComponent")
+         .func < [](Entity& e) { return (void*)e.TryGet<DecalComponent>(); } > (meta::GetComponent)
+         .func < [](Entity& e) { return (void*)&e.GetOrCreate<DecalComponent>(); } > (meta::GetOrCreateComponent)
+         .type();
+
       return 0;
    }
 

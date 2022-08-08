@@ -61,28 +61,28 @@ namespace pbe {
       void RegisterType(TypeID typeID, TypeInfo&& ti);
 
       template<typename T>
-      void ImGuiValue(std::string_view name, T& value) {
+      void ImGuiValue(std::string_view name, T& value) const {
          auto typeID = GetTypeID<T>();
          ImGuiValueImpl(name, typeID, (byte*)&value);
       }
 
-      void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value);
+      void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const;
 
       template<typename T>
-      void Serialize(YAML::Emitter& out, std::string_view name, const T& value) {
+      void Serialize(YAML::Emitter& out, std::string_view name, const T& value) const {
          auto typeID = GetTypeID<T>();
          SerializeImpl(out, name, typeID, (byte*)&value);
       }
 
-      void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value);
+      void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const;
 
       template<typename T>
-      void Deserialize(const YAML::Node& node, std::string_view name, T& value) {
+      void Deserialize(const YAML::Node& node, std::string_view name, T& value) const {
          auto typeID = GetTypeID<T>();
          DeserializeImpl(node, name, typeID, (byte*)&value);
       }
 
-      void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value);
+      void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
 
       std::unordered_map<TypeID, TypeInfo> types;
    };

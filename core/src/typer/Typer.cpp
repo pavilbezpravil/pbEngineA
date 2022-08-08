@@ -134,8 +134,8 @@ namespace pbe {
       types[typeID] = std::move(ti);
    }
 
-   void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) {
-      const auto& ti = types[typeID];
+   void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
+      const auto& ti = types.at(typeID);
 
       if (ti.imguiFunc) {
          ti.imguiFunc(name.data(), value);
@@ -152,8 +152,8 @@ namespace pbe {
       }
    }
 
-   void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) {
-      const auto& ti = types[typeID];
+   void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const {
+      const auto& ti = types.at(typeID);
 
       if (ti.imguiFunc) {
          if (ti.serialize) {
@@ -176,8 +176,8 @@ namespace pbe {
       }
    }
 
-   void Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) {
-      const auto& ti = types[typeID];
+   void Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const {
+      const auto& ti = types.at(typeID);
 
       if (!node[name.data()]) {
          WARN("Serialization failed! Cant find {}", name);

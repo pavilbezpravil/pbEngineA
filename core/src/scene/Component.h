@@ -2,16 +2,27 @@
 
 #include <entt/entt.hpp>
 
+#include "core/Common.h"
 #include "core/UUID.h"
 #include "math/Types.h"
 #include "core/Type.h"
 
 namespace pbe {
 
+   namespace meta {
+      using namespace entt::literals;
+
+      constexpr auto Name = "Name"_hs;
+      constexpr auto GetComponent = "GetComponent"_hs;
+      constexpr auto GetOrCreateComponent = "GetOrCreateComponent"_hs;
+   }
+
    class Entity;
 
    class ComponentList {
    public:
+      NON_COPYABLE(ComponentList);
+      ComponentList() = default;
 
       using ComponentID = TypeID;
       using ComponentFunc = std::function<void(Entity&)>;
@@ -21,6 +32,8 @@ namespace pbe {
       void RegisterComponent(ComponentID componentID, ComponentFunc&& func);
 
       std::unordered_map<ComponentID, ComponentFunc> components2;
+
+      std::vector<entt::id_type> components3;
    };
 
 #define DECL_COMPONENT(Component) \
