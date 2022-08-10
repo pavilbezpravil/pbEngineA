@@ -76,41 +76,20 @@ namespace pbe {
                      out << YAML::Key << "tag" << YAML::Value << c->tag;
                   }
 
-                  const auto& components = ComponentList::Get();
                   const auto& typer = Typer::Get();
 
-                  for (const auto id : components.components3) {
-                     auto mt = entt::resolve(id);
-                     auto getComponentFunc = mt.func(meta::GetComponent);
-                     auto any = getComponentFunc.invoke({}, entity);
-                     auto* ptr = (byte*)any.cast<void*>();
+                  // typer.SerializeImpl(out, SceneTransformComponent::GetName(),
+                  //    GetTypeID<SceneTransformComponent>(), (byte*)&entity.Get<SceneTransformComponent>());
 
+                  for (const auto ci : typer.components) {
+                     const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+                     auto* ptr = (byte*)ci.tryGet(entity);
                      if (ptr) {
-                        const char* name = mt.prop(meta::Name).value().cast<const char*>();
-                        typer.SerializeImpl(out, name, id, ptr);
+                        const char* name = ti.name.data();
+                        typer.SerializeImpl(out, name, ci.typeID, ptr);
                      }
                   }
-
-                  // if (const auto* c = entity.TryGet<SceneTransformComponent>()) {
-                  //    Typer::Get().Serialize(out, SceneTransformComponent::GetName(), *c);
-                  // }
-                  //
-                  // if (const auto* c = entity.TryGet<SimpleMaterialComponent>()) {
-                  //    // auto a = entt::resolve<SimpleMaterialComponent>().func(meta::GetComponent);
-                  //    // auto b = a.invoke({}, entity);
-                  //    // c = (SimpleMaterialComponent*)b.cast<void*>();
-                  //
-                  //    Typer::Get().Serialize(out, SimpleMaterialComponent::GetName(), *c);
-                  // }
-                  // if (const auto* c = entity.TryGet<LightComponent>()) {
-                  //    Typer::Get().Serialize(out, LightComponent::GetName(), *c);
-                  // }
-                  // if (const auto* c = entity.TryGet<DirectLightComponent>()) {
-                  //    Typer::Get().Serialize(out, DirectLightComponent::GetName(), *c);
-                  // }
-                  // if (const auto* c = entity.TryGet<DecalComponent>()) {
-                  //    Typer::Get().Serialize(out, DecalComponent::GetName(), *c);
-                  // }
                }
                out << YAML::EndMap;
             }
@@ -139,7 +118,7 @@ namespace pbe {
       // YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
       YAML::Node root = YAML::LoadFile(path.data());
 
-      auto name = root["sceneName"].as<string>();
+      auto sceneName = root["sceneName"].as<string>();
 
       YAML::Node entitiesNode = root["entities"];
       
@@ -155,38 +134,21 @@ namespace pbe {
 
          Entity entity = scene->CreateWithUUID(UUID{ uuid }, entityTag);
 
-         const auto& components = ComponentList::Get();
          const auto& typer = Typer::Get();
 
-         for (const auto id : components.components3) {
-            auto mt = entt::resolve(id);
+         // typer.DeserializeImpl(it, SceneTransformComponent::GetName(),
+         //    GetTypeID<SceneTransformComponent>(), (byte*)&entity.Get<SceneTransformComponent>());
 
-            const char* name = mt.prop(meta::Name).value().cast<const char*>();
+         for (const auto ci : typer.components) {
+            const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+            const char* name = ti.name.data();
 
             if (auto node = it[name]) {
-               auto getComponentFunc = mt.func(meta::GetOrCreateComponent);
-               auto any = getComponentFunc.invoke({}, entity);
-               auto* ptr = (byte*)any.cast<void*>();
-
-               typer.DeserializeImpl(it, name, id, ptr);
+               auto* ptr = (byte*)ci.getOrAdd(entity);
+               typer.DeserializeImpl(it, name, ci.typeID, ptr);
             }
          }
-
-         // if (auto node = it[SceneTransformComponent::GetName()]) {
-         //    Typer::Get().Deserialize(it, SceneTransformComponent::GetName(), entity.Get<SceneTransformComponent>());
-         // }
-         // if (auto node = it[SimpleMaterialComponent::GetName()]) {
-         //    Typer::Get().Deserialize(it, SimpleMaterialComponent::GetName(), entity.Add<SimpleMaterialComponent>());
-         // }
-         // if (auto node = it[LightComponent::GetName()]) {
-         //    Typer::Get().Deserialize(it, LightComponent::GetName(), entity.Add<LightComponent>());
-         // }
-         // if (auto node = it[DirectLightComponent::GetName()]) {
-         //    Typer::Get().Deserialize(it, DirectLightComponent::GetName(), entity.Add<DirectLightComponent>());
-         // }
-         // if (auto node = it[DecalComponent::GetName()]) {
-         //    Typer::Get().Deserialize(it, DecalComponent::GetName(), entity.Add<DecalComponent>());
-         // }
       }
 
       return scene;

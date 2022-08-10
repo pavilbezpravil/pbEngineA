@@ -129,8 +129,6 @@ namespace pbe {
 
       Scene* pScene{};
       EditorSelection* selection{};
-
-      // std::function<void(Entity)> selectedCb;
    };
 
    class InspectorWindow : public EditorWindow {
@@ -147,8 +145,13 @@ namespace pbe {
          } else {
             ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
 
-            for (const auto& [id, func] : ComponentList::Get().components2) {
-               func(entity);
+            const auto& typer = Typer::Get();
+
+            for (const auto& ci : typer.components) {
+               if (auto* pComponent = ci.tryGet(entity)) {
+                  const auto& ti = typer.GetTypeInfo(ci.typeID);
+                  EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
+               }
             }
          }
 
@@ -357,12 +360,12 @@ namespace pbe {
                for (int i = 0; i < 500; ++i) {
                   Entity e = scene->Create(std::format("Cube {}", i));
 
-                  auto& trans = e.GetOrCreate<SceneTransformComponent>();
+                  auto& trans = e.GetOrAdd<SceneTransformComponent>();
                   trans.position = Random::Uniform(-cubeSize, cubeSize);
                   trans.scale = Random::Uniform(vec3{ 0 }, vec3{ 3.f });
                   trans.rotation = Random::Uniform(vec3{ 0 }, vec3{ 30.f });
 
-                  auto& material = e.GetOrCreate<SimpleMaterialComponent>();
+                  auto& material = e.GetOrAdd<SimpleMaterialComponent>();
                   material.albedo = Random::Uniform(vec3_Zero, vec3_One);
                   material.metallic = Random::Uniform(0, 1);
                   material.roughness = Random::Uniform(0, 1);
@@ -372,7 +375,7 @@ namespace pbe {
                for (int i = 0; i < 8; ++i) {
                   Entity e = scene->Create(std::format("Light {}", i));
 
-                  auto& trans = e.GetOrCreate<SceneTransformComponent>();
+                  auto& trans = e.GetOrAdd<SceneTransformComponent>();
                   trans.position = Random::Uniform(-cubeSize, cubeSize);
 
                   auto& light = e.Add<LightComponent>();

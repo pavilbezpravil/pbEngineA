@@ -152,7 +152,7 @@ namespace pbe {
       context->IASetInputLayout(inputLayout);
 
       auto stride = (uint)sizeof(VertexPosColor);
-      auto dynVerts = cmd.AllocDynVertBuffer(lines.data(), stride * lines.size());
+      auto dynVerts = cmd.AllocDynVertBuffer(lines.data(), stride * (uint)lines.size());
 
       ID3D11Buffer* vBuffer = dynVerts.buffer->GetBuffer();
       context->IASetVertexBuffers(0, 1, &vBuffer, &stride, &dynVerts.offset);

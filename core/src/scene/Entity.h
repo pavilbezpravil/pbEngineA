@@ -52,7 +52,7 @@ namespace pbe {
       }
 
       template<typename T>
-      T& GetOrCreate() {
+      T& GetOrAdd() {
          if (auto c = TryGet<T>()) {
             return *c;
          }

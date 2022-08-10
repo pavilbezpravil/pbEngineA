@@ -13,6 +13,7 @@ namespace YAML {
 }
 
 namespace pbe {
+   class Entity;
 
 #define TYPER_BEGIN(type) \
    int TyperRegister_##type() { \
@@ -49,6 +50,12 @@ namespace pbe {
       std::function<void(const YAML::Node&, const char*, byte*)> deserialize;
    };
 
+   struct ComponentInfo {
+      TypeID typeID;
+      std::function<void*(Entity&)> tryGet;
+      std::function<void*(Entity&)> getOrAdd;
+   };
+
    class Typer {
    public:
       Typer();
@@ -59,6 +66,7 @@ namespace pbe {
       void ImGuiTypeInfo(const TypeInfo& ti);
 
       void RegisterType(TypeID typeID, TypeInfo&& ti);
+      const TypeInfo& GetTypeInfo(TypeID typeID) const;
 
       template<typename T>
       void ImGuiValue(std::string_view name, T& value) const {
@@ -84,7 +92,11 @@ namespace pbe {
 
       void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
 
+      void RegisterComponent(ComponentInfo&& ci);
+
       std::unordered_map<TypeID, TypeInfo> types;
+
+      std::vector<ComponentInfo> components;
    };
 
 }
