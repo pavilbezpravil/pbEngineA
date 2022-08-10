@@ -17,6 +17,8 @@ namespace pbe {
       Entity Create(std::string_view name = {});
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
 
+      Entity Duplicate(Entity entity);
+
       void DestroyImmediate(Entity entity);
 
       template<typename Component, typename... Other>

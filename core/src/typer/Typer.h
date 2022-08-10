@@ -54,6 +54,7 @@ namespace pbe {
       TypeID typeID;
       std::function<void*(Entity&)> tryGet;
       std::function<void*(Entity&)> getOrAdd;
+      std::function<void(void*, const void*)> duplicate;
    };
 
    class Typer {

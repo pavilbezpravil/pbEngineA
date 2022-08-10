@@ -423,6 +423,15 @@ namespace pbe {
             }
             editorSelection.ClearSelection();
          }
+         if (e->keyCode == 'D' && Input::IsKeyPressed(VK_CONTROL)) {
+            auto prevSelected = editorSelection.selected;
+            editorSelection.ClearSelection();
+
+            for (auto entity : prevSelected) {
+               auto duplicatedEntity = editorScene->Duplicate(entity);
+               editorSelection.Select(duplicatedEntity, false);
+            }
+         }
       }
    }
 

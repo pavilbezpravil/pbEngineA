@@ -30,6 +30,23 @@ namespace pbe {
       return e;
    }
 
+   Entity Scene::Duplicate(Entity entity) {
+      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag);
+
+      const auto& typer = Typer::Get();
+
+      for (const auto ci : typer.components) {
+         auto* pSrc = ci.tryGet(entity);
+
+         if (pSrc) {
+            auto* pDst = ci.getOrAdd(duplicatedEntity);
+            ci.duplicate(pDst, pSrc);
+         }
+      }
+
+      return duplicatedEntity;
+   }
+
    void Scene::DestroyImmediate(Entity entity) {
       registry.destroy(entity.GetID());
    }

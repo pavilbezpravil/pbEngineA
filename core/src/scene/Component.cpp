@@ -98,6 +98,7 @@ namespace pbe {
       ci.typeID = GetTypeID<Component>(); \
       ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
+      ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       typer.RegisterComponent(std::move(ci))
 
       ADD_COMPONENT(SceneTransformComponent);
