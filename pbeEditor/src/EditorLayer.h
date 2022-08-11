@@ -36,10 +36,13 @@ namespace pbe {
 
    private:
       void SetEditorScene(Own<Scene>&& scene);
+      void SetActiveScene(Scene* scene);
+      Scene* GetActiveScene();
 
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
       Own<Scene> editorScene;
+      Own<Scene> runtimeScene;
       EditorSelection editorSelection;
       EditorSettings editorSettings;
 

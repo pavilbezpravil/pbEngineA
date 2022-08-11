@@ -24,10 +24,11 @@ namespace pbe {
    } \
    static int ComponentInfo_##Component = TyperComponentRegister_##Component()
 
-#define DECL_COMPONENT(Component) \
-   static const char* GetName() { \
-      return STRINGIFY(Component); \
-   }
+// #define DECL_COMPONENT(Component) \
+//    static const char* GetName() { \
+//       return STRINGIFY(Component); \
+//    }
+#define DECL_COMPONENT(Component)
 
    // todo:
 #define COMPONENT_EXPLICIT_TEMPLATES_DECL(Component)
@@ -109,7 +110,6 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(DecalComponent);
 
-   class Typer;
-   void RegisterBasicComponents(Typer& typer);
+   void RegisterBasicComponents(class Typer& typer);
 
 }

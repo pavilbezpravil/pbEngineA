@@ -211,6 +211,14 @@ namespace pbe {
 
    class TestScript : public NativeScript {
    public:
+      void OnEnable() override {
+         INFO("OnEnable {}", GetName());
+      }
+
+      void OnDisable() override {
+         INFO("OnDisable {}", GetName());
+      }
+
       void OnUpdate(float dt) override {
          INFO("OnUpdate {}. intVal = {}", dt, intValue);
       }
@@ -245,17 +253,22 @@ namespace pbe {
       viewportWindow->customHeadFunc = [&]() {
          switch (editorState) {
             case State::Edit:
-               if (ImGui::Button("Play")) {
+               if (ImGui::Button("Play") && editorScene) {
+                  runtimeScene = editorScene->Copy();
+                  SetActiveScene(runtimeScene.get());
+                  runtimeScene->OnStart();
                   editorState = State::Play;
-                  INFO("Play pressed!");
                }
                break;
             case State::Play:
                if (ImGui::Button("Stop")) {
+                  runtimeScene->OnStop();
+                  runtimeScene = {};
+                  SetActiveScene(editorScene.get());
                   editorState = State::Edit;
                }
                break;
-            default: ;
+            default: UNIMPLEMENTED();
          }
       };
 
@@ -347,14 +360,16 @@ namespace pbe {
       }
 
       if (ImGui::BeginMenuBar()) {
+         bool canChangeScene = !runtimeScene;
+
          if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("New Scene")) {
+            if (ImGui::MenuItem("New Scene", nullptr, false, canChangeScene)) {
                editorSettings.scenePath = {};
                Own<Scene> scene{ new Scene() };
                SetEditorScene(std::move(scene));
             }
 
-            if (ImGui::MenuItem("Open Scene")) {
+            if (ImGui::MenuItem("Open Scene", nullptr, false, canChangeScene)) {
                auto path = OpenFileDialog({"Scene", "*.scn"});
                if (!path.empty()) {
                   editorSettings.scenePath = path;
@@ -363,13 +378,15 @@ namespace pbe {
                }
             }
 
-            if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, !editorSettings.scenePath.empty())) {
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S", false,
+               canChangeScene && !editorSettings.scenePath.empty())) {
                if (editorScene) {
                   SceneSerialize(editorSettings.scenePath, *editorScene);
                }
             }
 
-            if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S", false, !!editorScene)) {
+            if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S", false,
+               canChangeScene && !!editorScene)) {
                auto path = OpenFileDialog({ "Scene", "*.scn", true });
                if (!path.empty()) {
                   editorSettings.scenePath = path;
@@ -379,8 +396,8 @@ namespace pbe {
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Scene Random", nullptr, false, !!editorScene)) {
-               auto& scene = editorScene;
+            if (ImGui::MenuItem("Scene Random", nullptr, false, !!GetActiveScene())) {
+               auto scene = GetActiveScene();
 
                {
                   auto e = scene->Create("Red");
@@ -496,10 +513,25 @@ namespace pbe {
 
    void EditorLayer::SetEditorScene(Own<Scene>&& scene) {
       editorScene = std::move(scene);
+      SetActiveScene(editorScene.get());
+   }
+
+   void EditorLayer::SetActiveScene(Scene* scene) {
       editorSelection.ClearSelection();
 
-      sceneHierarchyWindow->SetScene(editorScene.get());
-      viewportWindow->scene = editorScene.get();
+      sceneHierarchyWindow->SetScene(scene);
+      viewportWindow->scene = scene;
+   }
+
+   Scene* EditorLayer::GetActiveScene() {
+      switch (editorState) {
+      case State::Edit:
+         return editorScene.get();
+      case State::Play:
+         return runtimeScene.get();
+      default: UNIMPLEMENTED();
+      }
+      return nullptr;
    }
 
 }

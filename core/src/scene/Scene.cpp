@@ -26,25 +26,26 @@ namespace pbe {
       }
 
       e.Add<SceneTransformComponent>();
-      // e.Add<SimpleMaterialComponent>();
 
       return e;
    }
 
-   Entity Scene::Duplicate(Entity entity) {
-      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag);
-
+   void Scene::Duplicate(Entity dst, Entity src) {
       const auto& typer = Typer::Get();
 
       for (const auto ci : typer.components) {
-         auto* pSrc = ci.tryGet(entity);
+         auto* pSrc = ci.tryGet(src);
 
          if (pSrc) {
-            auto* pDst = ci.getOrAdd(duplicatedEntity);
+            auto* pDst = ci.getOrAdd(dst);
             ci.duplicate(pDst, pSrc);
          }
       }
+   }
 
+   Entity Scene::Duplicate(Entity entity) {
+      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag);
+      Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
 
@@ -52,11 +53,31 @@ namespace pbe {
       registry.destroy(entity.GetID());
    }
 
+   void Scene::OnStart() {
+      const auto& typer = Typer::Get();
+
+      for (const auto& si : typer.nativeScripts) {
+         si.initialize(*this);
+      }
+
+      for (const auto& si : typer.nativeScripts) {
+         si.sceneApplyFunc(*this, [](NativeScript& script) { script.OnEnable(); });
+      }
+   }
+
    void Scene::OnUpdate(float dt) {
       const auto& typer = Typer::Get();
 
       for (const auto& si : typer.nativeScripts) {
          si.sceneApplyFunc(*this, [dt](NativeScript& script) { script.OnUpdate(dt); });
+      }
+   }
+
+   void Scene::OnStop() {
+      const auto& typer = Typer::Get();
+
+      for (const auto& si : typer.nativeScripts) {
+         si.sceneApplyFunc(*this, [](NativeScript& script) { script.OnDisable(); });
       }
    }
 
@@ -71,6 +92,18 @@ namespace pbe {
 
    uint Scene::EntitiesCount() const {
       return (uint)registry.alive();
+   }
+
+   Own<Scene> Scene::Copy() {
+      auto pScene = std::make_unique<Scene>();
+
+      for (auto [e, uuid] : GetEntitiesWith<UUIDComponent>().each()) {
+         Entity src{e, this};
+         Entity dst = pScene->CreateWithUUID(uuid.uuid, registry.get<TagComponent>(e).tag);
+         Duplicate(dst, src);
+      }
+
+      return pScene;
    }
 
    static string gAssetsPath = "../../assets/";

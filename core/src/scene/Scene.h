@@ -17,20 +17,30 @@ namespace pbe {
       Entity Create(std::string_view name = {});
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
 
+      void Duplicate(Entity dst, Entity src);
       Entity Duplicate(Entity entity);
 
       void DestroyImmediate(Entity entity);
+
+      template<typename Component, typename... Other>
+      auto GetEntitiesWith() const {
+         return registry.view<Component, Other...>();
+      }
 
       template<typename Component, typename... Other>
       auto GetEntitiesWith() {
          return registry.view<Component, Other...>();
       }
 
+      void OnStart();
       void OnUpdate(float dt);
+      void OnStop();
 
       Entity FindByName(std::string_view name);
 
       uint EntitiesCount() const;
+
+      Own<Scene> Copy(); // todo: const
 
    private:
       entt::registry registry;

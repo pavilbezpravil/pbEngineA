@@ -14,6 +14,7 @@ namespace YAML {
 
 namespace pbe {
    class Entity;
+   class Scene;
 
 #define TYPER_BEGIN(type) \
    int TyperRegister_##type() { \
@@ -61,7 +62,8 @@ namespace pbe {
       using ApplyFunc = std::function<void(class NativeScript&)>;
 
       TypeID typeID;
-      std::function<void(class Scene&, const ApplyFunc&)> sceneApplyFunc;
+      std::function<void(Scene&)> initialize;
+      std::function<void(Scene&, const ApplyFunc&)> sceneApplyFunc;
    };
 
    class Typer {
@@ -75,6 +77,9 @@ namespace pbe {
 
       void RegisterType(TypeID typeID, TypeInfo&& ti);
       const TypeInfo& GetTypeInfo(TypeID typeID) const;
+
+      void RegisterComponent(ComponentInfo&& ci);
+      void RegisterNativeScript(NativeScriptInfo&& si);
 
       template<typename T>
       void ImGuiValue(std::string_view name, T& value) const {
@@ -99,9 +104,6 @@ namespace pbe {
       }
 
       void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
-
-      void RegisterComponent(ComponentInfo&& ci);
-      void RegisterNativeScript(NativeScriptInfo&& si);
 
       std::unordered_map<TypeID, TypeInfo> types;
 

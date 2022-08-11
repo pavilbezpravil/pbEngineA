@@ -140,6 +140,14 @@ namespace pbe {
       return types.at(typeID);
    }
 
+   void Typer::RegisterComponent(ComponentInfo&& ci) {
+      components.emplace_back(std::move(ci));
+   }
+
+   void Typer::RegisterNativeScript(NativeScriptInfo&& si) {
+      nativeScripts.emplace_back(std::move(si));
+   }
+
    void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
       const auto& ti = types.at(typeID);
 
@@ -204,14 +212,6 @@ namespace pbe {
             DeserializeImpl(nodeFields, f.name, f.typeID, data);
          }
       }
-   }
-
-   void Typer::RegisterComponent(ComponentInfo&& ci) {
-      components.emplace_back(std::move(ci));
-   }
-
-   void Typer::RegisterNativeScript(NativeScriptInfo&& si) {
-      nativeScripts.emplace_back(std::move(si));
    }
 
 }
