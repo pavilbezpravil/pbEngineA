@@ -1,14 +1,15 @@
 #pragma once
 
+#include "core/Core.h"
+#include "core/Common.h"
 #include "Common.h"
 #include "core/Ref.h"
-#include "core/Common.h"
 
 struct ID3D11Resource;
 
 namespace pbe {
 
-   class GPUResource : public RefCounted {
+   class CORE_API GPUResource : public RefCounted {
       NON_COPYABLE(GPUResource);
    public:
       GPUResource(ID3D11Resource* pResource);

@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "core/Core.h"
 #include "core/Common.h"
 
 
@@ -10,7 +11,7 @@ namespace pbe {
    struct Event;
 
 
-   class Layer {
+   class CORE_API Layer {
       NON_COPYABLE(Layer);
    public:
       Layer(const std::string& name = "Layer");

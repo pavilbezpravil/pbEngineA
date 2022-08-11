@@ -4,6 +4,7 @@
 #include "typer/Typer.h"
 #include "scene/Scene.h"
 #include "EditorLayer.h"
+#include "app/EntryPoint.h"
 #include "core/Log.h"
 #include "rend/Renderer.h"
 #include "rend/Texture2D.h"
@@ -123,9 +124,9 @@ namespace pbe {
       }
    };
 
-   Application* CreateApplication() {
-      EditorApplication* app = new EditorApplication();
-      return app;
-   }
+}
 
+int main(int nArgs, char** args) {
+   pbe::EditorApplication* app = new pbe::EditorApplication();
+   return    pbeMain(app, nArgs, args);;
 }

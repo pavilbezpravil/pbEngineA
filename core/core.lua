@@ -1,5 +1,5 @@
 project "core"
-   staticCppLib()
+   sharedCppLib()
 
    libsinfo.core = {}
    libsinfo.core.includepath = os.getcwd().."/src"
@@ -21,4 +21,5 @@ project "core"
 
    links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 
-   files { "**.h", "**.cpp", "natvis/glm.natvis" }
+   defines { "CORE_API_EXPORT" }
+   files { "src/**.h", "src/**.cpp", "natvis/glm.natvis" }

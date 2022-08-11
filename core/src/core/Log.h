@@ -3,9 +3,11 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
+#include "core/Core.h"
+
 namespace pbe {
 
-   class Log {
+   class CORE_API Log {
    public:
       static void Init();
 

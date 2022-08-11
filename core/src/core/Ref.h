@@ -4,9 +4,11 @@
 #include <memory>
 #include <stdint.h>
 
+#include "Core.h"
+
 namespace pbe {
 
-   class RefCounted {
+   class CORE_API RefCounted {
    public:
       void IncRefCount() const {
          refCount++;

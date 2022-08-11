@@ -119,19 +119,21 @@ namespace pbe {
          resourses.push_back(blendStateTransparency);
       }
 
-      void Term() {
-         for (auto* resourse : resourses) {
-            SAFE_RELEASE(resourse);
-         }
-         resourses.clear();
-      }
-
       struct InputLayoutEntry {
          ComPtr<ID3D11InputLayout> inputLayout;
          // std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
       };
 
       static std::unordered_map<ID3DBlob*, InputLayoutEntry> sLayoutMap;
+
+      void Term() {
+         for (auto* resourse : resourses) {
+            SAFE_RELEASE(resourse);
+         }
+         resourses.clear();
+
+         sLayoutMap.clear();
+      }
 
       ID3D11InputLayout* GetInputLayout(ID3DBlob* vsBlob,
          std::vector<D3D11_INPUT_ELEMENT_DESC>& inputElementDesc) {

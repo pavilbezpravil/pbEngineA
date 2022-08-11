@@ -3,6 +3,7 @@
 #include <d3d11_3.h>
 #include <dxgi.h>
 
+#include "core/Core.h"
 #include "core/Ref.h"
 #include "math/Types.h"
 
@@ -33,6 +34,6 @@ namespace pbe {
       void SetupBackbuffer();
    };
 
-   extern Device* sDevice;
+   extern CORE_API Device* sDevice;
 
 }

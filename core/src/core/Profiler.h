@@ -31,10 +31,13 @@ namespace pbe {
       std::chrono::time_point<std::chrono::high_resolution_clock> tStart = std::chrono::high_resolution_clock::now();
    };
 
-   class Profiler {
+   class CORE_API Profiler {
       NON_COPYABLE(Profiler);
    public:
       Profiler() = default;
+
+      static void Init();
+      static void Term();
       static Profiler& Get();
 
       struct AverageTime {

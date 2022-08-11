@@ -59,7 +59,7 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
 
-   struct SceneTransformComponent {
+   struct CORE_API SceneTransformComponent {
       vec3 position{};
       quat rotation = quat_Identity;
       vec3 scale{ 1.f };

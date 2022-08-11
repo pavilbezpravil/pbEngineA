@@ -4,6 +4,18 @@
 #include <string>
 #include <vector>
 
+// warning C4251: 'SomeClass::member': class 'OtherClass' needs to have dll-interface
+// to be used by clients of class 'SomeClass'
+#pragma warning( disable : 4251 )
+
+#define EXTERN_C extern "C"
+
+#ifdef CORE_API_EXPORT
+   #define CORE_API  __declspec(dllexport)
+#else
+   #define CORE_API  __declspec(dllimport)
+#endif
+
 namespace pbe {
 
    using int8 = int8_t;

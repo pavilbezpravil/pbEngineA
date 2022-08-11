@@ -17,6 +17,9 @@ namespace pbe {
       program = GpuProgram::Create(programDesc);
    }
 
+   DbgRend::~DbgRend() {
+   }
+
    void DbgRend::DrawLine(const vec3& start, const vec3& end, const vec4& color) {
       lines.emplace_back(start, color);
       lines.emplace_back(end, color);

@@ -1,14 +1,9 @@
 #include "pch.h"
-#include "Application.h"
-
-namespace pbe {
-   extern Application* CreateApplication();
-}
+#include "EntryPoint.h"
 
 
-int main(int, char**) {
+int pbeMain(pbe::Application* sApplication, int nArgs, char** args) {
 
-   pbe::Application* sApplication = pbe::CreateApplication();
    sApplication->OnInit();
    sApplication->Run();
    sApplication->OnTerm();

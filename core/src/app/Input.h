@@ -1,4 +1,5 @@
 #pragma once
+#include "core/Core.h"
 #include "math/Types.h"
 
 
@@ -6,7 +7,7 @@ namespace pbe {
    struct Event;
 
 
-   class Input {
+   class CORE_API Input {
    public:
       Input(); // todo:
       // static void Init();

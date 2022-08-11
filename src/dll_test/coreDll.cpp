@@ -16,6 +16,10 @@ void Engine::helloStatic() {
    cout << "helloStatic" << endl;
 }
 
+void Engine::virtualFunc() {
+   cout << "virtual" << endl;
+}
+
 namespace core {
    int namespaceFunc() {
       cout << "namespaceFunc" << endl;

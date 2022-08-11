@@ -69,7 +69,7 @@ namespace pbe {
       bool superSampling = false;
    };
 
-   class Renderer {
+   class CORE_API Renderer {
    public:
       ~Renderer() {
          rendres::Term();

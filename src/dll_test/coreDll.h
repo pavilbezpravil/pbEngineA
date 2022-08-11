@@ -4,6 +4,10 @@
    #define CORE_API  __declspec(dllimport)
 #endif
 
+class Engine2 {
+   void Func();
+};
+
 class CORE_API Engine {
 public:
    Engine();
@@ -12,7 +16,11 @@ public:
    void hello();
    static void helloStatic();
 
+   virtual void virtualFunc();
+
    int val = 17;
+
+   Engine2 e2;
 };
 
 namespace core {

@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "core/Core.h"
+
 namespace pbe {
 
    namespace fs = std::filesystem;
@@ -14,6 +16,6 @@ namespace pbe {
       bool save = false;
    };
 
-   std::string OpenFileDialog(const OpenFileDialogCfg& cfg);
+   CORE_API std::string OpenFileDialog(const OpenFileDialogCfg& cfg);
 
 }

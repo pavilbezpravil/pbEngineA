@@ -373,7 +373,7 @@ namespace pbe {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
 
-         static DbgRend dbgRend;
+         DbgRend& dbgRend = *scene.dbgRend;
          dbgRend.Clear();
 
          // int size = 20;

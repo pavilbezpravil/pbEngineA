@@ -26,6 +26,8 @@ namespace pbe {
          return;
       }
 
+      Profiler::Init();
+
       sWindow->eventCallback = [&](Event& event) { OnEvent(event); };
 
       imguiLayer = new ImGuiLayer();
@@ -37,6 +39,8 @@ namespace pbe {
 
    void Application::OnTerm() {
       layerStack.Clear();
+
+      Profiler::Term();
 
       SAFE_DELETE(sDevice);
       SAFE_DELETE(sWindow);

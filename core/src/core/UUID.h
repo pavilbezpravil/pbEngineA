@@ -3,12 +3,12 @@
 #include <xhash>
 #include <limits>
 
-#include "Assert.h"
 #include "Core.h"
+#include "Assert.h"
 
 namespace pbe {
 
-   class UUID {
+   class CORE_API UUID {
    public:
       UUID();
       constexpr UUID(uint64 uuid) : uuid(uuid) {}

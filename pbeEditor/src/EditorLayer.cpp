@@ -241,6 +241,8 @@ namespace pbe {
          Typer::Get().Deserialize(node, "settings", editorSettings);
       }
 
+      ImGui::SetCurrentContext(GetImGuiContext());
+
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
@@ -281,6 +283,8 @@ namespace pbe {
    }
 
    void EditorLayer::OnDetach() {
+      ImGui::SetCurrentContext(nullptr);
+
       // todo:
       {
          YAML::Emitter out;

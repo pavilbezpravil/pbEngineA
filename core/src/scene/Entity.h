@@ -7,7 +7,7 @@
 
 namespace pbe {
 
-   class Entity {
+   class CORE_API Entity {
    public:
       Entity() = default;
       Entity(entt::entity id, Scene* scene);

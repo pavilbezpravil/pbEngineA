@@ -1,10 +1,10 @@
 project "yaml"
-    staticCppLib()
+    sharedCppLib()
 
     libsinfo.yaml = {}
     libsinfo.yaml.includepath = os.getcwd().."/include"
 
     includedirs { libsinfo.yaml.includepath }
 
-    defines { "YAML_CPP_STATIC_DEFINE" }
+    defines { "yaml_cpp_EXPORTS" }
     files { "include/**.h", "src/**.cpp" }

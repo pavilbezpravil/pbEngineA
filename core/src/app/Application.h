@@ -7,7 +7,7 @@
 
 namespace pbe {
 
-   class Application {
+   class CORE_API Application {
    public:
       NON_COPYABLE(Application);
       Application() = default;

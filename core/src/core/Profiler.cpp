@@ -3,9 +3,18 @@
 
 namespace pbe {
 
+   static Profiler* sProfiler = nullptr;
+
+   void Profiler::Init() {
+      sProfiler = new Profiler();
+   }
+
+   void Profiler::Term() {
+      delete sProfiler;
+   }
+
    Profiler& Profiler::Get() {
-      static Profiler sProfiler;
-      return sProfiler;
+      return *sProfiler;
    }
 
 }

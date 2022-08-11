@@ -5,9 +5,17 @@
 #include "Entity.h"
 #include "typer/Typer.h"
 #include "fs/FileSystem.h"
+#include "rend/DbgRend.h"
 #include "script/NativeScript.h"
 
 namespace pbe {
+
+   Scene::Scene() {
+      dbgRend = std::make_unique<DbgRend>();
+   }
+
+   Scene::~Scene() {
+   }
 
    Entity Scene::Create(std::string_view name) {
       return CreateWithUUID(UUID{}, name);

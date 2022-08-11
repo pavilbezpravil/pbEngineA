@@ -14,4 +14,4 @@ project "pbeEditor"
                  libsinfo.optick.includepath,
                  libsinfo.entt.includepath,
                  libsinfo.shaders.includepath }
-   links { "core" }
+   links { "core", "imgui", "yaml" }

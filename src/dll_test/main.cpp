@@ -10,6 +10,7 @@ int main() {
 
    Engine e;
    e.helloStatic();
+   e.virtualFunc();
 
    HINSTANCE hGetProcIDDLL = LoadLibrary(L"scriptDll.dll");
 

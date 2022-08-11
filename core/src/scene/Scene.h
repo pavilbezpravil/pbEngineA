@@ -2,17 +2,21 @@
 
 #include <entt/entt.hpp>
 
+#include "core/Core.h"
 #include "core/Ref.h"
 #include "math/Types.h"
 
 
 namespace pbe {
+   class DbgRend;
    class UUID;
 
    class Entity;
 
-   class Scene {
+   class CORE_API Scene {
    public:
+      Scene();
+      ~Scene();
 
       Entity Create(std::string_view name = {});
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
@@ -42,14 +46,15 @@ namespace pbe {
 
       Own<Scene> Copy(); // todo: const
 
+      Own<DbgRend> dbgRend; // todo:
+
    private:
       entt::registry registry;
 
       friend Entity;
-
-      friend void SceneSerialize(std::string_view path, Scene& scene);
    };
 
-   Own<Scene> SceneDeserialize(std::string_view path);
+   CORE_API void SceneSerialize(std::string_view path, Scene& scene);
+   CORE_API Own<Scene> SceneDeserialize(std::string_view path);
 
 }

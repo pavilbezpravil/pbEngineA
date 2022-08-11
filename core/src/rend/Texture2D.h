@@ -7,10 +7,10 @@
 
 namespace pbe {
 
-   class Texture2D : public GPUResource {
+   class CORE_API Texture2D : public GPUResource {
    public:
 
-      struct Desc {
+      struct CORE_API Desc {
          int2 size;
          uint mips = 1;
          DXGI_FORMAT format;

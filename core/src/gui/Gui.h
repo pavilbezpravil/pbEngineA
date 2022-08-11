@@ -29,7 +29,9 @@ namespace pbe {
    };
    */
 
-   void EditorUI(std::string_view name, TypeID typeID, byte* value);
+   CORE_API ImGuiContext* GetImGuiContext();
+
+   CORE_API void EditorUI(std::string_view name, TypeID typeID, byte* value);
 
    template<typename T>
    void EditorUI(std::string_view name, T& value) {

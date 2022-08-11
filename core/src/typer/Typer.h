@@ -66,7 +66,7 @@ namespace pbe {
       std::function<void(Scene&, const ApplyFunc&)> sceneApplyFunc;
    };
 
-   class Typer {
+   class CORE_API Typer {
    public:
       Typer();
 

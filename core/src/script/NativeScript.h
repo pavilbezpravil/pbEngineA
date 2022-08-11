@@ -27,7 +27,7 @@ namespace pbe {
    } \
    static int ScriptInfo_##Script = TyperScriptRegister_##Script()
 
-   class NativeScript {
+   class CORE_API NativeScript {
    public:
       virtual ~NativeScript() = default;
 

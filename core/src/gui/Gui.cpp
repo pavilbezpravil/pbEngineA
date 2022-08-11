@@ -4,6 +4,10 @@
 
 namespace pbe {
 
+   ImGuiContext* GetImGuiContext() {
+      return ImGui::GetCurrentContext();
+   }
+
    void EditorUI(std::string_view name, TypeID typeID, byte* value) {
       Typer::Get().ImGuiValueImpl(name, typeID, value);
    }
