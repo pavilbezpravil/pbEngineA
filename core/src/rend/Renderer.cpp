@@ -376,21 +376,21 @@ namespace pbe {
          static DbgRend dbgRend;
          dbgRend.Clear();
 
-         int size = 20;
-
-         for (int i = -size; i <= size; ++i) {
-            dbgRend.DrawLine(vec3{ i, 0, -size }, vec3{ i, 0, size });
-         }
-
-         for (int i = -size; i <= size; ++i) {
-            dbgRend.DrawLine(vec3{ -size, 0, i }, vec3{ size, 0, i });
-         }
+         // int size = 20;
+         //
+         // for (int i = -size; i <= size; ++i) {
+         //    dbgRend.DrawLine(vec3{ i, 0, -size }, vec3{ i, 0, size });
+         // }
+         //
+         // for (int i = -size; i <= size; ++i) {
+         //    dbgRend.DrawLine(vec3{ -size, 0, i }, vec3{ size, 0, i });
+         // }
 
          // AABB aabb{ vec3_One, vec3_One * 3.f };
          // dbgRend.DrawAABB(aabb);
 
-         auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
-         dbgRend.DrawViewProjection(shadowInvViewProjection);
+         // auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
+         // dbgRend.DrawViewProjection(shadowInvViewProjection);
 
          for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
