@@ -5,6 +5,7 @@
 #include "Entity.h"
 #include "typer/Typer.h"
 #include "fs/FileSystem.h"
+#include "script/NativeScript.h"
 
 namespace pbe {
 
@@ -49,6 +50,14 @@ namespace pbe {
 
    void Scene::DestroyImmediate(Entity entity) {
       registry.destroy(entity.GetID());
+   }
+
+   void Scene::OnUpdate(float dt) {
+      const auto& typer = Typer::Get();
+
+      for (const auto& si : typer.nativeScripts) {
+         si.sceneApplyFunc(*this, [dt](NativeScript& script) { script.OnUpdate(dt); });
+      }
    }
 
    Entity Scene::FindByName(std::string_view name) {

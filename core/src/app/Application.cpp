@@ -49,14 +49,14 @@ namespace pbe {
          INFO("App quit event");
          running = false;
       }
-      if (event.GetEvent<AppLoseFocusEvent>()) {
-         INFO("Lose Focus");
-         focused = false;
-      }
-      if (event.GetEvent<AppGetFocusEvent>()) {
-         INFO("Get Focus");
-         focused = true;
-      }
+      // if (event.GetEvent<AppLoseFocusEvent>()) {
+      //    INFO("Lose Focus");
+      //    focused = false;
+      // }
+      // if (event.GetEvent<AppGetFocusEvent>()) {
+      //    INFO("Get Focus");
+      //    focused = true;
+      // }
 
       if (auto* windowResize = event.GetEvent<WindowResizeEvent>()) {
          sDevice->Resize(windowResize->size);
@@ -110,7 +110,7 @@ namespace pbe {
             ThreadSleepMs(50);
          }
 
-         float dt = frameTimer.ElapsedMs(true);
+         float dt = frameTimer.ElapsedMs(true) / 1000.f;
          // INFO("DeltaTime: {}", dt);
 
          // debug handle

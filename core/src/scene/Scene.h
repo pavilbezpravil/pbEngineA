@@ -26,6 +26,8 @@ namespace pbe {
          return registry.view<Component, Other...>();
       }
 
+      void OnUpdate(float dt);
+
       Entity FindByName(std::string_view name);
 
       uint EntitiesCount() const;

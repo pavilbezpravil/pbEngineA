@@ -3,6 +3,7 @@
 #include "BasicTypes.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
+#include "scene/Component.h"
 
 namespace pbe {
 
@@ -54,6 +55,7 @@ namespace pbe {
 
    Typer::Typer() {
       RegisterBasicTypes(*this);
+      RegisterBasicComponents(*this);
    }
 
    Typer& Typer::Get() {
@@ -205,8 +207,11 @@ namespace pbe {
    }
 
    void Typer::RegisterComponent(ComponentInfo&& ci) {
-      // todo: typeID?
       components.emplace_back(std::move(ci));
+   }
+
+   void Typer::RegisterNativeScript(NativeScriptInfo&& si) {
+      nativeScripts.emplace_back(std::move(si));
    }
 
 }

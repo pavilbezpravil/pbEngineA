@@ -19,9 +19,9 @@ namespace pbe {
 
       enableInput = ImGui::IsWindowHovered();
 
-      // if (ImGui::Button("Play")) {
-      //    INFO("Play pressed!");
-      // }
+      if (customHeadFunc) {
+         customHeadFunc();
+      }
 
       static RenderConfing cfg;
 

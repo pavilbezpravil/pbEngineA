@@ -57,6 +57,13 @@ namespace pbe {
       std::function<void(void*, const void*)> duplicate;
    };
 
+   struct NativeScriptInfo {
+      using ApplyFunc = std::function<void(class NativeScript&)>;
+
+      TypeID typeID;
+      std::function<void(class Scene&, const ApplyFunc&)> sceneApplyFunc;
+   };
+
    class Typer {
    public:
       Typer();
@@ -94,10 +101,12 @@ namespace pbe {
       void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
 
       void RegisterComponent(ComponentInfo&& ci);
+      void RegisterNativeScript(NativeScriptInfo&& si);
 
       std::unordered_map<TypeID, TypeInfo> types;
 
       std::vector<ComponentInfo> components;
+      std::vector<NativeScriptInfo> nativeScripts;
    };
 
 }

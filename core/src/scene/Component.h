@@ -7,6 +7,23 @@
 
 namespace pbe {
 
+#define INTERNAL_ADD_COMPONENT(Component) \
+      ci = {}; \
+      ci.typeID = GetTypeID<Component>(); \
+      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
+      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
+      ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
+      typer.RegisterComponent(std::move(ci))
+
+#define TYPER_REGISTER_COMPONENT(Component) \
+   static int TyperComponentRegister_##Component() { \
+      auto& typer = Typer::Get(); \
+      ComponentInfo ci{}; \
+      INTERNAL_ADD_COMPONENT(Component); \
+      return 0; \
+   } \
+   static int ComponentInfo_##Component = TyperComponentRegister_##Component()
+
 #define DECL_COMPONENT(Component) \
    static const char* GetName() { \
       return STRINGIFY(Component); \
@@ -91,5 +108,8 @@ namespace pbe {
       DECL_COMPONENT(DecalComponent);
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(DecalComponent);
+
+   class Typer;
+   void RegisterBasicComponents(Typer& typer);
 
 }

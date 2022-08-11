@@ -88,33 +88,14 @@ namespace pbe {
       scale = scale_;
    }
 
-   int RegisterComponents() {
-      auto& typer = Typer::Get();
-
+   void RegisterBasicComponents(Typer& typer) {
       ComponentInfo ci{};
 
-#define ADD_COMPONENT(Component) \
-      ci = {}; \
-      ci.typeID = GetTypeID<Component>(); \
-      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
-      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
-      ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
-      typer.RegisterComponent(std::move(ci))
-
-      ADD_COMPONENT(SceneTransformComponent);
-      ADD_COMPONENT(SimpleMaterialComponent);
-      ADD_COMPONENT(LightComponent);
-      ADD_COMPONENT(DirectLightComponent);
-      ADD_COMPONENT(DecalComponent);
-
-      // ci = {};
-      // ci.tryGet = [](Entity& e) { return (void*)e.TryGet<SimpleMaterialComponent>(); };
-      // ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<SimpleMaterialComponent>(); };
-      // typer.RegisterComponent(GetTypeID<SimpleMaterialComponent>(), std::move(ci));
-
-      return 0;
+      INTERNAL_ADD_COMPONENT(SceneTransformComponent);
+      INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
+      INTERNAL_ADD_COMPONENT(LightComponent);
+      INTERNAL_ADD_COMPONENT(DirectLightComponent);
+      INTERNAL_ADD_COMPONENT(DecalComponent);
    }
-
-   static int __unused_value = RegisterComponents();
 
 }

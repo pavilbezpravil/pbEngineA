@@ -5,6 +5,7 @@
 #include "app/Event.h"
 #include "app/Input.h"
 #include "core/Profiler.h"
+#include "core/Type.h"
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
 #include "math/Random.h"
@@ -12,6 +13,7 @@
 #include "scene/Entity.h"
 #include "scene/Component.h"
 #include "rend/Renderer.h"
+#include "script/NativeScript.h"
 #include "typer/Typer.h"
 
 
@@ -83,10 +85,6 @@ namespace pbe {
                   if (ImGui::BeginPopupContextItem()) {
                      ImGui::Text("This a popup for \"%s\"!", name);
 
-                     if (ImGui::Button("Add component")) {
-                        INFO("Add component");
-                     }
-
                      ImGui::Separator();
 
                      if (ImGui::Button("Delete")) {
@@ -153,6 +151,24 @@ namespace pbe {
                   EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
                }
             }
+
+            if (ImGui::BeginPopupContextItem("Add Component Popup")) {
+               for (const auto& ci : typer.components) {
+                  auto* pComponent = ci.tryGet(entity);
+                  if (!pComponent) {
+                     auto text = std::format("Add {}", typer.GetTypeInfo(ci.typeID).name);
+                     if (ImGui::Button(text.data())) {
+                        ci.getOrAdd(entity);
+                     }
+                  }
+               }
+
+               ImGui::EndPopup();
+            }
+
+            if (ImGui::Button("Add Component")) {
+               ImGui::OpenPopup("Add Component Popup");
+            }
          }
 
          ImGui::End();
@@ -193,6 +209,23 @@ namespace pbe {
       }
    };
 
+   class TestScript : public NativeScript {
+   public:
+      void OnUpdate(float dt) override {
+         INFO("OnUpdate {}. intVal = {}", dt, intValue);
+      }
+
+      float floatValue = 2;
+      int intValue = 2;
+   };
+
+   TYPER_BEGIN(TestScript)
+      TYPER_FIELD(floatValue)
+      TYPER_FIELD(intValue)
+   TYPER_END(TestScript)
+   TYPER_REGISTER_COMPONENT(TestScript);
+   TYPER_REGISTER_NATIVE_SCRIPT(TestScript);
+
    void EditorLayer::OnAttach() {
       // todo:
       if (fs::exists(editorSettingPath)) {
@@ -208,6 +241,23 @@ namespace pbe {
       sceneHierarchyWindow->selection = &editorSelection;
       viewportWindow->selection = &editorSelection;
       inspectorWindow->selection = &editorSelection;
+
+      viewportWindow->customHeadFunc = [&]() {
+         switch (editorState) {
+            case State::Edit:
+               if (ImGui::Button("Play")) {
+                  editorState = State::Play;
+                  INFO("Play pressed!");
+               }
+               break;
+            case State::Play:
+               if (ImGui::Button("Stop")) {
+                  editorState = State::Edit;
+               }
+               break;
+            default: ;
+         }
+      };
 
       if (!editorSettings.scenePath.empty()) {
          auto s = SceneDeserialize(editorSettings.scenePath);
@@ -238,6 +288,10 @@ namespace pbe {
          if (window->show) {
             window->OnUpdate(dt);
          }
+      }
+
+      if (editorState == State::Play && editorScene) {
+         editorScene->OnUpdate(dt);
       }
    }
 

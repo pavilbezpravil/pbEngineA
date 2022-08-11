@@ -30,6 +30,8 @@ namespace pbe {
 
       Scene* scene{};
       EditorSelection* selection{};
+      std::function<void(void)> customHeadFunc; // todo: better name
+
       RenderCamera camera;
       vec2 cameraAngle{};
       Own<Renderer> renderer;

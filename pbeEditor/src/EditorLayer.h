@@ -46,6 +46,13 @@ namespace pbe {
       SceneHierarchyWindow* sceneHierarchyWindow{};
       InspectorWindow* inspectorWindow{};
       ViewportWindow* viewportWindow{};
+
+      enum class State {
+         Edit,
+         Play,
+      };
+
+      State editorState = State::Edit;
    };
 
 }
