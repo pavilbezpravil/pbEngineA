@@ -531,11 +531,14 @@ namespace pbe {
 
          std::wstring dllName = L"testProj.dll"; // todo:
 
-         // todo: for hot reload dll. windows lock dll for writing
-         fs::copy_file(dllName, "testProjCopy.dll", std::filesystem::copy_options::overwrite_existing);
+         if (1) {
+            // todo: for hot reload dll. windows lock dll for writing
+            fs::copy_file(dllName, "testProjCopy.dll", std::filesystem::copy_options::update_existing);
+            dllHandler = LoadLibrary(L"testProjCopy.dll");
+         } else {
+            dllHandler = LoadLibrary(dllName.data());
+         }
 
-         dllHandler = LoadLibrary(L"testProjCopy.dll");
-         // dllHandler = LoadLibrary(dllName.data());
          if (!dllHandler) {
             WARN("could not load the dynamic library testProj.dll");
          }
