@@ -396,10 +396,10 @@ namespace pbe {
    }
 
    void ImGuiLayer::OnEvent(Event& event) {
-      if (ImGui::GetCurrentContext()) {
-         auto& io = ImGui::GetIO();
-         event.handled = io.WantCaptureKeyboard || io.WantCaptureMouse;
-      }
+      // if (ImGui::GetCurrentContext()) {
+      //    auto& io = ImGui::GetIO();
+      //    event.handled = io.WantCaptureKeyboard || io.WantCaptureMouse;
+      // }
       Layer::OnEvent(event);
    }
 

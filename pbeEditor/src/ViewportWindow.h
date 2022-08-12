@@ -4,12 +4,13 @@
 #include "EditorWindow.h"
 #include "core/Ref.h"
 #include "rend/Renderer.h"
-#include "scene/Entity.h"
 
 namespace pbe {
+
    class Scene;
 
    class Renderer;
+   class RTRenderer;
    class Texture2D;
 
    struct GizmoCfg {
@@ -35,6 +36,7 @@ namespace pbe {
       RenderCamera camera;
       vec2 cameraAngle{};
       Own<Renderer> renderer;
+      Own<RTRenderer> rtRenderer;
       CameraContext cameraContext;
 
       bool enableInput = false;

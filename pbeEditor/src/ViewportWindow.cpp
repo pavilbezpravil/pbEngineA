@@ -6,12 +6,16 @@
 #include "ImGuizmo.h"
 #include "app/Input.h"
 #include "rend/Renderer.h"
+#include "rend/RTRenderer.h"
 
 namespace pbe {
 
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
       renderer.reset(new Renderer());
       renderer->Init();
+
+      rtRenderer.reset(new RTRenderer());
+      rtRenderer->Init();
    }
 
    void ViewportWindow::OnImGuiRender() {
@@ -47,6 +51,10 @@ namespace pbe {
 
       ImGui::Checkbox("Super Sampling", &cfg.superSampling);
 
+      static bool rtRender = false;
+      ImGui::SameLine();
+      ImGui::Checkbox("Rt Remder", &rtRender);
+
       renderer->cfg = cfg;
 
       static int item_current = 0;
@@ -66,6 +74,7 @@ namespace pbe {
             Texture2D::Desc texDesc;
             texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
             texDesc.size = size;
 
             texDesc.name = "scene colorHDR";
@@ -78,9 +87,9 @@ namespace pbe {
             texDesc.name = "scene depth";
             cameraContext.depth = Texture2D::Create(texDesc);
 
-            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
-            texDesc.name = "scene depth copy";
-            cameraContext.depthCopy = Texture2D::Create(texDesc);
+            // texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+            // texDesc.name = "scene depth copy";
+            // cameraContext.depthCopy = Texture2D::Create(texDesc);
 
             texDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -117,7 +126,11 @@ namespace pbe {
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
          if (scene) {
-            renderer->RenderScene(cmd, *scene, camera, cameraContext);
+            if (rtRender) {
+               rtRenderer->RenderScene(cmd, *scene, camera, cameraContext);
+            } else {
+               renderer->RenderScene(cmd, *scene, camera, cameraContext);
+            }
          }
          cmd.pContext->ClearState(); // todo:
 

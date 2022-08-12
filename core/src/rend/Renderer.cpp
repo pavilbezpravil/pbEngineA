@@ -145,26 +145,12 @@ namespace pbe {
 
       RenderDataPrepare(cmd, scene);
 
-      auto context = cmd.pContext;
-
       cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.normal, vec4{0, 0, 0, 0});
       cmd.ClearDepthTarget(*cameraContext.depth, 1);
 
       cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size);
       cmd.SetRasterizerState(rendres::rasterizerState);
-
-      // set mesh
-      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-      ID3D11InputLayout* inputLayout = rendres::GetInputLayout(baseColorPass->vs->blob.Get(), VertexPosNormal::inputElementDesc);
-      context->IASetInputLayout(inputLayout);
-
-      ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
-      uint offset = 0;
-      context->IASetVertexBuffers(0, 1, &vBuffer, &mesh.geom.nVertexByteSize, &offset);
-      context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
-      //
 
       uint nDecals = 0;
       if (cfg.decals) {
@@ -411,6 +397,19 @@ namespace pbe {
 
       program.SetCB<SCameraCB>(cmd, "gCameraCB", *cameraContext.cameraCB.buffer, cameraContext.cameraCB.offset);
       program.SetCB<SSceneCB>(cmd, "gSceneCB", *cameraContext.sceneCB.buffer, cameraContext.sceneCB.offset);
+
+      // set mesh
+      auto* context = cmd.pContext;
+      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+      ID3D11InputLayout* inputLayout = rendres::GetInputLayout(baseColorPass->vs->blob.Get(), VertexPosNormal::inputElementDesc);
+      context->IASetInputLayout(inputLayout);
+
+      ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
+      uint offset = 0;
+      context->IASetVertexBuffers(0, 1, &vBuffer, &mesh.geom.nVertexByteSize, &offset);
+      context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
+      //
 
       int instanceID = 0;
 
