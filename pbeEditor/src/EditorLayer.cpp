@@ -140,7 +140,18 @@ namespace pbe {
          if (!entity.Valid()) {
             ImGui::Text("No entity");
          } else {
-            ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
+            // ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
+
+            std::string name = entity.Get<TagComponent>().tag;
+            name.reserve(glm::max((int)name.size(), 64));
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+            if (ImGui::InputText("Name", name.data(), name.size())) {
+               entity.Get<TagComponent>().tag = std::move(name);
+            }
+
+            ImGui::SameLine();
+            ImGui::Text("0x%jx", (uint64)entity.Get<UUIDComponent>().uuid);
 
             const auto& typer = Typer::Get();
 
@@ -476,6 +487,10 @@ namespace pbe {
 
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyPressedEvent>()) {
+         // INFO("KeyCode {}", e->keyCode);
+         // auto& io = ImGui::GetIO();
+         // INFO("io.WantCaptureKeyboard {}", io.WantCaptureKeyboard);
+
          if (e->keyCode == VK_ESCAPE) {
             editorSelection.ClearSelection();
          }

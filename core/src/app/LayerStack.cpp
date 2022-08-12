@@ -4,6 +4,7 @@
 namespace pbe {
 
    LayerStack::LayerStack() {
+      // layers.reserve(2);
       layerInsert = layers.begin();
    }
 
@@ -18,7 +19,7 @@ namespace pbe {
    void LayerStack::PushOverlay(Layer* overlay) {
       layers.emplace_back(overlay);
       if (!layerInsert._Ptr) { // todo:
-         layerInsert = ++layers.begin();
+         layerInsert = layers.begin();
       }
    }
 

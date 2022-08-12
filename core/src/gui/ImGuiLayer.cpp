@@ -3,6 +3,7 @@
 
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
+#include "app/Event.h"
 #include "app/Window.h"
 #include "rend/Device.h"
 
@@ -331,7 +332,7 @@ namespace pbe {
    void ImGuiLayer::OnAttach() {
       // Setup Dear ImGui context
       IMGUI_CHECKVERSION();
-      ImGui::CreateContext();
+      // ImGui::CreateContext();
       ImGuiIO& io = ImGui::GetIO();
       (void)io;
       io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
@@ -387,11 +388,19 @@ namespace pbe {
    void ImGuiLayer::OnDetach() {
       ImGui_ImplDX11_Shutdown();
       ImGui_ImplWin32_Shutdown();
-      ImGui::DestroyContext();
+      // ImGui::DestroyContext();
    }
 
    void ImGuiLayer::OnImGuiRender() {
       Layer::OnImGuiRender();
+   }
+
+   void ImGuiLayer::OnEvent(Event& event) {
+      if (ImGui::GetCurrentContext()) {
+         auto& io = ImGui::GetIO();
+         event.handled = io.WantCaptureKeyboard || io.WantCaptureMouse;
+      }
+      Layer::OnEvent(event);
    }
 
    void ImGuiLayer::NewFrame() {

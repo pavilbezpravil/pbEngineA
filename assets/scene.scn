@@ -5,19 +5,40 @@ entities:
     SceneTransformComponent:
       position: [1, 0, 1]
       rotation: [0, -0, 0]
+      scale: [1, 1, 1]
     SimpleMaterialComponent:
       albedo: [0, 0, 1]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:
       position: [0, 0, 1]
       rotation: [0, -0, 0]
+      scale: [1, 1, 1]
     SimpleMaterialComponent:
       albedo: [0, 1, 0]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
   - uuid: 16365464828659249094
     tag: red
     SceneTransformComponent:
       position: [-1, 0, 1]
       rotation: [0, -0, 0]
+      scale: [1, 1, 1]
     SimpleMaterialComponent:
       albedo: [1, 0, 0]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 3093749986635836342
+    tag: Direct Light
+    SceneTransformComponent:
+      position: [0, 2.12788892, 0]
+      rotation: [60.525898, 1.36603785e-05, -45.2038078]
+      scale: [0.999999523, 0.99999702, 0.999997556]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1

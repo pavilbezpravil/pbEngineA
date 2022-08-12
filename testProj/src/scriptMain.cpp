@@ -7,6 +7,16 @@
 
 namespace pbe {
 
+   struct TestValues {
+      float floatValue = 2;
+      int intValue = 2;
+   };
+
+   TYPER_BEGIN(TestValues)
+      TYPER_FIELD(floatValue)
+      TYPER_FIELD(intValue)
+   TYPER_END(TestValues)
+
    class TestScript : public NativeScript {
    public:
       void OnEnable() override {
@@ -18,23 +28,19 @@ namespace pbe {
       }
 
       void OnUpdate(float dt) override {
-         INFO("OnUpdate {}. intVal = {}", dt, intValue);
-
          if (doMove) {
             auto& tran= owner.Get<SceneTransformComponent>();
             tran.position.x += speed * dt;
          }
       }
 
-      float floatValue = 2;
-      int intValue = 2;
+      TestValues values;
       float speed = 1;
       bool doMove = false;
    };
 
    TYPER_BEGIN(TestScript)
-      TYPER_FIELD(floatValue)
-      TYPER_FIELD(intValue)
+      TYPER_FIELD(values)
       TYPER_FIELD(speed)
       TYPER_FIELD(doMove)
    TYPER_END(TestScript)

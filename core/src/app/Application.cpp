@@ -30,6 +30,8 @@ namespace pbe {
 
       sWindow->eventCallback = [&](Event& event) { OnEvent(event); };
 
+      ImGui::CreateContext();
+
       imguiLayer = new ImGuiLayer();
       PushOverlay(imguiLayer);
 
@@ -39,6 +41,8 @@ namespace pbe {
 
    void Application::OnTerm() {
       layerStack.Clear();
+
+      ImGui::DestroyContext();
 
       Profiler::Term();
 

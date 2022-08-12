@@ -1,7 +1,7 @@
 sceneName: test_scene
 entities:
   - uuid: 5536664833689235849
-    tag: Entity 4
+    tag: Direct Light
     SceneTransformComponent:
       position: [0, 0, 0]
       rotation: [90, -0, 0]
@@ -13,7 +13,7 @@ entities:
     tag: blue
     SceneTransformComponent:
       position: [1, 0.500457227, 1]
-      rotation: [11.6504774, -22.3420715, 22.0491123]
+      rotation: [11.6504774, -22.3420715, 22.0491085]
       scale: [0.999999702, 0.999999702, 0.999999702]
     SimpleMaterialComponent:
       albedo: [0, 0, 1]
@@ -21,8 +21,9 @@ entities:
       metallic: 0
       opaque: true
     TestScript:
-      floatValue: 2
-      intValue: 2
+      values:
+        floatValue: 2
+        intValue: 2
       speed: 1
       doMove: true
   - uuid: 12468854452323807279
