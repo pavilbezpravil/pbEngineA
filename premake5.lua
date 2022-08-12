@@ -74,3 +74,4 @@ group ""
 
 include "core/core.lua"
 include "pbeEditor/pbeEditor.lua"
+include "testProj/testProj.lua"

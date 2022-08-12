@@ -56,6 +56,10 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DecalComponent)
 
+   ComponentRegisterGuard::~ComponentRegisterGuard() {
+      Typer::Get().UnregisterComponent(typeID);
+   }
+
    vec3 SceneTransformComponent::Up() const {
       return rotation * vec3_Up;
    }

@@ -39,6 +39,10 @@ namespace pbe {
       void SetActiveScene(Scene* scene);
       Scene* GetActiveScene();
 
+      void ReloadDll();
+      void UnloadDll();
+      HINSTANCE dllHandler = 0;
+
       std::vector<std::unique_ptr<EditorWindow>> editorWindows;
 
       Own<Scene> editorScene;

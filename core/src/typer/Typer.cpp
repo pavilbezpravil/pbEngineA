@@ -136,16 +136,30 @@ namespace pbe {
       types[typeID] = std::move(ti);
    }
 
-   const TypeInfo& Typer::GetTypeInfo(TypeID typeID) const {
-      return types.at(typeID);
+   void Typer::UnregisterType(TypeID typeID) {
+      types.erase(typeID);
    }
 
    void Typer::RegisterComponent(ComponentInfo&& ci) {
       components.emplace_back(std::move(ci));
    }
 
+   void Typer::UnregisterComponent(TypeID typeID) {
+      auto it = std::ranges::find(components, typeID, &ComponentInfo::typeID);
+      components.erase(it);
+   }
+
    void Typer::RegisterNativeScript(NativeScriptInfo&& si) {
       nativeScripts.emplace_back(std::move(si));
+   }
+
+   void Typer::UnregisterNativeScript(TypeID typeID) {
+      auto it = std::ranges::find(nativeScripts, typeID, &NativeScriptInfo::typeID);
+      nativeScripts.erase(it);
+   }
+
+   const TypeInfo& Typer::GetTypeInfo(TypeID typeID) const {
+      return types.at(typeID);
    }
 
    void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {

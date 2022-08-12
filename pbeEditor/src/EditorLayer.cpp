@@ -13,7 +13,6 @@
 #include "scene/Entity.h"
 #include "scene/Component.h"
 #include "rend/Renderer.h"
-#include "script/NativeScript.h"
 #include "typer/Typer.h"
 
 
@@ -209,31 +208,6 @@ namespace pbe {
       }
    };
 
-   class TestScript : public NativeScript {
-   public:
-      void OnEnable() override {
-         INFO("OnEnable {}", GetName());
-      }
-
-      void OnDisable() override {
-         INFO("OnDisable {}", GetName());
-      }
-
-      void OnUpdate(float dt) override {
-         INFO("OnUpdate {}. intVal = {}", dt, intValue);
-      }
-
-      float floatValue = 2;
-      int intValue = 2;
-   };
-
-   TYPER_BEGIN(TestScript)
-      TYPER_FIELD(floatValue)
-      TYPER_FIELD(intValue)
-   TYPER_END(TestScript)
-   TYPER_REGISTER_COMPONENT(TestScript);
-   TYPER_REGISTER_NATIVE_SCRIPT(TestScript);
-
    void EditorLayer::OnAttach() {
       // todo:
       if (fs::exists(editorSettingPath)) {
@@ -242,6 +216,8 @@ namespace pbe {
       }
 
       ImGui::SetCurrentContext(GetImGuiContext());
+
+      ReloadDll();
 
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
@@ -272,6 +248,13 @@ namespace pbe {
                break;
             default: UNIMPLEMENTED();
          }
+
+         if (editorState == State::Edit) {
+            ImGui::SameLine();
+            if (ImGui::Button("Reload dll")) {
+               ReloadDll();
+            }
+         }
       };
 
       if (!editorSettings.scenePath.empty()) {
@@ -284,6 +267,10 @@ namespace pbe {
 
    void EditorLayer::OnDetach() {
       ImGui::SetCurrentContext(nullptr);
+
+      runtimeScene = {};
+      editorScene = {};
+      UnloadDll();
 
       // todo:
       {
@@ -307,8 +294,8 @@ namespace pbe {
          }
       }
 
-      if (editorState == State::Play && editorScene) {
-         editorScene->OnUpdate(dt);
+      if (editorState == State::Play && runtimeScene) {
+         runtimeScene->OnUpdate(dt);
       }
    }
 
@@ -536,6 +523,51 @@ namespace pbe {
       default: UNIMPLEMENTED();
       }
       return nullptr;
+   }
+
+   void EditorLayer::ReloadDll() {
+      auto loadDll = [&] {
+         ASSERT(dllHandler == 0);
+
+         std::wstring dllName = L"testProj.dll"; // todo:
+
+         // todo: for hot reload dll. windows lock dll for writing
+         fs::copy_file(dllName, "testProjCopy.dll", std::filesystem::copy_options::overwrite_existing);
+
+         dllHandler = LoadLibrary(L"testProjCopy.dll");
+         // dllHandler = LoadLibrary(dllName.data());
+         if (!dllHandler) {
+            WARN("could not load the dynamic library testProj.dll");
+         }
+      };
+
+      if (dllHandler) {
+         if (editorScene) {
+            // todo: do it on RAM
+            INFO("Serialize editor scene for dll reload");
+            SceneSerialize("dllReload.scn", *editorScene);
+
+            UnloadDll();
+            loadDll();
+
+            INFO("Deserialize editor scene for dll reload");
+            auto reloadedScene = SceneDeserialize("dllReload.scn");
+            SetEditorScene(std::move(reloadedScene));
+         } else {
+            UnloadDll();
+            loadDll();
+         }
+      } else {
+         loadDll();
+      }
+   }
+
+   void EditorLayer::UnloadDll() {
+      if (dllHandler) {
+         INFO("Unload prev dll");
+         FreeLibrary(dllHandler);
+         dllHandler = 0;
+      }
    }
 
 }

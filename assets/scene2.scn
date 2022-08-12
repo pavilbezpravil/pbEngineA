@@ -8,17 +8,23 @@ entities:
       scale: [1, 1, 1]
     DirectLightComponent:
       color: [1, 1, 1]
+      intensity: 1
   - uuid: 8246439013926450448
     tag: blue
     SceneTransformComponent:
       position: [1, 0.500457227, 1]
-      rotation: [11.6504745, -22.3420715, 22.0491161]
+      rotation: [11.6504774, -22.3420715, 22.0491123]
       scale: [0.999999702, 0.999999702, 0.999999702]
     SimpleMaterialComponent:
       albedo: [0, 0, 1]
       roughness: 0.100000001
       metallic: 0
       opaque: true
+    TestScript:
+      floatValue: 2
+      intValue: 2
+      speed: 1
+      doMove: true
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:

@@ -17,7 +17,7 @@ namespace pbe {
    class Scene;
 
 #define TYPER_BEGIN(type) \
-   int TyperRegister_##type() { \
+   void TyperRegister_##type() { \
       using CurrentType = type; \
       TypeInfo ti; \
       ti.name = #type; \
@@ -29,9 +29,8 @@ namespace pbe {
 
 #define TYPER_END(type) \
       Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
-      return 0; \
    } \
-   static int TypeInfo_##type = TyperRegister_##type();
+   static TypeRegisterGuard TypeInfo_##type = {TyperRegister_##type, GetTypeID<type>()};
 
    struct TypeField {
       std::string name;
@@ -76,10 +75,15 @@ namespace pbe {
       void ImGuiTypeInfo(const TypeInfo& ti);
 
       void RegisterType(TypeID typeID, TypeInfo&& ti);
-      const TypeInfo& GetTypeInfo(TypeID typeID) const;
+      void UnregisterType(TypeID typeID);
 
       void RegisterComponent(ComponentInfo&& ci);
+      void UnregisterComponent(TypeID typeID);
+
       void RegisterNativeScript(NativeScriptInfo&& si);
+      void UnregisterNativeScript(TypeID typeID);
+
+      const TypeInfo& GetTypeInfo(TypeID typeID) const;
 
       template<typename T>
       void ImGuiValue(std::string_view name, T& value) const {
@@ -109,6 +113,17 @@ namespace pbe {
 
       std::vector<ComponentInfo> components;
       std::vector<NativeScriptInfo> nativeScripts;
+   };
+
+   struct TypeRegisterGuard {
+      template<typename Func>
+      TypeRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
+         f();
+      }
+      ~TypeRegisterGuard() {
+         Typer::Get().UnregisterType(typeID);
+      }
+      TypeID typeID;
    };
 
 }

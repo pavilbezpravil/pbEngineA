@@ -1,10 +1,20 @@
 #pragma once
+#include "core/Type.h"
 #include "scene/Entity.h"
 
 namespace pbe {
 
+   struct CORE_API NativeScriptRegisterGuard {
+      template<typename Func>
+      NativeScriptRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
+         f();
+      }
+      ~NativeScriptRegisterGuard();
+      TypeID typeID;
+   };
+
 #define TYPER_REGISTER_NATIVE_SCRIPT(Script) \
-   static int TyperScriptRegister_##Script() { \
+   static void TyperScriptRegister_##Script() { \
       auto& typer = Typer::Get(); \
       \
       NativeScriptInfo si{}; \
@@ -23,9 +33,8 @@ namespace pbe {
       }; \
       \
       typer.RegisterNativeScript(std::move(si)); \
-      return 0; \
    } \
-   static int ScriptInfo_##Script = TyperScriptRegister_##Script()
+   static NativeScriptRegisterGuard NativeScriptRegisterGuard_##Script = {TyperScriptRegister_##Script, GetTypeID<Script>()}
 
    class CORE_API NativeScript {
    public:

@@ -2,10 +2,20 @@
 
 #include <entt/entt.hpp>
 
+#include "core/Type.h"
 #include "core/UUID.h"
 #include "math/Types.h"
 
 namespace pbe {
+
+   struct CORE_API ComponentRegisterGuard {
+      template<typename Func>
+      ComponentRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
+         f();
+      }
+      ~ComponentRegisterGuard();
+      TypeID typeID;
+   };
 
 #define INTERNAL_ADD_COMPONENT(Component) \
       ci = {}; \
@@ -16,13 +26,12 @@ namespace pbe {
       typer.RegisterComponent(std::move(ci))
 
 #define TYPER_REGISTER_COMPONENT(Component) \
-   static int TyperComponentRegister_##Component() { \
+   static void TyperComponentRegister_##Component() { \
       auto& typer = Typer::Get(); \
       ComponentInfo ci{}; \
       INTERNAL_ADD_COMPONENT(Component); \
-      return 0; \
    } \
-   static int ComponentInfo_##Component = TyperComponentRegister_##Component()
+   static ComponentRegisterGuard ComponentInfo_##Component = {TyperComponentRegister_##Component, GetTypeID<Component>()};
 
 // #define DECL_COMPONENT(Component) \
 //    static const char* GetName() { \
