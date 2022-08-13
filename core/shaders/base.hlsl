@@ -1,6 +1,7 @@
 #include "shared/common.hlsli"
 #include "common.inl"
 #include "pbr.hlsli"
+#include "tonemaping.hlsli"
 #include "noise.inl"
 
 struct VsIn {
@@ -195,18 +196,6 @@ float3 Shade(Surface surface, float3 V) {
   return Lo;
 }
 
-// ACES tone mapping curve fit to go from HDR to LDR
-//https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
-float3 ACESFilm(float3 x)
-{
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return clamp((x*(a*x + b)) / (x*(c*x + d) + e), 0.0f, 1.0f);
-}
-
 struct PsOut {
   float4 color : SV_Target0;
 };
@@ -322,7 +311,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   color = ACESFilm(color);
   // color = color / (color + 1);
-  color = pow(color, 1.0 / 2.2); // todo: use srgb
+  color = GammaCorrection(color); // todo: use srgb
 
   PsOut output = (PsOut)0;
   output.color.rgb = color;

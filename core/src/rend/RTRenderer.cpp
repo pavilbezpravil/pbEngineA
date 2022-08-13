@@ -5,6 +5,7 @@
 #include "Renderer.h" // todo:
 #include "Shader.h"
 #include "core/Profiler.h"
+#include "math/Random.h"
 
 #include "scene/Component.h"
 #include "scene/Scene.h"
@@ -28,11 +29,12 @@ namespace pbe {
 
       std::vector<SRTObject> objs;
 
-      for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+      for (auto [e, trans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
          SRTObject obj;
          obj.position = trans.position;
-         // obj.size = trans.scale;
-         obj.size = vec3{ 1 }; // todo:
+         obj.halfSize = trans.scale / 2.f;
+         obj.albedo = material.albedo;
+         obj.geomType = 1;
 
          objs.emplace_back(obj);
       }
@@ -46,7 +48,7 @@ namespace pbe {
 
       cmd.UpdateSubresource(*rtObjectsBuffer, objs.data(), 0, nObj * sizeof(SRTObject));
 
-      cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
+      // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
@@ -62,6 +64,7 @@ namespace pbe {
       rtCB.rayDepth = 3;
       rtCB.nObjects = nObj;
       rtCB.nRays = 1;
+      rtCB.random01 = Random::Uniform(0.f, 1.f);
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       rayTracePass->Activate(cmd);

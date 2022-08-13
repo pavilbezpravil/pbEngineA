@@ -5,8 +5,8 @@ struct SRTObject {
     float3 albedo;
     float _sdfsde;
     
-    float3 size;
-    float _dsfdsf;
+    float3 halfSize;
+    int geomType;
 };
 
 struct SRTConstants {
@@ -15,5 +15,6 @@ struct SRTConstants {
     int nObjects;
 
     int nRays;
-    float3 _wef32;
+    float random01;
+    float2 _wef32;
 };

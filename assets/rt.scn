@@ -1,5 +1,22 @@
 sceneName: test_scene
 entities:
+  - uuid: 6806257574526974542
+    tag: "cei\x00"
+    SceneTransformComponent:
+      position: [0, 4, -0.0493881106]
+      rotation: [0, -0, 0]
+      scale: [6, 1, 4]
+    SimpleMaterialComponent:
+      albedo: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+    TestScript:
+      values:
+        floatValue: 2
+        intValue: 2
+      speed: 1
+      doMove: true
   - uuid: 5536664833689235849
     tag: Direct Light
     SceneTransformComponent:
@@ -12,11 +29,11 @@ entities:
   - uuid: 8246439013926450448
     tag: blue
     SceneTransformComponent:
-      position: [2.30654049, 0.527643681, 2.90313363]
-      rotation: [11.6504745, -22.3420696, 22.0491085]
-      scale: [0.999999762, 0.999999702, 0.999999702]
+      position: [0, 2.02723646, 2]
+      rotation: [0, -0, 0]
+      scale: [6, 4, 0.999999642]
     SimpleMaterialComponent:
-      albedo: [0, 0, 1]
+      albedo: [0, 0, 0.449999988]
       roughness: 0.100000001
       metallic: 0
       opaque: true
@@ -29,33 +46,33 @@ entities:
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:
-      position: [0.728645563, 0.640206575, 2.12324381]
+      position: [3, 2, 0]
       rotation: [0, -0, 0]
-      scale: [0.999999821, 0.999999821, 1]
+      scale: [0.999999821, 4, 4]
     SimpleMaterialComponent:
-      albedo: [0, 1, 0]
+      albedo: [0, 0.670000017, 0]
       roughness: 0.100000001
       metallic: 0
       opaque: true
   - uuid: 16365464828659249094
     tag: red
     SceneTransformComponent:
-      position: [-0.716355324, 0.76655376, 2.32370901]
-      rotation: [0, 42.1929283, 0]
-      scale: [0.999999464, 1, 0.999999464]
+      position: [-3, 2, 0]
+      rotation: [0, -0, 0]
+      scale: [0.999999464, 4, 4]
     SimpleMaterialComponent:
-      albedo: [1, 0, 0]
+      albedo: [0.5, 0, 0]
       roughness: 0.100000001
       metallic: 0
       opaque: true
   - uuid: 4494813099674761447
     tag: green
     SceneTransformComponent:
-      position: [0, -0.80396843, 1]
+      position: [0, 0, 1]
       rotation: [0, -0, 0]
       scale: [39.3040085, 0.999999821, 25.0262299]
     SimpleMaterialComponent:
-      albedo: [0, 0.5, 0]
+      albedo: [0.5, 0.5, 0.5]
       roughness: 0.100000001
       metallic: 0
       opaque: true
