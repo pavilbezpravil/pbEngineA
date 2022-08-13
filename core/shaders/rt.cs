@@ -181,6 +181,10 @@ float SumComponents(float3 v) {
     return v.x + v.y + v.z;
 }
 
+float sdot(float3 x, float3 y, float f = 1.0f) {
+    return saturate(dot(x, y) * f);
+}
+
 float3 RayColor(Ray ray) {
     float3 color = 0;
     float3 energy = 1;
@@ -203,15 +207,14 @@ float3 RayColor(Ray ray) {
                 Ray shadowRay = CreateRay(ray.origin, L);
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.distance == INF) {
-                    float NdotL = dot(hit.normal, L);
-                    float3 directLightShade = max(NdotL, 0) * albedo * 1;
+                    float3 directLightShade = dot(hit.normal, L) * albedo * 1;
                     color += directLightShade * energy;
                 }
 
                 // ray.direction = RandomInHemisphere(hit.normal, SumComponents(ray.direction) * 1000 + gRTConstants.random01 * 0);
                 ray.direction = RandomInHemisphere(hit.normal, frac(ray.direction * 1000) * 1000 + gRTConstants.random01 * 0);
 
-                energy *= albedo;
+                energy *= 2 * albedo * dot(hit.normal, ray.direction);
             } else {
                 float3 specular = 0.5;
                 specular = albedo;
