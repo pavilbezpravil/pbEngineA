@@ -1,3 +1,13 @@
+#ifndef SHARED_COMMON
+#define SHARED_COMMON
+
+#define SAMPLER_SLOT_WRAP_POINT 0
+#define SAMPLER_SLOT_WRAP_LINEAR 1
+#define SAMPLER_SLOT_SHADOW 2
+
+#define CB_SLOT_SCENE 10
+#define CB_SLOT_CAMERA 11
+
 struct Material {
   float3 albedo;
   float roughness;
@@ -73,3 +83,5 @@ struct SDrawCallCB {
   int instanceStart;
   float3 _dymmy3;
 };
+
+#endif // SHARED_COMMON

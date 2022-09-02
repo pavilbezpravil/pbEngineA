@@ -48,6 +48,12 @@ namespace pbe {
       programDesc = ProgramDesc::Cs("ssao.cs", "main");
       ssaoPass = GpuProgram::Create(programDesc);
 
+      programDesc = ProgramDesc::Cs("fog.cs", "main");
+      fogPass = GpuProgram::Create(programDesc);
+
+      programDesc = ProgramDesc::Cs("tonemap.cs", "main");
+      tonemapPass = GpuProgram::Create(programDesc);
+
       mesh = Mesh::Create(MeshGeomCube());
    }
 
@@ -240,10 +246,6 @@ namespace pbe {
 
       cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
 
-      cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
-      cmd.pContext->PSSetSamplers(1, 1, &rendres::samplerStateLinear); // todo:
-      cmd.pContext->PSSetSamplers(2, 1, &rendres::samplerStateShadow); // todo:
-
       if (cfg.useShadowPass && hasDirectLight) {
          GPU_MARKER("Shadow Map");
          PROFILE_GPU("Shadow Map");
@@ -255,7 +257,7 @@ namespace pbe {
          cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
          cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
-         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
+         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint); // todo:
 
          SCameraCB shadowCameraCB;
          shadowCamera.FillSCameraCB(shadowCameraCB);
@@ -292,7 +294,7 @@ namespace pbe {
             const auto& cameraCB = cameraContext.cameraCB;
             ssaoPass->SetCB<SCameraCB>(cmd, "gCameraCB", *cameraCB.buffer, cameraCB.offset);
 
-            cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStatePoint); // todo:
+            cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStateWrapPoint); // todo:
             ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
             ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
@@ -355,9 +357,56 @@ namespace pbe {
          RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
       }
 
+      if (1)
       {
+         GPU_MARKER("Fog");
+         PROFILE_GPU("Fog");
+
+         cmd.SetRenderTargets();
+
+         fogPass->Activate(cmd);
+
+         fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+         fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
+
+         fogPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+
+         // todo:
+         ID3D11ShaderResourceView* views[] = { nullptr };
+         cmd.pContext->CSSetShaderResources(0, 1, views);
+
+         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+      }
+
+      // if (cfg.ssao)
+      {
+         GPU_MARKER("Tonemap");
+         PROFILE_GPU("Tonemap");
+
+         cmd.SetRenderTargets();
+
+         tonemapPass->Activate(cmd);
+
+         tonemapPass->SetSRV(cmd, "gColorHDR", *cameraContext.colorHDR);
+         tonemapPass->SetUAV(cmd, "gColorLDR", *cameraContext.colorLDR);
+
+         tonemapPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+
+         // todo:
+         ID3D11ShaderResourceView* views[] = { nullptr };
+         cmd.pContext->CSSetShaderResources(0, 1, views);
+
+         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+      }
+
+      // todo:
+      if (0) {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
+
+         cmd.SetRenderTargets(cameraContext.colorLDR, cameraContext.depth);
 
          DbgRend& dbgRend = *scene.dbgRend;
          dbgRend.Clear();

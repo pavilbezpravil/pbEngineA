@@ -12,6 +12,15 @@
 #include "gui/ImGuiLayer.h"
 #include "rend/Shader.h"
 
+
+/*
+#include <float.h>
+_clearfp();
+_controlfp(_controlfp(0, 0) & ~(_EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW),
+   _MCW_EM);
+*/
+
+
 namespace pbe {
 
    Application* sApplication = nullptr;

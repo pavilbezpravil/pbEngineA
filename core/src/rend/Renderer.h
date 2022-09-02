@@ -43,6 +43,7 @@ namespace pbe {
 
    struct CameraContext {
       Ref<Texture2D> colorHDR;
+      Ref<Texture2D> colorLDR;
       Ref<Texture2D> depth;
       Ref<Texture2D> depthCopy;
       Ref<Texture2D> normal;
@@ -83,6 +84,8 @@ namespace pbe {
       Ref<GpuProgram> baseDecal;
 
       Ref<GpuProgram> ssaoPass;
+      Ref<GpuProgram> fogPass;
+      Ref<GpuProgram> tonemapPass;
 
       Mesh mesh;
 

@@ -34,17 +34,10 @@ Ray CreateRay(float3 origin, float3 direction) {
     return ray;
 }
 
-// todo: copy paste from ssao.cs
-float3 GetWorldPositionFromDepth(float2 uv, float depth ) {
-	float4 ndc = float4(TexToNDC(uv), depth, 1);
-	float4 wp = mul(ndc, gCamera.invViewProjection);
-	return (wp / wp.w).xyz;
-}
-
 Ray CreateCameraRay(float2 uv) {
     float3 origin = gCamera.position;
     // float3 posW = mul(float4(uv, 1, 1), gCamera.invViewProjection).xyz;
-    float3 posW = GetWorldPositionFromDepth(uv, 1);
+    float3 posW = GetWorldPositionFromDepth(uv, 1, gCamera.invViewProjection);
     float3 direction = normalize(posW - origin);
     return CreateRay(origin, direction);
 }
@@ -200,11 +193,12 @@ float3 RayColor(Ray ray) {
 
             ray.origin = hit.position + hit.normal * 0.0001;
             if (1) {
+                float randomValue = frac(ray.direction * 1000) * 1000 + gRTConstants.random01 * 1;
 
                 // Shadow test ray
                 bool shadow = false;
                 float3 L = normalize(float3(0.2, 1, -0.5));
-                Ray shadowRay = CreateRay(ray.origin, L);
+                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(randomValue + 2) * 0.1));
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.distance == INF) {
                     float3 directLightShade = dot(hit.normal, L) * albedo * 1;
@@ -212,7 +206,7 @@ float3 RayColor(Ray ray) {
                 }
 
                 // ray.direction = RandomInHemisphere(hit.normal, SumComponents(ray.direction) * 1000 + gRTConstants.random01 * 0);
-                ray.direction = RandomInHemisphere(hit.normal, frac(ray.direction * 1000) * 1000 + gRTConstants.random01 * 0);
+                ray.direction = normalize(RandomInHemisphere(hit.normal, randomValue));
 
                 energy *= 2 * albedo * dot(hit.normal, ray.direction);
             } else {

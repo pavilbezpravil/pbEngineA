@@ -10,8 +10,8 @@ namespace pbe {
    namespace rendres {
 
       ID3D11RasterizerState1* rasterizerState;
-      ID3D11SamplerState* samplerStatePoint;
-      ID3D11SamplerState* samplerStateLinear;
+      ID3D11SamplerState* samplerStateWrapPoint;
+      ID3D11SamplerState* samplerStateWrapLinear;
       ID3D11SamplerState* samplerStateShadow;
       ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
@@ -55,12 +55,12 @@ namespace pbe {
          samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
          samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 
-         device->CreateSamplerState(&samplerDesc, &samplerStatePoint);
-         resourses.push_back(samplerStatePoint);
+         device->CreateSamplerState(&samplerDesc, &samplerStateWrapPoint);
+         resourses.push_back(samplerStateWrapPoint);
 
          samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-         device->CreateSamplerState(&samplerDesc, &samplerStateLinear);
-         resourses.push_back(samplerStateLinear);
+         device->CreateSamplerState(&samplerDesc, &samplerStateWrapLinear);
+         resourses.push_back(samplerStateWrapLinear);
 
          // samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
          samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;

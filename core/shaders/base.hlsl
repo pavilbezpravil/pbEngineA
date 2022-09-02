@@ -3,6 +3,7 @@
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 #include "noise.inl"
+#include "samplers.hlsli"
 
 struct VsIn {
   float3 posL : POSITION;
@@ -17,14 +18,6 @@ struct VsOut {
   uint instanceID : SV_InstanceID;
 };
 
-cbuffer gCameraCB {
-  SCameraCB gCamera;
-}
-
-cbuffer gSceneCB {
-  SSceneCB gScene;
-}
-
 cbuffer gDrawCallCB {
   SDrawCallCB gDrawCall;
 }
@@ -33,19 +26,8 @@ StructuredBuffer<Instance> gInstances;
 StructuredBuffer<SDecal> gDecals;
 StructuredBuffer<SLight> gLights;
 
-SamplerState gSamplerPoint : register(s0);
-SamplerState gSamplerLinear : register(s1);
-SamplerComparisonState gSamplerShadow : register(s2);
-
 Texture2D<float> gShadowMap;
 Texture2D<float> gSsao;
-
-// todo: copy paste from ssao.cs
-float3 GetWorldPositionFromDepth(float2 uv, float depth ) {
-	float4 ndc = float4(TexToNDC(uv), depth, 1);
-	float4 wp = mul(ndc, gCamera.invViewProjection);
-	return (wp / wp.w).xyz;
-}
 
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
@@ -309,9 +291,9 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     color += accScaterring;
   }
 
-  color = ACESFilm(color);
+  // color = ACESFilm(color);
   // color = color / (color + 1);
-  color = GammaCorrection(color); // todo: use srgb
+  // color = GammaCorrection(color); // todo: use srgb
 
   PsOut output = (PsOut)0;
   output.color.rgb = color;

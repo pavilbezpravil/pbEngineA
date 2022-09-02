@@ -120,8 +120,16 @@ namespace pbe {
       void DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount = 1, int indexStart = 0, int startVert = 0);
 
       void Dispatch(CommandList& cmd, int3 groups);
+      void Dispatch(CommandList& cmd, int3 size, int3 groupSize) {
+         auto groups = glm::ceil(vec3{ size } / vec3{ groupSize });
+         Dispatch(cmd, int3{ groups });
+      }
       void Dispatch(CommandList& cmd, int2 groups) {
          Dispatch(cmd, int3{groups, 1});
+      }
+      void Dispatch(CommandList& cmd, int2 size, int2 groupSize) {
+         auto groups = glm::ceil(vec2{ size } / vec2{ groupSize });
+         Dispatch(cmd, int3{ groups, 1 });
       }
 
       bool Valid() const;

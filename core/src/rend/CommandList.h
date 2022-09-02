@@ -12,7 +12,7 @@ namespace pbe {
       uint offset = 0;
    };
 
-   class CommandList {
+   class CORE_API CommandList {
    public:
       static constexpr int DYN_CONST_BUFFER_SIZE = 256 * 512;
       static constexpr int DYN_VERT_BUFFER_SIZE = 256 * 512;
@@ -135,6 +135,7 @@ namespace pbe {
          pContext->EndEvent();
       }
 
+      void SetCommonSamplers();
 
       ID3D11CommandList* GetD3DCommandList() {
          return nullptr;

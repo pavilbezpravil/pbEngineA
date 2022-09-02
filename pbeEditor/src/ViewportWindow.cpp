@@ -16,6 +16,13 @@ namespace pbe {
 
       rtRenderer.reset(new RTRenderer());
       rtRenderer->Init();
+
+      mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
+      rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
+
+      float3 direction = vec4(0, 0, 1, 1) * rotation;
+
+      camera.view = glm::lookAt(camera.position, camera.position + direction, vec3_Y);
    }
 
    void ViewportWindow::OnImGuiRender() {
@@ -58,7 +65,7 @@ namespace pbe {
       renderer->cfg = cfg;
 
       static int item_current = 0;
-      const char* items[] = { "Color", "Depth", "Normal", "Position", "SSAO", "ShadowMap"};
+      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "Normal", "Position", "SSAO", "ShadowMap"};
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -72,13 +79,19 @@ namespace pbe {
       if (size.x > 1 && size.y > 1) {
          if (!cameraContext.colorHDR || cameraContext.colorHDR->GetDesc().size != size) {
             Texture2D::Desc texDesc;
-            texDesc.format = DXGI_FORMAT_R16G16B16A16_UNORM;
+            // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT;
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
             texDesc.size = size;
 
             texDesc.name = "scene colorHDR";
             cameraContext.colorHDR = Texture2D::Create(texDesc);
+
+            texDesc.name = "scene colorLDR";
+            // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            // texDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM; // todo: test srgb
+            cameraContext.colorLDR = Texture2D::Create(texDesc);
 
             // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
             texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
@@ -125,6 +138,7 @@ namespace pbe {
          }
 
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
+         cmd.SetCommonSamplers();
          if (scene) {
             if (rtRender) {
                rtRenderer->RenderScene(cmd, *scene, camera, cameraContext);
@@ -136,7 +150,7 @@ namespace pbe {
 
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();
 
-         Texture2D* sceneRTs[] = { cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
+         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
 
          Gizmo(imSize, gizmoCursorPos);
@@ -224,6 +238,7 @@ namespace pbe {
          }
       }
 
+      // todo:
       mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
       rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
 

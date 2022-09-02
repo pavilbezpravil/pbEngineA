@@ -24,12 +24,6 @@ float LinearizeDepth(float depth) {
    return -B / (depth - A);
 }
 
-float3 GetWorldPositionFromDepth(float2 uv, float depth ) {
-	float4 ndc = float4(TexToNDC(uv), depth, 1);
-	float4 wp = mul(ndc, gCamera.invViewProjection);
-	return (wp / wp.w).xyz;
-}
-
 [numthreads(8, 8, 1)]
 void main( uint3 dispatchThreadID : SV_DispatchThreadID ) { 
    float3 normalW = gNormal[dispatchThreadID.xy];
@@ -38,7 +32,7 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
    float depth = LinearizeDepth(depthRaw);
 
    float2 uv = float2(dispatchThreadID.xy) / float2(gCamera.rtSize);
-   float3 posW = GetWorldPositionFromDepth(uv, depthRaw);
+   float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
 
    const int sampleCount = 32;
 

@@ -85,6 +85,24 @@ OStream& operator<<(OStream& os, const int2& v)
 }
 
 template<typename OStream>
+OStream& operator<<(OStream& os, const uint2& v)
+{
+   return os << "(" << v.x << ", " << v.y << ")";
+}
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const int3& v)
+{
+   return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+}
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const uint3& v)
+{
+   return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+}
+
+template<typename OStream>
 OStream& operator<<(OStream& os, const glm::vec2& v)
 {
    return os << "(" << v.x << ", " << v.y << ")";

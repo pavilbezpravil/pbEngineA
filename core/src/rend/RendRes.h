@@ -31,8 +31,8 @@ namespace pbe {
       void Term();
 
       extern ID3D11RasterizerState1* rasterizerState;
-      extern ID3D11SamplerState* samplerStatePoint;
-      extern ID3D11SamplerState* samplerStateLinear;
+      extern ID3D11SamplerState* samplerStateWrapPoint;
+      extern ID3D11SamplerState* samplerStateWrapLinear;
       extern ID3D11SamplerState* samplerStateShadow;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
