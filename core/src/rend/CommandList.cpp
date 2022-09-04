@@ -2,9 +2,31 @@
 #include "CommandList.h"
 
 #include "RendRes.h"
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 
 namespace pbe {
+
+   void CommandList::UpdateSubresource(Buffer& buffer, const void* data, uint offset, size_t size) {
+      if (buffer.Valid() && size > 0) {
+         D3D11_BOX box{};
+         box.left = offset;
+         box.right = offset + (uint)size;
+         box.bottom = 1;
+         box.back = 1;
+
+         pContext->UpdateSubresource1(buffer.GetBuffer(), 0,
+            size == -1 ? nullptr : &box, data, 0, 0, D3D11_COPY_NO_OVERWRITE);
+      }
+   }
+
+   void CommandList::SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size) {
+      auto dxBuffer = buffer->GetBuffer();
+
+      pContext->VSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
+      pContext->PSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
+
+      pContext->CSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
+   }
 
    void CommandList::SetCommonSamplers() {
       std::pair<int, ID3D11SamplerState**> samplers[] = {

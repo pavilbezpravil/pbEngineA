@@ -10,7 +10,7 @@
 #include "scene/Component.h"
 #include "scene/Scene.h"
 
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 #include "shared/rt.hlsli"
 
 

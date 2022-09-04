@@ -7,7 +7,7 @@
 #include "Renderer.h"
 #include "math/Shape.h"
 
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 
 
 namespace pbe {

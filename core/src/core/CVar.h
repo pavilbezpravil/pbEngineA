@@ -28,6 +28,8 @@ namespace pbe {
             : CVar(name), value(initialValue) {
       }
 
+      operator T() const { return value; }
+
       void UI() override;
 
    private:

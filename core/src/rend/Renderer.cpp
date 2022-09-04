@@ -2,14 +2,17 @@
 #include "Renderer.h"
 
 #include "DbgRend.h"
+#include "core/CVar.h"
 #include "core/Profiler.h"
 #include "math/Random.h"
 #include "math/Shape.h"
 
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 
 
 namespace pbe {
+
+   CVarValue<bool> instancedDraw{ "render/instanced draw", true };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -221,7 +224,8 @@ namespace pbe {
          break;
       }
 
-      cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
+      // cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
+      cameraContext.sceneCB = cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
 
 
       SCameraCB cameraCB;
@@ -232,7 +236,8 @@ namespace pbe {
       static int iFrame = 0; // todo:
       ++iFrame;
       cameraCB.iFrame = iFrame;
-      cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
+      // cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
+      cameraContext.cameraCB = cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
 
       if (cfg.opaqueSorting) {
          // todo: slow. I assumed
@@ -474,7 +479,8 @@ namespace pbe {
          auto dynCB = cmd.AllocDynConstantBuffer(cb);
          program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
 
-         if (cfg.useInstancedDraw) {
+         // if (cfg.useInstancedDraw) {
+         if (instancedDraw) {
             program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());
             break;
          } else {

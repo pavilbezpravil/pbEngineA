@@ -220,10 +220,6 @@ namespace pbe {
       }
    };
 
-   CVarValue<int> testInt{ "testInt", 42};
-   CVarValue<bool> testBool{ "testBool", false};
-   CVarSlider<int> testSliderInt{ "testSliderInt", 5, 2, 7 };
-
    class ConfigVarsWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;

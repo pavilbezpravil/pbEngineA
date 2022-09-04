@@ -1,4 +1,4 @@
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 
 // todo:
 SamplerState gSamplerPoint : register(s0);

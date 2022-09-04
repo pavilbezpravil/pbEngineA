@@ -1,4 +1,4 @@
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 
 struct VsIn {
   float3 posW : POSITION;

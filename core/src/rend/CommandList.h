@@ -75,18 +75,7 @@ namespace pbe {
          UpdateSubresource(buffer, (const void*)&data, offset, sizeof(T));
       }
 
-      void UpdateSubresource(Buffer& buffer, const void* data, uint offset = 0, size_t size = -1) {
-         if (buffer.Valid() && size > 0) {
-            D3D11_BOX box{};
-            box.left = offset;
-            box.right = offset + (uint)size;
-            box.bottom = 1;
-            box.back = 1;
-
-            pContext->UpdateSubresource1(buffer.GetBuffer(), 0,
-               size == -1 ? nullptr : &box, data, 0, 0, D3D11_COPY_NO_OVERWRITE);
-         }
-      }
+      void UpdateSubresource(Buffer& buffer, const void* data, uint offset = 0, size_t size = -1);
 
       void CopyResource(GPUResource& dst, GPUResource& src) {
          pContext->CopyResource(dst.pResource.Get(), src.pResource.Get());
@@ -134,6 +123,16 @@ namespace pbe {
       void EndEvent() {
          pContext->EndEvent();
       }
+
+      template<typename T>
+      OffsetedBuffer AllocAndSetCommonCB(int slot, const T& data) {
+         constexpr uint dataSize = sizeof(T);
+         auto dynCB = AllocDynConstantBuffer((const void*)&data, dataSize);
+         SetCommonCB(slot, dynCB.buffer, dynCB.offset, dataSize);
+         return dynCB;
+      }
+
+      void SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size);
 
       void SetCommonSamplers();
 

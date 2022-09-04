@@ -1,4 +1,4 @@
-#include "shared/common.hlsli"
+#include "shared/hlslCppShared.hlsli"
 #include "common.inl"
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
