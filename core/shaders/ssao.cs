@@ -1,15 +1,10 @@
 #include "shared/hlslCppShared.hlsli"
 #include "common.inl"
-
-SamplerState gSamplerPoint;
+#include "samplers.hlsli"
 
 Texture2D<float> gDepth;
 Texture2D<float3> gNormal;
 RWTexture2D<float> gSsao;
-
-cbuffer gCameraCB {
-  SCameraCB gCamera;
-}
 
 StructuredBuffer<float3> gRandomDirs;
 

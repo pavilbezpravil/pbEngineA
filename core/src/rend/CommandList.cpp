@@ -22,6 +22,8 @@ namespace pbe {
    void CommandList::SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size) {
       auto dxBuffer = buffer->GetBuffer();
 
+      offsetInBytes /= 16;
+
       pContext->VSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
       pContext->PSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
 

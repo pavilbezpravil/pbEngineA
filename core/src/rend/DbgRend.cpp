@@ -4,10 +4,7 @@
 #include "RendRes.h"
 #include "Shader.h"
 #include "CommandList.h"
-#include "Renderer.h"
 #include "math/Shape.h"
-
-#include "shared/hlslCppShared.hlsli"
 
 
 namespace pbe {
@@ -160,13 +157,7 @@ namespace pbe {
       ID3D11Buffer* vBuffer = dynVerts.buffer->GetBuffer();
       context->IASetVertexBuffers(0, 1, &vBuffer, &stride, &dynVerts.offset);
 
-      SCameraCB cameraCB;
-      camera.FillSCameraCB(cameraCB);
-
-      auto dynCameraCB = cmd.AllocDynConstantBuffer(cameraCB);
-
       program->Activate(cmd);
-      program->SetCB<SCameraCB>(cmd, "gCameraCB", *dynCameraCB.buffer, dynCameraCB.offset);
       program->DrawInstanced(cmd, (uint)lines.size());
    }
 

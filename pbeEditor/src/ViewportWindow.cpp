@@ -6,16 +6,12 @@
 #include "ImGuizmo.h"
 #include "app/Input.h"
 #include "rend/Renderer.h"
-#include "rend/RTRenderer.h"
 
 namespace pbe {
 
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
       renderer.reset(new Renderer());
       renderer->Init();
-
-      rtRenderer.reset(new RTRenderer());
-      rtRenderer->Init();
 
       mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
       rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
@@ -57,10 +53,6 @@ namespace pbe {
       ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
       ImGui::Checkbox("Super Sampling", &cfg.superSampling);
-
-      static bool rtRender = false;
-      ImGui::SameLine();
-      ImGui::Checkbox("Rt Remder", &rtRender);
 
       renderer->cfg = cfg;
 
@@ -136,11 +128,7 @@ namespace pbe {
          CommandList cmd{ sDevice->g_pd3dDeviceContext };
          cmd.SetCommonSamplers();
          if (scene) {
-            if (rtRender) {
-               rtRenderer->RenderScene(cmd, *scene, camera, cameraContext);
-            } else {
-               renderer->RenderScene(cmd, *scene, camera, cameraContext);
-            }
+            renderer->RenderScene(cmd, *scene, camera, cameraContext);
          }
          cmd.pContext->ClearState(); // todo:
 

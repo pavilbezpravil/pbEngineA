@@ -11,10 +11,10 @@ namespace pbe {
    public:
 
       struct CORE_API Desc {
-         int2 size;
+         int2 size = {};
          uint mips = 1;
-         DXGI_FORMAT format;
-         UINT bindFlags;
+         DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+         UINT bindFlags = 0;
 
          std::string name;
       };

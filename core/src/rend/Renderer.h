@@ -3,8 +3,7 @@
 #include "Buffer.h"
 #include "Device.h"
 #include "CommandList.h"
-#include "GpuTimer.h"
-#include "RendRes.h"
+#include "RTRenderer.h"
 #include "Texture2D.h"
 #include "Shader.h"
 #include "math/Types.h"
@@ -16,6 +15,7 @@
 struct SCameraCB;
 
 namespace pbe {
+   // class RTRenderer;
 
    struct RenderCamera {
       vec3 position{};
@@ -51,10 +51,6 @@ namespace pbe {
       Ref<Texture2D> ssao;
 
       Ref<Texture2D> shadowMap;
-
-      // todo:
-      OffsetedBuffer cameraCB;
-      OffsetedBuffer sceneCB;
    };
 
    struct RenderConfing {
@@ -72,11 +68,11 @@ namespace pbe {
 
    class CORE_API Renderer {
    public:
-      ~Renderer() {
-         rendres::Term();
-      }
+      ~Renderer();
 
       RenderConfing cfg;
+
+      Own<RTRenderer> rtRenderer;
 
       Ref<GpuProgram> baseColorPass;
       Ref<GpuProgram> baseZPass;

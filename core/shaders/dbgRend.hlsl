@@ -1,4 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
+#include "samplers.hlsli"
 
 struct VsIn {
   float3 posW : POSITION;
@@ -9,10 +10,6 @@ struct VsOut {
   float4 color : COLOR;
   float4 posH : SV_POSITION;
 };
-
-cbuffer gCameraCB {
-  SCameraCB gCamera;
-}
 
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;

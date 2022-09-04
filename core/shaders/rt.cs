@@ -3,12 +3,9 @@
 #include "common.inl"
 #include "noise.inl"
 #include "tonemaping.hlsli"
+#include "samplers.hlsli"
 
 RWTexture2D<float4> gColor;
-
-cbuffer gCameraCB {
-  SCameraCB gCamera;
-}
 
 cbuffer gRTConstantsCB {
   SRTConstants gRTConstants;
@@ -239,7 +236,7 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
     // float2 uv = float2((id.xy + float2(0.5f, 0.5f)) / float2(width, height) * 2.0f - 1.0f);
 
     int nRays = gRTConstants.nRays;
-    nRays = 25;
+    // nRays = 25;
 
     float3 color = 0;
 

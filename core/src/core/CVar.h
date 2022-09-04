@@ -46,6 +46,8 @@ namespace pbe {
                : CVar(name), value(initialValue), min(min), max(max) {
       }
 
+      operator T() const { return value; }
+
       void UI() override;
 
    private:

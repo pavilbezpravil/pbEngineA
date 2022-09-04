@@ -4,6 +4,7 @@
 #include "CommandList.h"
 #include "Renderer.h" // todo:
 #include "Shader.h"
+#include "core/CVar.h"
 #include "core/Profiler.h"
 #include "math/Random.h"
 
@@ -16,6 +17,8 @@
 
 namespace pbe {
 
+   CVarSlider<int> nRays{ "render/rt/nRays", 5, 1, 128 };
+
    void RTRenderer::Init() {
       auto programDesc = ProgramDesc::Cs("rt.cs", "rtCS");
       rayTracePass = GpuProgram::Create(programDesc);
@@ -23,7 +26,6 @@ namespace pbe {
 
    void RTRenderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
                                 CameraContext& cameraContext) {
-
       GPU_MARKER("RT Scene");
       PROFILE_GPU("RT Scene");
 
@@ -50,28 +52,17 @@ namespace pbe {
 
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
-      SCameraCB cameraCB;
-      camera.FillSCameraCB(cameraCB);
-      cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-
-      static int iFrame = 0; // todo:
-      ++iFrame;
-      cameraCB.iFrame = iFrame;
-      cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
-
       SRTConstants rtCB;
       rtCB.rtSize = cameraContext.colorHDR->GetDesc().size;
       rtCB.rayDepth = 3;
       rtCB.nObjects = nObj;
-      rtCB.nRays = 1;
+      rtCB.nRays = nRays;
       rtCB.random01 = Random::Uniform(0.f, 1.f);
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       rayTracePass->Activate(cmd);
 
       rayTracePass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
-      rayTracePass->SetCB<SCameraCB>(cmd, "gCameraCB", *cameraContext.cameraCB.buffer, cameraContext.cameraCB.offset);
-      // rayTracePass->SetCB<SSceneCB>(cmd, "gSceneCB", *cameraContext.sceneCB.buffer, cameraContext.sceneCB.offset);
       rayTracePass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
       rayTracePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);

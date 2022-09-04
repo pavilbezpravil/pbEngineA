@@ -2,6 +2,8 @@
 #include "Renderer.h"
 
 #include "DbgRend.h"
+#include "RendRes.h"
+#include "RTRenderer.h"
 #include "core/CVar.h"
 #include "core/Profiler.h"
 #include "math/Random.h"
@@ -13,6 +15,8 @@
 namespace pbe {
 
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
+   CVarValue<bool> applyFog{ "render/apply fog", true };
+   CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -29,8 +33,15 @@ namespace pbe {
       cameraCB.position = position;
    }
 
+   Renderer::~Renderer() {
+      rendres::Term();
+   }
+
    void Renderer::Init() {
       rendres::Init(); // todo:
+
+      rtRenderer.reset(new RTRenderer());
+      rtRenderer->Init();
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       programDesc.vs.defines.AddDefine("ZPASS");
@@ -154,11 +165,11 @@ namespace pbe {
 
       RenderDataPrepare(cmd, scene);
 
+      cmd.ClearRenderTarget(*cameraContext.colorLDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.normal, vec4{0, 0, 0, 0});
       cmd.ClearDepthTarget(*cameraContext.depth, 1);
 
-      cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size);
       cmd.SetRasterizerState(rendres::rasterizerState);
 
       uint nDecals = 0;
@@ -224,20 +235,7 @@ namespace pbe {
          break;
       }
 
-      // cameraContext.sceneCB = cmd.AllocDynConstantBuffer(sceneCB);
-      cameraContext.sceneCB = cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
-
-
-      SCameraCB cameraCB;
-      camera.FillSCameraCB(cameraCB);
-      cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cameraCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
-
-      static int iFrame = 0; // todo:
-      ++iFrame;
-      cameraCB.iFrame = iFrame;
-      // cameraContext.cameraCB = cmd.AllocDynConstantBuffer(cameraCB);
-      cameraContext.cameraCB = cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
+      cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
 
       if (cfg.opaqueSorting) {
          // todo: slow. I assumed
@@ -251,137 +249,146 @@ namespace pbe {
 
       cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
 
-      if (cfg.useShadowPass && hasDirectLight) {
-         GPU_MARKER("Shadow Map");
-         PROFILE_GPU("Shadow Map");
+      SCameraCB cameraCB;
+      camera.FillSCameraCB(cameraCB);
+      cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+      cameraCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
 
-         cmd.ClearDepthTarget(*cameraContext.shadowMap, 1);
+      static int iFrame = 0; // todo:
+      ++iFrame;
+      cameraCB.iFrame = iFrame;
+      cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
 
-         cmd.SetRenderTargets(nullptr, cameraContext.shadowMap);
-         cmd.SetViewport({}, cameraContext.shadowMap->GetDesc().size);
-         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-         cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+      if (rayTracingSceneRender) {
+         rtRenderer->RenderScene(cmd, scene, camera, cameraContext);
+      } else {
+         if (cfg.useShadowPass && hasDirectLight) {
+            GPU_MARKER("Shadow Map");
+            PROFILE_GPU("Shadow Map");
 
-         cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint); // todo:
+            cmd.ClearDepthTarget(*cameraContext.shadowMap, 1);
 
-         SCameraCB shadowCameraCB;
-         shadowCamera.FillSCameraCB(shadowCameraCB);
-         // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-
-         auto oldCameraCB = cameraContext.cameraCB; // todo:
-         cameraContext.cameraCB = cmd.AllocDynConstantBuffer(shadowCameraCB);
-         RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
-         cameraContext.cameraCB = oldCameraCB;
-
-         cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
-      }
-
-      if (cfg.useZPass) {
-         {
-            GPU_MARKER("ZPass");
-            PROFILE_GPU("ZPass");
-
-            cmd.SetRenderTargets(cameraContext.normal, cameraContext.depth);
+            cmd.SetRenderTargets(nullptr, cameraContext.shadowMap);
+            cmd.SetViewport({}, cameraContext.shadowMap->GetDesc().size);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
             cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
+            cmd.pContext->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint); // todo:
+
+            SCameraCB shadowCameraCB;
+            shadowCamera.FillSCameraCB(shadowCameraCB);
+            // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+
+            cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
+            RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
          }
 
-         if (cfg.ssao) {
-            GPU_MARKER("SSAO");
-            PROFILE_GPU("SSAO");
+         cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB); // todo: set twice
+
+         cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
+
+         if (cfg.useZPass) {
+            {
+               GPU_MARKER("ZPass");
+               PROFILE_GPU("ZPass");
+
+               cmd.SetRenderTargets(cameraContext.normal, cameraContext.depth);
+               cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+               cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
+            }
+
+            if (cfg.ssao) {
+               GPU_MARKER("SSAO");
+               PROFILE_GPU("SSAO");
+
+               cmd.SetRenderTargets();
+
+               ssaoPass->Activate(cmd);
+
+               ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+               ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
+               ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
+               ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
+
+               ssaoPass->Dispatch(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+
+               // todo:
+               ID3D11ShaderResourceView* views[] = { nullptr };
+               cmd.pContext->CSSetShaderResources(0, 1, views);
+
+               ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+               cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+            }
+
+            {
+               GPU_MARKER("Color");
+               PROFILE_GPU("Color");
+
+               cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+               cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
+               cmd.SetBlendState(rendres::blendStateDefaultRGB);
+
+               baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+               baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
+               baseColorPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
+            }
+         } else {
+            GPU_MARKER("Color (Without ZPass)");
+            PROFILE_GPU("Color (Without ZPass)");
+
+            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetBlendState(rendres::blendStateDefaultRGB);
+            baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+            baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
+
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
+         }
+
+         if (cfg.transparency && !transparentObjs.empty()) {
+            GPU_MARKER("Transparency");
+            PROFILE_GPU("Transparency");
+
+            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
+            cmd.SetBlendState(rendres::blendStateTransparency);
+
+            if (cfg.transparencySorting) {
+               // todo: slow. I assumed
+               std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
+                  float az = glm::dot(camera.Forward(), a.trans.position);
+                  float bz = glm::dot(camera.Forward(), b.trans.position);
+                  return az > bz;
+                  });
+            }
+
+            UpdateInstanceBuffer(cmd, transparentObjs);
+            RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
+         }
+
+         if (applyFog) {
+            GPU_MARKER("Fog");
+            PROFILE_GPU("Fog");
 
             cmd.SetRenderTargets();
 
-            ssaoPass->Activate(cmd);
+            fogPass->Activate(cmd);
 
-            const auto& cameraCB = cameraContext.cameraCB;
-            ssaoPass->SetCB<SCameraCB>(cmd, "gCameraCB", *cameraCB.buffer, cameraCB.offset);
+            fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+            fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
-            cmd.pContext->CSSetSamplers(0, 1, &rendres::samplerStateWrapPoint); // todo:
-            ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
-            ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
-            ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
-            ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
-
-            ssaoPass->Dispatch(cmd, glm::ceil(vec2{cameraContext.colorHDR->GetDesc().size} / vec2{ 8 }));
+            fogPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
 
             // todo:
-            ID3D11ShaderResourceView* views[] = {nullptr};
+            ID3D11ShaderResourceView* views[] = { nullptr };
             cmd.pContext->CSSetShaderResources(0, 1, views);
 
             ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
             cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
          }
-
-         {
-            GPU_MARKER("Color");
-            PROFILE_GPU("Color");
-
-            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
-            cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
-            cmd.SetBlendState(rendres::blendStateDefaultRGB);
-
-            baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
-            baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-            baseColorPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
-         }
-      } else {
-         GPU_MARKER("Color (Without ZPass)");
-         PROFILE_GPU("Color (Without ZPass)");
-
-         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
-         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-         cmd.SetBlendState(rendres::blendStateDefaultRGB);
-         baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
-         baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-
-         RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
-      }
-
-      if (cfg.transparency && !transparentObjs.empty()) {
-         GPU_MARKER("Transparency");
-         PROFILE_GPU("Transparency");
-
-         cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
-         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
-         cmd.SetBlendState(rendres::blendStateTransparency);
-
-         if (cfg.transparencySorting) {
-            // todo: slow. I assumed
-            std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
-               float az = glm::dot(camera.Forward(), a.trans.position);
-               float bz = glm::dot(camera.Forward(), b.trans.position);
-               return az > bz;
-            });
-         }
-
-         UpdateInstanceBuffer(cmd, transparentObjs);
-         RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
-      }
-
-      if (1)
-      {
-         GPU_MARKER("Fog");
-         PROFILE_GPU("Fog");
-
-         cmd.SetRenderTargets();
-
-         fogPass->Activate(cmd);
-
-         fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
-         fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
-
-         fogPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
-
-         // todo:
-         ID3D11ShaderResourceView* views[] = { nullptr };
-         cmd.pContext->CSSetShaderResources(0, 1, views);
-
-         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
       }
 
       // if (cfg.ssao)
@@ -438,9 +445,6 @@ namespace pbe {
 
          dbgRend.Render(cmd, camera);
       }
-
-      cameraContext.cameraCB = {};
-      cameraContext.sceneCB = {};
    }
 
    void Renderer::RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs,
@@ -448,9 +452,6 @@ namespace pbe {
       program.Activate(cmd);
       program.SetSRV(cmd, "gInstances", *instanceBuffer);
       program.SetSRV(cmd, "gLights", *lightBuffer);
-
-      program.SetCB<SCameraCB>(cmd, "gCameraCB", *cameraContext.cameraCB.buffer, cameraContext.cameraCB.offset);
-      program.SetCB<SSceneCB>(cmd, "gSceneCB", *cameraContext.sceneCB.buffer, cameraContext.sceneCB.offset);
 
       // set mesh
       auto* context = cmd.pContext;
