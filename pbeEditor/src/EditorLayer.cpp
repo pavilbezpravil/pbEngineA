@@ -4,6 +4,7 @@
 #include "ViewportWindow.h"
 #include "app/Event.h"
 #include "app/Input.h"
+#include "core/CVar.h"
 #include "core/Profiler.h"
 #include "core/Type.h"
 #include "fs/FileSystem.h"
@@ -219,6 +220,29 @@ namespace pbe {
       }
    };
 
+   CVarValue<int> testInt{ "testInt", 42};
+   CVarValue<bool> testBool{ "testBool", false};
+   CVarSlider<int> testSliderInt{ "testSliderInt", 5, 2, 7 };
+
+   class ConfigVarsWindow : public EditorWindow {
+   public:
+      using EditorWindow::EditorWindow;
+
+      void OnImGuiRender() override {
+         ImGui::Begin(name.c_str(), &show);
+
+         const ConfigVarsMng& configVars = sConfigVarsMng;
+
+         ImGui::Text("Vars:");
+
+         for (const auto& configVar : configVars.configVars) {
+            configVar->UI();
+         }
+
+         ImGui::End();
+      }
+   };
+
    void EditorLayer::OnAttach() {
       // todo:
       if (fs::exists(editorSettingPath)) {
@@ -234,6 +258,7 @@ namespace pbe {
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
+      AddEditorWindow(new ConfigVarsWindow("ConfigVars"), true);
 
       sceneHierarchyWindow->selection = &editorSelection;
       viewportWindow->selection = &editorSelection;

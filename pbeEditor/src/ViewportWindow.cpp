@@ -79,8 +79,8 @@ namespace pbe {
       if (size.x > 1 && size.y > 1) {
          if (!cameraContext.colorHDR || cameraContext.colorHDR->GetDesc().size != size) {
             Texture2D::Desc texDesc;
-            // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-            texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT;
+            texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+            // texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT; // my laptop doesnot support this format as UAV
             texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
             texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
             texDesc.size = size;
