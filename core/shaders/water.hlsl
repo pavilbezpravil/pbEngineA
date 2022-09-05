@@ -19,27 +19,22 @@ Texture2D<float> gShadowMap;
 VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
    VsOut output = (VsOut)0;
 
-   float size = 10;
+   float halfSize = gScene.waterPatchSize;
    float height = 2;
 
    float3 corners[] = {
-      float3(-size, height, size),
-      float3(size, height, size),
-      float3(size, height, -size),
-      float3(-size, height, -size),
+      float3(-halfSize, height, halfSize),
+      float3(halfSize, height, halfSize),
+      float3(-halfSize, height, -halfSize),
+      float3(halfSize, height, -halfSize),
    };
 
-   float3 posW = 0;
+   float3 posW = corners[vertexID];
 
-   if (       vertexID == 0) {
-      posW = corners[0];
-   } else if (vertexID == 1) {
-      posW = corners[1];
-   } else if (vertexID == 2) {
-      posW = corners[3];
-   } else if (vertexID == 3) {
-      posW = corners[2];
-   }
+   float2 localIdx = float2(instanceID % gScene.waterPatchCount, instanceID / gScene.waterPatchCount)
+                   - float(gScene.waterPatchCount) / 2;
+   // localIdx *= 1.1;
+   posW.xz += localIdx * halfSize * 2;
 
    output.normalW = float3(0, 1, 0);
    output.posW = posW;
@@ -55,24 +50,32 @@ struct ConstantOutputType {
 };
 
 struct HullOutputType {
-   float3 position : POSITION;
+   float3 posW : POS_W;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Patch Constant Function
 ////////////////////////////////////////////////////////////////////////////////
-ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> inputPatch, uint patchId : SV_PrimitiveID) {    
+ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint patchId : SV_PrimitiveID) {    
    ConstantOutputType output;
 
-   float tessellationAmount = gScene.tessFactorEdge;
+   float3 cameraPos = gCamera.position;
+
+   float3 patchCenter = (patch[0].posW 
+                       + patch[1].posW
+                       + patch[2].posW
+                       + patch[3].posW) / 4;
+   float distance = length(patchCenter - cameraPos);
+
+   float tessellationAmount = gScene.tessFactorEdge / distance * 10;
 
    output.edges[0] = tessellationAmount;
    output.edges[1] = tessellationAmount;
    output.edges[2] = tessellationAmount;
    output.edges[3] = tessellationAmount;
 
-   output.inside[0] = gScene.tessFactorInside;
-   output.inside[1] = gScene.tessFactorInside;
+   output.inside[0] = gScene.tessFactorInside / distance * 10;
+   output.inside[1] = output.inside[0];
 
    return output;
 }
@@ -91,7 +94,7 @@ ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> inputPatch, u
 HullOutputType waterHS(InputPatch<VsOut, 4> patch, uint pointId : SV_OutputControlPointID, uint patchId : SV_PrimitiveID) {
    HullOutputType output;
 
-   output.position = patch[pointId].posW;
+   output.posW = patch[pointId].posW;
 
    return output;
 }
@@ -110,7 +113,7 @@ struct PixelInputType {
 PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, const OutputPatch<HullOutputType, 4> patch) {
    PixelInputType output;
  
-   float3 posW = WATER_PATCH_BC(patch, position, bc);   
+   float3 posW = WATER_PATCH_BC(patch, posW, bc);   
    float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
 
    output.posW = posW;

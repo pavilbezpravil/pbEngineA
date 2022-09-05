@@ -71,7 +71,8 @@ struct SSceneCB {
    // todo:
    float tessFactorEdge;
    float tessFactorInside;
-   float2 _sdf3fd;
+   float waterPatchSize;
+   int waterPatchCount;
 };
 
 struct SCameraCB {

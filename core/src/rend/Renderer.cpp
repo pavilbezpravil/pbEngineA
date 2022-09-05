@@ -21,6 +21,8 @@ namespace pbe {
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 5.f, 0.f, 32.f };
    CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 5.f, 0.f, 32.f };
+   CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
+   CVarSlider<int> waterPatchCount{ "render/water/patch count", 4, 1, 64 };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -221,6 +223,8 @@ namespace pbe {
 
       sceneCB.tessFactorEdge = waterTessFactorEdge;
       sceneCB.tessFactorInside = waterTessFactorInside;
+      sceneCB.waterPatchSize = waterPatchSize;
+      sceneCB.waterPatchCount = waterPatchCount;
 
       sceneCB.directLight.color = {};
       sceneCB.directLight.direction = vec3{1, 0, 0};
@@ -386,7 +390,7 @@ namespace pbe {
 
             waterPass->Activate(cmd);
 
-            waterPass->DrawInstanced(cmd, 4);
+            waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);
          }
 
          if (cfg.transparency && !transparentObjs.empty()) {
