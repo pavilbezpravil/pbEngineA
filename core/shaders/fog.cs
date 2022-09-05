@@ -25,7 +25,7 @@ float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
       // jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
    }
 
-   float3 shadowUVZ = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
+   float3 shadowUVZ = mul(float4(posW, 1), gScene.toShadowSpace).xyz;
    if (shadowUVZ.z >= 1) {
       return 1;
    }
@@ -89,10 +89,10 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
 
       float stepLength = length(posW - gCamera.position) / maxSteps;
 
-      float randomOffset = rand2(screenUV * 100 + rand1dTo2d(gCamera.iFrame % 64));
+      float randomOffset = rand2(screenUV * 100 + rand1dTo2d(gScene.iFrame % 64));
       float3 startPosW = lerp(gCamera.position, posW, randomOffset / maxSteps);
 
-      // float3 randomOffset = rand2dTo3d(screenUV * 100 + rand1dTo2d(gCamera.iFrame % 64));
+      // float3 randomOffset = rand2dTo3d(screenUV * 100 + rand1dTo2d(gScene.iFrame % 64));
       // float3 startPosW = gCamera.position + randomOffset * stepLength;
 
       float accTransmittance = 1;

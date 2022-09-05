@@ -10,6 +10,7 @@ namespace pbe {
    namespace rendres {
 
       ID3D11RasterizerState1* rasterizerState;
+      ID3D11RasterizerState1* rasterizerStateWireframe;
       ID3D11SamplerState* samplerStateWrapPoint;
       ID3D11SamplerState* samplerStateWrapLinear;
       ID3D11SamplerState* samplerStateShadow;
@@ -45,6 +46,12 @@ namespace pbe {
 
          device->CreateRasterizerState1(&rasterizerDesc, &rasterizerState);
          resourses.push_back(rasterizerState);
+
+         rasterizerDesc.FillMode = D3D11_FILL_WIREFRAME;
+         rasterizerDesc.CullMode = D3D11_CULL_NONE;
+
+         device->CreateRasterizerState1(&rasterizerDesc, &rasterizerStateWireframe);
+         resourses.push_back(rasterizerStateWireframe);
 
          ///////////////////////////////////////////////////////////////////////////////////////////////
 

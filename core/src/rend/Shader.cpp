@@ -31,6 +31,8 @@ namespace pbe {
    HRESULT CompileShader(ShaderDesc& desc, ID3DBlob** blob) {
       static const char* gShaderProfile[] = {
          "vs_5_0",
+         "hs_5_0",
+         "ds_5_0",
          "ps_5_0",
          "cs_5_0",
       };
@@ -126,6 +128,16 @@ namespace pbe {
          nullptr, &vs);
          SetDbgName(vs.Get(), dbgName);
          break;
+      case ShaderType::Hull: sDevice->g_pd3dDevice->CreateHullShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &hs);
+         SetDbgName(hs.Get(), dbgName);
+         break;
+      case ShaderType::Domain: sDevice->g_pd3dDevice->CreateDomainShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &ds);
+         SetDbgName(ds.Get(), dbgName);
+         break;
       case ShaderType::Pixel: sDevice->g_pd3dDevice->CreatePixelShader(
          shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
          nullptr, &ps);
@@ -167,6 +179,8 @@ namespace pbe {
       bool graphics = vs || ps;
       if (graphics) {
          cmd.pContext->VSSetShader(vs ? vs->vs.Get() : nullptr, nullptr, 0);
+         cmd.pContext->HSSetShader(hs ? hs->hs.Get() : nullptr, nullptr, 0);
+         cmd.pContext->DSSetShader(ds ? ds->ds.Get() : nullptr, nullptr, 0);
          cmd.pContext->PSSetShader(ps ? ps->ps.Get() : nullptr, nullptr, 0);
       } else {
          if (cs) {
@@ -191,6 +205,8 @@ namespace pbe {
             cmd.pContext->VSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
          }
       }
+
+      // todo: hs, ds
 
       if (ps) {
          const auto reflection = ps->reflection;
@@ -273,11 +289,13 @@ namespace pbe {
    }
 
    bool GpuProgram::Valid() const {
-      return (!vs || vs->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
+      return (!vs || vs->Valid()) && (!hs || hs->Valid()) && (!ds || ds->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
    }
 
    GpuProgram::GpuProgram(ProgramDesc& desc) : desc(desc) {
       vs = ShaderCompile(desc.vs);
+      hs = ShaderCompile(desc.hs);
+      ds = ShaderCompile(desc.ds);
       ps = ShaderCompile(desc.ps);
       cs = ShaderCompile(desc.cs);
    }

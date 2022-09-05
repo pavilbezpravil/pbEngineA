@@ -74,6 +74,8 @@ namespace pbe {
 
       Own<RTRenderer> rtRenderer;
 
+      Ref<GpuProgram> waterPass;
+
       Ref<GpuProgram> baseColorPass;
       Ref<GpuProgram> baseZPass;
       Ref<GpuProgram> shadowMapPass;

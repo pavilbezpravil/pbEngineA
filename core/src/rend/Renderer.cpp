@@ -16,6 +16,7 @@ namespace pbe {
 
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> applyFog{ "render/apply fog", true };
+   CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
 
    static mat4 NDCToTexSpaceMat4() {
@@ -54,6 +55,9 @@ namespace pbe {
 
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
+
+      programDesc = ProgramDesc::VsPs("water.hlsl", "vs_main", "ps_main");
+      waterPass = GpuProgram::Create(programDesc);
 
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       programDesc.ps.defines.AddDefine("DECAL");
@@ -201,6 +205,14 @@ namespace pbe {
       RenderCamera shadowCamera;
 
       SSceneCB sceneCB;
+
+      static int iFrame = 0; // todo:
+      ++iFrame;
+      sceneCB.iFrame = iFrame;
+      sceneCB.deltaTime = 1 / 60.0f; // todo:
+      sceneCB.time = sceneCB.deltaTime * sceneCB.iFrame;
+      sceneCB.animationTime = sceneCB.time;
+
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
 
@@ -233,6 +245,7 @@ namespace pbe {
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
+         sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
       }
 
       cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
@@ -252,11 +265,7 @@ namespace pbe {
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cameraCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
 
-      static int iFrame = 0; // todo:
-      ++iFrame;
-      cameraCB.iFrame = iFrame;
       cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
 
       // todo:
@@ -353,6 +362,33 @@ namespace pbe {
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
 
+         {
+            GPU_MARKER("Water");
+            PROFILE_GPU("Water");
+
+            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetBlendState(rendres::blendStateDefaultRGB);
+
+            if (waterWireframe) {
+               cmd.SetRasterizerState(rendres::rasterizerStateWireframe);
+            }
+
+            // set mesh
+            auto* context = cmd.pContext;
+            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+            context->IASetInputLayout(nullptr);
+
+            context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+            context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
+            //
+
+            waterPass->Activate(cmd);
+
+            waterPass->DrawInstanced(cmd, mesh.geom.VertexCount());
+         }
+
          if (cfg.transparency && !transparentObjs.empty()) {
             GPU_MARKER("Transparency");
             PROFILE_GPU("Transparency");
@@ -411,7 +447,6 @@ namespace pbe {
          ResetCS_SRV_UAV();
       }
 
-      // todo:
       if (1) {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");

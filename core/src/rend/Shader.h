@@ -41,6 +41,8 @@ namespace pbe {
 
    enum class ShaderType {
       Vertex,
+      Hull,
+      Domain,
       Pixel,
       Compute,
       Unknown
@@ -69,6 +71,8 @@ namespace pbe {
       ComPtr<ID3DBlob> blob;
 
       ComPtr<ID3D11VertexShader> vs;
+      ComPtr<ID3D11HullShader> hs;
+      ComPtr<ID3D11DomainShader> ds;
       ComPtr<ID3D11PixelShader> ps;
       ComPtr<ID3D11ComputeShader> cs;
 
@@ -79,7 +83,10 @@ namespace pbe {
 
    struct ProgramDesc {
       ShaderDesc vs;
+      ShaderDesc hs;
+      ShaderDesc ds;
       ShaderDesc ps;
+
       ShaderDesc cs;
 
       // todo:
@@ -135,6 +142,8 @@ namespace pbe {
       bool Valid() const;
 
       Ref<Shader> vs;
+      Ref<Shader> hs;
+      Ref<Shader> ds;
       Ref<Shader> ps;
       Ref<Shader> cs;
 
