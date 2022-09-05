@@ -1,3 +1,6 @@
+#ifndef PBR_HEADER
+#define PBR_HEADER
+
 #include "math.hlsli"
 
 float3 fresnelSchlick(float cosTheta, float3 F0) {
@@ -35,3 +38,5 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness) {
 	
     return ggx1 * ggx2;
 }
+
+#endif // PBR_HEADER

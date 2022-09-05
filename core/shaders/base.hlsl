@@ -54,20 +54,15 @@ float3 LightGetL(SLight light, float3 posW) { // L
   return float3(0, 0, 0);
 }
 
-float lengthSq(float3 v) {
-  return dot(v, v);
-}
-
-float ComponentSum(float4 v) {
-  return v.x + v.y + v.z + v.w;
-}
-
 float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
   if (0) {
     jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
   }
 
   float3 shadowUVZ = mul(float4(posW, 1), gCamera.toShadowSpace).xyz;
+  if (shadowUVZ.z >= 1) {
+      return 1;
+  }
 
   float2 shadowUV = shadowUVZ.xy + jitter;
   float z = shadowUVZ.z;

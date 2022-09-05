@@ -208,9 +208,12 @@ namespace pbe {
       sceneCB.directLight.direction = vec3{1, 0, 0};
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
 
-      bool hasDirectLight = false;
+      auto directLightsView = scene.GetEntitiesWith<SceneTransformComponent, DirectLightComponent>();
+      bool hasDirectLight = directLightsView.size_hint() > 0;
 
-      for (auto [_, trans, directLight] : scene.GetEntitiesWith<SceneTransformComponent, DirectLightComponent>().each()) {
+      if (hasDirectLight) {
+         auto [_, trans, directLight] = *directLightsView.each().begin();
+
          sceneCB.directLight.color = directLight.color;
          sceneCB.directLight.direction = trans.Forward();
 
@@ -221,7 +224,7 @@ namespace pbe {
          vec3 posShadowSpace = shadowSpace * vec4(camera.position, 1);
 
          vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
-         vec3 shadowTexelSize = vec3{ 2.f * halfSize / shadowMapTexels, 2.f * halfDepth / (1 << 16)};
+         vec3 shadowTexelSize = vec3{ 2.f * halfSize / shadowMapTexels, 2.f * halfDepth / (1 << 16) };
          vec3 snappedPosShadowSpace = glm::ceil(posShadowSpace / shadowTexelSize) * shadowTexelSize;
 
          vec3 snappedPosW = glm::inverse(shadowSpace) * vec4(snappedPosShadowSpace, 1);
@@ -230,9 +233,6 @@ namespace pbe {
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
-
-         hasDirectLight = true;
-         break;
       }
 
       cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
@@ -259,8 +259,18 @@ namespace pbe {
       cameraCB.iFrame = iFrame;
       cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
 
+      // todo:
+      auto ResetCS_SRV_UAV = [&] {
+         ID3D11ShaderResourceView* views[] = { nullptr };
+         cmd.pContext->CSSetShaderResources(0, 1, views);
+
+         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+      };
+
       if (rayTracingSceneRender) {
          rtRenderer->RenderScene(cmd, scene, camera, cameraContext);
+         ResetCS_SRV_UAV();
       } else {
          if (cfg.useShadowPass && hasDirectLight) {
             GPU_MARKER("Shadow Map");
@@ -314,12 +324,7 @@ namespace pbe {
 
                ssaoPass->Dispatch(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
 
-               // todo:
-               ID3D11ShaderResourceView* views[] = { nullptr };
-               cmd.pContext->CSSetShaderResources(0, 1, views);
-
-               ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-               cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+               ResetCS_SRV_UAV();
             }
 
             {
@@ -377,17 +382,15 @@ namespace pbe {
 
             fogPass->Activate(cmd);
 
+            fogPass->SetSRV(cmd, "gLights", *lightBuffer);
+            fogPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
+
             fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
             fogPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
 
-            // todo:
-            ID3D11ShaderResourceView* views[] = { nullptr };
-            cmd.pContext->CSSetShaderResources(0, 1, views);
-
-            ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-            cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+            ResetCS_SRV_UAV();
          }
       }
 
@@ -405,16 +408,11 @@ namespace pbe {
 
          tonemapPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
 
-         // todo:
-         ID3D11ShaderResourceView* views[] = { nullptr };
-         cmd.pContext->CSSetShaderResources(0, 1, views);
-
-         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+         ResetCS_SRV_UAV();
       }
 
       // todo:
-      if (0) {
+      if (1) {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
 

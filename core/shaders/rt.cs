@@ -2,7 +2,6 @@
 #include "shared/hlslCppShared.hlsli"
 #include "common.inl"
 #include "noise.inl"
-#include "tonemaping.hlsli"
 #include "samplers.hlsli"
 
 RWTexture2D<float4> gColor;
@@ -179,7 +178,7 @@ float3 RayColor(Ray ray) {
     float3 color = 0;
     float3 energy = 1;
 
-    for (int depth = 0; depth < 6; depth++) {
+    for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
         RayHit hit = Trace(ray);
         if (hit.distance < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
@@ -194,18 +193,18 @@ float3 RayColor(Ray ray) {
 
                 // Shadow test ray
                 bool shadow = false;
-                float3 L = normalize(float3(0.2, 1, -0.5));
+                float3 L = -gScene.directLight.direction;
                 Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(randomValue + 2) * 0.1));
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.distance == INF) {
-                    float3 directLightShade = dot(hit.normal, L) * albedo * 1;
+                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color;
                     color += directLightShade * energy;
                 }
 
                 // ray.direction = RandomInHemisphere(hit.normal, SumComponents(ray.direction) * 1000 + gRTConstants.random01 * 0);
                 ray.direction = normalize(RandomInHemisphere(hit.normal, randomValue));
 
-                energy *= 2 * albedo * dot(hit.normal, ray.direction);
+                energy *= albedo * dot(hit.normal, ray.direction);
             } else {
                 float3 specular = 0.5;
                 specular = albedo;
@@ -236,7 +235,6 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
     // float2 uv = float2((id.xy + float2(0.5f, 0.5f)) / float2(width, height) * 2.0f - 1.0f);
 
     int nRays = gRTConstants.nRays;
-    // nRays = 25;
 
     float3 color = 0;
 
@@ -249,10 +247,7 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
         color += RayColor(ray);
     }
 
-    color /= nRays;
-
-    color = ACESFilm(color);
-    color = GammaCorrection(color);
+    color /= nRays;;
 
     gColor[id.xy] = float4(color, 1);
 }

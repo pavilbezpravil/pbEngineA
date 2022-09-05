@@ -14,3 +14,11 @@ float3 GetWorldPositionFromDepth(float2 uv, float depth, float4x4 invViewProject
 	float4 wp = mul(ndc, invViewProjection);
 	return (wp / wp.w).xyz;
 }
+
+float lengthSq(float3 v) {
+  return dot(v, v);
+}
+
+float ComponentSum(float4 v) {
+  return v.x + v.y + v.z + v.w;
+}

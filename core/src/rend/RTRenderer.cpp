@@ -17,7 +17,8 @@
 
 namespace pbe {
 
-   CVarSlider<int> nRays{ "render/rt/nRays", 5, 1, 128 };
+   CVarSlider<int> cvNRays{ "render/rt/nRays", 5, 1, 128 };
+   CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
 
    void RTRenderer::Init() {
       auto programDesc = ProgramDesc::Cs("rt.cs", "rtCS");
@@ -54,9 +55,9 @@ namespace pbe {
 
       SRTConstants rtCB;
       rtCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      rtCB.rayDepth = 3;
+      rtCB.rayDepth = cvRayDepth;
       rtCB.nObjects = nObj;
-      rtCB.nRays = nRays;
+      rtCB.nRays = cvNRays;
       rtCB.random01 = Random::Uniform(0.f, 1.f);
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
