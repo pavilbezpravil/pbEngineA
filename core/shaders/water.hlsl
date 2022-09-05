@@ -96,7 +96,10 @@ ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 3> inputPatch, u
 // Hull Shader
 ////////////////////////////////////////////////////////////////////////////////
 [domain("tri")]
-[partitioning("integer")]
+// [partitioning("integer")]
+// [partitioning("fractional_even")]
+[partitioning("fractional_odd")]
+// [partitioning("pow2")]
 [outputtopology("triangle_cw")]
 [outputcontrolpoints(3)]
 [patchconstantfunc("WaterPatchConstantFunction")]
