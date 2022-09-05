@@ -380,20 +380,13 @@ namespace pbe {
                cmd.SetRasterizerState(rendres::rasterizerStateWireframe);
             }
 
-            // set mesh
             auto* context = cmd.pContext;
-            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
-
-            // todo: can i skip next 3 calls?
+            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
             context->IASetInputLayout(nullptr);
-
-            context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-            context->IASetIndexBuffer(nullptr, DXGI_FORMAT_R16_UINT, 0);
-            //
 
             waterPass->Activate(cmd);
 
-            waterPass->DrawInstanced(cmd, mesh.geom.VertexCount());
+            waterPass->DrawInstanced(cmd, 4);
          }
 
          if (cfg.transparency && !transparentObjs.empty()) {
