@@ -16,8 +16,11 @@ namespace pbe {
 
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> applyFog{ "render/apply fog", true };
-   CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
+
+   CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
+   CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 5.f, 0.f, 32.f };
+   CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 5.f, 0.f, 32.f };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -56,7 +59,7 @@ namespace pbe {
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
 
-      programDesc = ProgramDesc::VsPs("water.hlsl", "vs_main", "ps_main");
+      programDesc = ProgramDesc::VsHsDsPs("water.hlsl", "waterVS", "waterHS", "waterDS", "waterPS");
       waterPass = GpuProgram::Create(programDesc);
 
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
@@ -215,6 +218,9 @@ namespace pbe {
 
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
+
+      sceneCB.tessFactorEdge = waterTessFactorEdge;
+      sceneCB.tessFactorInside = waterTessFactorInside;
 
       sceneCB.directLight.color = {};
       sceneCB.directLight.direction = vec3{1, 0, 0};
@@ -376,8 +382,9 @@ namespace pbe {
 
             // set mesh
             auto* context = cmd.pContext;
-            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
+            // todo: can i skip next 3 calls?
             context->IASetInputLayout(nullptr);
 
             context->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);

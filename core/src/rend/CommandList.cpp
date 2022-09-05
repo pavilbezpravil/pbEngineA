@@ -25,6 +25,8 @@ namespace pbe {
       offsetInBytes /= 16;
 
       pContext->VSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
+      pContext->HSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
+      pContext->DSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
       pContext->PSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
 
       pContext->CSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);

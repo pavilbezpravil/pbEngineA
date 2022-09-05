@@ -106,6 +106,17 @@ namespace pbe {
          }
          return desc;
       }
+
+      static ProgramDesc VsHsDsPs(std::string_view path, std::string_view vsEntry, std::string_view hsEntry, std::string_view dsEntry, std::string_view psEntry = {}) {
+         ProgramDesc desc;
+         desc.vs = { path.data(), vsEntry.data(), ShaderType::Vertex };
+         desc.hs = { path.data(), hsEntry.data(), ShaderType::Hull };
+         desc.ds = { path.data(), dsEntry.data(), ShaderType::Domain };
+         if (!psEntry.empty()) {
+            desc.ps = { path.data(), psEntry.data(), ShaderType::Pixel };
+         }
+         return desc;
+      }
    };
 
    class GpuProgram : public RefCounted {

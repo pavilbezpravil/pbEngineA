@@ -13,7 +13,6 @@
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
-#include "rend/Renderer.h"
 #include "typer/Typer.h"
 
 

@@ -17,8 +17,16 @@ namespace pbe {
       ImGui::InputInt(name.c_str(), &value);
    }
 
+   void CVarValue<float>::UI() {
+      ImGui::InputFloat(name.c_str(), &value);
+   }
+
    void CVarSlider<int>::UI() {
       ImGui::SliderInt(name.c_str(), &value, min, max);
+   }
+
+   void CVarSlider<float>::UI() {
+      ImGui::SliderFloat(name.c_str(), &value, min, max);
    }
 
 }

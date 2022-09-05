@@ -38,6 +38,7 @@ namespace pbe {
 
    extern template void CORE_API CVarValue<bool>::UI();
    extern template void CORE_API CVarValue<int>::UI();
+   extern template void CORE_API CVarValue<float>::UI();
 
    template<typename T>
    class CVarSlider : public CVar {
@@ -57,5 +58,6 @@ namespace pbe {
    };
 
    extern template void CORE_API CVarSlider<int>::UI();
+   extern template void CORE_API CVarSlider<float>::UI();
 
 }

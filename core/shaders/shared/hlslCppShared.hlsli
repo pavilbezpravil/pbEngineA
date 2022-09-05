@@ -67,6 +67,11 @@ struct SSceneCB {
 
    SLight directLight;
    float4x4 toShadowSpace;
+
+   // todo:
+   float tessFactorEdge;
+   float tessFactorInside;
+   float2 _sdf3fd;
 };
 
 struct SCameraCB {

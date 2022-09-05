@@ -206,7 +206,25 @@ namespace pbe {
          }
       }
 
-      // todo: hs, ds
+      if (hs) {
+         const auto reflection = hs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->HSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
+         }
+      }
+
+      if (ds) {
+         const auto reflection = ds->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->DSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
+         }
+      }
 
       if (ps) {
          const auto reflection = ps->reflection;
