@@ -146,12 +146,19 @@ struct PsOut {
    float4 color : SV_Target0;
 };
 
+float WaterFresnel(float dotNV) {
+	float ior = 1.33f;
+	float c = abs(dotNV);
+	float g = sqrt(ior * ior + c * c - 1);
+	float fresnel = 0.5 * pow2(g - c) / pow2(g + c) * (1 + pow2(c * (g + c) - 1) / pow2(c * (g - c) + 1));
+	return saturate(fresnel);
+}
+
 PsOut waterPS(PixelInputType input) : SV_TARGET {
    // float2 screenUV = input.posH.xy / gCamera.rtSize;
 
    // float3 normalW = normalize(input.normalW);
    float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
-   // float3 normalW = float3(0, 1, 0);
    float3 posW = input.posW;
 
    float3 V = normalize(gCamera.position - posW);
@@ -160,10 +167,12 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
 
    float3 reflectionDirection = reflect(-V, normalW);
 
-   float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
+   // float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
+   float fresnel = WaterFresnel(dot(normalW, V));
 
    float3 waterColor = float3(21, 95, 179) / 256;
    color = lerp(waterColor, GetSkyColor(reflectionDirection), fresnel);
+   // color = fresnel;
 
    // color = normalW;
 
