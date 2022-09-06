@@ -76,16 +76,23 @@ float3 LightRadiance(SLight light, float3 posW) {
 [numthreads(8, 8, 1)]
 void main( uint3 dispatchThreadID : SV_DispatchThreadID ) { 
    // todo: check border
-   float3 color = gColor[dispatchThreadID.xy];
+   float3 color = gColor[dispatchThreadID.xy].xyz;
    float depthRaw = gDepth[dispatchThreadID.xy];
 
    float2 uv = float2(dispatchThreadID.xy) / float2(gCamera.rtSize);
    float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
 
+   // todo:
+   float3 V = posW - gCamera.position;
+   if (length(V) > 900) {
+      V = normalize(V);
+      color = GetSkyColor(V);
+   }
+
    float2 screenUV = uv;
 
    if (1) {
-      const int maxSteps = 20;
+      const int maxSteps = gScene.fogNSteps;
 
       float stepLength = length(posW - gCamera.position) / maxSteps;
 

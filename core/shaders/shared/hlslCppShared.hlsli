@@ -73,6 +73,10 @@ struct SSceneCB {
    float tessFactorInside;
    float waterPatchSize;
    int waterPatchCount;
+
+   int nWaves;
+   int fogNSteps;
+   float2 _sdfsdg;
 };
 
 struct SCameraCB {
@@ -94,6 +98,17 @@ struct SDrawCallCB {
 
    int instanceStart;
    float3 _dymmy3;
+};
+
+struct WaveData {
+   float2 direction;
+	float amplitude;
+	float length;
+
+	float magnitude;
+	float frequency;
+	float phase;
+	float steepness;
 };
 
 #endif // SHARED_COMMON

@@ -104,6 +104,9 @@ struct PixelInputType {
     float4 posH : SV_POSITION;
 };
 
+
+StructuredBuffer<WaveData> gWaves;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Domain Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,12 +115,29 @@ struct PixelInputType {
 [domain("quad")]
 PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, const OutputPatch<HullOutputType, 4> patch) {
    PixelInputType output;
- 
-   float3 posW = WATER_PATCH_BC(patch, posW, bc);   
-   float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
+
+   float3 posW = WATER_PATCH_BC(patch, posW, bc);
+
+   float time = gScene.animationTime;
+
+   float3 displacement = 0;
+
+   for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
+      WaveData wave = gWaves[iWave];
+
+      float theta = wave.magnitude * dot(wave.direction, posW.xz) - wave.frequency * time + wave.phase;
+
+      float2 sin_cos;
+      sincos(theta, sin_cos.x, sin_cos.y);
+
+      displacement.y += sin_cos.x * wave.amplitude;
+      displacement.xz += sin_cos.y * wave.direction * wave.steepness * wave.amplitude;
+   }
+
+   posW += displacement;
 
    output.posW = posW;
-   output.posH = posH;
+   output.posH = mul(float4(posW, 1), gCamera.viewProjection);
 
    return output;
 }
@@ -130,12 +150,18 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    // float2 screenUV = input.posH.xy / gCamera.rtSize;
 
    // float3 normalW = normalize(input.normalW);
-   float3 normalW = float3(0, 1, 0);
+   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+   // float3 normalW = float3(0, 1, 0);
    float3 posW = input.posW;
 
    float3 V = normalize(gCamera.position - posW);
 
-   float3 color = 1;
+   float3 color = 0;
+
+   float3 reflectionDirection = reflect(-V, normalW);
+   color = GetSkyColor(reflectionDirection);
+
+   // color = normalW;
 
    PsOut output = (PsOut)0;
    output.color.rgb = color;

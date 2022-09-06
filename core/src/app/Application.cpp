@@ -8,6 +8,7 @@
 #include "rend/Device.h"
 #include "rend/CommandList.h"
 #include "Window.h"
+#include "core/CVar.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
 #include "rend/Shader.h"
@@ -136,8 +137,9 @@ namespace pbe {
          }
          OPTICK_TAG("DeltaTime (ms)", dt * 1000.f);
 
+         // todo: different interface
+         sConfigVarsMng.NextFrame(); // todo: use before triggered in that frame
          Profiler::Get().NextFrame();
-
          Input::OnUpdate(dt);
 
          for (auto* layer : layerStack) {

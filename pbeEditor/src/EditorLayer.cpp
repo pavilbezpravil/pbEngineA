@@ -448,7 +448,7 @@ namespace pbe {
                   m.albedo = { 0, 0, 1 };
                }
 
-               int3 cubeSize{ 25, 10, 25 };
+               vec3 cubeSize{ 25, 10, 25 };
 
                for (int i = 0; i < 500; ++i) {
                   Entity e = scene->Create(std::format("Cube {}", i));

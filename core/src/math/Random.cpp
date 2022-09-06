@@ -25,5 +25,27 @@ namespace pbe {
             Uniform(min.z, max.z) };
       }
 
+      vec2 Uniform(vec2 min, vec2 max) {
+         return {
+            Uniform(min.x, max.x),
+            Uniform(min.y, max.y)};
+      }
+
+      vec3 UniformInSphere() {
+         vec3 test;
+         do {
+            test = Uniform(vec3{ -1 }, vec3{ 1 });
+         } while (glm::length(test) > 1);
+         return test;
+      }
+
+      vec2 UniformInCircle() {
+         vec2 test;
+         do {
+            test = Uniform(vec2{ -1 }, vec2{ 1 });
+         } while (glm::length(test) > 1);
+         return test;
+      }
+
    }
 }

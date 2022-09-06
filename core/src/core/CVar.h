@@ -9,6 +9,7 @@ namespace pbe {
       CVar(std::string_view name);
 
       virtual void UI() = 0;
+      virtual void NextFrame() {}
 
    // private:
       std::string name;
@@ -16,6 +17,8 @@ namespace pbe {
 
    class CORE_API ConfigVarsMng {
    public:
+      void NextFrame();
+
       std::vector<CVar*> configVars;
    };
 
@@ -59,5 +62,18 @@ namespace pbe {
 
    extern template void CORE_API CVarSlider<int>::UI();
    extern template void CORE_API CVarSlider<float>::UI();
+
+   class CVarTrigger : public CVar {
+   public:
+      CVarTrigger(std::string_view name);
+
+      operator bool() const { return triggered; }
+
+      void UI() override;
+      void NextFrame() override;
+
+   private:
+      bool triggered = false;
+   };
 
 }

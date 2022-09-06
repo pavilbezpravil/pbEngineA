@@ -9,6 +9,12 @@ namespace pbe {
       sConfigVarsMng.configVars.push_back(this);
    }
 
+   void ConfigVarsMng::NextFrame() {
+      for (auto* cvar : configVars) {
+         cvar->NextFrame();
+      }
+   }
+
    void CVarValue<bool>::UI() {
       ImGui::Checkbox(name.c_str(), &value);
    }
@@ -27,6 +33,22 @@ namespace pbe {
 
    void CVarSlider<float>::UI() {
       ImGui::SliderFloat(name.c_str(), &value, min, max);
+   }
+
+   CVarTrigger::CVarTrigger(std::string_view name): CVar(name) {
+   }
+
+   void CVarTrigger::UI() {
+      // triggered = ImGui::Button("Trigger");
+      if (ImGui::Button("Trigger")) {
+         triggered = true;
+      }
+      ImGui::SameLine();
+      ImGui::Text(name.c_str());
+   }
+
+   void CVarTrigger::NextFrame() {
+      triggered = false;
    }
 
 }

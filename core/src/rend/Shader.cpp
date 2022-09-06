@@ -259,6 +259,24 @@ namespace pbe {
             cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
          }
       }
+      if (hs) {
+         const auto reflection = hs->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->HSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+         }
+      }
+      if (ds) {
+         const auto reflection = ds->reflection;
+
+         auto iter = reflection.find(id);
+         if (iter != reflection.end()) {
+            const auto& bi = iter->second;
+            cmd.pContext->DSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+         }
+      }
       if (ps) {
          const auto reflection = ps->reflection;
 

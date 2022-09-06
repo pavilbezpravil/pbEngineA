@@ -17,12 +17,19 @@ namespace pbe {
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> applyFog{ "render/apply fog", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
+   CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
-   CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
-   CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 5.f, 0.f, 32.f };
-   CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 5.f, 0.f, 32.f };
+   CVarSlider<int> fogNSteps{ "render/fog/nSteps", 8, 0, 128 };
+
+   CVarValue<bool> waterWireframe{ "render/water/wireframe", true };
+   CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 32.f, 0.f, 64.f };
+   CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 32.f, 0.f, 64.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
-   CVarSlider<int> waterPatchCount{ "render/water/patch count", 4, 1, 64 };
+   CVarSlider<int> waterPatchCount{ "render/water/patch count", 32, 1, 64 };
+   CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 1, 64 };
+   CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.1f, 64.f };
+   CVarSlider<float> waterWavelengthAmplitudeRatio{ "render/water/wavelength-amplitude ratio", 100.f, 10.0f, 300.f };
+   CVarTrigger waterRecreateWaves{ "render/water/recreate waves" };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -216,7 +223,17 @@ namespace pbe {
       sceneCB.iFrame = iFrame;
       sceneCB.deltaTime = 1 / 60.0f; // todo:
       sceneCB.time = sceneCB.deltaTime * sceneCB.iFrame;
-      sceneCB.animationTime = sceneCB.time;
+
+      sceneCB.animationTime = std::invoke([&] {
+         static float animTime = 0;
+         if (animationTimeUpdate) {
+            animTime += sceneCB.deltaTime;
+         }
+         return animTime;
+      });
+
+      sceneCB.nWaves = waterNWaves;
+      sceneCB.fogNSteps = fogNSteps;
 
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
@@ -376,6 +393,35 @@ namespace pbe {
             GPU_MARKER("Water");
             PROFILE_GPU("Water");
 
+            if (!waterWaves || waterWaves->ElementsCount() != waterNWaves || waterRecreateWaves) {
+               std::vector<WaveData> waves;
+               waves.reserve(waterNWaves);
+
+               for (int i = 0; i < waterNWaves; ++i) {
+                  WaveData wave;
+
+                  // shallow water v = sqrt(g * h)
+                  // deep water v = sqrt((g * wavelength) / PI2)
+                  float wavelength = Random::Uniform(0.f, waterMaxWavelength);
+                  float g = 9.8f;
+                  float speed = sqrt((g * wavelength) / PI2);
+
+                  wave.direction = glm::normalize(Random::UniformInCircle());
+                  wave.amplitude = wavelength / waterWavelengthAmplitudeRatio * Random::Uniform(0.5f, 1.5f);
+                  wave.length = wavelength; // todo:
+
+                  wave.magnitude = PI2 / wavelength;
+                  // wave.frequency = speed / wavelength;
+                  wave.frequency = sqrt((g * PI2) / wavelength);
+                  wave.phase = Random::Uniform(0.f, PI2);
+                  wave.steepness = 1;
+                  waves.emplace_back(wave);
+               }
+
+               auto bufferDesc = Buffer::Desc::Structured("waver waves", waterNWaves, sizeof(WaveData));
+               waterWaves = Buffer::Create(bufferDesc, waves.data());
+            }
+
             cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
             cmd.SetBlendState(rendres::blendStateDefaultRGB);
@@ -390,6 +436,7 @@ namespace pbe {
 
             waterPass->Activate(cmd);
 
+            waterPass->SetSRV(cmd, "gWaves", *waterWaves);
             waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);
          }
 

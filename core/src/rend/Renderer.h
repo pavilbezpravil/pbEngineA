@@ -91,6 +91,7 @@ namespace pbe {
       Ref<Buffer> decalBuffer;
       Ref<Buffer> lightBuffer;
       Ref<Buffer> ssaoRandomDirs;
+      Ref<Buffer> waterWaves;
 
       struct RenderObject {
          SceneTransformComponent trans;
