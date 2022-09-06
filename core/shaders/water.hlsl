@@ -159,7 +159,11 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    float3 color = 0;
 
    float3 reflectionDirection = reflect(-V, normalW);
-   color = GetSkyColor(reflectionDirection);
+
+   float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
+
+   float3 waterColor = float3(21, 95, 179) / 256;
+   color = lerp(waterColor, GetSkyColor(reflectionDirection), fresnel);
 
    // color = normalW;
 

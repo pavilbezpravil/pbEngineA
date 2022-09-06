@@ -21,7 +21,7 @@ namespace pbe {
 
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 8, 0, 128 };
 
-   CVarValue<bool> waterWireframe{ "render/water/wireframe", true };
+   CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 32.f, 0.f, 64.f };
    CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 32.f, 0.f, 64.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
