@@ -44,15 +44,12 @@ namespace pbe {
       cameraCB.viewProjection = glm::transpose(GetViewProjection());
       cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
       cameraCB.position = position;
-   }
 
-   Renderer::~Renderer() {
-      rendres::Term();
+      cameraCB.zNear = zNear;
+      cameraCB.zFar = zFar;
    }
 
    void Renderer::Init() {
-      rendres::Init(); // todo:
-
       rtRenderer.reset(new RTRenderer());
       rtRenderer->Init();
 
@@ -446,6 +443,23 @@ namespace pbe {
 
             UpdateInstanceBuffer(cmd, transparentObjs);
             RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
+         }
+
+         if (1) { // todo
+            GPU_MARKER("Linearize Depth");
+            PROFILE_GPU("Linearize Depth");
+
+            cmd.SetRenderTargets();
+
+            auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "main"));
+            linearizeDepthPass->Activate(cmd);
+
+            linearizeDepthPass->SetSRV(cmd, "gDepthRaw", *cameraContext.depth);
+            linearizeDepthPass->SetUAV(cmd, "gDepth", *cameraContext.linearDepth);
+
+            linearizeDepthPass->Dispatch(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
+
+            ResetCS_SRV_UAV();
          }
 
          if (applyFog) {

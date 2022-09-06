@@ -1,5 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
-#include "common.inl"
+#include "common.hlsli"
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 #include "noise.inl"

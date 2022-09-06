@@ -88,6 +88,10 @@ struct SCameraCB {
    float3 position;
    int _sdfsdf2;
 
+   float zNear;
+   float zFar;
+   float2 _sdf4g34g;
+
    int2 rtSize;
    float2 _dymmy3;
 };

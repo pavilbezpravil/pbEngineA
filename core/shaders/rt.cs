@@ -1,6 +1,6 @@
 #include "shared/rt.hlsli"
 #include "shared/hlslCppShared.hlsli"
-#include "common.inl"
+#include "common.hlsli"
 #include "noise.inl"
 #include "samplers.hlsli"
 

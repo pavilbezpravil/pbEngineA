@@ -11,6 +11,7 @@
 #include "core/CVar.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
+#include "rend/RendRes.h"
 #include "rend/Shader.h"
 
 
@@ -36,6 +37,8 @@ namespace pbe {
          return;
       }
 
+      rendres::Init();
+
       Profiler::Init();
 
       sWindow->eventCallback = [&](Event& event) { OnEvent(event); };
@@ -50,6 +53,7 @@ namespace pbe {
    }
 
    void Application::OnTerm() {
+      rendres::Term();
       TermGpuPrograms();
       layerStack.Clear();
 

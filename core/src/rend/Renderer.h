@@ -45,6 +45,7 @@ namespace pbe {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> colorLDR;
       Ref<Texture2D> depth;
+      Ref<Texture2D> linearDepth;
       Ref<Texture2D> depthCopy;
       Ref<Texture2D> normal;
       Ref<Texture2D> position;
@@ -68,8 +69,6 @@ namespace pbe {
 
    class CORE_API Renderer {
    public:
-      ~Renderer();
-
       RenderConfing cfg;
 
       Own<RTRenderer> rtRenderer;

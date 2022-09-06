@@ -1,5 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
-#include "common.inl"
+#include "common.hlsli"
 #include "samplers.hlsli"
 
 Texture2D<float> gDepth;

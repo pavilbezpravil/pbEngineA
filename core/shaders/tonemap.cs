@@ -1,5 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
-#include "common.inl"
+#include "common.hlsli"
 #include "tonemaping.hlsli"
 
 Texture2D<float3> gColorHDR;

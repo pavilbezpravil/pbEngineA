@@ -9,6 +9,19 @@ float2 NDCToTex(float2 ndc) {
    return (ndc + 1) * 0.5;
 }
 
+// todo: does it work?
+float LinearizeDepth(float depth, float4x4 cameraProjection) {
+   // depth = A + B / z
+   float A = cameraProjection[2][2];
+   float B = cameraProjection[2][3];
+   // todo: why minus?
+   return -B / (depth - A);
+}
+
+float LinearizeDepth(float d, float zNear, float zFar) {
+    return zNear * zFar / (zFar + d * (zNear - zFar));
+}
+
 float3 GetWorldPositionFromDepth(float2 uv, float depth, float4x4 invViewProjection) {
 	float4 ndc = float4(TexToNDC(uv), depth, 1);
 	float4 wp = mul(ndc, invViewProjection);

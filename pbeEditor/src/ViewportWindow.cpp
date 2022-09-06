@@ -57,7 +57,7 @@ namespace pbe {
       renderer->cfg = cfg;
 
       static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "Normal", "Position", "SSAO", "ShadowMap"};
+      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "LinearDepth", "Normal", "Position", "SSAO", "ShadowMap"};
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -90,6 +90,11 @@ namespace pbe {
             texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
             texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
             cameraContext.depth = Texture2D::Create(texDesc);
+
+            texDesc.name = "scene linear depth";
+            texDesc.format = DXGI_FORMAT_R16_FLOAT;
+            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+            cameraContext.linearDepth = Texture2D::Create(texDesc);
 
             // texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
             // texDesc.name = "scene depth copy";
@@ -134,7 +139,7 @@ namespace pbe {
 
          auto gizmoCursorPos = ImGui::GetCursorScreenPos();
 
-         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
+         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
          ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
 
          Gizmo(imSize, gizmoCursorPos);

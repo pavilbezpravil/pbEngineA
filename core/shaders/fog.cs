@@ -1,5 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
-#include "common.inl"
+#include "common.hlsli"
 #include "tonemaping.hlsli"
 #include "samplers.hlsli"
 #include "noise.inl"
@@ -146,5 +146,4 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
    }
 
    gColor[dispatchThreadID.xy] = float4(color, 1);
-   // gColor[dispatchThreadID.xy] = float4(frac(LinearizeDepth(depth)).xxx, 1);
 }
