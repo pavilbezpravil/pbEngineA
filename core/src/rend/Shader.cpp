@@ -13,6 +13,72 @@
 
 #include "core/Profiler.h"
 
+// https://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
+template <class T>
+void HashCombine(std::size_t& s, const T& v) {
+   std::hash<T> h;
+   s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
+template<>
+struct std::hash<D3D_SHADER_MACRO> {
+   std::size_t operator()(const D3D_SHADER_MACRO& v) const {
+      std::size_t res = 0;
+      HashCombine(res, v.Name);
+      HashCombine(res, v.Definition);
+      return res;
+   }
+};
+
+// todo: any integer
+template<>
+struct std::hash<std::vector<int>> {
+   std::size_t operator()(const std::vector<int>& v) const {
+      std::size_t res = v.size();
+      for (auto& i : v) {
+         res ^= i + 0x9e3779b9 + (res << 6) + (res >> 2);
+      }
+      return res;
+   }
+};
+
+template<typename T>
+struct std::hash<std::vector<T>> {
+   std::size_t operator()(const std::vector<T>& v) const {
+      std::size_t res = v.size();
+      for (auto& i : v) {
+         HashCombine(res, i);
+      }
+      return res;
+   }
+};
+
+template<>
+struct std::hash<pbe::ShaderDesc> {
+   std::size_t operator()(const pbe::ShaderDesc& v) const {
+      std::size_t res = 0;
+      HashCombine(res, v.entryPoint);
+      HashCombine(res, v.path);
+      HashCombine(res, v.type);
+      HashCombine(res, *(std::vector<D3D_SHADER_MACRO>*) & v.defines);
+      return res;
+   }
+};
+
+template<>
+struct std::hash<pbe::ProgramDesc> {
+   std::size_t operator()(const pbe::ProgramDesc& v) const {
+      std::size_t res = 0;
+      HashCombine(res, v.vs);
+      HashCombine(res, v.hs);
+      HashCombine(res, v.ds);
+      HashCombine(res, v.ps);
+
+      HashCombine(res, v.cs);
+      return res;
+   }
+};
+
 namespace pbe {
 
    size_t StrHash(std::string_view str) {
@@ -95,9 +161,9 @@ namespace pbe {
       }
    }
 
-   Shader::Shader(ShaderDesc& desc) : desc(desc) {}
+   Shader::Shader(const ShaderDesc& desc) : desc(desc) {}
 
-   Ref<Shader> ShaderCompile(ShaderDesc& desc) {
+   static Ref<Shader> ShaderCompile(const ShaderDesc& desc) {
       if (desc.path.empty()) {
          return {};
       }
@@ -171,7 +237,7 @@ namespace pbe {
       return compiled;
    }
 
-   Ref<GpuProgram> GpuProgram::Create(ProgramDesc& desc) {
+   Ref<GpuProgram> GpuProgram::Create(const ProgramDesc& desc) {
       return Ref<GpuProgram>::Create(desc);
    }
 
@@ -328,12 +394,30 @@ namespace pbe {
       return (!vs || vs->Valid()) && (!hs || hs->Valid()) && (!ds || ds->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
    }
 
-   GpuProgram::GpuProgram(ProgramDesc& desc) : desc(desc) {
+   GpuProgram::GpuProgram(const ProgramDesc& desc) : desc(desc) {
       vs = ShaderCompile(desc.vs);
       hs = ShaderCompile(desc.hs);
       ds = ShaderCompile(desc.ds);
       ps = ShaderCompile(desc.ps);
       cs = ShaderCompile(desc.cs);
+   }
+
+   // static std::unordered_map<S, Ref<GpuProgram>> sGpuPrograms;
+   static std::unordered_map<ProgramDesc, Ref<GpuProgram>> sGpuPrograms;
+
+   GpuProgram* GetGpuProgram(const ProgramDesc& desc) {
+      auto it = sGpuPrograms.find(desc);
+      if (it == sGpuPrograms.end()) {
+         auto program = GpuProgram::Create(desc);
+         sGpuPrograms[desc] = program;
+         return program.Raw();
+      }
+
+      return it->second.Raw();
+   }
+
+   void TermGpuPrograms() {
+      sGpuPrograms.clear();
    }
 
 }

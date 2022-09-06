@@ -15,11 +15,11 @@
 namespace pbe {
 
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
-   CVarValue<bool> applyFog{ "render/apply fog", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
-   CVarSlider<int> fogNSteps{ "render/fog/nSteps", 8, 0, 128 };
+   CVarValue<bool> applyFog{ "render/fog/enable", true };
+   CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 32.f, 0.f, 64.f };
@@ -67,22 +67,6 @@ namespace pbe {
 
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsHsDsPs("water.hlsl", "waterVS", "waterHS", "waterDS", "waterPS");
-      waterPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-      programDesc.ps.defines.AddDefine("DECAL");
-      baseDecal = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::Cs("ssao.cs", "main");
-      ssaoPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::Cs("fog.cs", "main");
-      fogPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::Cs("tonemap.cs", "main");
-      tonemapPass = GpuProgram::Create(programDesc);
 
       mesh = Mesh::Create(MeshGeomCube());
    }
@@ -351,6 +335,8 @@ namespace pbe {
 
                cmd.SetRenderTargets();
 
+               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.cs", "main"));
+
                ssaoPass->Activate(cmd);
 
                ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
@@ -434,6 +420,7 @@ namespace pbe {
             context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
             context->IASetInputLayout(nullptr);
 
+            auto waterPass = GetGpuProgram(ProgramDesc::VsHsDsPs("water.hlsl", "waterVS", "waterHS", "waterDS", "waterPS"));
             waterPass->Activate(cmd);
 
             waterPass->SetSRV(cmd, "gWaves", *waterWaves);
@@ -467,6 +454,8 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
+            auto fogPass = GetGpuProgram(ProgramDesc::Cs("fog.cs", "main"));
+
             fogPass->Activate(cmd);
 
             fogPass->SetSRV(cmd, "gLights", *lightBuffer);
@@ -487,6 +476,8 @@ namespace pbe {
          PROFILE_GPU("Tonemap");
 
          cmd.SetRenderTargets();
+
+         auto tonemapPass = GetGpuProgram(ProgramDesc::Cs("tonemap.cs", "main"));
 
          tonemapPass->Activate(cmd);
 

@@ -50,6 +50,7 @@ namespace pbe {
    }
 
    void Application::OnTerm() {
+      TermGpuPrograms();
       layerStack.Clear();
 
       ImGui::DestroyContext();

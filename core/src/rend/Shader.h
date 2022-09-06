@@ -37,6 +37,23 @@ namespace pbe {
          }
          push_back({});
       }
+
+      friend bool operator==(const ShaderDefines& lhs, const ShaderDefines& rhs) {
+         if (lhs.size() != rhs.size()) {
+            return false;
+         }
+         // last define always null
+         for (int i = 0; i < (int)lhs.size() - 1; ++i) {
+            auto& l = lhs[i];
+            auto& r = rhs[i];
+
+            if (strcmp(l.Name, r.Name) != 0 || strcmp(l.Definition, r.Definition) == 0) {
+               return false;
+            }
+         }
+
+         return true;
+      }
    };
 
    enum class ShaderType {
@@ -57,11 +74,13 @@ namespace pbe {
       ShaderDesc() = default;
       ShaderDesc(const std::string& path, const std::string& entry_point, ShaderType type) : path(path),
          entryPoint(entry_point), type(type) {}
+
+      friend bool operator==(ShaderDesc const& lhs, ShaderDesc const& rhs) = default;
    };
 
    class Shader : public RefCounted {
    public:
-      Shader(ShaderDesc& desc);
+      Shader(const ShaderDesc& desc);
 
       bool Valid() const { return compiled; }
 
@@ -88,6 +107,8 @@ namespace pbe {
       ShaderDesc ps;
 
       ShaderDesc cs;
+
+      friend bool operator==(ProgramDesc const& lhs, ProgramDesc const& rhs) = default;
 
       // todo:
       // ShaderDefines defines;
@@ -121,7 +142,7 @@ namespace pbe {
 
    class GpuProgram : public RefCounted {
    public:
-      static Ref<GpuProgram> Create(ProgramDesc& desc);
+      static Ref<GpuProgram> Create(const ProgramDesc& desc);
 
       void Activate(CommandList& cmd);
 
@@ -163,7 +184,7 @@ namespace pbe {
    private:
       friend Ref<GpuProgram>;
 
-      GpuProgram(ProgramDesc& desc);
+      GpuProgram(const ProgramDesc& desc);
    };
 
    // class GraphicsProgram : public GpuProgram {
@@ -173,5 +194,8 @@ namespace pbe {
    // class ComputeProgram : public GpuProgram {
    // public:
    // };
+
+   GpuProgram* GetGpuProgram(const ProgramDesc& desc);
+   void TermGpuPrograms();
 
 }
