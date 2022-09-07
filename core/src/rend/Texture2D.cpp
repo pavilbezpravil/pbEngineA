@@ -62,7 +62,20 @@ namespace pbe {
       desc.format = dxDesc.Format;
    }
 
-   Texture2D::Texture2D(Desc& desc) : GPUResource(nullptr), desc(desc) {
+   Texture2D::Texture2D(Desc& _desc) : GPUResource(nullptr), desc(_desc) {
+      // todo: calc Mips
+      if (desc.mips == 0) {
+         int2 size = desc.size;
+         int nMips = 0;
+
+         while (size.x > 0 || size.y > 0) {
+            size /= 2;
+            nMips++;
+         }
+
+         desc.mips = nMips;
+      }
+
       D3D11_TEXTURE2D_DESC dxDesc{};
 
       dxDesc.Width = desc.size.x;
@@ -98,6 +111,21 @@ namespace pbe {
 
          pDevice->CreateShaderResourceView(pTexture, &dxSrv, srv.GetAddressOf());
          // pDevice->CreateShaderResourceView(pTexture, NULL, srv.GetAddressOf());
+
+         if (desc.mips != 1) {
+            int nMips = desc.mips;
+            mipsSrv.resize(nMips);
+
+            for (int iMip = 0; iMip < nMips; ++iMip) {
+               D3D11_SHADER_RESOURCE_VIEW_DESC dxSrv{};
+               dxSrv.Format = FormatToSrv(desc.format);
+               dxSrv.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+               dxSrv.Texture2D.MipLevels = 1;
+               dxSrv.Texture2D.MostDetailedMip = iMip;
+
+               pDevice->CreateShaderResourceView(pTexture, &dxSrv, mipsSrv[iMip].GetAddressOf());
+            }
+         }
       }
       if (desc.bindFlags & D3D11_BIND_DEPTH_STENCIL) {
          D3D11_DEPTH_STENCIL_VIEW_DESC dxDsv{};
@@ -110,6 +138,20 @@ namespace pbe {
       }
       if (desc.bindFlags & D3D11_BIND_UNORDERED_ACCESS) {
          pDevice->CreateUnorderedAccessView(pTexture, NULL, uav.GetAddressOf());
+
+         if (desc.mips != 1) {
+            int nMips = desc.mips;
+            mipsUav.resize(nMips);
+
+            for (int iMip = 0; iMip < nMips; ++iMip) {
+               D3D11_UNORDERED_ACCESS_VIEW_DESC dxSrv{};
+               dxSrv.Format = desc.format;
+               dxSrv.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+               dxSrv.Texture2D.MipSlice = iMip;
+
+               pDevice->CreateUnorderedAccessView(pTexture, &dxSrv, mipsUav[iMip].GetAddressOf());
+            }
+         }
       }
 
       pResource = pTexture;

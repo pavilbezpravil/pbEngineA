@@ -25,6 +25,9 @@ namespace pbe {
       ID3D11Texture2D* GetTexture2D() { return (ID3D11Texture2D*)pResource.Get(); }
       Desc GetDesc() const;
 
+      ID3D11ShaderResourceView* GetMipSrv(int iMip) { return mipsSrv[iMip].Get(); }
+      ID3D11UnorderedAccessView* GetMipUav(int iMip) { return mipsUav[iMip].Get(); }
+
       ComPtr<ID3D11RenderTargetView> rtv;
       ComPtr<ID3D11DepthStencilView> dsv;
 
@@ -33,6 +36,9 @@ namespace pbe {
 
       Texture2D(ID3D11Texture2D* pTexture);
       Texture2D(Desc& desc);
+
+      std::vector<ComPtr<ID3D11ShaderResourceView>> mipsSrv;
+      std::vector<ComPtr<ID3D11UnorderedAccessView>> mipsUav;
 
       Desc desc;
    };

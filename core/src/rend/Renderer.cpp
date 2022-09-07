@@ -15,6 +15,7 @@
 namespace pbe {
 
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
+   CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
@@ -278,11 +279,11 @@ namespace pbe {
 
       // todo:
       auto ResetCS_SRV_UAV = [&] {
-         ID3D11ShaderResourceView* views[] = { nullptr };
-         cmd.pContext->CSSetShaderResources(0, 1, views);
+         ID3D11ShaderResourceView* viewsSRV[] = { nullptr, nullptr };
+         cmd.pContext->CSSetShaderResources(0, _countof(viewsSRV), viewsSRV);
 
-         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-         cmd.pContext->CSSetUnorderedAccessViews(0, 1, viewsUAV, nullptr);
+         ID3D11UnorderedAccessView* viewsUAV[] = { nullptr, nullptr };
+         cmd.pContext->CSSetUnorderedAccessViews(0, _countof(viewsUAV), viewsUAV, nullptr);
       };
 
       if (rayTracingSceneRender) {
@@ -454,12 +455,38 @@ namespace pbe {
             auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "main"));
             linearizeDepthPass->Activate(cmd);
 
-            linearizeDepthPass->SetSRV(cmd, "gDepthRaw", *cameraContext.depth);
-            linearizeDepthPass->SetUAV(cmd, "gDepth", *cameraContext.linearDepth);
+            linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+            linearizeDepthPass->SetUAV(cmd, "gDepthOut", cameraContext.linearDepth->GetMipUav(0));
 
             linearizeDepthPass->Dispatch(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
+         }
+
+         if (depthDownsampleEnable) {
+            GPU_MARKER("Downsample Depth");
+            PROFILE_GPU("Downsample  Depth");
+
+            cmd.SetRenderTargets();
+
+            auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "downsampleDepth"));
+            downsampleDepthPass->Activate(cmd);
+
+            auto& texture = cameraContext.linearDepth;
+
+            int nMips = texture->GetDesc().mips;
+            int2 size = texture->GetDesc().size;
+
+            for (int iMip = 0; iMip < nMips - 1; ++iMip) {
+               size /= 2;
+
+               downsampleDepthPass->SetSRV(cmd, "gDepth", texture->GetMipSrv(iMip));
+               downsampleDepthPass->SetUAV(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
+
+               downsampleDepthPass->Dispatch(cmd, size, int2{ 8 });
+
+               ResetCS_SRV_UAV();
+            }
          }
 
          if (applyFog) {

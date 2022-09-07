@@ -93,8 +93,11 @@ namespace pbe {
 
             texDesc.name = "scene linear depth";
             texDesc.format = DXGI_FORMAT_R16_FLOAT;
+            texDesc.mips = 0;
             texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
             cameraContext.linearDepth = Texture2D::Create(texDesc);
+
+            texDesc.mips = 1;
 
             // texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
             // texDesc.name = "scene depth copy";
@@ -146,6 +149,28 @@ namespace pbe {
       }
 
       ImGui::End();
+
+      {
+         ImGui::Begin("Texture View");
+
+         auto texture = cameraContext.linearDepth;
+
+         const auto& desc = texture->GetDesc();
+         ImGui::Text("%s (%dx%d, %d)", desc.name.c_str(), desc.size.x, desc.size.y, desc.mips);
+
+         static int iMip = 0;
+         ImGui::SliderInt("mip", &iMip, 0, texture->GetDesc().mips - 1);
+         ImGui::SameLine();
+
+         int d = 1 << iMip;
+         ImGui::Text("mip size (%dx%d)", desc.size.x / d, desc.size.y / d);
+
+         auto imSize = ImGui::GetContentRegionAvail();
+         auto srv = texture->GetMipSrv(iMip);
+         ImGui::Image(srv, imSize);
+
+         ImGui::End();
+      }
    }
 
    void ViewportWindow::OnUpdate(float dt) {

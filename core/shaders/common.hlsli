@@ -48,6 +48,14 @@ float max4(float4 v) {
   return max(max2(v.xy), max2(v.zw));
 }
 
+float max4(float v1, float v2, float v3, float v4) {
+  return max(max(v1, v2), max(v3, v4));
+}
+
+float min4(float v1, float v2, float v3, float v4) {
+  return max(min(v1, v2), min(v3, v4));
+}
+
 float ComponentSum(float4 v) {
   return v.x + v.y + v.z + v.w;
 }

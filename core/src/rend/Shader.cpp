@@ -313,7 +313,7 @@ namespace pbe {
       }
    }
 
-   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource) {
+   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv) {
       size_t id = StrHash(name);
 
       if (vs) {
@@ -322,7 +322,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, &srv);
          }
       }
       if (hs) {
@@ -331,7 +331,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->HSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+            cmd.pContext->HSSetShaderResources(bi.BindPoint, 1, &srv);
          }
       }
       if (ds) {
@@ -340,7 +340,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->DSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+            cmd.pContext->DSSetShaderResources(bi.BindPoint, 1, &srv);
          }
       }
       if (ps) {
@@ -349,7 +349,7 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, &srv);
          }
       }
 
@@ -359,12 +359,16 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->CSSetShaderResources(bi.BindPoint, 1, resource.srv.GetAddressOf());
+            cmd.pContext->CSSetShaderResources(bi.BindPoint, 1, &srv);
          }
       }
    }
 
-   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource) {
+   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource) {
+      SetSRV(cmd, name, resource.srv.Get());
+   }
+
+   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav) {
       size_t id = StrHash(name);
 
       if (cs) {
@@ -373,9 +377,13 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, resource.uav.GetAddressOf(), nullptr);
+            cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, &uav, nullptr);
          }
       }
+   }
+
+   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource) {
+      SetUAV(cmd, name, resource.uav.Get());
    }
 
    void GpuProgram::DrawInstanced(CommandList& cmd, int vertCount, int instCount, int startVert) {
