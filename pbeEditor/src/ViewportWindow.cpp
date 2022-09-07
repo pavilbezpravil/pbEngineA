@@ -6,6 +6,8 @@
 #include "ImGuizmo.h"
 #include "app/Input.h"
 #include "rend/Renderer.h"
+#include "rend/RendRes.h"
+
 
 namespace pbe {
 
@@ -61,6 +63,8 @@ namespace pbe {
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+
+      CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
@@ -133,7 +137,6 @@ namespace pbe {
             camera.projection = glm::perspectiveFov(90.f / (180) * PI, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
          }
 
-         CommandList cmd{ sDevice->g_pd3dDeviceContext };
          cmd.SetCommonSamplers();
          if (scene) {
             renderer->RenderScene(cmd, *scene, camera, cameraContext);
@@ -167,7 +170,18 @@ namespace pbe {
 
          auto imSize = ImGui::GetContentRegionAvail();
          auto srv = texture->GetMipSrv(iMip);
+
+         // todo: hack. lambda with capture cant be passed as function pointer
+         using dx11ContextType = decltype(cmd.pContext);
+         static dx11ContextType sCtx = cmd.pContext;
+         auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
+            sCtx->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
+         };
+         // cmd.SetCommonSamplers(); // todo:
+
+         ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
          ImGui::Image(srv, imSize);
+         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
 
          ImGui::End();
       }
