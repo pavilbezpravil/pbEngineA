@@ -5,11 +5,15 @@
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "app/Input.h"
+#include "core/CVar.h"
 #include "rend/Renderer.h"
 #include "rend/RendRes.h"
 
 
 namespace pbe {
+
+   CVarValue<bool> zoomEnable{ "zoom/enable", false };
+   CVarSlider<float> zoomScale{ "zoom/scale", 0.2f, 0.f, 1.f };
 
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
       renderer.reset(new Renderer());
@@ -69,6 +73,12 @@ namespace pbe {
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
+
+      // todo: hack. lambda with capture cant be passed as function pointer
+      static auto sCtx = cmd.pContext;
+      auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
+         sCtx->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
+      };
 
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
@@ -147,12 +157,34 @@ namespace pbe {
          }
          cmd.pContext->ClearState(); // todo:
 
-         auto gizmoCursorPos = ImGui::GetCursorScreenPos();
+         vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
          Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
-         ImGui::Image(sceneRTs[item_current]->srv.Get(), imSize);
+         auto srv = sceneRTs[item_current]->srv.Get();
 
-         Gizmo(imSize, gizmoCursorPos);
+         ImGui::Image(srv, imSize);
+
+         if (zoomEnable) {
+            ImGui::BeginTooltip();
+
+            vec2 zoomImageSize{300, 300};
+
+            vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+
+            vec2 uvCenter = (mousePos - cursorPos) / vec2{ imSize.x, imSize.y};
+            vec2 uvScale{ zoomScale / 2.f };
+
+            vec2 uv0 = uvCenter - uvScale;
+            vec2 uv1 = uvCenter + uvScale;
+
+            ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
+            ImGui::Image(srv, { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
+            ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+            ImGui::EndTooltip();
+         }
+
+         Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
       }
 
       ImGui::End();
@@ -174,14 +206,6 @@ namespace pbe {
 
          auto imSize = ImGui::GetContentRegionAvail();
          auto srv = texture->GetMipSrv(iMip);
-
-         // todo: hack. lambda with capture cant be passed as function pointer
-         using dx11ContextType = decltype(cmd.pContext);
-         static dx11ContextType sCtx = cmd.pContext;
-         auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
-            sCtx->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
-         };
-         // cmd.SetCommonSamplers(); // todo:
 
          ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
          ImGui::Image(srv, imSize);
@@ -281,7 +305,7 @@ namespace pbe {
       // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
    }
 
-   void ViewportWindow::Gizmo(const ImVec2& contentRegion, const ImVec2& cursorPos) {
+   void ViewportWindow::Gizmo(const vec2& contentRegion, const vec2& cursorPos) {
       auto selectedEntity = selection->FirstSelected();
       if (!selectedEntity.Valid()) {
          return;

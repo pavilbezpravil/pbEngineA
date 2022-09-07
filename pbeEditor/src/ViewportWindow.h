@@ -24,7 +24,7 @@ namespace pbe {
       void OnImGuiRender() override;
       void OnUpdate(float dt) override;
 
-      void Gizmo(const ImVec2& contentRegion, const ImVec2& cursorPos);
+      void Gizmo(const vec2& contentRegion, const vec2& cursorPos);
 
       Scene* scene{};
       EditorSelection* selection{};
