@@ -28,7 +28,12 @@ float3 GetWorldPositionFromDepth(float2 uv, float depth, float4x4 invViewProject
 	return (wp / wp.w).xyz;
 }
 
+// todo:
 float pow2(float v) {
+   return v * v;
+}
+
+float Square(float v) {
    return v * v;
 }
 

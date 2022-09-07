@@ -94,9 +94,9 @@ HullOutputType waterHS(InputPatch<VsOut, 4> patch, uint pointId : SV_OutputContr
 
 struct PixelInputType {
     float3 posW : POS_W;
+    float3 normalW : NORMAL_W;
     float4 posH : SV_POSITION;
 };
-
 
 StructuredBuffer<WaveData> gWaves;
 
@@ -115,21 +115,32 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    float3 displacement = 0;
 
+   float3 tangent = float3(1, 0, 0);
+   float3 binormal = float3(0, 0, 1);
+
    for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
 
-      float theta = wave.magnitude * dot(wave.direction, posW.xz) - wave.frequency * time + wave.phase;
+      float2 d = wave.direction;
+      float theta = wave.magnitude * dot(d, posW.xz) - wave.frequency * time + wave.phase;
 
       float2 sin_cos;
       sincos(theta, sin_cos.x, sin_cos.y);
 
-      displacement.y += sin_cos.x * wave.amplitude;
-      displacement.xz += sin_cos.y * wave.direction * wave.steepness * wave.amplitude;
+      float3 offset = wave.amplitude;
+      offset.xz *= d * wave.steepness * wave.amplitude;
+
+      displacement += offset * float3(sin_cos.y, sin_cos.x, sin_cos.y);
+
+      float3 derivative = wave.magnitude * offset * float3(-sin_cos.x, sin_cos.y, -sin_cos.x);
+      tangent += derivative * d.x;
+      binormal += derivative * d.y;
    }
 
    posW += displacement;
 
    output.posW = posW;
+   output.normalW = normalize(cross(binormal, tangent));
    output.posH = mul(float4(posW, 1), gCamera.viewProjection);
 
    return output;
@@ -138,6 +149,9 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 struct PsOut {
    float4 color : SV_Target0;
 };
+
+Texture2D<float3> gDepth;
+Texture2D<float3> gRefraction;
 
 float WaterFresnel(float dotNV) {
 	float ior = 1.33f;
@@ -148,24 +162,39 @@ float WaterFresnel(float dotNV) {
 }
 
 PsOut waterPS(PixelInputType input) : SV_TARGET {
-   // float2 screenUV = input.posH.xy / gCamera.rtSize;
+   float2 screenUV = input.posH.xy / gCamera.rtSize;
 
-   // float3 normalW = normalize(input.normalW);
-   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
    float3 posW = input.posW;
+   float3 normalW = normalize(input.normalW);
+   if (gScene.waterPixelNormals > 0) {
+      normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+   }
 
-   float3 V = normalize(gCamera.position - posW);
-
-   float3 color = 0;
+   float3 toCamera = gCamera.position - posW;
+   float3 V = normalize(toCamera);
 
    float3 reflectionDirection = reflect(-V, normalW);
+   float3 reflectionColor = GetSkyColor(reflectionDirection);
+
+   float3 refractionColor = gRefraction.Sample(gSamplerLinear, screenUV);
+   
+   float waterDepth = length(toCamera);
+
+   float3 scenePosW = GetWorldPositionFromDepth(screenUV, gDepth.Sample(gSamplerPoint, screenUV), gCamera.invViewProjection);
+   float sceneDepth = length(gCamera.position - scenePosW);
+
+   float underwaterLength = sceneDepth - waterDepth;
+
+   float3 fogColor = float3(21, 95, 179) / 256;
+   float fogExp = 1 - exp(-underwaterLength);
+   float3 underwaterColor = lerp(refractionColor, fogColor, fogExp);
 
    // float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
    float fresnel = WaterFresnel(dot(normalW, V));
+   float3 color = lerp(underwaterColor, reflectionColor, fresnel);
 
-   float3 waterColor = float3(21, 95, 179) / 256;
-   color = lerp(waterColor, GetSkyColor(reflectionDirection), fresnel);
-   // color = fresnel;
+   float softZ = exp(-underwaterLength * 10);
+   color = lerp(color, refractionColor, softZ);
 
    // color = normalW;
 

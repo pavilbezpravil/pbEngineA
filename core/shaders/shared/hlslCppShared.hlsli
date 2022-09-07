@@ -70,9 +70,9 @@ struct SSceneCB {
 
    // todo:
    float waterTessFactor;
-   float _sdfsdf32r;
    float waterPatchSize;
    int waterPatchCount;
+   int waterPixelNormals;
 
    int nWaves;
    int fogNSteps;

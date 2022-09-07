@@ -14,7 +14,7 @@
 namespace pbe {
 
    CVarValue<bool> zoomEnable{ "zoom/enable", false };
-   CVarSlider<float> zoomScale{ "zoom/scale", 0.2f, 0.f, 1.f };
+   CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
 
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
       renderer.reset(new Renderer());
@@ -104,11 +104,19 @@ namespace pbe {
             // texDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM; // todo: test srgb
             cameraContext.colorLDR = Texture2D::Create(texDesc);
 
+            texDesc.name = "water refraction";
+            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.waterRefraction = Texture2D::Create(texDesc);
+
             texDesc.name = "scene depth";
             // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
             texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
             texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
             cameraContext.depth = Texture2D::Create(texDesc);
+
+            texDesc.name = "scene depth without water";
+            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+            cameraContext.depthWithoutWater = Texture2D::Create(texDesc);
 
             texDesc.name = "scene linear depth";
             texDesc.format = DXGI_FORMAT_R16_FLOAT;

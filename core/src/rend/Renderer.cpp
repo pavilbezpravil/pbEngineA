@@ -23,10 +23,12 @@ namespace pbe {
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
+   CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
    CVarSlider<int> waterPatchCount{ "render/water/patch count", 32, 1, 64 };
    CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 1, 64 };
+   CVarSlider<float> waterMinWavelength{ "render/water/wavelength max", 4.f, 0.1f, 64.f };
    CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.1f, 64.f };
    CVarSlider<float> waterWavelengthAmplitudeRatio{ "render/water/wavelength-amplitude ratio", 100.f, 10.0f, 300.f };
    CVarTrigger waterRecreateWaves{ "render/water/recreate waves" };
@@ -222,6 +224,7 @@ namespace pbe {
       sceneCB.waterTessFactor = waterTessFactor;
       sceneCB.waterPatchSize = waterPatchSize;
       sceneCB.waterPatchCount = waterPatchCount;
+      sceneCB.waterPixelNormals = waterPixelNormal;
 
       sceneCB.directLight.color = {};
       sceneCB.directLight.direction = vec3{1, 0, 0};
@@ -372,6 +375,14 @@ namespace pbe {
          }
 
          {
+            {
+               GPU_MARKER("Water Refraction");
+               PROFILE_GPU("Water Refraction");
+
+               cmd.CopyResource(*cameraContext.waterRefraction, *cameraContext.colorHDR);
+               cmd.CopyResource(*cameraContext.depthWithoutWater, *cameraContext.depth);
+            }
+
             GPU_MARKER("Water");
             PROFILE_GPU("Water");
 
@@ -384,7 +395,7 @@ namespace pbe {
 
                   // shallow water v = sqrt(g * h)
                   // deep water v = sqrt((g * wavelength) / PI2)
-                  float wavelength = Random::Uniform(0.f, waterMaxWavelength);
+                  float wavelength = Random::Uniform(waterMinWavelength, waterMaxWavelength);
                   float g = 9.8f;
                   float speed = sqrt((g * wavelength) / PI2);
 
@@ -419,6 +430,8 @@ namespace pbe {
             auto waterPass = GetGpuProgram(ProgramDesc::VsHsDsPs("water.hlsl", "waterVS", "waterHS", "waterDS", "waterPS"));
             waterPass->Activate(cmd);
 
+            waterPass->SetSRV(cmd, "gDepth", *cameraContext.depthWithoutWater);
+            waterPass->SetSRV(cmd, "gRefraction", *cameraContext.waterRefraction);
             waterPass->SetSRV(cmd, "gWaves", *waterWaves);
             waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);
          }

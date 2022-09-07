@@ -45,8 +45,10 @@ namespace pbe {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> colorLDR;
       Ref<Texture2D> depth;
+      Ref<Texture2D> depthWithoutWater;
       Ref<Texture2D> linearDepth;
       Ref<Texture2D> depthCopy;
+      Ref<Texture2D> waterRefraction;
       Ref<Texture2D> normal;
       Ref<Texture2D> position;
       Ref<Texture2D> ssao;
