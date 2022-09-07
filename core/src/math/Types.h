@@ -21,6 +21,10 @@ namespace pbe {
       return radians * 180.f / PI;
    }
 
+   using bool2 = glm::bvec2;
+   using bool3 = glm::bvec3;
+   using bool4 = glm::bvec4;
+
    using glm::vec2;
    using glm::vec3;
    using glm::vec4;
@@ -63,6 +67,30 @@ namespace pbe {
    constexpr vec3 vec4_WNeg = vec4(0, 0, 0, -1);
 
    constexpr quat quat_Identity = quat(1, 0, 0, 0);
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator<(const glm::ivec2& lhs, const glm::ivec2& rhs) {
+      return glm::lessThan(lhs, rhs);
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator>(const glm::ivec2& lhs, const glm::ivec2& rhs) {
+      return glm::greaterThan(lhs, rhs);
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator<(const glm::vec2& lhs, const glm::vec2& rhs) {
+      return glm::lessThan(lhs, rhs);
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator>(const glm::vec2& lhs, const glm::vec2& rhs) {
+      return glm::greaterThan(lhs, rhs);
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool3 operator<(const vec3& lhs, const vec3& rhs) {
+      return glm::lessThan(lhs, rhs);
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool3 operator>(const vec3& lhs, const vec3& rhs) {
+      return glm::greaterThan(lhs, rhs);
+   }
 
 }
 

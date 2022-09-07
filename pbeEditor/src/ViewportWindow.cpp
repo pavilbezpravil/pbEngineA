@@ -8,6 +8,7 @@
 #include "core/CVar.h"
 #include "rend/Renderer.h"
 #include "rend/RendRes.h"
+#include "math/Types.h"
 
 
 namespace pbe {
@@ -165,23 +166,26 @@ namespace pbe {
          ImGui::Image(srv, imSize);
 
          if (zoomEnable) {
-            ImGui::BeginTooltip();
-
             vec2 zoomImageSize{300, 300};
 
             vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
 
             vec2 uvCenter = (mousePos - cursorPos) / vec2{ imSize.x, imSize.y};
-            vec2 uvScale{ zoomScale / 2.f };
 
-            vec2 uv0 = uvCenter - uvScale;
-            vec2 uv1 = uvCenter + uvScale;
+            if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
+               vec2 uvScale{ zoomScale / 2.f };
 
-            ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
-            ImGui::Image(srv, { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
-            ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+               vec2 uv0 = uvCenter - uvScale;
+               vec2 uv1 = uvCenter + uvScale;
 
-            ImGui::EndTooltip();
+               ImGui::BeginTooltip();
+
+               ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
+               ImGui::Image(srv, { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
+               ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+               ImGui::EndTooltip();
+            }
          }
 
          Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
