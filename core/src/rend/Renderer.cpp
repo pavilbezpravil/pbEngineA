@@ -23,8 +23,7 @@ namespace pbe {
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
-   CVarSlider<float> waterTessFactorEdge{ "render/water/tess factor edge", 32.f, 0.f, 64.f };
-   CVarSlider<float> waterTessFactorInside{ "render/water/tess factor inside", 32.f, 0.f, 64.f };
+   CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
    CVarSlider<int> waterPatchCount{ "render/water/patch count", 32, 1, 64 };
    CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 1, 64 };
@@ -220,8 +219,7 @@ namespace pbe {
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
 
-      sceneCB.tessFactorEdge = waterTessFactorEdge;
-      sceneCB.tessFactorInside = waterTessFactorInside;
+      sceneCB.waterTessFactor = waterTessFactor;
       sceneCB.waterPatchSize = waterPatchSize;
       sceneCB.waterPatchCount = waterPatchCount;
 

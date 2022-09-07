@@ -54,6 +54,10 @@ namespace pbe {
       ImGui::SameLine();
       ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
 
+      static bool textureViewWindow = false;
+      ImGui::Checkbox("Texture View Window", &textureViewWindow);
+      ImGui::SameLine();
+
       ImGui::Checkbox("Super Sampling", &cfg.superSampling);
 
       renderer->cfg = cfg;
@@ -153,7 +157,7 @@ namespace pbe {
 
       ImGui::End();
 
-      {
+      if (textureViewWindow && cameraContext.linearDepth) {
          ImGui::Begin("Texture View");
 
          auto texture = cameraContext.linearDepth;

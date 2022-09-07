@@ -60,21 +60,14 @@ ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint p
    ConstantOutputType output;
 
    float3 cameraPos = gCamera.position;
+   float s = gScene.waterTessFactor * gScene.waterPatchSize;
 
-   float3 patchCenter = (patch[0].posW 
-                       + patch[1].posW
-                       + patch[2].posW
-                       + patch[3].posW) / 4;
-   float distance = length(patchCenter - cameraPos);
+   output.edges[0] = s / length((patch[0].posW + patch[2].posW) / 2 - cameraPos);
+   output.edges[1] = s / length((patch[0].posW + patch[1].posW) / 2 - cameraPos);
+   output.edges[2] = s / length((patch[1].posW + patch[3].posW) / 2 - cameraPos);
+   output.edges[3] = s / length((patch[2].posW + patch[3].posW) / 2 - cameraPos);
 
-   float tessellationAmount = gScene.tessFactorEdge / distance * 10;
-
-   output.edges[0] = tessellationAmount;
-   output.edges[1] = tessellationAmount;
-   output.edges[2] = tessellationAmount;
-   output.edges[3] = tessellationAmount;
-
-   output.inside[0] = gScene.tessFactorInside / distance * 10;
+   output.inside[0] = max4(output.edges[0], output.edges[1], output.edges[2], output.edges[3]);
    output.inside[1] = output.inside[0];
 
    return output;

@@ -69,8 +69,8 @@ struct SSceneCB {
    float4x4 toShadowSpace;
 
    // todo:
-   float tessFactorEdge;
-   float tessFactorInside;
+   float waterTessFactor;
+   float _sdfsdf32r;
    float waterPatchSize;
    int waterPatchCount;
 
