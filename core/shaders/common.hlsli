@@ -41,6 +41,25 @@ float lengthSq(float3 v) {
   return dot(v, v);
 }
 
+float Lerp(float a, float b, float t, bool doClamp = false) {
+   if (doClamp) {
+      t = saturate(t);
+   }
+   return a + (b - a) * t;
+}
+
+float InvLerp(float a, float b, float v, bool doClamp = false) {
+   if (doClamp) {
+      v = clamp(v, a, b);
+   }
+   return (v - a)  / (b - a);
+}
+
+float Remap(float a, float b, float c, float d, float v, bool doClamp = false) {
+   float t = InvLerp(a, b, v, doClamp);
+   return Lerp(c, d, t);
+}
+
 float max2(float2 v) {
   return max(v.x, v.y);
 }

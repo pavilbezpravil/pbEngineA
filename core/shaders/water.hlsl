@@ -100,6 +100,40 @@ struct PixelInputType {
 
 StructuredBuffer<WaveData> gWaves;
 
+float SphericalMask(float3 p, float3 center, float radius, float fade) {
+   float dist = length(p - center);
+   return 1 - saturate((dist - radius) / fade);
+   // return Remap(radius, radius + fade, 1, 0, dist, true);
+}
+
+void GertsnerWave(WaveData wave, float3 posW, inout float3 displacement, inout float3 tangent, inout float3 binormal) {
+   float2 d = wave.direction;
+   float theta = wave.magnitude * dot(d, posW.xz) - wave.frequency * gScene.animationTime + wave.phase;
+
+   float2 sin_cos;
+   sincos(theta, sin_cos.x, sin_cos.y);
+
+   float3 offset = wave.amplitude;
+   offset.xz *= d * wave.steepness;
+
+   displacement += offset * float3(sin_cos.y, sin_cos.x, sin_cos.y);
+
+   float3 derivative = wave.magnitude * offset * float3(-sin_cos.x, sin_cos.y, -sin_cos.x);
+   tangent += derivative * d.x;
+   binormal += derivative * d.y;
+}
+
+void WaveParamFromWavelength(inout WaveData wave, float wavelength, float amplitude, float2 direction, float2 directionOffset) {
+   float k = 2 * PI / wavelength;
+   float c = sqrt(9.8 / k);
+
+   wave.magnitude = k;
+   // wave.frequency = c;
+   wave.frequency = 5;
+   wave.amplitude = amplitude;
+   // wave.direction = normalize(direction + directionOffset);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Domain Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,21 +154,32 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
+      GertsnerWave(wave, posW, displacement, tangent, binormal);
+   }
 
-      float2 d = wave.direction;
-      float theta = wave.magnitude * dot(d, posW.xz) - wave.frequency * time + wave.phase;
+   float3 center = 0;
+   float waveMask = SphericalMask(posW, center, 20, 20) * 0; // todo:
+   if (waveMask > 0) {
+      float2 direction = normalize(posW.xz - center.xz);
 
-      float2 sin_cos;
-      sincos(theta, sin_cos.x, sin_cos.y);
+      WaveData wave = (WaveData)0;
+      wave.steepness = 1;
+      wave.direction = normalize(posW.xz - center.xz);
 
-      float3 offset = wave.amplitude;
-      offset.xz *= d * wave.steepness * wave.amplitude;
+      WaveParamFromWavelength(wave, 1, 0.1 * waveMask, direction, rand1dTo2d(11));
+      GertsnerWave(wave, posW, displacement, tangent, binormal);
 
-      displacement += offset * float3(sin_cos.y, sin_cos.x, sin_cos.y);
+      // WaveParamFromWavelength(wave, 2, 0.1 * waveMask, direction, rand1dTo2d(12));
+      // GertsnerWave(wave, posW, displacement, tangent, binormal);
 
-      float3 derivative = wave.magnitude * offset * float3(-sin_cos.x, sin_cos.y, -sin_cos.x);
-      tangent += derivative * d.x;
-      binormal += derivative * d.y;
+      // WaveParamFromWavelength(wave, 4, 0.15 * waveMask, direction, rand1dTo2d(13));
+      // GertsnerWave(wave, posW, displacement, tangent, binormal);
+
+      // WaveParamFromWavelength(wave, 8, 0.15 * waveMask, direction, rand1dTo2d(14));
+      // GertsnerWave(wave, posW, displacement, tangent, binormal);
+
+      // WaveParamFromWavelength(wave, 16, 0.2 * waveMask, direction, rand1dTo2d(15));
+      // GertsnerWave(wave, posW, displacement, tangent, binormal);
    }
 
    posW += displacement;
@@ -190,7 +235,8 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    float3 underwaterColor = lerp(refractionColor, fogColor, fogExp);
 
    // float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
-   float fresnel = WaterFresnel(dot(normalW, V));
+   float fresnel = WaterFresnel(dot(normalW, V)); // todo: so few reflection on high angles
+   // fresnel = 1;
    float3 color = lerp(underwaterColor, reflectionColor, fresnel);
 
    float softZ = exp(-underwaterLength * 10);

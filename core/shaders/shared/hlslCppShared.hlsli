@@ -76,7 +76,8 @@ struct SSceneCB {
 
    int nWaves;
    int fogNSteps;
-   float2 _sdfsdg;
+   float exposition;
+   float _sdfsdg;
 };
 
 struct SCameraCB {

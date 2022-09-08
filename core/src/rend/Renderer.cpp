@@ -22,15 +22,17 @@ namespace pbe {
    CVarValue<bool> applyFog{ "render/fog/enable", true };
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
+   CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 1.f };
+
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
    CVarSlider<int> waterPatchCount{ "render/water/patch count", 32, 1, 64 };
-   CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 1, 64 };
-   CVarSlider<float> waterMinWavelength{ "render/water/wavelength max", 4.f, 0.1f, 64.f };
-   CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.1f, 64.f };
-   CVarSlider<float> waterWavelengthAmplitudeRatio{ "render/water/wavelength-amplitude ratio", 100.f, 10.0f, 300.f };
+   CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 0, 64 };
+   CVarSlider<float> waterMinWavelength{ "render/water/wavelength min", 1.f, 0.005f, 64.f };
+   CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.005f, 64.f };
+   CVarSlider<float> waterWavelengthAmplitudeRatio{ "render/water/wavelength-amplitude ratio", 150.f, 10.0f, 300.f };
    CVarTrigger waterRecreateWaves{ "render/water/recreate waves" };
 
    static mat4 NDCToTexSpaceMat4() {
@@ -225,6 +227,8 @@ namespace pbe {
       sceneCB.waterPatchSize = waterPatchSize;
       sceneCB.waterPatchCount = waterPatchCount;
       sceneCB.waterPixelNormals = waterPixelNormal;
+
+      sceneCB.exposition = tonemapExposition;
 
       sceneCB.directLight.color = {};
       sceneCB.directLight.direction = vec3{1, 0, 0};
