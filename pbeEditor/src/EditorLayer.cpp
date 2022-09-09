@@ -249,11 +249,11 @@ namespace pbe {
 
       ReloadDll();
 
+      AddEditorWindow(new ConfigVarsWindow("ConfigVars"), true);
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
-      AddEditorWindow(new ConfigVarsWindow("ConfigVars"), true);
 
       sceneHierarchyWindow->selection = &editorSelection;
       viewportWindow->selection = &editorSelection;
