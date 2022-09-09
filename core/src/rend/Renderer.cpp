@@ -408,7 +408,6 @@ namespace pbe {
                   wave.length = wavelength; // todo:
 
                   wave.magnitude = PI2 / wavelength;
-                  // wave.frequency = speed / wavelength;
                   wave.frequency = sqrt((g * PI2) / wavelength);
                   wave.phase = Random::Uniform(0.f, PI2);
                   wave.steepness = 1;

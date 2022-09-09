@@ -124,12 +124,8 @@ void GertsnerWave(WaveData wave, float3 posW, inout float3 displacement, inout f
 }
 
 void WaveParamFromWavelength(inout WaveData wave, float wavelength, float amplitude, float2 direction, float2 directionOffset) {
-   float k = 2 * PI / wavelength;
-   float c = sqrt(9.8 / k);
-
-   wave.magnitude = k;
-   // wave.frequency = c;
-   wave.frequency = 5;
+   wave.magnitude = 2 * PI / wavelength;
+   wave.frequency = sqrt(9.8 * wave.magnitude);
    wave.amplitude = amplitude;
    // wave.direction = normalize(direction + directionOffset);
 }
@@ -160,13 +156,21 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
    float3 center = 0;
    float waveMask = SphericalMask(posW, center, 20, 20) * 0; // todo:
    if (waveMask > 0) {
-      float2 direction = normalize(posW.xz - center.xz);
+      #if 1
+         float2 noisePos = posW.xz * 0.05;
+         float2 flow = float2(noise(noisePos), noise(noisePos + float2(102, 278))) * 2 - 1;
+         float A = length(flow);
+         float2 direction = normalize(flow);
+      #else
+         float2 direction = normalize(posW.xz - center.xz);
+         float A = 1;
+      #endif
 
       WaveData wave = (WaveData)0;
       wave.steepness = 1;
-      wave.direction = normalize(posW.xz - center.xz);
+      wave.direction = direction;
 
-      WaveParamFromWavelength(wave, 1, 0.1 * waveMask, direction, rand1dTo2d(11));
+      WaveParamFromWavelength(wave, 5, 0.4 * A * waveMask, direction, rand1dTo2d(11));
       GertsnerWave(wave, posW, displacement, tangent, binormal);
 
       // WaveParamFromWavelength(wave, 2, 0.1 * waveMask, direction, rand1dTo2d(12));
@@ -243,6 +247,13 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    color = lerp(color, refractionColor, softZ);
 
    // color = normalW;
+   // color = rand2dTo1d(posW.xz);
+   // color = noise(posW.xz);
+   // float2 noisePos = posW.xz * 0.2;
+   // float2 noise2 = float2(noise(noisePos), noise(noisePos + float2(102, 278))) * 2 - 1;
+   // // noise2 = normalize(noise2);
+   // float A = length(noise2);
+   // color = float3(noise2, 0);
 
    PsOut output = (PsOut)0;
    output.color.rgb = color;
