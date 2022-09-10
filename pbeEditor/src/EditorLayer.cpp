@@ -230,11 +230,26 @@ namespace pbe {
 
          ImGui::Text("Vars:");
 
-         for (const auto& configVar : configVars.configVars) {
-            configVar->UI();
-         }
+         CVarChilds(configVars.GetCVarsRoot());
 
          ImGui::End();
+      }
+
+      void CVarChilds(const ConfigVarsMng::CVarChilds& childs) {
+         if (childs.cvar) {
+            childs.cvar->UI();
+         } else {
+            for (const auto &child : childs.childs) {
+               if (child.IsLeaf()) {
+                  CVarChilds(child);
+               } else {
+                  if (ImGui::TreeNodeEx(child.folderName.c_str())) {
+                     CVarChilds(child);
+                     ImGui::TreePop();
+                  }
+               }
+            }
+         }
       }
    };
 

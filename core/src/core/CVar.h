@@ -6,20 +6,37 @@ namespace pbe {
 
    class CORE_API CVar {
    public:
-      CVar(std::string_view name);
+      CVar(std::string_view fullPath);
 
       virtual void UI() = 0;
       virtual void NextFrame() {}
 
    // private:
+      std::string fullPath;
       std::string name;
    };
 
    class CORE_API ConfigVarsMng {
    public:
+      struct CVarChilds {
+         std::string folderName;
+         CVar* cvar = nullptr;
+         std::vector<CVarChilds> childs;
+
+         bool IsLeaf() const { return childs.empty(); }
+      };
+
+      void AddCVar(CVar* cvar);
       void NextFrame();
 
+      const CVarChilds& GetCVarsRoot() const { return root; }
+
+      const std::vector<CVar*>& GetCVars() const { return configVars; }
+   private:
+      bool cvarsChanged = false;
+
       std::vector<CVar*> configVars;
+      CVarChilds root;
    };
 
    extern ConfigVarsMng CORE_API sConfigVarsMng;

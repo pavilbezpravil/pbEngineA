@@ -21,7 +21,7 @@ float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
   float2 shadowUV = shadowUVZ.xy + jitter;
   float z = shadowUVZ.z;
 
-  float bias = 0.01;
+  float bias = 0.003;
 
   if (0) {
     return gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias);
