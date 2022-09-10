@@ -7,7 +7,7 @@
 namespace pbe {
 
    void CommandList::UpdateSubresource(Buffer& buffer, const void* data, uint offset, size_t size) {
-      if (buffer.Valid() && size > 0) {
+      if (buffer.Valid() && size > 0 && data) {
          D3D11_BOX box{};
          box.left = offset;
          box.right = offset + (uint)size;

@@ -75,9 +75,6 @@ namespace pbe {
       auto bufferDesc = Buffer::Desc::Structured("under cursor buffer",
          underCursorSize, sizeof(uint), D3D11_BIND_UNORDERED_ACCESS);
       underCursorBuffer = Buffer::Create(bufferDesc);
-      bufferDesc = Buffer::Desc::StructuredReadback("under cursor buffer readback",
-         underCursorSize, sizeof(uint));
-      underCursorBufferReadback = Buffer::Create(bufferDesc);
 
       mesh = Mesh::Create(MeshGeomCube());
    }
@@ -651,17 +648,8 @@ namespace pbe {
    }
 
    uint Renderer::GetEntityIDUnderCursor(CommandList& cmd) {
-      cmd.CopyResource(*underCursorBufferReadback, *underCursorBuffer);
-
-      auto resource = underCursorBufferReadback->pResource.Get();
-
-      D3D11_MAPPED_SUBRESOURCE mapped;
-      cmd.pContext->Map(resource, 0, D3D11_MAP_READ, 0, &mapped);
-      uint* data = (uint*)mapped.pData;
-
-      uint entityID = *data;
-
-      cmd.pContext->Unmap(resource, 0);
+      uint entityID;
+      cmd.ReadbackBuffer(*underCursorBuffer, 0, sizeof(uint), &entityID);
 
       return entityID;
    }

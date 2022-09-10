@@ -90,7 +90,6 @@ namespace pbe {
       Ref<Buffer> waterWaves;
 
       Ref<Buffer> underCursorBuffer;
-      Ref<Buffer> underCursorBufferReadback;
 
       struct RenderObject {
          SceneTransformComponent trans;

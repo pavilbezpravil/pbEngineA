@@ -14,9 +14,6 @@ namespace pbe {
 
    class CORE_API CommandList {
    public:
-      static constexpr int DYN_CONST_BUFFER_SIZE = 256 * 512;
-      static constexpr int DYN_VERT_BUFFER_SIZE = 256 * 512;
-
       CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
 
       }
@@ -33,41 +30,11 @@ namespace pbe {
       OffsetedBuffer AllocDynConstantBuffer(const void* data, uint size) {
          size = ((size - 1) / 256 + 1) * 256; // todo:
 
-         if (dynConstBuffers.empty() || dynConstBufferOffset + size >= DYN_CONST_BUFFER_SIZE) {
-            auto bufferDesc = Buffer::Desc::Constant("cmdList dynConstBuffer", DYN_CONST_BUFFER_SIZE);
-            dynConstBuffers.emplace_back(Buffer::Create(bufferDesc));
-
-            dynConstBufferOffset = 0;
-         }
-
-         uint oldOffset = dynConstBufferOffset;
-         dynConstBufferOffset += size;
-
-         auto& curDynConstBuffer = *dynConstBuffers.back();
-
-         UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
-
-         return { &curDynConstBuffer, oldOffset };
+         return AllocDynBuffer(data, size, dynConstBuffers);
       }
 
       OffsetedBuffer AllocDynVertBuffer(const void* data, uint size) {
-         size = ((size - 1) / 256 + 1) * 256; // todo:
-
-         if (dynVertBuffers.empty() || dynVertBufferOffset + size >= DYN_VERT_BUFFER_SIZE) {
-            auto bufferDesc = Buffer::Desc::Vertex("cmdList dynVertBuffer", DYN_VERT_BUFFER_SIZE);
-            dynVertBuffers.emplace_back(Buffer::Create(bufferDesc));
-
-            dynVertBufferOffset = 0;
-         }
-
-         uint oldOffset = dynVertBufferOffset;
-         dynVertBufferOffset += size;
-
-         auto& curDynConstBuffer = *dynVertBuffers.back();
-
-         UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
-
-         return { &curDynConstBuffer, oldOffset };
+         return AllocDynBuffer(data, size, dynVertBufffers);
       }
 
       template<typename T>
@@ -79,6 +46,39 @@ namespace pbe {
 
       void CopyResource(GPUResource& dst, GPUResource& src) {
          pContext->CopyResource(dst.pResource.Get(), src.pResource.Get());
+      }
+
+      // void CopySubresourceRegion(GPUResource& dst, uint dstSub, uint dstX, uint dstY, uint dstZ,
+      //    GPUResource& src, uint srcSub, const D3D11_BOX& srcBox) {
+      //    pContext->CopySubresourceRegion(dst.pResource.Get(), dstSub, dstX, dstY, dstZ,
+      //       src.pResource.Get(), srcSub, &srcBox);
+      // }
+
+      void CopyBufferRegion(Buffer& dst, uint dstOffset, Buffer& src, uint srcOffset, uint size) {
+         D3D11_BOX box{};
+         box.left = srcOffset;
+         box.right = srcOffset + size;
+         box.bottom = 1;
+         box.back = 1;
+
+         pContext->CopySubresourceRegion(dst.pResource.Get(), 0, dstOffset, 0, 0, src.pResource.Get(), 0, &box);
+      }
+
+      void ReadbackBuffer(Buffer& buffer, uint offset, uint size, void* data) {
+         auto dynBuffer = AllocDynBuffer(nullptr, size, dynReadbackBufffers);
+
+         CopyBufferRegion(*dynBuffer.buffer, dynBuffer.offset, buffer, offset, size);
+
+         auto resource = dynBuffer.buffer->pResource.Get();
+
+         // todo: map all subresource, but required only part
+         D3D11_MAPPED_SUBRESOURCE mapped;
+         pContext->Map(resource, 0, D3D11_MAP_READ, 0, &mapped);
+
+         char* readbackData = ((char*)mapped.pData + dynBuffer.offset);
+         memcpy(data, readbackData, size);
+
+         pContext->Unmap(resource, 0);
       }
 
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {
@@ -140,15 +140,42 @@ namespace pbe {
          return nullptr;
       }
 
-
       ID3D11DeviceContext3* pContext{};
 
    private:
-      std::vector<Ref<Buffer>> dynConstBuffers;
-      uint dynConstBufferOffset = 0;
+      struct DynBuffers {
+         Buffer::Desc desc;
+         std::vector<Ref<Buffer>> dynBuffers;
+         uint dynBufferOffset = 0;
+      };
 
-      std::vector<Ref<Buffer>> dynVertBuffers;
-      uint dynVertBufferOffset = 0;
+      DynBuffers dynConstBuffers{ .desc = Buffer::Desc::Constant("cmdList dynConstBuffer", 256 * 512)};
+      DynBuffers dynVertBufffers{ .desc = Buffer::Desc::Vertex("cmdList dynVertBuffer", 1024)};
+      DynBuffers dynReadbackBufffers{ .desc = Buffer::Desc::Readback("cmdList dynReadbackBuffer", 512)};
+
+      OffsetedBuffer AllocDynBuffer(const void* data, uint size, DynBuffers& dynBuffer) {
+         uint descSize = dynBuffer.desc.Size;
+
+         if (dynBuffer.dynBuffers.empty() || dynBuffer.dynBufferOffset + size >= descSize) {
+            auto bufferDesc = dynBuffer.desc;
+            bufferDesc.name = std::format("{} {}", dynBuffer.desc.name.data(), dynBuffer.dynBuffers.size());
+            bufferDesc.Size = std::max(descSize, size);
+
+            dynBuffer.dynBuffers.emplace_back(Buffer::Create(bufferDesc));
+
+            dynBuffer.dynBufferOffset = 0;
+         }
+
+         uint oldOffset = dynBuffer.dynBufferOffset;
+         dynBuffer.dynBufferOffset += size;
+
+         auto& curDynConstBuffer = *dynBuffer.dynBuffers.back();
+
+         UpdateSubresource(curDynConstBuffer, data, oldOffset, size);
+
+         return { &curDynConstBuffer, oldOffset };
+      }
+
    };
 
    struct GpuMarker {
