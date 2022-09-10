@@ -34,4 +34,6 @@ namespace pbe {
 #define STRINGIFY(x) #x
 #define CONCATENATION(a, b) a ## b
 
+#define BIT(x) 1 << x
+
 }

@@ -158,8 +158,9 @@ namespace pbe {
       void SetUAV(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav);
       void SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource);
 
-      void DrawInstanced(CommandList& cmd, int vertCount, int instCount = 1, int startVert = 0);
-      void DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount = 1, int indexStart = 0, int startVert = 0);
+      void DrawInstanced(CommandList& cmd, uint vertCount, uint instCount = 1, uint startVert = 0);
+      void DrawIndexedInstanced(CommandList& cmd, uint indexCount, uint instCount = 1, uint indexStart = 0, uint startVert = 0);
+      void DrawIndexedInstancedIndirect(CommandList& cmd, Buffer& args, uint offset);
 
       void Dispatch(CommandList& cmd, int3 groups);
       void Dispatch(CommandList& cmd, int3 size, int3 groupSize) {

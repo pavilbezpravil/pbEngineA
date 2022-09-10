@@ -386,12 +386,16 @@ namespace pbe {
       SetUAV(cmd, name, resource.uav.Get());
    }
 
-   void GpuProgram::DrawInstanced(CommandList& cmd, int vertCount, int instCount, int startVert) {
+   void GpuProgram::DrawInstanced(CommandList& cmd, uint vertCount, uint instCount, uint startVert) {
       cmd.pContext->DrawInstanced(vertCount, instCount, startVert, 0);
    }
 
-   void GpuProgram::DrawIndexedInstanced(CommandList& cmd, int indexCount, int instCount, int indexStart, int startVert) {
+   void GpuProgram::DrawIndexedInstanced(CommandList& cmd, uint indexCount, uint instCount, uint indexStart, uint startVert) {
       cmd.pContext->DrawIndexedInstanced(indexCount, instCount, indexStart, startVert, 0);
+   }
+
+   void GpuProgram::DrawIndexedInstancedIndirect(CommandList& cmd, Buffer& args, uint offset) {
+      cmd.pContext->DrawIndexedInstancedIndirect(args.GetBuffer(), offset);
    }
 
    void GpuProgram::Dispatch(CommandList& cmd, int3 groups) {

@@ -16,6 +16,7 @@ namespace pbe {
 
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
+   CVarValue<bool> indirectDraw{ "render/indirect draw", true };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
@@ -110,7 +111,16 @@ namespace pbe {
       opaqueObjs.clear();
       transparentObjs.clear();
 
-      for (auto [e, sceneTrans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+      for (auto [e, sceneTrans, material] :
+         scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+
+         // DrawDesc desc;
+         // desc.entityID = (uint)e;
+         // desc.transform = sceneTrans.GetMatrix();
+         // desc.material = { material, true };
+         //
+         // drawDescs.push_back(desc);
+
          if (material.opaque) {
             opaqueObjs.emplace_back(sceneTrans, material);
          } else {
@@ -638,7 +648,13 @@ namespace pbe {
 
          // if (cfg.useInstancedDraw) {
          if (instancedDraw) {
-            program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (int)renderObjs.size());
+            if (indirectDraw) {
+               DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), (uint)renderObjs.size(), 0, 0, 0 };
+               auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
+               program.DrawIndexedInstancedIndirect(cmd, *dynArgs.buffer, dynArgs.offset);
+            } else {
+               program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (uint)renderObjs.size());
+            }
             break;
          } else {
             // program->DrawInstanced(cmd, mesh.geom.VertexCount());

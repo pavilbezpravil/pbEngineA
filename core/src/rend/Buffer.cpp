@@ -42,7 +42,16 @@ namespace pbe {
             pDevice->CreateShaderResourceView(pBuffer, NULL, srv.GetAddressOf());
          }
          if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS) {
-            pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
+            if (desc.MiscFlags & D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS) {
+               D3D11_UNORDERED_ACCESS_VIEW_DESC dxDesc{};
+               dxDesc.Format = DXGI_FORMAT_R32_UINT;
+               dxDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+               dxDesc.Buffer.FirstElement = 0;
+               dxDesc.Buffer.NumElements = desc.StructureByteStride; // todo:
+               pDevice->CreateUnorderedAccessView(pBuffer, &dxDesc, uav.GetAddressOf());
+            } else {
+               pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
+            }
          }
 
          pResource = pBuffer;

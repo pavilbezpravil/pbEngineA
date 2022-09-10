@@ -5,6 +5,8 @@
 #include "Texture2D.h"
 #include "core/Core.h"
 
+#include <shared/IndirectArgs.hlsli>
+
 namespace pbe {
 
    struct OffsetedBuffer {
@@ -35,6 +37,12 @@ namespace pbe {
 
       OffsetedBuffer AllocDynVertBuffer(const void* data, uint size) {
          return AllocDynBuffer(data, size, dynVertBufffers);
+      }
+
+      // todo: remove data
+      OffsetedBuffer AllocDynDrawIndexedInstancedBuffer(const void* data, uint count) {
+         uint size = count * sizeof(DrawIndexedInstancedArgs);
+         return AllocDynBuffer(data, size, dynDrawIndexedInstancedBuffer);
       }
 
       template<typename T>
@@ -152,6 +160,9 @@ namespace pbe {
       DynBuffers dynConstBuffers{ .desc = Buffer::Desc::Constant("cmdList dynConstBuffer", 256 * 512)};
       DynBuffers dynVertBufffers{ .desc = Buffer::Desc::Vertex("cmdList dynVertBuffer", 1024)};
       DynBuffers dynReadbackBufffers{ .desc = Buffer::Desc::Readback("cmdList dynReadbackBuffer", 512)};
+      DynBuffers dynDrawIndexedInstancedBuffer{
+         .desc = Buffer::Desc::IndirectArgs("cmdList dynDrawIndexedInstancedBuffer",
+         4, sizeof(DrawIndexedInstancedArgs))};
 
       OffsetedBuffer AllocDynBuffer(const void* data, uint size, DynBuffers& dynBuffer) {
          uint descSize = dynBuffer.desc.Size;

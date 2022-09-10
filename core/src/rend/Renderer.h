@@ -9,7 +9,7 @@
 #include "math/Types.h"
 #include "mesh/Mesh.h"
 #include "scene/Component.h"
-#include "scene/Scene.h"
+#include "math/Shape.h"
 
 #include <shared/hlslCppShared.hlsli> // todo:
 
@@ -26,6 +26,10 @@ namespace pbe {
 
       float zNear;
       float zFar;
+
+      vec3 Right() const {
+         return vec3{ view[0][0], view[1][0] , view[2][0] };
+      }
 
       vec3 Up() const {
          return vec3{ view[0][1], view[1][1] , view[2][1] };
@@ -72,11 +76,24 @@ namespace pbe {
       bool superSampling = false;
    };
 
+   // enum class MaterialType {
+   //    Opaque,
+   //    Transparent,
+   // };
+
+   struct Material {
+      SMaterial material; // todo:
+      bool opaque = true; // todo:
+      // MaterialType type = MaterialType::Opaque;
+   };
+
    struct DrawDesc {
       uint entityID = (uint)-1;
       mat4 transform;
-      SMaterial material;
+      Material material;
+
       Mesh* mesh = nullptr;
+      AABB aabb;
    };
 
    class CORE_API Renderer {
@@ -107,6 +124,8 @@ namespace pbe {
       std::vector<RenderObject> opaqueObjs;
       std::vector<RenderObject> transparentObjs;
       std::vector<RenderObject> decalObjs;
+
+      std::vector<DrawDesc> drawDescs;
 
       void Init();
 
