@@ -54,6 +54,8 @@ namespace pbe {
       Ref<Texture2D> ssao;
 
       Ref<Texture2D> shadowMap;
+
+      int2 cursorPixelIdx{-1}; // todo:
    };
 
    struct RenderConfing {
@@ -87,6 +89,9 @@ namespace pbe {
       Ref<Buffer> ssaoRandomDirs;
       Ref<Buffer> waterWaves;
 
+      Ref<Buffer> underCursorBuffer;
+      Ref<Buffer> underCursorBufferReadback;
+
       struct RenderObject {
          SceneTransformComponent trans;
          SimpleMaterialComponent material;
@@ -103,6 +108,8 @@ namespace pbe {
 
       void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
       void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraContext& cameraContext);
+
+      uint GetEntityIDUnderCursor(CommandList& cmd);
 
    };
 

@@ -1,12 +1,16 @@
 #ifndef SHARED_COMMON
 #define SHARED_COMMON
 
+#define GLUE(a,b) a##b
+#define DECLARE_REGISTER(prefix, regNum) register(GLUE(prefix,regNum))
+
 #define SAMPLER_SLOT_WRAP_POINT 0
 #define SAMPLER_SLOT_WRAP_LINEAR 1
 #define SAMPLER_SLOT_SHADOW 2
 
 #define CB_SLOT_SCENE 10
 #define CB_SLOT_CAMERA 11
+#define CB_SLOT_EDITOR 12
 
 struct Material {
    float3 albedo;
@@ -19,6 +23,9 @@ struct Material {
 struct Instance {
    float4x4 transform;
    Material material;
+
+   uint entityID;
+   float3 _sdfsdg;
 };
 
 struct SDecal {
@@ -98,11 +105,16 @@ struct SCameraCB {
 };
 
 struct SDrawCallCB {
-   float4x4 transform;
-   Material material;
+   Instance instance;
 
    int instanceStart;
    float3 _dymmy3;
+};
+
+struct SEditorCB {
+   int2 cursorPixelIdx;
+   int underCursorBufferSize;
+   float _sdf3ff;
 };
 
 struct WaveData {

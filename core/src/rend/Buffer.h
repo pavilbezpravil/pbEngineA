@@ -46,13 +46,39 @@ namespace pbe {
             return desc;
          }
 
-         static Desc Structured(std::string_view name, uint count, uint structureByteSize) {
+         static Desc Structured(std::string_view name, uint count, uint structureByteSize, uint bindFlags = D3D11_BIND_SHADER_RESOURCE) {
             Desc desc{};
             desc.Size = structureByteSize * count;
             desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.BindFlags = bindFlags;
             desc.StructureByteStride = structureByteSize;
             desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.name = name;
+
+            return desc;
+         }
+
+         static Desc StructuredReadback(std::string_view name, uint count, uint structureByteSize) {
+            Desc desc{};
+            desc.Size = structureByteSize * count;
+            desc.Usage = D3D11_USAGE_STAGING;
+            desc.BindFlags = 0; // cant be bounded
+            desc.StructureByteStride = structureByteSize;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            desc.name = name;
+
+            return desc;
+         }
+
+         static Desc StructuredDynamic(std::string_view name, uint count, uint structureByteSize, uint bindFlags = D3D11_BIND_SHADER_RESOURCE) {
+            Desc desc{};
+            desc.Size = structureByteSize * count;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = bindFlags;
+            desc.StructureByteStride = structureByteSize;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.name = name;
 
             return desc;

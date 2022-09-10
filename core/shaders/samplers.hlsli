@@ -1,8 +1,5 @@
 #include "shared/hlslCppShared.hlsli"
 
-#define GLUE(a,b) a##b
-#define DECLARE_REGISTER(prefix, regNum, spaceNum) register(GLUE(prefix,regNum))
-
 // todo:
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);

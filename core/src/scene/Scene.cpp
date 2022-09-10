@@ -22,9 +22,9 @@ namespace pbe {
    }
 
    Entity Scene::CreateWithUUID(UUID uuid, std::string_view name) {
-      auto id = registry.create();
+      auto entityID = registry.create();
 
-      auto e = Entity{ id, this };
+      auto e = Entity{ entityID, this };
       e.Add<UUIDComponent>(uuid);
       if (!name.empty()) {
          e.Add<TagComponent>(name.data());
@@ -33,7 +33,7 @@ namespace pbe {
          e.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
       }
 
-      e.Add<SceneTransformComponent>();
+      e.Add<SceneTransformComponent>().entity = e;
 
       return e;
    }

@@ -38,6 +38,9 @@ namespace pbe {
       bool enableInput = false;
 
       GizmoCfg gizmoCfg;
+
+   private:
+      bool selectEntityUnderCursor = false;
    };
 
 }

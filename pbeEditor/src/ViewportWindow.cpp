@@ -75,6 +75,19 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
+      if (selectEntityUnderCursor) {
+         auto entityID = renderer->GetEntityIDUnderCursor(cmd);
+
+         bool clearPrevSelection = !Input::IsKeyPressed(VK_CONTROL);
+         if (entityID != (uint) -1) {
+            Entity e{ entt::entity(entityID), scene};
+            selection->ToggleSelect(e, clearPrevSelection);
+         } else if (clearPrevSelection) {
+            selection->ClearSelection();
+         }
+         selectEntityUnderCursor = false;
+      }
+
       // todo: hack. lambda with capture cant be passed as function pointer
       static auto sCtx = cmd.pContext;
       auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
@@ -160,13 +173,18 @@ namespace pbe {
             camera.projection = glm::perspectiveFov(90.f / (180) * PI, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
          }
 
+         vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+         vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
+
+         vec2 pixelIdxFloat = (mousePos - cursorPos);
+
          cmd.SetCommonSamplers();
          if (scene) {
+            int2 cursorPixelIdx{ pixelIdxFloat + EPSILON };
+            cameraContext.cursorPixelIdx = cursorPixelIdx;
             renderer->RenderScene(cmd, *scene, camera, cameraContext);
          }
          cmd.pContext->ClearState(); // todo:
-
-         vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
          Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
          auto srv = sceneRTs[item_current]->srv.Get();
@@ -176,9 +194,7 @@ namespace pbe {
          if (zoomEnable) {
             vec2 zoomImageSize{300, 300};
 
-            vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
-
-            vec2 uvCenter = (mousePos - cursorPos) / vec2{ imSize.x, imSize.y};
+            vec2 uvCenter = pixelIdxFloat / vec2{ imSize.x, imSize.y };
 
             if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
                vec2 uvScale{ zoomScale / 2.f };
@@ -230,6 +246,10 @@ namespace pbe {
    void ViewportWindow::OnUpdate(float dt) {
       if (!enableInput) {
          return;
+      }
+
+      if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
+         selectEntityUnderCursor = true;
       }
 
       if (Input::IsKeyPressed(VK_RBUTTON)) {

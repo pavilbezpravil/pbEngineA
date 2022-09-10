@@ -1,7 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
+#include "Entity.h"
 #include "core/Type.h"
 #include "core/UUID.h"
 #include "math/Types.h"
@@ -69,6 +68,8 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATES_DECL(TagComponent);
 
    struct CORE_API SceneTransformComponent {
+      Entity entity;
+
       vec3 position{};
       quat rotation = quat_Identity;
       vec3 scale{ 1.f };

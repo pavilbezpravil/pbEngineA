@@ -5,6 +5,16 @@
 #include "noise.inl"
 #include "samplers.hlsli"
 
+#ifndef ZPASS
+  #define COLOR_PASS
+#endif
+
+// todo:
+#define EDITOR
+#ifdef EDITOR
+  #include "editor.hlsli"
+#endif
+
 struct VsIn {
   float3 posL : POSITION;
   float3 normalL : NORMAL;
@@ -177,15 +187,19 @@ struct PsOut {
   float4 color : SV_Target0;
 };
 
+// ps uses UAV writes, it removes early z test
+[earlydepthstencil]
 PsOut ps_main(VsOut input) : SV_TARGET {
-  float2 screenUV = input.posH.xy / gCamera.rtSize;
+  uint2 pixelIdx = input.posH.xy;
+  float2 screenUV = pixelIdx / gCamera.rtSize;
 
   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
   float3 posW = input.posW;
 
   float alpha = 0.75;
 
-  Material material = gInstances[gDrawCall.instanceStart + input.instanceID].material;
+  Instance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+  Material material = instance.material;
   
   Surface surface;
   surface.albedo = material.albedo;
@@ -301,5 +315,10 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     output.color.rgb = normalW;
     output.color.a = 1; // todo:
   #endif
+
+  #if defined(COLOR_PASS) && defined(EDITOR)
+    SetEntityUnderCursor(pixelIdx, instance.entityID);
+  #endif
+
   return output;
 }

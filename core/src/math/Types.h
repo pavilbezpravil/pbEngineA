@@ -9,6 +9,7 @@
 
 namespace pbe {
 
+   constexpr float EPSILON = FLT_EPSILON;
    constexpr float PI = glm::pi<float>();
    constexpr float PI2 = PI * 2.f;
    constexpr float PIHalf = PI * 0.5f;
@@ -100,6 +101,8 @@ using int2 = glm::ivec2;
 using uint2 = glm::uvec2;
 using int3 = glm::ivec3;
 using uint3 = glm::uvec3;
+using int4 = glm::ivec4;
+using uint4 = glm::uvec4;
 
 using float2 = glm::vec2;
 using float3 = glm::vec3;

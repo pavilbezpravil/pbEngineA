@@ -14,6 +14,7 @@
 
 namespace pbe {
 
+   CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
@@ -24,6 +25,7 @@ namespace pbe {
 
    CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 1.f };
 
+   CVarValue<bool> waterDraw{ "render/water/draw", false };
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
@@ -69,6 +71,14 @@ namespace pbe {
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
 
+      uint underCursorSize = 1;
+      auto bufferDesc = Buffer::Desc::Structured("under cursor buffer",
+         underCursorSize, sizeof(uint), D3D11_BIND_UNORDERED_ACCESS);
+      underCursorBuffer = Buffer::Create(bufferDesc);
+      bufferDesc = Buffer::Desc::StructuredReadback("under cursor buffer readback",
+         underCursorSize, sizeof(uint));
+      underCursorBufferReadback = Buffer::Create(bufferDesc);
+
       mesh = Mesh::Create(MeshGeomCube());
    }
 
@@ -88,7 +98,12 @@ namespace pbe {
          m.roughness = material.roughness;
          m.metallic = material.metallic;
 
-         instances.emplace_back(transform, m);
+         Instance instance;
+         instance.material = m;
+         instance.transform = transform;
+         instance.entityID = (uint)trans.entity.GetID();
+
+         instances.emplace_back(instance);
       }
 
       cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(Instance));
@@ -276,11 +291,17 @@ namespace pbe {
 
       cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
 
+      uint4 clearValue = { -1, -1, -1, -1 };
+      cmd.pContext->ClearUnorderedAccessViewUint(underCursorBuffer->uav.Get(), &clearValue.x);
+
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-
       cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
+
+      SEditorCB editorCB;
+      editorCB.cursorPixelIdx = cameraContext.cursorPixelIdx;
+      cmd.AllocAndSetCommonCB(CB_SLOT_EDITOR, editorCB);
 
       // todo:
       auto ResetCS_SRV_UAV = [&] {
@@ -356,7 +377,14 @@ namespace pbe {
                GPU_MARKER("Color");
                PROFILE_GPU("Color");
 
-               cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+               // baseColorPass->SetUAV(cmd, "gUnderCursorBuffer", *underCursorBuffer);
+               // cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+
+               // todo:
+               uint uavInitialCount = 0;
+               cmd.pContext->OMSetRenderTargetsAndUnorderedAccessViews(1, cameraContext.colorHDR->rtv.GetAddressOf(),
+                  cameraContext.depth->dsv.Get(), 1, 1, underCursorBuffer->uav.GetAddressOf(), &uavInitialCount);
+
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
                cmd.SetBlendState(rendres::blendStateDefaultRGB);
 
@@ -378,7 +406,7 @@ namespace pbe {
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
 
-         {
+         if (waterDraw) {
             {
                GPU_MARKER("Water Refraction");
                PROFILE_GPU("Water Refraction");
@@ -544,7 +572,7 @@ namespace pbe {
          ResetCS_SRV_UAV();
       }
 
-      if (1) {
+      if (dbgRenderEnable) {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
 
@@ -600,11 +628,12 @@ namespace pbe {
 
       for (const auto& [trans, material] : renderObjs) {
          SDrawCallCB cb;
-         cb.transform = glm::translate(mat4(1), trans.position);
-         cb.transform = glm::transpose(cb.transform);
-         cb.material.roughness = material.roughness;
-         cb.material.albedo = material.albedo;
-         cb.material.metallic = material.metallic;
+         cb.instance.transform = glm::translate(mat4(1), trans.position);
+         cb.instance.transform = glm::transpose(cb.instance.transform);
+         cb.instance.material.roughness = material.roughness;
+         cb.instance.material.albedo = material.albedo;
+         cb.instance.material.metallic = material.metallic;
+         cb.instance.entityID = (uint)trans.entity.GetID();
          cb.instanceStart = instanceID++;
 
          auto dynCB = cmd.AllocDynConstantBuffer(cb);
@@ -619,6 +648,22 @@ namespace pbe {
             program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
          }
       }
+   }
+
+   uint Renderer::GetEntityIDUnderCursor(CommandList& cmd) {
+      cmd.CopyResource(*underCursorBufferReadback, *underCursorBuffer);
+
+      auto resource = underCursorBufferReadback->pResource.Get();
+
+      D3D11_MAPPED_SUBRESOURCE mapped;
+      cmd.pContext->Map(resource, 0, D3D11_MAP_READ, 0, &mapped);
+      uint* data = (uint*)mapped.pData;
+
+      uint entityID = *data;
+
+      cmd.pContext->Unmap(resource, 0);
+
+      return entityID;
    }
 
 }
