@@ -11,6 +11,7 @@
 #include "scene/Component.h"
 #include "scene/Scene.h"
 
+#include <shared/hlslCppShared.hlsli> // todo:
 
 struct SCameraCB;
 
@@ -69,6 +70,13 @@ namespace pbe {
       bool fog = false;
       bool useInstancedDraw = true;
       bool superSampling = false;
+   };
+
+   struct DrawDesc {
+      uint entityID = (uint)-1;
+      mat4 transform;
+      SMaterial material;
+      Mesh* mesh = nullptr;
    };
 
    class CORE_API Renderer {

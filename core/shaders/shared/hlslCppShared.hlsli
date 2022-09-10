@@ -12,7 +12,7 @@
 #define CB_SLOT_CAMERA 11
 #define CB_SLOT_EDITOR 12
 
-struct Material {
+struct SMaterial {
    float3 albedo;
    float roughness;
 
@@ -20,9 +20,9 @@ struct Material {
    float3 _dymmy;
 };
 
-struct Instance {
+struct SInstance {
    float4x4 transform;
-   Material material;
+   SMaterial material;
 
    uint entityID;
    float3 _sdfsdg;
@@ -105,7 +105,7 @@ struct SCameraCB {
 };
 
 struct SDrawCallCB {
-   Instance instance;
+   SInstance instance;
 
    int instanceStart;
    float3 _dymmy3;

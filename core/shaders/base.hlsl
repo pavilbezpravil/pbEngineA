@@ -32,7 +32,7 @@ cbuffer gDrawCallCB {
   SDrawCallCB gDrawCall;
 }
 
-StructuredBuffer<Instance> gInstances;
+StructuredBuffer<SInstance> gInstances;
 StructuredBuffer<SDecal> gDecals;
 StructuredBuffer<SLight> gLights;
 
@@ -198,8 +198,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
   float alpha = 0.75;
 
-  Instance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
-  Material material = instance.material;
+  SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+  SMaterial material = instance.material;
   
   Surface surface;
   surface.albedo = material.albedo;

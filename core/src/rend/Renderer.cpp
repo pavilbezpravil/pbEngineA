@@ -81,21 +81,21 @@ namespace pbe {
 
    void Renderer::UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs) {
       if (!instanceBuffer || instanceBuffer->ElementsCount() < renderObjs.size()) {
-         auto bufferDesc = Buffer::Desc::Structured("instance buffer", (uint)renderObjs.size(), sizeof(Instance));
+         auto bufferDesc = Buffer::Desc::Structured("instance buffer", (uint)renderObjs.size(), sizeof(SInstance));
          instanceBuffer = Buffer::Create(bufferDesc);
       }
 
-      std::vector<Instance> instances;
+      std::vector<SInstance> instances;
       instances.reserve(renderObjs.size());
       for (auto& [trans, material] : renderObjs) {
          mat4 transform = glm::transpose(trans.GetMatrix());
 
-         Material m;
+         SMaterial m;
          m.albedo = material.albedo;
          m.roughness = material.roughness;
          m.metallic = material.metallic;
 
-         Instance instance;
+         SInstance instance;
          instance.material = m;
          instance.transform = transform;
          instance.entityID = (uint)trans.entity.GetID();
@@ -103,7 +103,7 @@ namespace pbe {
          instances.emplace_back(instance);
       }
 
-      cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(Instance));
+      cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(SInstance));
    }
 
    void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene) {
@@ -119,7 +119,7 @@ namespace pbe {
       }
 
       if (!instanceBuffer || instanceBuffer->ElementsCount() < scene.EntitiesCount()) {
-         auto bufferDesc = Buffer::Desc::Structured("instance buffer", scene.EntitiesCount(), sizeof(Instance));
+         auto bufferDesc = Buffer::Desc::Structured("instance buffer", scene.EntitiesCount(), sizeof(SInstance));
          instanceBuffer = Buffer::Create(bufferDesc);
       }
 
