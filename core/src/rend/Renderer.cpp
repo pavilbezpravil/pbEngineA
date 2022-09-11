@@ -375,7 +375,7 @@ namespace pbe {
                ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
                ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
 
-               ssaoPass->Dispatch(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+               ssaoPass->Dispatch2D(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
 
                ResetCS_SRV_UAV();
             }
@@ -507,7 +507,7 @@ namespace pbe {
             linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             linearizeDepthPass->SetUAV(cmd, "gDepthOut", cameraContext.linearDepth->GetMipUav(0));
 
-            linearizeDepthPass->Dispatch(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
+            linearizeDepthPass->Dispatch2D(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -532,7 +532,7 @@ namespace pbe {
                downsampleDepthPass->SetSRV(cmd, "gDepth", texture->GetMipSrv(iMip));
                downsampleDepthPass->SetUAV(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
 
-               downsampleDepthPass->Dispatch(cmd, size, int2{ 8 });
+               downsampleDepthPass->Dispatch2D(cmd, size, int2{ 8 });
 
                ResetCS_SRV_UAV();
             }
@@ -554,7 +554,7 @@ namespace pbe {
             fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
-            fogPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+            fogPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -574,7 +574,7 @@ namespace pbe {
          tonemapPass->SetSRV(cmd, "gColorHDR", *cameraContext.colorHDR);
          tonemapPass->SetUAV(cmd, "gColorLDR", *cameraContext.colorLDR);
 
-         tonemapPass->Dispatch(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+         tonemapPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
 
          ResetCS_SRV_UAV();
       }
@@ -646,11 +646,26 @@ namespace pbe {
          auto dynCB = cmd.AllocDynConstantBuffer(cb);
          program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
 
-         // if (cfg.useInstancedDraw) {
          if (instancedDraw) {
             if (indirectDraw) {
-               DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), (uint)renderObjs.size(), 0, 0, 0 };
+               // DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), (uint)renderObjs.size(), 0, 0, 0 };
+               DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), 0, 0, 0, 0 };
                auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
+
+               if (1) {
+                  auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.cs", "indirectArgsTest"));
+               
+                  indirectArgsTest->Activate(cmd);
+               
+                  indirectArgsTest->SetUAV(cmd, "gIndirectArgsInstanceCount", *dynArgs.buffer);
+
+                  uint4 offset{ dynArgs.offset / sizeof(uint), (uint)renderObjs.size(), 0, 0};
+                  auto testCB = cmd.AllocDynConstantBuffer(offset);
+                  indirectArgsTest->SetCB<uint4>(cmd, "gTestCB", *testCB.buffer, testCB.offset);
+               
+                  indirectArgsTest->Dispatch1D(cmd, 1);
+               }
+
                program.DrawIndexedInstancedIndirect(cmd, *dynArgs.buffer, dynArgs.offset);
             } else {
                program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount(), (uint)renderObjs.size());

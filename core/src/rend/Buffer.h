@@ -70,12 +70,12 @@ namespace pbe {
             return desc;
          }
 
-         static Desc IndirectArgs(std::string_view name, uint count, uint structureByteSize, uint bindFlags = D3D11_BIND_UNORDERED_ACCESS) {
+         static Desc IndirectArgs(std::string_view name, uint size, uint bindFlags = D3D11_BIND_UNORDERED_ACCESS) {
             Desc desc{};
-            desc.Size = structureByteSize * count;
+            desc.Size = size;
             desc.Usage = D3D11_USAGE_DEFAULT;
             desc.BindFlags = bindFlags;
-            desc.StructureByteStride = structureByteSize;
+            desc.StructureByteStride = 0;
             desc.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
             desc.name = name;
 

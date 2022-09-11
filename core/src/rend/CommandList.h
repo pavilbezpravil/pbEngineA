@@ -162,7 +162,7 @@ namespace pbe {
       DynBuffers dynReadbackBufffers{ .desc = Buffer::Desc::Readback("cmdList dynReadbackBuffer", 512)};
       DynBuffers dynDrawIndexedInstancedBuffer{
          .desc = Buffer::Desc::IndirectArgs("cmdList dynDrawIndexedInstancedBuffer",
-         4, sizeof(DrawIndexedInstancedArgs))};
+         16 * sizeof(DrawIndexedInstancedArgs))};
 
       OffsetedBuffer AllocDynBuffer(const void* data, uint size, DynBuffers& dynBuffer) {
          uint descSize = dynBuffer.desc.Size;

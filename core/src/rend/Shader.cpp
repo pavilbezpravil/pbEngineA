@@ -398,7 +398,7 @@ namespace pbe {
       cmd.pContext->DrawIndexedInstancedIndirect(args.GetBuffer(), offset);
    }
 
-   void GpuProgram::Dispatch(CommandList& cmd, int3 groups) {
+   void GpuProgram::Dispatch3D(CommandList& cmd, int3 groups) {
       cmd.pContext->Dispatch(groups.x, groups.y, groups.z);
    }
 

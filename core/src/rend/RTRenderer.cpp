@@ -68,7 +68,7 @@ namespace pbe {
 
       rayTracePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
-      rayTracePass->Dispatch(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+      rayTracePass->Dispatch2D(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
    }
 
 }

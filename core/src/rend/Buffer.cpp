@@ -47,7 +47,7 @@ namespace pbe {
                dxDesc.Format = DXGI_FORMAT_R32_UINT;
                dxDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                dxDesc.Buffer.FirstElement = 0;
-               dxDesc.Buffer.NumElements = desc.StructureByteStride; // todo:
+               dxDesc.Buffer.NumElements = desc.Size / sizeof(uint);
                pDevice->CreateUnorderedAccessView(pBuffer, &dxDesc, uav.GetAddressOf());
             } else {
                pDevice->CreateUnorderedAccessView(pBuffer, NULL, uav.GetAddressOf());
