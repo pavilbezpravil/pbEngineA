@@ -72,10 +72,11 @@ namespace pbe {
       programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
 
-      uint underCursorSize = 1;
+      const uint underCursorSize = 1;
+      uint underCursorInitialData[underCursorSize] = { (uint)-1 };
       auto bufferDesc = Buffer::Desc::Structured("under cursor buffer",
          underCursorSize, sizeof(uint), D3D11_BIND_UNORDERED_ACCESS);
-      underCursorBuffer = Buffer::Create(bufferDesc);
+      underCursorBuffer = Buffer::Create(bufferDesc, underCursorInitialData);
 
       mesh = Mesh::Create(MeshGeomCube());
    }
