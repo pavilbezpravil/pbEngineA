@@ -31,7 +31,7 @@ namespace pbe {
    CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
-   CVarSlider<int> waterPatchCount{ "render/water/patch count", 32, 1, 64 };
+   CVarSlider<int> waterPatchCount{ "render/water/patch count", 64, 1, 256 };
    CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 0, 64 };
    CVarSlider<float> waterMinWavelength{ "render/water/wavelength min", 1.f, 0.005f, 64.f };
    CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.005f, 64.f };
@@ -178,6 +178,157 @@ namespace pbe {
       }
    }
 
+   static std::vector<WaveData> GenerateWaves() {
+      std::vector<WaveData> waves;
+
+      struct WaterWaveDesc {
+         float weight = 1;
+         int nWaves = 1;
+
+         float lengthMin = 1;
+         float lengthMax = 2;
+
+         float amplitudeMin = 1;
+         float amplitudeMax = 2;
+
+         float steepness = 1;
+         float directionAngleVariance = 90;
+      };
+
+      std::vector<WaterWaveDesc> wavesDesc;
+
+      // smallest
+      wavesDesc.push_back(
+         {
+            .weight = 0.8f,
+            .nWaves = 16,
+
+            .lengthMin = 1,
+            .lengthMax = 3,
+
+            .amplitudeMin = 0.005f,
+            .amplitudeMax = 0.015f,
+
+            .directionAngleVariance = 180,
+         });
+
+      // small
+      wavesDesc.push_back(
+         {
+            .weight = 0.7f,
+            .nWaves = 24,
+
+            .lengthMin = 2,
+            .lengthMax = 8,
+
+            .amplitudeMin = 0.015f,
+            .amplitudeMax = 0.04f,
+
+            .directionAngleVariance = 180,
+         });
+
+      // medium_2
+      wavesDesc.push_back(
+         {
+            .weight = 0.4f,
+            .nWaves = 24,
+
+            .lengthMin = 8,
+            .lengthMax = 16,
+
+            .amplitudeMin = 0.05f,
+            .amplitudeMax = 0.1f,
+
+            .directionAngleVariance = 160,
+         });
+
+      // medium
+      wavesDesc.push_back(
+         {
+            .weight = 0.2f,
+            .nWaves = 24,
+
+            .lengthMin = 16,
+            .lengthMax = 32,
+
+            .amplitudeMin = 0.05f,
+            .amplitudeMax = 0.2f,
+
+            .directionAngleVariance = 120,
+         });
+
+      // large_2
+      wavesDesc.push_back(
+         {
+            .weight = 0.1f,
+            .nWaves = 6,
+
+            .lengthMin = 32,
+            .lengthMax = 64,
+
+            .amplitudeMin = 0.3f,
+            .amplitudeMax = 0.6f,
+
+            .directionAngleVariance = 90,
+         });
+
+      // large
+      wavesDesc.push_back(
+         {
+            .weight = 0.0f,
+            .nWaves = 6,
+
+            .lengthMin = 64,
+            .lengthMax = 128,
+
+            .amplitudeMin = 1,
+            .amplitudeMax = 2,
+
+            .directionAngleVariance = 120,
+         });
+
+      // largest
+      wavesDesc.push_back(
+         {
+            .weight = 0.0f,
+            .nWaves = 4,
+
+            .lengthMin = 256,
+            .lengthMax = 512,
+
+            .amplitudeMin = 4,
+            .amplitudeMax = 14,
+
+            .directionAngleVariance = 60,
+         });
+
+      for (const auto& waveDesc : wavesDesc) {
+         if (waveDesc.weight < EPSILON) {
+            continue;
+         }
+
+         for (int i = 0; i < waveDesc.nWaves; ++i) {
+            const float g = 9.8f;
+
+            WaveData wave;
+
+            float wavelength = Random::Uniform(waveDesc.lengthMin, waveDesc.lengthMax);
+            wave.direction = glm::normalize(Random::UniformInCircle()); // todo:
+            wave.amplitude = Random::Uniform(waveDesc.amplitudeMin, waveDesc.amplitudeMax) * waveDesc.weight;
+            wave.length = wavelength; // todo:
+
+            wave.magnitude = PI2 / wavelength;
+            wave.frequency = sqrt((g * PI2) / wavelength);
+            wave.phase = Random::Uniform(0.f, PI2);
+            wave.steepness = waveDesc.steepness;
+
+            waves.emplace_back(wave);
+         }
+      }
+
+      return waves;
+   }
+
    void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
       CameraContext& cameraContext) {
       if (!baseColorPass->Valid() || !baseZPass->Valid()) {
@@ -240,7 +391,7 @@ namespace pbe {
          return animTime;
       });
 
-      sceneCB.nWaves = waterNWaves;
+      sceneCB.nWaves = waterWaves ? (int)waterWaves->ElementsCount() : 0;
       sceneCB.fogNSteps = fogNSteps;
 
       sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
@@ -426,31 +577,10 @@ namespace pbe {
             GPU_MARKER("Water");
             PROFILE_GPU("Water");
 
-            if (!waterWaves || waterWaves->ElementsCount() != waterNWaves || waterRecreateWaves) {
-               std::vector<WaveData> waves;
-               waves.reserve(waterNWaves);
+            if (!waterWaves || waterRecreateWaves) {
+               std::vector<WaveData> waves = GenerateWaves();
 
-               for (int i = 0; i < waterNWaves; ++i) {
-                  WaveData wave;
-
-                  // shallow water v = sqrt(g * h)
-                  // deep water v = sqrt((g * wavelength) / PI2)
-                  float wavelength = Random::Uniform(waterMinWavelength, waterMaxWavelength);
-                  float g = 9.8f;
-                  float speed = sqrt((g * wavelength) / PI2);
-
-                  wave.direction = glm::normalize(Random::UniformInCircle());
-                  wave.amplitude = wavelength / waterWavelengthAmplitudeRatio * Random::Uniform(0.5f, 1.5f);
-                  wave.length = wavelength; // todo:
-
-                  wave.magnitude = PI2 / wavelength;
-                  wave.frequency = sqrt((g * PI2) / wavelength);
-                  wave.phase = Random::Uniform(0.f, PI2);
-                  wave.steepness = 1;
-                  waves.emplace_back(wave);
-               }
-
-               auto bufferDesc = Buffer::Desc::Structured("waver waves", waterNWaves, sizeof(WaveData));
+               auto bufferDesc = Buffer::Desc::Structured("waver waves", (uint)waves.size(), sizeof(WaveData));
                waterWaves = Buffer::Create(bufferDesc, waves.data());
             }
 

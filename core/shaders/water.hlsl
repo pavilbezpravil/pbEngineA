@@ -199,7 +199,7 @@ struct PsOut {
    float4 color : SV_Target0;
 };
 
-Texture2D<float3> gDepth;
+Texture2D<float> gDepth;
 Texture2D<float3> gRefraction;
 
 float WaterFresnel(float dotNV) {
