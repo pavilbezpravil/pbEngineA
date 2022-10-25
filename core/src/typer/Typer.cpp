@@ -171,12 +171,15 @@ namespace pbe {
 
       if (ti.imguiFunc) {
          ti.imguiFunc(name.data(), value);
-      }
-      else {
+      } else {
          if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
             for (const auto& f : ti.fields) {
                byte* data = value + f.offset;
-               ImGuiValueImpl(f.name, f.typeID, data);
+               if (f.uiFunc) {
+                  f.uiFunc(f.name.c_str(), data);
+               } else {
+                  ImGuiValueImpl(f.name, f.typeID, data);
+               }
             }
 
             ImGui::TreePop();

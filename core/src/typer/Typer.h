@@ -22,10 +22,28 @@ namespace pbe {
       TypeInfo ti; \
       ti.name = #type; \
       ti.typeID = GetTypeID<type>(); \
-      ti.typeSizeOf = sizeof(type);
+      ti.typeSizeOf = sizeof(type); \
+      \
+      TypeField f{};
 
+   // todo: remove
 #define TYPER_FIELD(name) \
       ti.fields.emplace_back(#name, GetTypeID<decltype(CurrentType{}.name)>(), offsetof(CurrentType, name));
+
+   //  for handle initialization like this 'TYPE_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'
+   // problem with ','
+#define TYPE_FIELD_UI(...) \
+      f.uiFunc = __VA_ARGS__;
+   // similar to this define
+   // #define TYPE_FIELD_UI(func) \
+   //       f.uiFunc = func;
+
+#define TYPE_FIELD(_name) \
+      f.name = #_name; \
+      f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
+      f.offset = offsetof(CurrentType, _name); \
+      ti.fields.emplace_back(f); \
+      f = {};
 
 #define TYPER_END(type) \
       Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
@@ -36,6 +54,7 @@ namespace pbe {
       std::string name;
       TypeID typeID;
       size_t offset;
+      std::function<void(const char*, byte*)> uiFunc;
    };
 
    struct TypeInfo {

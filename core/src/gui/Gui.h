@@ -39,4 +39,16 @@ namespace pbe {
       EditorUI(name, typeID, (byte*)&value);
    }
 
+   void UIColorEdit3(const char* name, byte* value);
+   void UIColorPicker3(const char* name, byte* value);
+
+   struct UISliderFloat {
+      float min = 0;
+      float max = 1;
+
+      void operator()(const char* name, byte* value) {
+         ImGui::SliderFloat(name, (float*)value, min, max);
+      }
+   };
+
 }

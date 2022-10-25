@@ -6,6 +6,8 @@
 
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "gui/Gui.h"
+
 namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(UUIDComponent);
@@ -42,8 +44,11 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATE_DEF(LightComponent)
 
    TYPER_BEGIN(DirectLightComponent)
-      TYPER_FIELD(color)
-      TYPER_FIELD(intensity)
+      TYPE_FIELD_UI(UIColorEdit3)
+      TYPE_FIELD(color)
+
+      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
+      TYPE_FIELD(intensity)
    TYPER_END(DirectLightComponent)
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DirectLightComponent)
