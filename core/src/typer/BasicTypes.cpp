@@ -1,7 +1,10 @@
 #include "pch.h"
-#include "BasicTypes.h"
+#include "BasicTypes.h" // todo:
 #include "Typer.h"
+#include "gui/Gui.h"
 #include "math/Types.h"
+#include "scene/Component.h"
+#include "scene/Entity.h"
 
 namespace YAML {
    template<>
@@ -85,6 +88,29 @@ namespace YAML {
       out << angles;
       return out;
    }
+
+   template<>
+   struct convert<pbe::Entity> {
+      static bool decode(const Node& node, pbe::Entity& rhs) {
+         pbe::UUID entityUUID = node.as<pbe::uint64>();
+         if ((pbe::uint64)entityUUID != (pbe::uint64)entt::null) {
+            pbe::Scene* scene = pbe::Scene::GetCurrentDeserializedScene();
+            rhs = scene->GetEntity(entityUUID);
+         }
+
+         return true;
+      }
+   };
+
+   YAML::Emitter& operator << (YAML::Emitter& out, const pbe::Entity& v) {
+      if (v.Valid()) {
+         out << (pbe::uint64)v.Get<pbe::UUIDComponent>().uuid;
+      } else {
+         out << (pbe::uint64)entt::null;
+      }
+
+      return out;
+   }
 }
 
 namespace pbe {
@@ -149,6 +175,30 @@ namespace pbe {
          }
       };
       DEFAULT_SER_DESER(quat);
+      END_DECL_TYPE();
+
+      START_DECL_TYPE(Entity);
+      ti.imguiFunc = [](const char* name, byte* value) {
+         Entity* e = (Entity*)value;
+
+         ImGui::Text(name);
+         ImGui::SameLine();
+
+         const char* entityName = e->Valid() ? e->Get<TagComponent>().tag.c_str() : "None";
+         if (ImGui::Button(entityName)) {
+            
+         }
+
+         if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(DRAG_DROP_ENTITY)) {
+               ASSERT(payload->DataSize == sizeof(Entity));
+               Entity ddEntity = *(Entity*)payload->Data;
+               *e = ddEntity;
+            }
+            ImGui::EndDragDropTarget();
+         }
+      };
+      DEFAULT_SER_DESER(Entity);
       END_DECL_TYPE();
    }
 

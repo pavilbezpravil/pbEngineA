@@ -120,6 +120,11 @@ namespace pbe {
    };
    COMPONENT_EXPLICIT_TEMPLATES_DECL(DecalComponent);
 
+   struct SkyComponent {
+      Entity directLight;
+      vec3 color = vec4_One;
+   };
+
    void RegisterBasicComponents(class Typer& typer);
 
 }

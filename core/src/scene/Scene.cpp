@@ -35,7 +35,13 @@ namespace pbe {
 
       e.Add<SceneTransformComponent>().entity = e;
 
+      uuidToEntities[(uint64)uuid] = entityID;
+
       return e;
+   }
+
+   Entity Scene::GetEntity(UUID uuid) {
+      return { uuidToEntities[(uint64)uuid], this };
    }
 
    void Scene::Duplicate(Entity dst, Entity src) {
@@ -114,6 +120,12 @@ namespace pbe {
       return pScene;
    }
 
+   static Scene* gCurrentDeserializedScene = nullptr;
+
+   Scene* Scene::GetCurrentDeserializedScene() {
+      return gCurrentDeserializedScene;
+   }
+
    static string gAssetsPath = "../../assets/";
 
    string GetAssetsPath(string_view path) {
@@ -181,6 +193,8 @@ namespace pbe {
 
       Own<Scene> scene{ new Scene() };
 
+      gCurrentDeserializedScene = scene.get();
+
       // todo:
       // YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
       YAML::Node root = YAML::LoadFile(path.data());
@@ -188,7 +202,8 @@ namespace pbe {
       auto sceneName = root["sceneName"].as<string>();
 
       YAML::Node entitiesNode = root["entities"];
-      
+
+      // on first iteration create all entities
       for (int i = 0; i < entitiesNode.size(); ++i) {
          auto it = entitiesNode[i];
 
@@ -199,7 +214,15 @@ namespace pbe {
             entityTag = it["tag"].as<string>();
          }
 
-         Entity entity = scene->CreateWithUUID(UUID{ uuid }, entityTag);
+         scene->CreateWithUUID(UUID{ uuid }, entityTag);
+      }
+
+      // on second iteration create all components
+      for (int i = 0; i < entitiesNode.size(); ++i) {
+         auto it = entitiesNode[i];
+
+         auto uuid = it["uuid"].as<uint64>();
+         Entity entity = scene->GetEntity(uuid);
 
          const auto& typer = Typer::Get();
 
@@ -217,6 +240,8 @@ namespace pbe {
             }
          }
       }
+
+      gCurrentDeserializedScene = nullptr;
 
       return scene;
    }

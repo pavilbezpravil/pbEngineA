@@ -61,6 +61,13 @@ namespace pbe {
 
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DecalComponent)
 
+   TYPER_BEGIN(SkyComponent)
+      TYPE_FIELD(directLight)
+
+      TYPE_FIELD_UI(UIColorEdit3)
+      TYPE_FIELD(color)
+   TYPER_END(SkyComponent)
+
    ComponentRegisterGuard::~ComponentRegisterGuard() {
       Typer::Get().UnregisterComponent(typeID);
    }
@@ -105,6 +112,7 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);
+      INTERNAL_ADD_COMPONENT(SkyComponent);
    }
 
 }

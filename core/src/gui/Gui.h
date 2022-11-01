@@ -7,6 +7,9 @@
 
 namespace pbe {
 
+   // todo:
+   constexpr char DRAG_DROP_ENTITY[] = "DD_ENTITY";
+
    /*
    #include <string_view>
 

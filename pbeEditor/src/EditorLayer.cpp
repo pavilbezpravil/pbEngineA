@@ -33,8 +33,7 @@ namespace pbe {
 
          if (!pScene) {
             ImGui::Text("No scene");
-         }
-         else {
+         } else {
             if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
                if (ImGui::MenuItem("Create Empty Entity")) {
                   auto createdEntity = pScene->Create();
@@ -77,7 +76,14 @@ namespace pbe {
                   | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
                if (ImGui::TreeNodeEx((void*)(size_t)entity.GetID(), nodeFlags, name)) {
-                  if (ImGui::IsItemClicked()) {
+                  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                     ImGui::SetDragDropPayload(DRAG_DROP_ENTITY, &entity, sizeof(entity));
+                     ImGui::Text("Drag&Drop Entity %s", name);
+                     ImGui::EndDragDropSource();
+                  }
+
+                  // if (ImGui::IsItemClicked()) {
+                  if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)) {
                      ToggleSelectEntity(entity);
                   }
 
@@ -146,8 +152,8 @@ namespace pbe {
             name.reserve(glm::max((int)name.size(), 64));
 
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-            if (ImGui::InputText("Name", name.data(), name.size())) {
-               entity.Get<TagComponent>().tag = std::move(name);
+            if (ImGui::InputText("Name", name.data(), name.capacity())) {
+               entity.Get<TagComponent>().tag = name.c_str();
             }
 
             ImGui::SameLine();

@@ -21,6 +21,8 @@ namespace pbe {
       Entity Create(std::string_view name = {});
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
 
+      Entity GetEntity(UUID uuid);
+
       void Duplicate(Entity dst, Entity src);
       Entity Duplicate(Entity entity);
 
@@ -48,8 +50,12 @@ namespace pbe {
 
       Own<DbgRend> dbgRend; // todo:
 
+      static Scene* GetCurrentDeserializedScene();
+
    private:
       entt::registry registry;
+
+      std::unordered_map<uint64, entt::entity> uuidToEntities;
 
       friend Entity;
    };
