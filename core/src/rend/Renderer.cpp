@@ -31,11 +31,7 @@ namespace pbe {
    CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
-   CVarSlider<int> waterPatchCount{ "render/water/patch count", 64, 1, 256 };
-   CVarSlider<int> waterNWaves{ "render/water/nWaves", 16, 0, 64 };
-   CVarSlider<float> waterMinWavelength{ "render/water/wavelength min", 1.f, 0.005f, 64.f };
-   CVarSlider<float> waterMaxWavelength{ "render/water/wavelength max", 16.f, 0.005f, 64.f };
-   CVarSlider<float> waterWavelengthAmplitudeRatio{ "render/water/wavelength-amplitude ratio", 150.f, 10.0f, 300.f };
+   CVarSlider<int> waterPatchCount{ "render/water/patch count", 256, 1, 512 };
    CVarTrigger waterRecreateWaves{ "render/water/recreate waves" };
 
    static mat4 NDCToTexSpaceMat4() {
@@ -179,8 +175,6 @@ namespace pbe {
    }
 
    static std::vector<WaveData> GenerateWaves() {
-      std::vector<WaveData> waves;
-
       struct WaterWaveDesc {
          float weight = 1;
          int nWaves = 1;
@@ -302,6 +296,8 @@ namespace pbe {
             .directionAngleVariance = 60,
          });
 
+      std::vector<WaveData> waves;
+
       for (const auto& waveDesc : wavesDesc) {
          if (waveDesc.weight < EPSILON) {
             continue;
@@ -325,6 +321,8 @@ namespace pbe {
             waves.emplace_back(wave);
          }
       }
+
+      std::ranges::sort(waves, std::greater{}, &WaveData::amplitude);
 
       return waves;
    }

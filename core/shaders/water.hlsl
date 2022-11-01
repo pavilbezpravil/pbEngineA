@@ -141,8 +141,6 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    float3 posW = WATER_PATCH_BC(patch, posW, bc);
 
-   float time = gScene.animationTime;
-
    float3 displacement = 0;
 
    float3 tangent = float3(1, 0, 0);
@@ -150,6 +148,15 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
+
+      // todo: fist distant fade test
+      float dist = length(gCamera.position - posW);
+      float distantFade = saturate((wave.amplitude / dist) / 0.0001 - 0.1);
+      wave.amplitude *= distantFade;
+      if (wave.amplitude < EPSILON) {
+         break;
+      }
+
       GertsnerWave(wave, posW, displacement, tangent, binormal);
    }
 
