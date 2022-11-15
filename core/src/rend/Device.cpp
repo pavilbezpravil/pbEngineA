@@ -5,9 +5,12 @@
 #include "Common.h"
 #include "Texture2D.h"
 #include "core/Common.h"
+#include "core/CVar.h"
 #include "core/Log.h"
 
 namespace pbe {
+
+   CVarValue<bool> cfgVSyncEnable{ "render/vsync", true };
 
    Device* sDevice = nullptr;
 
@@ -101,8 +104,8 @@ namespace pbe {
    }
 
    void Device::Present() {
-      sDevice->g_pSwapChain->Present(1, 0); // Present with vsync
-      //g_pSwapChain->Present(0, 0); // Present without vsync
+      int syncInterval = cfgVSyncEnable ? 1 : 0;
+      sDevice->g_pSwapChain->Present(syncInterval, 0);
       // ++backBufferIdx; // todo:
    }
 

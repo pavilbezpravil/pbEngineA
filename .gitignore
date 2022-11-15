@@ -4,6 +4,8 @@
 *.vcxproj.user
 *.vcxproj.filters
 
+.vscode
+
 imgui.ini
 bin/
 bin-int/
