@@ -4,7 +4,7 @@
 #include "math.hlsli"
 
 float3 fresnelSchlick(float cosTheta, float3 F0) {
-    return F0 + (1 - F0) * pow(clamp(1 - cosTheta, 0, 1), 5);
+    return F0 + (1 - F0) * pow(saturate(1 - cosTheta), 5);
 }
 
 float DistributionGGX(float3 N, float3 H, float roughness) {

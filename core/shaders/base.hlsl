@@ -158,9 +158,7 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
   float G = GeometrySmith(N, V, L, surface.roughness);
   float3 F = fresnelSchlick(max(dot(H, V), 0.0), surface.F0);
 
-  float3 kS = F;
-  float3 kD = 1 - kS;
-  kD *= 1.0 - surface.metallic;
+  float3 kD = 1 - F;
 
   float3 numerator = NDF * G * F;
   float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
@@ -202,12 +200,14 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   SMaterial material = instance.material;
   
   Surface surface;
-  surface.albedo = material.albedo;
   surface.metallic = material.metallic;
   surface.roughness = material.roughness;
 
   surface.posW = posW;
   surface.normalW = normalW;
+
+  // todo: material.albedo -> material.baseColor
+  float3 baseColor = material.albedo;
 
   for (int iDecal = 0; iDecal < gScene.nDecals; ++iDecal) {
     SDecal decal = gDecals[iDecal];
@@ -227,12 +227,16 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
     float2 decalUV = NDCToTex(posDecalSpace.xy);
 
-    surface.albedo = lerp(surface.albedo, decal.albedo.rgb, alpha);
+    // todo: decal.baseColor
+    baseColor = lerp(baseColor, decal.albedo.rgb, alpha);
     surface.metallic = lerp(surface.metallic, decal.metallic, alpha);
     surface.roughness = lerp(surface.roughness, decal.roughness, alpha);
   }
 
+  surface.albedo = baseColor * (1.0 - surface.metallic);
   surface.F0 = lerp(0.04, surface.albedo, surface.metallic);
+
+  // lighting
 
   float3 V = normalize(gCamera.position - posW);
   float3 Lo = Shade(surface, V);
