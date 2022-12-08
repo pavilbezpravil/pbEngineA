@@ -5,6 +5,10 @@
 #include "noise.inl"
 #include "samplers.hlsli"
 
+cbuffer gWaterCB {
+  SWaterCB gWater;
+}
+
 struct VsOut {
    float3 posW : POS_W;
    float3 normalW : NORMAL_W;
@@ -19,7 +23,7 @@ Texture2D<float> gShadowMap;
 VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
    VsOut output = (VsOut)0;
 
-   float halfSize = gScene.waterPatchSize / 2;
+   float halfSize = gWater.waterPatchSize / 2;
    float height = 1;
 
    float3 corners[] = {
@@ -31,8 +35,8 @@ VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
 
    float3 posW = corners[vertexID];
 
-   float2 localIdx = float2(instanceID % gScene.waterPatchCount, instanceID / gScene.waterPatchCount)
-                   - float(gScene.waterPatchCount) / 2;
+   float2 localIdx = float2(instanceID % gWater.waterPatchCount, instanceID / gWater.waterPatchCount)
+                   - float(gWater.waterPatchCount) / 2;
    // localIdx *= 1.1;
    posW.xz += localIdx * halfSize * 2;
 
@@ -63,7 +67,7 @@ float3 Distance(float3 p0, float3 p1) {
 
 float TessFactor(float3 p) {
    float3 cameraPos = gCamera.position;
-   float s = gScene.waterTessFactor * gScene.waterPatchSize;
+   float s = gWater.waterTessFactor * gWater.waterPatchSize;
 
    return s / length(p - cameraPos);
 }
@@ -156,14 +160,14 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    float3 posW = WATER_PATCH_BC(patch, posW, bc);
 
-   const float polySize = gScene.waterPatchSize * gScene.waterPatchSizeAAScale / TessFactor(posW);
+   const float polySize = gWater.waterPatchSize * gWater.waterPatchSizeAAScale / TessFactor(posW);
 
    float3 displacement = 0;
 
    float3 tangent = float3(1, 0, 0);
    float3 binormal = float3(0, 0, 1);
 
-   for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
+   for (int iWave = 0; iWave < gWater.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
 
       float antialiasingFade = 1.0f - saturate(polySize * wave.magnitude - 1.0f);
@@ -172,7 +176,7 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
       }
       wave.amplitude *= antialiasingFade;
 
-      wave.amplitude *= gScene.waterWaveScale;
+      wave.amplitude *= gWater.waterWaveScale;
       GertsnerWave(wave, posW, displacement, tangent, binormal);
    }
 
@@ -238,7 +242,7 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
 
    float3 posW = input.posW;
    float3 normalW = normalize(input.normalW);
-   if (gScene.waterPixelNormals > 0) {
+   if (gWater.waterPixelNormals > 0) {
       normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
    }
 

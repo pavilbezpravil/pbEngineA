@@ -75,6 +75,13 @@ struct SSceneCB {
    SLight directLight;
    float4x4 toShadowSpace;
 
+   int _asdf3221;
+   int fogNSteps;
+   float exposition;
+   float _sdfsdg;
+};
+
+struct SWaterCB {
    // todo:
    float waterTessFactor;
    float waterPatchSize;
@@ -83,12 +90,8 @@ struct SSceneCB {
 
    int waterPixelNormals;
    float waterWaveScale;
-   float2 _b2bfe;
-
    int nWaves;
-   int fogNSteps;
-   float exposition;
-   float _sdfsdg;
+   float _b2bfe;
 };
 
 struct SCameraCB {

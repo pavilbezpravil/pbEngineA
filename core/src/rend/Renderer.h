@@ -13,6 +13,8 @@
 
 #include <shared/hlslCppShared.hlsli> // todo:
 
+#include "system/Water.h"
+
 struct SCameraCB;
 
 namespace pbe {
@@ -112,9 +114,10 @@ namespace pbe {
       Ref<Buffer> decalBuffer;
       Ref<Buffer> lightBuffer;
       Ref<Buffer> ssaoRandomDirs;
-      Ref<Buffer> waterWaves;
 
       Ref<Buffer> underCursorBuffer;
+
+      Water waterSystem;
 
       struct RenderObject {
          SceneTransformComponent trans;
