@@ -21,10 +21,10 @@ namespace pbe {
 #endif
 
    // Core Logging Macros
-#define TRACE(...)	Log::GetLogger()->trace(__VA_ARGS__)
-#define INFO(...)	Log::GetLogger()->info(__VA_ARGS__)
-#define WARN(...)	Log::GetLogger()->warn(__VA_ARGS__)
-#define ERROR(...)	Log::GetLogger()->error(__VA_ARGS__)
-#define FATAL(...)	Log::GetLogger()->critical(__VA_ARGS__)
+#define TRACE(...)	pbe::Log::GetLogger()->trace(__VA_ARGS__)
+#define INFO(...)	   pbe::Log::GetLogger()->info(__VA_ARGS__)
+#define WARN(...)	   pbe::Log::GetLogger()->warn(__VA_ARGS__)
+#define ERROR(...)	pbe::Log::GetLogger()->error(__VA_ARGS__)
+#define FATAL(...)	pbe::Log::GetLogger()->critical(__VA_ARGS__)
 
 }

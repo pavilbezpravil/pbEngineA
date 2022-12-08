@@ -35,6 +35,7 @@ namespace pbe {
       sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
       UINT createDeviceFlags = 0;
+      // createDeviceFlags = D3D11_CREATE_DEVICE_PREVENT_ALTERING_LAYER_SETTINGS_FROM_REGISTRY;
 #if defined(DEBUG)
       createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
       INFO("Create device with debug layer");

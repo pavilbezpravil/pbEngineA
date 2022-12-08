@@ -19,8 +19,8 @@ Texture2D<float> gShadowMap;
 VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
    VsOut output = (VsOut)0;
 
-   float halfSize = gScene.waterPatchSize;
-   float height = 2;
+   float halfSize = gScene.waterPatchSize / 2;
+   float height = 1;
 
    float3 corners[] = {
       float3(-halfSize, height, halfSize),
@@ -53,22 +53,37 @@ struct HullOutputType {
    float3 posW : POS_W;
 };
 
+// todo: move
+float3 CentralPoint(float3 p0, float3 p1) {
+   return (p0 + p1) / 2;
+}
+float3 Distance(float3 p0, float3 p1) {
+   return length(p0 - p1);
+}
+
+float TessFactor(float3 p) {
+   float3 cameraPos = gCamera.position;
+   float s = gScene.waterTessFactor * gScene.waterPatchSize;
+
+   return s / length(p - cameraPos);
+}
+
+float TessFactor(float3 p0, float3 p1) {
+   return TessFactor(CentralPoint(p0, p1));
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Patch Constant Function
 ////////////////////////////////////////////////////////////////////////////////
 ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint patchId : SV_PrimitiveID) {    
    ConstantOutputType output;
 
-   float3 cameraPos = gCamera.position;
-   float s = gScene.waterTessFactor * gScene.waterPatchSize;
+   output.edges[0] = TessFactor(patch[2].posW, patch[0].posW);
+   output.edges[1] = TessFactor(patch[0].posW, patch[1].posW);
+   output.edges[2] = TessFactor(patch[1].posW, patch[3].posW);
+   output.edges[3] = TessFactor(patch[3].posW, patch[2].posW);
 
-   output.edges[0] = s / length((patch[0].posW + patch[2].posW) / 2 - cameraPos);
-   output.edges[1] = s / length((patch[0].posW + patch[1].posW) / 2 - cameraPos);
-   output.edges[2] = s / length((patch[1].posW + patch[3].posW) / 2 - cameraPos);
-   output.edges[3] = s / length((patch[2].posW + patch[3].posW) / 2 - cameraPos);
-
-   output.inside[0] = max4(output.edges[0], output.edges[1], output.edges[2], output.edges[3]);
-   output.inside[1] = output.inside[0];
+   output.inside[0] = output.inside[1] = max4(output.edges);
 
    return output;
 }
@@ -141,6 +156,8 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    float3 posW = WATER_PATCH_BC(patch, posW, bc);
 
+   const float polySize = gScene.waterPatchSize * gScene.waterPatchSizeAAScale / TessFactor(posW);
+
    float3 displacement = 0;
 
    float3 tangent = float3(1, 0, 0);
@@ -149,14 +166,13 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
    for (int iWave = 0; iWave < gScene.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
 
-      // todo: fist distant fade test
-      float dist = length(gCamera.position - posW);
-      float distantFade = saturate((wave.amplitude / dist) / 0.0001 - 0.1);
-      wave.amplitude *= distantFade;
-      if (wave.amplitude < EPSILON) {
+      float antialiasingFade = 1.0f - saturate(polySize * wave.magnitude - 1.0f);
+      if (antialiasingFade <= 0) {
          break;
       }
+      wave.amplitude *= antialiasingFade;
 
+      wave.amplitude *= gScene.waterWaveScale;
       GertsnerWave(wave, posW, displacement, tangent, binormal);
    }
 

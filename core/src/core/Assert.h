@@ -6,6 +6,7 @@
 
 #ifdef DEBUG
    #define ENABLE_ASSERTS
+   #define ENABLE_MT_ASSERTS
 #endif
 
 #ifdef ENABLE_ASSERTS
@@ -19,4 +20,23 @@
    #define ASSERT(...)
 
    #define UNIMPLEMENTED()
+#endif
+
+
+#ifdef ENABLE_MT_ASSERTS
+   struct AssertMTUnique {
+      AssertMTUnique() {
+         bool prev = entered.exchange(true);
+         ASSERT_MESSAGE(!prev, "Multiple thread touch scope!");
+      }
+
+      ~AssertMTUnique() {
+         entered = false;
+      }
+
+      std::atomic_bool entered = false;
+   };
+   #define ASSERT_MT_UNIQUE() static AssertMTUnique __AssertMTUnique;
+#else
+   #define ASSERT_MT_UNIQUE()
 #endif

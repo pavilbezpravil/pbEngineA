@@ -76,6 +76,10 @@ float max4(float v1, float v2, float v3, float v4) {
   return max(max(v1, v2), max(v3, v4));
 }
 
+float max4(float vs[4]) {
+  return max(max(vs[0], vs[1]), max(vs[2], vs[3]));
+}
+
 float min4(float v1, float v2, float v3, float v4) {
   return max(min(v1, v2), min(v3, v4));
 }

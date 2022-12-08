@@ -26,11 +26,13 @@ namespace pbe {
 
    CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 1.f };
 
-   CVarValue<bool> waterDraw{ "render/water/draw", false };
+   CVarValue<bool> waterDraw{ "render/water/draw", true };
    CVarValue<bool> waterWireframe{ "render/water/wireframe", false };
    CVarValue<bool> waterPixelNormal{ "render/water/pixel normal", false };
+   CVarSlider<float> waterWaveScale{ "render/water/wave scale", 1.f, 0.f, 5.f };
    CVarSlider<float> waterTessFactor{ "render/water/tess factor", 64.f, 0.f, 128.f };
    CVarSlider<float> waterPatchSize{ "render/water/patch size", 4.f, 1.f, 32.f };
+   CVarSlider<float> waterPatchSizeAAScale{ "render/water/patch size aa scale", 1.f, 0.f, 2.f };
    CVarSlider<int> waterPatchCount{ "render/water/patch count", 256, 1, 512 };
    CVarTrigger waterRecreateWaves{ "render/water/recreate waves" };
 
@@ -174,21 +176,21 @@ namespace pbe {
       }
    }
 
-   static std::vector<WaveData> GenerateWaves() {
-      struct WaterWaveDesc {
-         float weight = 1;
-         int nWaves = 1;
+   struct WaterWaveDesc {
+      float weight = 1;
+      int nWaves = 1;
 
-         float lengthMin = 1;
-         float lengthMax = 2;
+      float lengthMin = 1;
+      float lengthMax = 2;
 
-         float amplitudeMin = 1;
-         float amplitudeMax = 2;
+      float amplitudeMin = 1;
+      float amplitudeMax = 2;
 
-         float steepness = 1;
-         float directionAngleVariance = 90;
-      };
+      float steepness = 1;
+      float directionAngleVariance = 90;
+   };
 
+   static std::vector<WaterWaveDesc> GenerateWavesDesc() {
       std::vector<WaterWaveDesc> wavesDesc;
 
       // smallest
@@ -296,6 +298,107 @@ namespace pbe {
             .directionAngleVariance = 60,
          });
 
+      return wavesDesc;
+   }
+
+   static std::vector<WaterWaveDesc> GenerateWavesDesc2() {
+      std::vector<WaterWaveDesc> wavesDesc;
+
+      wavesDesc.push_back(
+         {
+            .weight = 1.0f,
+            .nWaves = 16,
+
+            .lengthMin = 0.2f,
+            .lengthMax = 0.5f,
+
+            .amplitudeMin = 0.005f * 0.1f,
+            .amplitudeMax = 0.015f * 0.1f,
+
+            .directionAngleVariance = 180,
+         });
+
+      wavesDesc.push_back(
+         {
+            .weight = 1.0f,
+            .nWaves = 16,
+      
+            .lengthMin = 0.5f,
+            .lengthMax = 1.0f,
+      
+            .amplitudeMin = 0.005f * 1,
+            .amplitudeMax = 0.015f * 1,
+      
+            .directionAngleVariance = 180,
+         });
+
+      // smallest
+      wavesDesc.push_back(
+         {
+            .weight = 0.8f,
+            .nWaves = 16,
+      
+            .lengthMin = 1,
+            .lengthMax = 3,
+      
+            .amplitudeMin = 0.005f,
+            .amplitudeMax = 0.015f,
+      
+            .directionAngleVariance = 180,
+         });
+      //
+      // // small
+      // wavesDesc.push_back(
+      //    {
+      //       .weight = 0.7f,
+      //       .nWaves = 24,
+      //
+      //       .lengthMin = 2,
+      //       .lengthMax = 8,
+      //
+      //       .amplitudeMin = 0.015f,
+      //       .amplitudeMax = 0.04f,
+      //
+      //       .directionAngleVariance = 180,
+      //    });
+      //
+      // // medium_2
+      // wavesDesc.push_back(
+      //    {
+      //       .weight = 0.4f,
+      //       .nWaves = 24,
+      //
+      //       .lengthMin = 8,
+      //       .lengthMax = 16,
+      //
+      //       .amplitudeMin = 0.05f,
+      //       .amplitudeMax = 0.1f,
+      //
+      //       .directionAngleVariance = 160,
+      //    });
+      //
+      // // medium
+      // wavesDesc.push_back(
+      //    {
+      //       .weight = 0.2f,
+      //       .nWaves = 24,
+      //
+      //       .lengthMin = 16,
+      //       .lengthMax = 32,
+      //
+      //       .amplitudeMin = 0.05f,
+      //       .amplitudeMax = 0.2f,
+      //
+      //       .directionAngleVariance = 120,
+      //    });
+
+      return wavesDesc;
+   }
+
+   static std::vector<WaveData> GenerateWaves() {
+      std::vector<WaterWaveDesc> wavesDesc = GenerateWavesDesc();
+      // std::vector<WaterWaveDesc> wavesDesc = GenerateWavesDesc2();
+
       std::vector<WaveData> waves;
 
       for (const auto& waveDesc : wavesDesc) {
@@ -397,8 +500,11 @@ namespace pbe {
 
       sceneCB.waterTessFactor = waterTessFactor;
       sceneCB.waterPatchSize = waterPatchSize;
+      sceneCB.waterPatchSizeAAScale = waterPatchSizeAAScale;
       sceneCB.waterPatchCount = waterPatchCount;
       sceneCB.waterPixelNormals = waterPixelNormal;
+
+      sceneCB.waterWaveScale = waterWaveScale;
 
       sceneCB.exposition = tonemapExposition;
 
