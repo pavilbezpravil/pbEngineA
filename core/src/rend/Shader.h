@@ -21,7 +21,7 @@ namespace pbe {
    class Texture2D;
    class CommandList;
 
-   void ReloadShaders();
+   void CORE_API ReloadShaders();
 
    struct ShaderDefine {
       std::string define;
@@ -53,6 +53,10 @@ namespace pbe {
          }
 
          return true;
+      }
+
+      int NDefines() const {
+         return empty() ? 0 : (int)size() - 1;
       }
    };
 
@@ -206,5 +210,7 @@ namespace pbe {
 
    GpuProgram* GetGpuProgram(const ProgramDesc& desc);
    void TermGpuPrograms();
+
+   extern CORE_API std::vector<Shader*> sShaders;
 
 }

@@ -152,11 +152,11 @@ namespace pbe {
       return hr;
    }
 
-   static std::vector<Shader*> shaders;
+   std::vector<Shader*> sShaders;
 
    void ReloadShaders() {
       INFO("Reload shaders!");
-      for (auto shader : shaders) {
+      for (auto shader : sShaders) {
          shader->Compile();
       }
    }
@@ -171,7 +171,7 @@ namespace pbe {
       // todo: check if already exist
       Ref shader{ new Shader(desc) };
       shader->Compile();
-      shaders.push_back(shader);
+      sShaders.push_back(shader);
       return shader;
    }
 
@@ -414,7 +414,6 @@ namespace pbe {
       cs = ShaderCompile(desc.cs);
    }
 
-   // static std::unordered_map<S, Ref<GpuProgram>> sGpuPrograms;
    static std::unordered_map<ProgramDesc, Ref<GpuProgram>> sGpuPrograms;
 
    GpuProgram* GetGpuProgram(const ProgramDesc& desc) {

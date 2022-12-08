@@ -259,6 +259,52 @@ namespace pbe {
       }
    };
 
+   class ShaderWindow : public EditorWindow {
+   public:
+      using EditorWindow::EditorWindow;
+
+      void OnImGuiRender() override {
+         ImGui::Begin(name.c_str(), &show);
+
+         if (ImGui::Button("Reload")) {
+            ReloadShaders();
+         }
+
+         ImGui::Text("Shaders:");
+
+         for (auto shader : sShaders) {
+            const auto& desc = shader->desc;
+            std::string shaderName = desc.path + " " + desc.entryPoint;
+
+            if (ImGui::TreeNodeEx(shaderName.c_str())) {
+               ImGui::Text("%s type %d", desc.entryPoint.c_str(), desc.type);
+
+               if (ImGui::TreeNodeEx("Defines")) {
+                  const auto& defines = desc.defines;
+
+                  int nDefines = defines.NDefines();
+                  for (int i = 0; i < nDefines; ++i) {
+                     ImGui::Text("%s = %s", defines[2 * i].Name, defines[2 * i + 1].Definition);
+                  }
+
+                  ImGui::TreePop();
+               }
+
+               if (ImGui::TreeNodeEx("Reflection")) {
+                  for (auto [id, bindDesc] : shader->reflection) {
+                     ImGui::Text("%s %d, type %d", bindDesc.Name, bindDesc.BindPoint, bindDesc.Type);
+                  }
+                  ImGui::TreePop();
+               }
+
+               ImGui::TreePop();
+            }
+         }
+
+         ImGui::End();
+      }
+   };
+
    void EditorLayer::OnAttach() {
       // todo:
       if (fs::exists(editorSettingPath)) {
@@ -275,6 +321,7 @@ namespace pbe {
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
       AddEditorWindow(new ProfilerWindow("Profiler"), true);
+      AddEditorWindow(new ShaderWindow("Shader"), true);
 
       sceneHierarchyWindow->selection = &editorSelection;
       viewportWindow->selection = &editorSelection;
