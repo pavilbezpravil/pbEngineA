@@ -279,6 +279,20 @@ namespace pbe {
             if (ImGui::TreeNodeEx(shaderName.c_str())) {
                ImGui::Text("%s type %d", desc.entryPoint.c_str(), desc.type);
 
+               if (ImGui::Button("Edit")) {
+                  // todo:
+                  static string gEngineSourcePath = "../../";
+                  static string gShadersPath = "../../core/shaders/";
+
+                  // open engine folder
+                  std::string cmd = std::format("code {}", gEngineSourcePath);
+                  system(cmd.c_str());
+
+                  // open shader file
+                  cmd = std::format("code {}{}", gShadersPath, desc.path);
+                  system(cmd.c_str());
+               }
+
                if (ImGui::TreeNodeEx("Defines")) {
                   const auto& defines = desc.defines;
 
