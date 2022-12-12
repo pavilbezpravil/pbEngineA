@@ -149,6 +149,9 @@ void WaveParamFromWavelength(inout WaveData wave, float wavelength, float amplit
    // wave.direction = normalize(direction + directionOffset);
 }
 
+// todo:
+#define FLOWMAP
+
 ////////////////////////////////////////////////////////////////////////////////
 // Domain Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -167,6 +170,12 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
    float3 tangent = float3(1, 0, 0);
    float3 binormal = float3(0, 0, 1);
 
+   float3 gertsnerWavePosW = posW;
+   #ifdef FLOWMAP
+      const float2 flow = float2(4, 0);
+      gertsnerWavePosW.xz -= flow * gScene.animationTime;
+   #endif
+
    for (int iWave = 0; iWave < gWater.nWaves; ++iWave) {
       WaveData wave = gWaves[iWave];
 
@@ -177,7 +186,7 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
       wave.amplitude *= antialiasingFade;
 
       wave.amplitude *= gWater.waterWaveScale;
-      GertsnerWave(wave, posW, displacement, tangent, binormal);
+      GertsnerWave(wave, gertsnerWavePosW, displacement, tangent, binormal);
    }
 
    float3 center = 0;
