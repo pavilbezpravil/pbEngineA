@@ -246,13 +246,17 @@ float WaterFresnel(float dotNV) {
 	return saturate(fresnel);
 }
 
+float3 PixelNormal(float3 posW) {
+   return normalize(cross(ddx(posW), ddy(posW)));
+}
+
 PsOut waterPS(PixelInputType input) : SV_TARGET {
    float2 screenUV = input.posH.xy / gCamera.rtSize;
 
    float3 posW = input.posW;
    float3 normalW = normalize(input.normalW);
    if (gWater.waterPixelNormals > 0) {
-      normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+      normalW = PixelNormal(input.posW);
    }
 
    float3 toCamera = gCamera.position - posW;

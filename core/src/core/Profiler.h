@@ -185,7 +185,11 @@ namespace pbe {
       Profiler::GpuEvent& gpuEvent;
    };
 
-#define PROFILE_CPU(Name) CpuEventGuard cpuEvent{ Profiler::Get().CreateCpuEvent(Name) }
-#define PROFILE_GPU(Name) GpuEventGuard gpuEvent{ Profiler::Get().CreateGpuEvent(Name) }
+   // todo: how macros work? why after a do this marco expand correctly?
+#define __PROFILE_CPU(Name, unique) CpuEventGuard CONCAT(cpuEvent, unique){ Profiler::Get().CreateCpuEvent(Name) }
+#define PROFILE_CPU(Name) __PROFILE_CPU(Name, __COUNTER__)
+
+#define __PROFILE_GPU(Name, unique) GpuEventGuard CONCAT(gpuEvent, unique){ Profiler::Get().CreateGpuEvent(Name) }
+#define PROFILE_GPU(Name) __PROFILE_GPU(Name, __COUNTER__)
 
 }

@@ -270,6 +270,18 @@ namespace pbe {
             ReloadShaders();
          }
 
+         // CALL_ONCE([] {
+         //       int64 mask = 1 << 7 | 1 << 13 | 1 << 25;
+         //
+         //       INFO("Mask {}", mask);
+         //
+         //       unsigned long index;
+         //       while (BitScanForward64(&index, mask)) {
+         //          mask &= ~(1 << index);
+         //          INFO("{}", index);
+         //       }
+         // });
+
          ImGui::Text("Shaders:");
 
          for (auto shader : sShaders) {

@@ -32,8 +32,20 @@ namespace pbe {
    using std::vector;
 
 #define STRINGIFY(x) #x
-#define CONCATENATION(a, b) a ## b
+#define CONCAT(a, b) a ## b
 
 #define BIT(x) 1 << x
+
+#define CALL_N_TIMES(f, times) \
+   { \
+      static int executed = times; \
+      if (executed > 0) { \
+            executed--; \
+            f(); \
+      } \
+   }
+
+#define CALL_ONCE(f) \
+   CALL_N_TIMES(f, 1)
 
 }
