@@ -76,7 +76,7 @@ namespace pbe {
       ShaderDefines defines;
 
       ShaderDesc() = default;
-      ShaderDesc(const std::string& path, const std::string& entry_point, ShaderType type) : path(path),
+      ShaderDesc(const string_view path, const string_view& entry_point, ShaderType type) : path(path),
          entryPoint(entry_point), type(type) {}
 
       friend bool operator==(ShaderDesc const& lhs, ShaderDesc const& rhs) = default;
@@ -212,5 +212,7 @@ namespace pbe {
    void TermGpuPrograms();
 
    extern CORE_API std::vector<Shader*> sShaders;
+
+   void CORE_API ShadersWindow();
 
 }

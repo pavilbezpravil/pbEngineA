@@ -265,65 +265,7 @@ namespace pbe {
 
       void OnImGuiRender() override {
          ImGui::Begin(name.c_str(), &show);
-
-         if (ImGui::Button("Reload")) {
-            ReloadShaders();
-         }
-
-         // CALL_ONCE([] {
-         //       int64 mask = 1 << 7 | 1 << 13 | 1 << 25;
-         //
-         //       INFO("Mask {}", mask);
-         //
-         //       unsigned long index;
-         //       while (BitScanForward64(&index, mask)) {
-         //          mask &= ~(1 << index);
-         //          INFO("{}", index);
-         //       }
-         // });
-
-         ImGui::Text("Shaders:");
-
-         for (auto shader : sShaders) {
-            const auto& desc = shader->desc;
-            std::string shaderName = desc.path + " " + desc.entryPoint;
-
-            UI_PUSH_ID(&desc);
-
-            if (UI_TREE_NODE(shaderName.c_str())) {
-               ImGui::Text("%s type %d", desc.entryPoint.c_str(), desc.type);
-
-               if (ImGui::Button("Edit")) {
-                  // todo:
-                  static string gEngineSourcePath = "../../";
-                  static string gShadersPath = "../../core/shaders/";
-
-                  // open engine folder
-                  std::string cmd = std::format("code {}", gEngineSourcePath);
-                  system(cmd.c_str());
-
-                  // open shader file
-                  cmd = std::format("code {}{}", gShadersPath, desc.path);
-                  system(cmd.c_str());
-               }
-
-               if (UI_TREE_NODE("Defines")) {
-                  const auto& defines = desc.defines;
-
-                  int nDefines = defines.NDefines();
-                  for (int i = 0; i < nDefines; ++i) {
-                     ImGui::Text("%s = %s", defines[2 * i].Name, defines[2 * i + 1].Definition);
-                  }
-               }
-
-               if (UI_TREE_NODE("Reflection" )) {
-                  for (auto [id, bindDesc] : shader->reflection) {
-                     ImGui::Text("%s %d, type %d", bindDesc.Name, bindDesc.BindPoint, bindDesc.Type);
-                  }
-               }
-            }
-         }
-
+         ShadersWindow();
          ImGui::End();
       }
    };
