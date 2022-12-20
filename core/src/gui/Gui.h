@@ -10,27 +10,49 @@ namespace pbe {
    // todo:
    constexpr char DRAG_DROP_ENTITY[] = "DD_ENTITY";
 
-   /*
-   #include <string_view>
-
-   #include "imgui.h"
-
-   struct TreeNode {
-      TreeNode(std::string_view name, ImGuiTreeNodeFlags flags = 0) {
-         opened = ImGui::TreeNodeEx(name.data(), flags);
-      }
-
-      ~TreeNode() {
-         if (opened) {
-            ImGui::TreePop();
+   namespace ui {
+      struct PushID {
+         PushID(const void* ptrID) {
+            ImGui::PushID(ptrID);
          }
-      }
 
-      operator bool() const { return opened; }
+         PushID(int intID) {
+            ImGui::PushID(intID);
+         }
 
-      bool opened = false;
-   };
-   */
+         PushID(const char* strID) {
+            ImGui::PushID(strID);
+         }
+
+         PushID(const char* strID_begin, const char* strID_end) {
+            ImGui::PushID(strID_begin, strID_end);
+         }
+
+         ~PushID() {
+            ImGui::PopID();
+         }
+      };
+
+#define UI_PUSH_ID(id) ui::PushID uiPushID{id}
+
+      struct TreeNode {
+         TreeNode(std::string_view name, ImGuiTreeNodeFlags flags = 0) {
+            opened = ImGui::TreeNodeEx(name.data(), flags);
+         }
+
+         ~TreeNode() {
+            if (opened) {
+               ImGui::TreePop();
+            }
+         }
+
+         operator bool() const { return opened; }
+
+         bool opened = false;
+      };
+
+#define UI_TREE_NODE(Name) ui::TreeNode uiTreeNode{Name}
+   }
 
    CORE_API ImGuiContext* GetImGuiContext();
 

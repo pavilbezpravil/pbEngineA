@@ -288,7 +288,9 @@ namespace pbe {
             const auto& desc = shader->desc;
             std::string shaderName = desc.path + " " + desc.entryPoint;
 
-            if (ImGui::TreeNodeEx(shaderName.c_str())) {
+            UI_PUSH_ID(&desc);
+
+            if (UI_TREE_NODE(shaderName.c_str())) {
                ImGui::Text("%s type %d", desc.entryPoint.c_str(), desc.type);
 
                if (ImGui::Button("Edit")) {
@@ -305,25 +307,20 @@ namespace pbe {
                   system(cmd.c_str());
                }
 
-               if (ImGui::TreeNodeEx("Defines")) {
+               if (UI_TREE_NODE("Defines")) {
                   const auto& defines = desc.defines;
 
                   int nDefines = defines.NDefines();
                   for (int i = 0; i < nDefines; ++i) {
                      ImGui::Text("%s = %s", defines[2 * i].Name, defines[2 * i + 1].Definition);
                   }
-
-                  ImGui::TreePop();
                }
 
-               if (ImGui::TreeNodeEx("Reflection")) {
+               if (UI_TREE_NODE("Reflection" )) {
                   for (auto [id, bindDesc] : shader->reflection) {
                      ImGui::Text("%s %d, type %d", bindDesc.Name, bindDesc.BindPoint, bindDesc.Type);
                   }
-                  ImGui::TreePop();
                }
-
-               ImGui::TreePop();
             }
          }
 
