@@ -10,6 +10,8 @@
 #endif
 
 #ifdef ENABLE_ASSERTS
+   #define DEBUG_BREAK() __debugbreak()
+
    #define ASSERT_NO_MESSAGE(condition) { if(!(condition)) { ERROR("Assertion Failed"); __debugbreak(); } }
    #define ASSERT_MESSAGE(condition, ...) { if(!(condition)) { ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 
@@ -17,6 +19,8 @@
 
    #define UNIMPLEMENTED() ASSERT(FALSE)
 #else
+   #define DEBUG_BREAK
+
    #define ASSERT(...)
 
    #define UNIMPLEMENTED()

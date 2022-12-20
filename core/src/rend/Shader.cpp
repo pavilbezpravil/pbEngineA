@@ -111,6 +111,35 @@ namespace pbe {
          WARN("Cant find file '{}' for compilation", desc.path);
       }
 
+      // todo: 
+      if (0) {
+         INFO("ShaderSrcPath = {}", desc.path);
+
+         auto src = ReadFileAsString(path);
+
+         size_t pos = 0;
+         while (pos != std::string::npos) {
+            pos = src.find("#include """, pos);
+
+            if (pos != std::string::npos) {
+               pos = src.find('"', pos + 1);
+               if (pos != std::string::npos) {
+                  auto startIdx = pos + 1;
+                  pos = src.find('"', pos + 1);
+
+                  if (pos != std::string::npos) {
+                     string_view includePath{ src.data() + startIdx, pos - startIdx };
+                     INFO("   IncludePath = {}", includePath);
+
+                     continue;
+                  }
+               }
+
+               WARN("Shader src code error");
+            }
+         }
+      }
+
       *blob = nullptr;
 
       UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
