@@ -11,8 +11,10 @@
 #include <d3d11shader.h>
 #include <d3dcompiler.h>
 
+#include "core/CVar.h"
 #include "core/Profiler.h"
 #include "gui/Gui.h"
+#include "fs/FileWatch.h"
 
 // https://stackoverflow.com/questions/19195183/how-to-properly-hash-the-custom-struct
 template <class T>
@@ -82,6 +84,8 @@ struct std::hash<pbe::ProgramDesc> {
 
 namespace pbe {
 
+   CVarValue<bool> cShaderReloadOnAnyChange{ "shaders/reload on any change", true};
+
    size_t StrHash(std::string_view str) {
       return std::hash<std::string_view>()(str);
    }
@@ -90,8 +94,9 @@ namespace pbe {
       return std::wstring(str.begin(), str.end());
    }
 
+   static string gShadersPath = "../../core/shaders/";
+
    string GetShadersPath(string_view path) {
-      static string gShadersPath = "../../core/shaders/";
       return gShadersPath + path.data();
    }
 
@@ -112,34 +117,7 @@ namespace pbe {
          WARN("Cant find file '{}' for compilation", desc.path);
       }
 
-      // todo: 
-      if (0) {
-         INFO("ShaderSrcPath = {}", desc.path);
-
-         auto src = ReadFileAsString(path);
-
-         size_t pos = 0;
-         while (pos != std::string::npos) {
-            pos = src.find("#include """, pos);
-
-            if (pos != std::string::npos) {
-               pos = src.find('"', pos + 1);
-               if (pos != std::string::npos) {
-                  auto startIdx = pos + 1;
-                  pos = src.find('"', pos + 1);
-
-                  if (pos != std::string::npos) {
-                     string_view includePath{ src.data() + startIdx, pos - startIdx };
-                     INFO("   IncludePath = {}", includePath);
-
-                     continue;
-                  }
-               }
-
-               WARN("Shader src code error");
-            }
-         }
-      }
+// todo
 
       *blob = nullptr;
 
@@ -461,6 +439,65 @@ namespace pbe {
       sGpuPrograms.clear();
    }
 
+   struct ShaderSrcDesc {
+      string path;
+      string source;
+      int64 hash;
+
+      std::unordered_set<string> includes;
+   };
+
+   struct ShaderMng {
+      std::unordered_map<string, ShaderSrcDesc> shaderSrcMap;
+
+      void AddSrc(string_view path)
+      {
+         auto iter = shaderSrcMap.find(path.data());
+         if (iter == shaderSrcMap.end()) {
+            ShaderSrcDesc desc;
+            desc.path = path;
+
+            INFO("ShaderSrcPath = {}", desc.path);
+
+            auto absPath = GetShadersPath(desc.path);
+
+            desc.source = ReadFileAsString(absPath);
+            const auto& src = desc.source;
+
+            size_t pos = 0;
+            while (pos != std::string::npos) {
+               pos = src.find("#include """, pos);
+
+               if (pos != std::string::npos) {
+                  pos = src.find('"', pos + 1);
+                  if (pos != std::string::npos) {
+                     auto startIdx = pos + 1;
+                     pos = src.find('"', pos + 1);
+
+                     if (pos != std::string::npos) {
+                        string_view includePath{ src.data() + startIdx, pos - startIdx };
+                        INFO("   IncludePath = {}", includePath);
+
+                        desc.includes.insert(includePath.data()); // todo:
+
+                        continue;
+                     }
+                  }
+
+                  WARN("Shader src code error");
+               }
+            }
+
+            // desc.hash = ;
+
+            shaderSrcMap[path.data()] = desc;
+         }
+      }
+      
+   };
+
+   static ShaderMng sShaderMng;
+
    void ShadersWindow() {
       if (ImGui::Button("Reload")) {
          ReloadShaders();
@@ -518,6 +555,44 @@ namespace pbe {
                }
             }
          }
+      }
+   }
+
+   void ShadersSrcWatcherUpdate()
+   {
+      static bool anySrcChanged = false; // todo: atomic
+
+      CALL_ONCE([] {
+         // todo:
+         static filewatch::FileWatch<std::string> watch(
+            gShadersPath,
+            [](const std::string& path, const filewatch::Event change_type) {
+               anySrcChanged = true;
+               std::cout << path << " : ";
+               switch (change_type) {
+               case filewatch::Event::added:
+                  std::cout << "The file was added to the directory." << '\n';
+                  break;
+               case filewatch::Event::removed:
+                  std::cout << "The file was removed from the directory." << '\n';
+                  break;
+               case filewatch::Event::modified:
+                  std::cout << "The file was modified. This can be a change in the time stamp or attributes." << '\n';
+                  break;
+               case filewatch::Event::renamed_old:
+                  std::cout << "The file was renamed and this is the old name." << '\n';
+                  break;
+               case filewatch::Event::renamed_new:
+                  std::cout << "The file was renamed and this is the new name." << '\n';
+                  break;
+               }
+            }
+         );
+      });
+
+      if (anySrcChanged && cShaderReloadOnAnyChange) {
+         ReloadShaders();
+         anySrcChanged = false;
       }
    }
 }

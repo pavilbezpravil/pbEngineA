@@ -146,6 +146,7 @@ namespace pbe {
          sConfigVarsMng.NextFrame(); // todo: use before triggered in that frame
          Profiler::Get().NextFrame();
          Input::OnUpdate(dt);
+         ShadersSrcWatcherUpdate();
 
          for (auto* layer : layerStack) {
             layer->OnUpdate(dt);

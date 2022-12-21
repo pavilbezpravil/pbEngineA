@@ -214,5 +214,6 @@ namespace pbe {
    extern CORE_API std::vector<Shader*> sShaders;
 
    void CORE_API ShadersWindow();
+   void CORE_API ShadersSrcWatcherUpdate();
 
 }
