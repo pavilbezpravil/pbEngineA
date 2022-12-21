@@ -28,8 +28,13 @@ namespace pbe {
 
    TYPER_BEGIN(SimpleMaterialComponent)
       TYPER_FIELD(albedo)
+
+      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(roughness)
+
+      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(metallic)
+
       TYPER_FIELD(opaque)
    TYPER_END(SimpleMaterialComponent)
 
@@ -67,6 +72,15 @@ namespace pbe {
       TYPE_FIELD_UI(UIColorEdit3)
       TYPE_FIELD(color)
    TYPER_END(SkyComponent)
+
+   TYPER_BEGIN(WaterComponent)
+      TYPE_FIELD_UI(UIColorEdit3)
+      TYPE_FIELD(fogColor)
+
+      TYPE_FIELD(fogUnderwaterLength)
+      TYPE_FIELD(softZ)
+   TYPER_END(WaterComponent)
+
 
    ComponentRegisterGuard::~ComponentRegisterGuard() {
       Typer::Get().UnregisterComponent(typeID);
@@ -113,6 +127,7 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);
       INTERNAL_ADD_COMPONENT(SkyComponent);
+      INTERNAL_ADD_COMPONENT(WaterComponent);
    }
 
 }

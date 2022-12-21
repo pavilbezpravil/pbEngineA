@@ -397,7 +397,7 @@ namespace pbe {
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
 
-         waterSystem.Render(cmd, cameraContext);
+         waterSystem.Render(cmd, scene, cameraContext);
 
          if (cfg.transparency && !transparentObjs.empty()) {
             GPU_MARKER("Transparency");

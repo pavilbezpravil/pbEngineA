@@ -9,6 +9,7 @@
 #include "rend/Renderer.h"
 #include "rend/RendRes.h"
 #include "rend/Shader.h"
+#include "scene/Scene.h"
 
 #include <shared/hlslCppShared.hlsli>
 
@@ -279,7 +280,7 @@ namespace pbe {
       return waves;
    }
 
-   void Water::Render(CommandList& cmd, CameraContext& cameraContext) {
+   void Water::Render(CommandList& cmd, Scene& scene, CameraContext& cameraContext) {
       if (!waterDraw) {
          return;
       }
@@ -318,6 +319,10 @@ namespace pbe {
       auto waterPass = GetGpuProgram(ProgramDesc::VsHsDsPs("water.hlsl", "waterVS", "waterHS", "waterDS", "waterPS"));
       waterPass->Activate(cmd);
 
+      waterPass->SetSRV(cmd, "gDepth", *cameraContext.depthWithoutWater);
+      waterPass->SetSRV(cmd, "gRefraction", *cameraContext.waterRefraction);
+      waterPass->SetSRV(cmd, "gWaves", *waterWaves);
+
       SWaterCB sceneCB;
 
       sceneCB.nWaves = waterWaves ? (int)waterWaves->ElementsCount() : 0;
@@ -330,14 +335,18 @@ namespace pbe {
 
       sceneCB.waterWaveScale = waterWaveScale;
 
-      auto dynWaterCB = cmd.AllocDynConstantBuffer(sceneCB);
+      for (auto [e, trans, water] : scene.GetEntitiesWith<SceneTransformComponent, WaterComponent>().each()) {
+         sceneCB.planeHeight = trans.position.y;
 
-      waterPass->SetCB<SWaterCB>(cmd, "gWaterCB", *dynWaterCB.buffer, dynWaterCB.offset);
+         sceneCB.fogColor = water.fogColor;
+         sceneCB.fogUnderwaterLength = water.fogUnderwaterLength;
+         sceneCB.softZ = water.softZ;
 
-      waterPass->SetSRV(cmd, "gDepth", *cameraContext.depthWithoutWater);
-      waterPass->SetSRV(cmd, "gRefraction", *cameraContext.waterRefraction);
-      waterPass->SetSRV(cmd, "gWaves", *waterWaves);
-      waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);
+         auto dynWaterCB = cmd.AllocDynConstantBuffer(sceneCB);
+         waterPass->SetCB<SWaterCB>(cmd, "gWaterCB", *dynWaterCB.buffer, dynWaterCB.offset);
+
+         waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);
+      }
    }
 
 }

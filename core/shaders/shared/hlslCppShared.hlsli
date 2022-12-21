@@ -91,7 +91,13 @@ struct SWaterCB {
    int waterPixelNormals;
    float waterWaveScale;
    int nWaves;
-   float _b2bfe;
+   float planeHeight;
+
+   float3 fogColor;
+   float fogUnderwaterLength;
+
+   float softZ;
+   float3 _asfa2f23fd;
 };
 
 struct SCameraCB {

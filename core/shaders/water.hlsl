@@ -24,7 +24,7 @@ VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
    VsOut output = (VsOut)0;
 
    float halfSize = gWater.waterPatchSize / 2;
-   float height = 1;
+   float height = gWater.planeHeight;
 
    float3 corners[] = {
       float3(-halfSize, height, halfSize),
@@ -172,7 +172,7 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    float3 gertsnerWavePosW = posW;
    #ifdef FLOWMAP
-      const float2 flow = float2(4, 0);
+      const float2 flow = float2(3, 0);
       gertsnerWavePosW.xz -= flow * gScene.animationTime;
    #endif
 
@@ -274,8 +274,8 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
 
    float underwaterLength = sceneDepth - waterDepth;
 
-   float3 fogColor = float3(21, 95, 179) / 256;
-   float fogExp = 1 - exp(-underwaterLength / 3);
+   float3 fogColor = gWater.fogColor;
+   float fogExp = 1 - exp(-underwaterLength / gWater.fogUnderwaterLength);
    float3 underwaterColor = lerp(refractionColor, fogColor, fogExp);
 
    // float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:
@@ -283,7 +283,7 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    // fresnel = 1;
    float3 color = lerp(underwaterColor, reflectionColor, fresnel);
 
-   float softZ = exp(-underwaterLength * 10);
+   float softZ = exp(-underwaterLength / gWater.softZ);
    color = lerp(color, refractionColor, softZ);
 
    // color = normalW;

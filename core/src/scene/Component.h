@@ -122,7 +122,13 @@ namespace pbe {
 
    struct SkyComponent {
       Entity directLight;
-      vec3 color = vec4_One;
+      vec3 color = vec3_One;
+   };
+
+   struct WaterComponent {
+      vec3 fogColor = vec3(21, 95, 179) / 256.f;
+      float fogUnderwaterLength = 5.f;
+      float softZ = 0.1f;
    };
 
    void RegisterBasicComponents(class Typer& typer);
