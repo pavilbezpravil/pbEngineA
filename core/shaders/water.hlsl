@@ -275,7 +275,7 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    float underwaterLength = sceneDepth - waterDepth;
 
    float3 fogColor = float3(21, 95, 179) / 256;
-   float fogExp = 1 - exp(-underwaterLength);
+   float fogExp = 1 - exp(-underwaterLength / 3);
    float3 underwaterColor = lerp(refractionColor, fogColor, fogExp);
 
    // float fresnel = fresnelSchlick(max(dot(normalW, V), 0.0), 0.04).x; // todo:

@@ -31,4 +31,7 @@ namespace pbe {
       return {};
    }
 
+   void OpenFileExplorer(const string_view path) {
+      ShellExecuteA(NULL, "open", path.data(), NULL, NULL, SW_SHOWDEFAULT);
+   }
 }

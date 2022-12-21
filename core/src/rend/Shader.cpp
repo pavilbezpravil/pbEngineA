@@ -85,6 +85,7 @@ struct std::hash<pbe::ProgramDesc> {
 namespace pbe {
 
    CVarValue<bool> cShaderReloadOnAnyChange{ "shaders/reload on any change", true};
+   CVarValue<bool> cShaderUseCache{ "shaders/use cache", true};
 
    size_t StrHash(std::string_view str) {
       return std::hash<std::string_view>()(str);
@@ -94,10 +95,12 @@ namespace pbe {
       return std::wstring(str.begin(), str.end());
    }
 
-   static string gShadersPath = "../../core/shaders/";
+   static string gEngineSourcePath = "../../";
+   static string gShadersSourcePath = "../../core/shaders";
+   static string gShadersCacheFolder = "shader_cache";
 
    string GetShadersPath(string_view path) {
-      return gShadersPath + path.data();
+      return gShadersSourcePath + '/' + path.data();
    }
 
    HRESULT CompileShader(ShaderDesc& desc, ID3DBlob** blob) {
@@ -116,8 +119,6 @@ namespace pbe {
       if (!fs::exists(path)) {
          WARN("Cant find file '{}' for compilation", desc.path);
       }
-
-// todo
 
       *blob = nullptr;
 
@@ -160,12 +161,12 @@ namespace pbe {
       return hr;
    }
 
-   std::vector<Shader*> sShaders;
+   std::unordered_map<size_t, Shader*> sShadersMap;
 
    void ReloadShaders() {
       INFO("Reload shaders!");
-      for (auto shader : sShaders) {
-         shader->Compile();
+      for (auto [_, shader] : sShadersMap) {
+         shader->Compile(true);
       }
    }
 
@@ -176,23 +177,53 @@ namespace pbe {
          return {};
       }
 
-      // todo: check if already exist
+      std::hash<ShaderDesc> h;
+      auto shaderDescHash = h(desc);
+
+      auto it = sShadersMap.find(shaderDescHash);
+      if (it != sShadersMap.end()) {
+         return it->second;
+      }
+
       Ref shader{ new Shader(desc) };
       shader->Compile();
-      sShaders.push_back(shader);
+
+      sShadersMap[shaderDescHash] = shader;
+
       return shader;
    }
 
-   bool Shader::Compile() {
+   bool Shader::Compile(bool force) {
       compiled = false;
 
+      std::hash<ShaderDesc> h;
+      auto shaderDescHash = h(desc);
+
+      auto shaderCachePath = std::format("{}/{}", gShadersCacheFolder, shaderDescHash);
+      auto wShaderCachePath = ToWstr(shaderCachePath);
+
       ID3D10Blob* shaderBuffer{};
-      CompileShader(desc, &shaderBuffer);
+
+      if (cShaderUseCache && !force) {
+         D3DReadFileToBlob(wShaderCachePath.c_str(), &shaderBuffer);
+      }
+
       if (!shaderBuffer) {
-         return false;
+         CompileShader(desc, &shaderBuffer);
+         if (!shaderBuffer) {
+            return false;
+         }
+
+         if (cShaderUseCache) {
+            fs::create_directory(gShadersCacheFolder);
+            if (D3DWriteBlobToFile(shaderBuffer, wShaderCachePath.c_str(), true) != S_OK) {
+               WARN("Cant save shader in cache");
+            }
+         }
       }
 
       blob = shaderBuffer;
+      shaderBuffer->Release();
 
       std::string_view dbgName = desc.path.data();
 
@@ -498,9 +529,32 @@ namespace pbe {
 
    static ShaderMng sShaderMng;
 
+   void OpenVSCodeEngineSource() {
+      std::string cmd = std::format("code {}", gEngineSourcePath);
+      system(cmd.c_str());
+   }
+
    void ShadersWindow() {
       if (ImGui::Button("Reload")) {
          ReloadShaders();
+      }
+
+      if (ImGui::Button("Clear cache")) {
+         fs::remove_all(gShadersCacheFolder);
+      }
+
+      if (ImGui::Button("Open cache folder")) {
+         OpenFileExplorer(gShadersCacheFolder);
+      }
+
+      // todo:
+      if (ImGui::Button("Open vs code engine folder")) {
+         OpenVSCodeEngineSource();
+      }
+
+      // todo:
+      if (ImGui::Button("Open explorer engine folder")) {
+         OpenFileExplorer(".\\..\\..\\");
       }
 
       // CALL_ONCE([] {
@@ -517,7 +571,7 @@ namespace pbe {
 
       ImGui::Text("Shaders:");
 
-      for (auto shader : sShaders) {
+      for (auto [_, shader] : sShadersMap) {
          const auto& desc = shader->desc;
          std::string shaderName = desc.path + " " + desc.entryPoint;
 
@@ -527,16 +581,10 @@ namespace pbe {
             ImGui::Text("%s type %d", desc.entryPoint.c_str(), desc.type);
 
             if (ImGui::Button("Edit")) {
-               // todo:
-               static string gEngineSourcePath = "../../";
-               static string gShadersPath = "../../core/shaders/";
-
-               // open engine folder
-               std::string cmd = std::format("code {}", gEngineSourcePath);
-               system(cmd.c_str());
+               OpenVSCodeEngineSource();
 
                // open shader file
-               cmd = std::format("code {}{}", gShadersPath, desc.path);
+               auto cmd = std::format("code {}{}", gShadersSourcePath, desc.path);
                system(cmd.c_str());
             }
 
@@ -565,7 +613,7 @@ namespace pbe {
       CALL_ONCE([] {
          // todo:
          static filewatch::FileWatch<std::string> watch(
-            gShadersPath,
+            gShadersSourcePath,
             [](const std::string& path, const filewatch::Event change_type) {
                anySrcChanged = true;
                std::cout << path << " : ";

@@ -47,7 +47,7 @@ namespace pbe {
             auto& l = lhs[i];
             auto& r = rhs[i];
 
-            if (strcmp(l.Name, r.Name) != 0 || strcmp(l.Definition, r.Definition) == 0) {
+            if (strcmp(l.Name, r.Name) != 0 || l.Definition == r.Definition || strcmp(l.Definition, r.Definition) == 0) {
                return false;
             }
          }
@@ -101,7 +101,7 @@ namespace pbe {
 
       std::unordered_map<size_t, D3D11_SHADER_INPUT_BIND_DESC> reflection;
 
-      bool Compile();
+      bool Compile(bool force = false);
    };
 
    struct ProgramDesc {

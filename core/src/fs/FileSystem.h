@@ -18,4 +18,6 @@ namespace pbe {
 
    CORE_API std::string OpenFileDialog(const OpenFileDialogCfg& cfg);
 
+   CORE_API void OpenFileExplorer(const string_view path);
+
 }
