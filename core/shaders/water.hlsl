@@ -1,9 +1,9 @@
-#include "shared/hlslCppShared.hlsli"
+#include "commonResources.hlsli"
 #include "common.hlsli"
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 #include "noise.inl"
-#include "samplers.hlsli"
+#include "sky.hlsli"
 
 cbuffer gWaterCB {
   SWaterCB gWater;

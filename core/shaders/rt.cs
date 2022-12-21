@@ -1,8 +1,7 @@
 #include "shared/rt.hlsli"
-#include "shared/hlslCppShared.hlsli"
+#include "commonResources.hlsli"
 #include "common.hlsli"
 #include "noise.inl"
-#include "samplers.hlsli"
 
 RWTexture2D<float4> gColor;
 

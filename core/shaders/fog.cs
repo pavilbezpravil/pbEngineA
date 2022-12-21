@@ -1,9 +1,9 @@
-#include "shared/hlslCppShared.hlsli"
+#include "commonResources.hlsli"
 #include "common.hlsli"
 #include "tonemaping.hlsli"
-#include "samplers.hlsli"
 #include "noise.inl"
 #include "math.hlsli"
+#include "sky.hlsli"
 
 Texture2D<float> gDepth;
 RWTexture2D<float4> gColor;

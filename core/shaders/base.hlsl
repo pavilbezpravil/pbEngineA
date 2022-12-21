@@ -3,7 +3,7 @@
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 #include "noise.inl"
-#include "samplers.hlsli"
+#include "commonResources.hlsli"
 
 #ifndef ZPASS
   #define COLOR_PASS

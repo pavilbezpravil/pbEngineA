@@ -1,6 +1,5 @@
-#include "shared/hlslCppShared.hlsli"
+#include "commonResources.hlsli"
 #include "common.hlsli"
-#include "samplers.hlsli"
 
 cbuffer gTestCB {
    uint offset;
