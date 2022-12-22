@@ -11,4 +11,13 @@ cbuffer gCameraCB : DECLARE_REGISTER(b, CB_SLOT_CAMERA) {
   SCameraCB gCamera;
 }
 
+cbuffer gCullCameraCB : DECLARE_REGISTER(b, CB_SLOT_CULL_CAMERA) {
+  SCameraCB gCullCamera;
+}
+
+SCameraCB GetCullCamera() {
+  // return gCamera;
+  return gCullCamera;
+}
+
 #endif

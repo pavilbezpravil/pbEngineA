@@ -120,7 +120,7 @@ namespace pbe {
    }
 
    void DbgRend::DrawViewProjection(const mat4& invViewProjection, const vec4& color) {
-      vec3 points[8];
+      vec4 points[8];
 
       points[0] = invViewProjection * vec4{-1, -1, 0, 1};
       points[1] = invViewProjection * vec4{1, -1, 0, 1};
@@ -132,7 +132,13 @@ namespace pbe {
       points[6] = invViewProjection * vec4{ -1, 1, 1, 1 };
       points[7] = invViewProjection * vec4{ 1, 1, 1, 1 };
 
-      DrawAABBOrderPoints(points, color);
+      vec3 points3[8];
+      for (int i = 0; i < ARRAYSIZE(points); ++i) {
+         points[i] /= points[i].w;
+         points3[i] = points[i];
+      }
+
+      DrawAABBOrderPoints(points3, color);
    }
 
    void DbgRend::Clear() {

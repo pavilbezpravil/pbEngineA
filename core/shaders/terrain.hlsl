@@ -59,7 +59,7 @@ struct HullOutputType {
 };
 
 float TessFactor(float3 p) {
-   float3 cameraPos = gCamera.position;
+   float3 cameraPos = GetCullCamera().position;
    float s = gTerrain.waterTessFactor * gTerrain.waterPatchSize;
 
    return s / length(p - cameraPos);

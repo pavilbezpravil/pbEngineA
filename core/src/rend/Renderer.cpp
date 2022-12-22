@@ -15,6 +15,8 @@
 
 namespace pbe {
 
+   CVarValue<bool> cFreezeCullCamera{ "render/freeze cull camera", false };
+
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", true };
@@ -176,6 +178,11 @@ namespace pbe {
       GPU_MARKER("Render Scene");
       PROFILE_GPU("Render Scene");
 
+      static RenderCamera cullCamera = camera;
+      if (!cFreezeCullCamera) {
+         cullCamera = camera;
+      }
+
       RenderDataPrepare(cmd, scene);
 
       cmd.ClearRenderTarget(*cameraContext.colorLDR, vec4{0, 0, 0, 1});
@@ -291,6 +298,13 @@ namespace pbe {
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
       cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
+
+      {
+         SCameraCB cullCameraCB;
+         cullCamera.FillSCameraCB(cullCameraCB);
+         cullCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+         cmd.AllocAndSetCommonCB(CB_SLOT_CULL_CAMERA, cullCameraCB);
+      }
 
       SEditorCB editorCB;
       editorCB.cursorPixelIdx = cameraContext.cursorPixelIdx;
@@ -515,7 +529,7 @@ namespace pbe {
          DbgRend& dbgRend = *scene.dbgRend;
          dbgRend.Clear();
 
-         // int size = 20;
+         // int size = 50;
          //
          // for (int i = -size; i <= size; ++i) {
          //    dbgRend.DrawLine(vec3{ i, 0, -size }, vec3{ i, 0, size });
@@ -530,6 +544,9 @@ namespace pbe {
 
          // auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
          // dbgRend.DrawViewProjection(shadowInvViewProjection);
+
+         auto cullCameraInvViewProjection = glm::inverse(cullCamera.GetViewProjection());
+         dbgRend.DrawViewProjection(cullCameraInvViewProjection);
 
          for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
