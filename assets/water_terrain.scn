@@ -1,0 +1,96 @@
+sceneName: test_scene
+entities:
+  - uuid: 4494813099674761447
+    tag: green
+    SceneTransformComponent:
+      position: [0, 0, 1]
+      rotation: [0, -0, 0]
+      scale: [39.3040085, 0.999999821, 25.0262299]
+    SimpleMaterialComponent:
+      albedo: [0.5, 0.5, 0.5]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 16365464828659249094
+    tag: red
+    SceneTransformComponent:
+      position: [-3, 2, 0]
+      rotation: [0, -0, 0]
+      scale: [0.999999464, 4, 4]
+    SimpleMaterialComponent:
+      albedo: [0.5, 0, 0]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 12468854452323807279
+    tag: green
+    SceneTransformComponent:
+      position: [3, 2, 0]
+      rotation: [0, -0, 0]
+      scale: [0.999999821, 4, 4]
+    SimpleMaterialComponent:
+      albedo: [0, 0.670000017, 0]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 8246439013926450448
+    tag: blue
+    SceneTransformComponent:
+      position: [0, 2.02723646, 2]
+      rotation: [0, -0, 0]
+      scale: [6, 4, 0.999999642]
+    SimpleMaterialComponent:
+      albedo: [0, 0, 0.449999988]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+    TestScript:
+      values:
+        floatValue: 2
+        intValue: 2
+      speed: 1
+      doMove: true
+  - uuid: 5536664833689235849
+    tag: Direct Light
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [58.7625618, 6.83018925e-06, -41.6738739]
+      scale: [0.999997139, 0.999997795, 0.999997914]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 6806257574526974542
+    tag: cei
+    SceneTransformComponent:
+      position: [0, 4, -0.0493881106]
+      rotation: [0, -0, 0]
+      scale: [6, 1, 4]
+    SimpleMaterialComponent:
+      albedo: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+    TestScript:
+      values:
+        floatValue: 2
+        intValue: 2
+      speed: 1
+      doMove: true
+  - uuid: 7193068985296031994
+    tag: water
+    SceneTransformComponent:
+      position: [0, 2.28470802, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    WaterComponent:
+      fogColor: [0.0186851211, 0.0929371044, 0.176470593]
+      fogUnderwaterLength: 5
+      softZ: 0.100000001
+  - uuid: 3730453661121589334
+    tag: terrain
+    SceneTransformComponent:
+      position: [0, -2.86409187, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    TerrainComponent:
+      color: [0.0679734498, 0.700421929, 0.180052876]

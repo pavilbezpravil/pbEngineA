@@ -1,3 +1,6 @@
+#ifndef COMMON_HEADER
+#define COMMON_HEADER
+
 float2 TexToNDC(float2 uv) {
    uv = uv * 2 - 1;
    uv.y *= -1;
@@ -87,3 +90,12 @@ float min4(float v1, float v2, float v3, float v4) {
 float ComponentSum(float4 v) {
   return v.x + v.y + v.z + v.w;
 }
+
+float3 CentralPoint(float3 p0, float3 p1) {
+   return (p0 + p1) / 2;
+}
+float3 Distance(float3 p0, float3 p1) {
+   return length(p0 - p1);
+}
+
+#endif

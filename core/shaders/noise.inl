@@ -1,3 +1,5 @@
+#ifndef NOISE_HEADER
+#define NOISE_HEADER
 /*
   Most of this code hasn't been made by me (maybe partially tweaked to fit) and just collected those snippets from many sources 
   across the internet. I haven't saved some of the original author names and all the credits 
@@ -698,3 +700,5 @@ float fbm2( in float2 p ){
 
     	return f/0.9375;
 }
+
+#endif

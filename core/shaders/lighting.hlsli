@@ -1,5 +1,12 @@
-#include "shared/hlslCppShared.hlsli"
+#ifndef LIGHTING_HEADER
+#define LIGHTING_HEADER
+
+#include "commonResources.hlsli"
 #include "pbr.hlsli"
+#include "noise.inl"
+
+StructuredBuffer<SLight> gLights : DECLARE_REGISTER(t, SRV_SLOT_LIGHTS);
+Texture2D<float> gShadowMap : DECLARE_REGISTER(t, SRV_SLOT_SHADOWMAP);
 
 float3 LightGetL(SLight light, float3 posW) { // L
   if (light.type == SLIGHT_TYPE_DIRECT) {
@@ -13,10 +20,13 @@ float3 LightGetL(SLight light, float3 posW) { // L
 
 float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
   if (0) {
-    // jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
+    jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
   }
 
   float3 shadowUVZ = mul(float4(posW, 1), gScene.toShadowSpace).xyz;
+  if (shadowUVZ.z >= 1) {
+      return 1;
+  }
 
   float2 shadowUV = shadowUVZ.xy + jitter;
   float z = shadowUVZ.z;
@@ -102,9 +112,7 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
   float G = GeometrySmith(N, V, L, surface.roughness);
   float3 F = fresnelSchlick(max(dot(H, V), 0.0), surface.F0);
 
-  float3 kS = F;
-  float3 kD = 1 - kS;
-  kD *= 1.0 - surface.metallic;
+  float3 kD = 1 - F;
 
   float3 numerator = NDF * G * F;
   float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
@@ -114,3 +122,17 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
   float NdotL = max(dot(N, L), 0);
   return (kD * surface.albedo / PI + specular) * radiance * NdotL;  
 }
+
+float3 Shade(Surface surface, float3 V) {
+  float3 Lo = 0;
+
+  Lo += LightShadeLo(gScene.directLight, surface, V);
+
+  for(int i = 0; i < gScene.nLights; ++i) {
+      Lo += LightShadeLo(gLights[i], surface, V);
+  }
+
+  return Lo;
+}
+
+#endif

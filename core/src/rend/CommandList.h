@@ -141,6 +141,7 @@ namespace pbe {
       }
 
       void SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size);
+      void SetCommonSRV(int slot, GPUResource& resource);
 
       void SetCommonSamplers();
 

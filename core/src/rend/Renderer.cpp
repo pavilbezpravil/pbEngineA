@@ -303,6 +303,8 @@ namespace pbe {
          cmd.pContext->CSSetUnorderedAccessViews(0, _countof(viewsUAV), viewsUAV, nullptr);
       };
 
+      cmd.SetCommonSRV(SRV_SLOT_LIGHTS, *lightBuffer);
+
       if (rayTracingSceneRender) {
          rtRenderer->RenderScene(cmd, scene, camera, cameraContext);
          ResetCS_SRV_UAV();
@@ -326,6 +328,9 @@ namespace pbe {
 
             cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
             RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
+
+            cmd.SetRenderTargets();
+            cmd.SetCommonSRV(SRV_SLOT_SHADOWMAP, *cameraContext.shadowMap);
          }
 
          cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB); // todo: set twice
@@ -381,7 +386,6 @@ namespace pbe {
 
                baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
                baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-               baseColorPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
                RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
             }
          } else {
@@ -396,6 +400,8 @@ namespace pbe {
 
             RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
          }
+
+         terrainSystem.Render(cmd, scene, cameraContext);
 
          waterSystem.Render(cmd, scene, cameraContext);
 
@@ -473,9 +479,6 @@ namespace pbe {
 
             fogPass->Activate(cmd);
 
-            fogPass->SetSRV(cmd, "gLights", *lightBuffer);
-            fogPass->SetSRV(cmd, "gShadowMap", *cameraContext.shadowMap);
-
             fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
             fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
@@ -541,7 +544,6 @@ namespace pbe {
       GpuProgram& program, const CameraContext& cameraContext) {
       program.Activate(cmd);
       program.SetSRV(cmd, "gInstances", *instanceBuffer);
-      program.SetSRV(cmd, "gLights", *lightBuffer);
 
       // set mesh
       auto* context = cmd.pContext;

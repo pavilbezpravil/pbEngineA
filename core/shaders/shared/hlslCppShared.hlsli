@@ -12,6 +12,9 @@
 #define CB_SLOT_CAMERA 11
 #define CB_SLOT_EDITOR 12
 
+#define SRV_SLOT_LIGHTS 64
+#define SRV_SLOT_SHADOWMAP 65
+
 struct SMaterial {
    float3 albedo;
    float roughness;
@@ -98,6 +101,25 @@ struct SWaterCB {
 
    float softZ;
    float3 _asfa2f23fd;
+};
+
+struct STerrainCB {
+   // todo:
+   float waterTessFactor;
+   float waterPatchSize;
+   float _wef23c;
+   int waterPatchCount;
+
+   int waterPixelNormals;
+   float waterWaveScale;
+   int _asdf23ff;
+   float _sdf2ccc;
+
+   float3 center;
+   float _asdf3f2c;
+
+   float3 color;
+   float _asdfsdf;
 };
 
 struct SCameraCB {

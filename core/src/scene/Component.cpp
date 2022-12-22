@@ -81,6 +81,10 @@ namespace pbe {
       TYPE_FIELD(softZ)
    TYPER_END(WaterComponent)
 
+   TYPER_BEGIN(TerrainComponent)
+      TYPE_FIELD_UI(UIColorEdit3)
+      TYPE_FIELD(color)
+   TYPER_END(TerrainComponent)
 
    ComponentRegisterGuard::~ComponentRegisterGuard() {
       Typer::Get().UnregisterComponent(typeID);
@@ -128,6 +132,7 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(DecalComponent);
       INTERNAL_ADD_COMPONENT(SkyComponent);
       INTERNAL_ADD_COMPONENT(WaterComponent);
+      INTERNAL_ADD_COMPONENT(TerrainComponent);
    }
 
 }

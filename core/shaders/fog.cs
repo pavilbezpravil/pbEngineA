@@ -4,74 +4,18 @@
 #include "noise.inl"
 #include "math.hlsli"
 #include "sky.hlsli"
+#include "lighting.hlsli"
 
 Texture2D<float> gDepth;
 RWTexture2D<float4> gColor;
 
-StructuredBuffer<SLight> gLights;
-Texture2D<float> gShadowMap;
-
-float LinearizeDepth(float depth) {
-   // depth = A + B / z
-   float A = gCamera.projection[2][2];
-   float B = gCamera.projection[2][3];
-   // todo: why minus?
-   return -B / (depth - A);
-}
-
-// todo: copy past'a
-float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
-   if (0) {
-      // jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
-   }
-
-   float3 shadowUVZ = mul(float4(posW, 1), gScene.toShadowSpace).xyz;
-   if (shadowUVZ.z >= 1) {
-      return 1;
-   }
-
-   float2 shadowUV = shadowUVZ.xy + jitter;
-   float z = shadowUVZ.z;
-
-   float bias = 0.003;
-
-   if (0) {
-      return gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias);
-   } else {
-      float sum = 0;
-
-      sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, float2(0, 0));
-
-      int offset = 1;
-
-      sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(-offset, 0));
-      sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(offset, 0));
-      sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(0, -offset));
-      sum += gShadowMap.SampleCmpLevelZero(gSamplerShadow, shadowUV, z - bias, int2(0, offset));
-
-      return sum / (5);
-   }
-}
-
-float LightAttenuation(SLight light, float3 posW) {
-  float attenuation = 1;
-
-  if (light.type == SLIGHT_TYPE_DIRECT) {
-    attenuation = SunShadowAttenuation(posW);
-  } else if (light.type == SLIGHT_TYPE_POINT) {
-    float distance = length(light.position - posW);
-    // attenuation = 1 / (distance * distance);
-    attenuation = smoothstep(1, 0, distance / light.radius);
-  }
-
-  return attenuation;
-}
-
-float3 LightRadiance(SLight light, float3 posW) {
-  float attenuation = LightAttenuation(light, posW);
-  float3 radiance = light.color * attenuation;
-  return radiance;
-}
+// float LinearizeDepth(float depth) {
+//    // depth = A + B / z
+//    float A = gCamera.projection[2][2];
+//    float B = gCamera.projection[2][3];
+//    // todo: why minus?
+//    return -B / (depth - A);
+// }
 
 [numthreads(8, 8, 1)]
 void main( uint3 dispatchThreadID : SV_DispatchThreadID ) { 

@@ -4,11 +4,11 @@
 #include "shared/hlslCppShared.hlsli"
 #include "samplers.hlsli"
 
-cbuffer gSceneCB : register(b10) {
+cbuffer gSceneCB : DECLARE_REGISTER(b, CB_SLOT_SCENE) {
   SSceneCB gScene;
 }
 
-cbuffer gCameraCB : register(b11) {
+cbuffer gCameraCB : DECLARE_REGISTER(b, CB_SLOT_CAMERA) {
   SCameraCB gCamera;
 }
 

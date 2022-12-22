@@ -16,10 +16,6 @@ struct VsOut {
    uint instanceID : SV_InstanceID;
 };
 
-StructuredBuffer<SLight> gLights;
-
-Texture2D<float> gShadowMap;
-
 VsOut waterVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID) {
    VsOut output = (VsOut)0;
 
@@ -56,14 +52,6 @@ struct ConstantOutputType {
 struct HullOutputType {
    float3 posW : POS_W;
 };
-
-// todo: move
-float3 CentralPoint(float3 p0, float3 p1) {
-   return (p0 + p1) / 2;
-}
-float3 Distance(float3 p0, float3 p1) {
-   return length(p0 - p1);
-}
 
 float TessFactor(float3 p) {
    float3 cameraPos = gCamera.position;

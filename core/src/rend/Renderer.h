@@ -11,8 +11,9 @@
 #include "scene/Component.h"
 #include "math/Shape.h"
 
-#include <shared/hlslCppShared.hlsli> // todo:
+// #include <shared/hlslCppShared.hlsli> // todo:
 
+#include "system/Terrain.h"
 #include "system/Water.h"
 
 struct SCameraCB;
@@ -83,20 +84,20 @@ namespace pbe {
    //    Transparent,
    // };
 
-   struct Material {
-      SMaterial material; // todo:
-      bool opaque = true; // todo:
-      // MaterialType type = MaterialType::Opaque;
-   };
-
-   struct DrawDesc {
-      uint entityID = (uint)-1;
-      mat4 transform;
-      Material material;
-
-      Mesh* mesh = nullptr;
-      AABB aabb;
-   };
+   // struct Material {
+   //    SMaterial material; // todo:
+   //    bool opaque = true; // todo:
+   //    // MaterialType type = MaterialType::Opaque;
+   // };
+   //
+   // struct DrawDesc {
+   //    uint entityID = (uint)-1;
+   //    mat4 transform;
+   //    Material material;
+   //
+   //    Mesh* mesh = nullptr;
+   //    AABB aabb;
+   // };
 
    class CORE_API Renderer {
    public:
@@ -118,6 +119,7 @@ namespace pbe {
       Ref<Buffer> underCursorBuffer;
 
       Water waterSystem;
+      Terrain terrainSystem;
 
       struct RenderObject {
          SceneTransformComponent trans;
@@ -128,7 +130,7 @@ namespace pbe {
       std::vector<RenderObject> transparentObjs;
       std::vector<RenderObject> decalObjs;
 
-      std::vector<DrawDesc> drawDescs;
+      // std::vector<DrawDesc> drawDescs;
 
       void Init();
 

@@ -131,6 +131,10 @@ namespace pbe {
       float softZ = 0.1f;
    };
 
+   struct TerrainComponent {
+      vec3 color = vec3(21, 95, 179) / 256.f;
+   };
+
    void RegisterBasicComponents(class Typer& typer);
 
 }
