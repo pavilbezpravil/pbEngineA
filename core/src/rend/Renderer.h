@@ -63,6 +63,8 @@ namespace pbe {
 
       Ref<Texture2D> shadowMap;
 
+      Ref<Buffer> underCursorBuffer; // todo:
+
       int2 cursorPixelIdx{-1}; // todo:
    };
 

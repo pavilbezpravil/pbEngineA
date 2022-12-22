@@ -584,7 +584,7 @@ namespace pbe {
                OpenVSCodeEngineSource();
 
                // open shader file
-               auto cmd = std::format("code {}{}", gShadersSourcePath, desc.path);
+               auto cmd = std::format("code {}/{}", gShadersSourcePath, desc.path);
                system(cmd.c_str());
             }
 

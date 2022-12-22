@@ -5,6 +5,12 @@
 #include "noise.inl"
 #include "sky.hlsli"
 
+// todo:
+#define EDITOR
+#ifdef EDITOR
+  #include "editor.hlsli"
+#endif
+
 cbuffer gWaterCB {
   SWaterCB gWater;
 }
@@ -238,6 +244,7 @@ float3 PixelNormal(float3 posW) {
    return normalize(cross(ddx(posW), ddy(posW)));
 }
 
+[earlydepthstencil]
 PsOut waterPS(PixelInputType input) : SV_TARGET {
    float2 screenUV = input.posH.xy / gCamera.rtSize;
 
@@ -286,6 +293,11 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    PsOut output = (PsOut)0;
    output.color.rgb = color;
    output.color.a = 1;
+
+   #if defined(EDITOR)
+      uint2 pixelIdx = input.posH.xy;
+      SetEntityUnderCursor(pixelIdx, gWater.entityID);
+   #endif
 
    return output;
 }

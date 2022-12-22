@@ -105,6 +105,16 @@ namespace pbe {
          pContext->OMSetRenderTargets(nRtvs, rtv, dsv);
       }
 
+      void SetRenderTargetsUAV(Texture2D* rt = nullptr, Texture2D* depth = nullptr, GPUResource* uav = nullptr) {
+         int nRtvs = rt ? 1 : 0;
+         ID3D11RenderTargetView** rtv = rt ? rt->rtv.GetAddressOf() : nullptr;
+         ID3D11DepthStencilView* dsv = depth ? depth->dsv.Get() : nullptr;
+
+         uint uavInitialCount = 0;
+         pContext->OMSetRenderTargetsAndUnorderedAccessViews(nRtvs, rtv,
+            dsv, 1, 1, uav ? uav->uav.GetAddressOf() : nullptr, &uavInitialCount);
+      }
+
       void SetDepthStencilState(ID3D11DepthStencilState* state, uint stencilRef = 0) {
          pContext->OMSetDepthStencilState(state, stencilRef);
       }

@@ -82,8 +82,8 @@ namespace pbe {
                      ImGui::EndDragDropSource();
                   }
 
-                  // if (ImGui::IsItemClicked()) {
-                  if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)) {
+                  if (ImGui::IsItemClicked()) {
+                  // if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)) {
                      ToggleSelectEntity(entity);
                   }
 

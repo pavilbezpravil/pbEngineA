@@ -304,7 +304,7 @@ namespace pbe {
          waterWaves = Buffer::Create(bufferDesc, waves.data());
       }
 
-      cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+      cmd.SetRenderTargetsUAV(cameraContext.colorHDR, cameraContext.depth, cameraContext.underCursorBuffer);
       cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
       cmd.SetBlendState(rendres::blendStateDefaultRGB);
 
@@ -323,26 +323,28 @@ namespace pbe {
       waterPass->SetSRV(cmd, "gRefraction", *cameraContext.waterRefraction);
       waterPass->SetSRV(cmd, "gWaves", *waterWaves);
 
-      SWaterCB sceneCB;
+      SWaterCB waterCB;
 
-      sceneCB.nWaves = waterWaves ? (int)waterWaves->ElementsCount() : 0;
+      waterCB.nWaves = waterWaves ? (int)waterWaves->ElementsCount() : 0;
 
-      sceneCB.waterTessFactor = waterTessFactor;
-      sceneCB.waterPatchSize = waterPatchSize;
-      sceneCB.waterPatchSizeAAScale = waterPatchSizeAAScale;
-      sceneCB.waterPatchCount = waterPatchCount;
-      sceneCB.waterPixelNormals = waterPixelNormal;
+      waterCB.waterTessFactor = waterTessFactor;
+      waterCB.waterPatchSize = waterPatchSize;
+      waterCB.waterPatchSizeAAScale = waterPatchSizeAAScale;
+      waterCB.waterPatchCount = waterPatchCount;
+      waterCB.waterPixelNormals = waterPixelNormal;
 
-      sceneCB.waterWaveScale = waterWaveScale;
+      waterCB.waterWaveScale = waterWaveScale;
 
       for (auto [e, trans, water] : scene.GetEntitiesWith<SceneTransformComponent, WaterComponent>().each()) {
-         sceneCB.planeHeight = trans.position.y;
+         waterCB.planeHeight = trans.position.y;
 
-         sceneCB.fogColor = water.fogColor;
-         sceneCB.fogUnderwaterLength = water.fogUnderwaterLength;
-         sceneCB.softZ = water.softZ;
+         waterCB.fogColor = water.fogColor;
+         waterCB.fogUnderwaterLength = water.fogUnderwaterLength;
+         waterCB.softZ = water.softZ;
 
-         auto dynWaterCB = cmd.AllocDynConstantBuffer(sceneCB);
+         waterCB.entityID = (uint)e;
+
+         auto dynWaterCB = cmd.AllocDynConstantBuffer(waterCB);
          waterPass->SetCB<SWaterCB>(cmd, "gWaterCB", *dynWaterCB.buffer, dynWaterCB.offset);
 
          waterPass->DrawInstanced(cmd, 4, waterPatchCount * waterPatchCount);

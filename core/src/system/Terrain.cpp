@@ -33,7 +33,7 @@ namespace pbe {
       GPU_MARKER("Terrain");
       PROFILE_GPU("Terrain");
 
-      cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+      cmd.SetRenderTargetsUAV(cameraContext.colorHDR, cameraContext.depth, cameraContext.underCursorBuffer);
       cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
       cmd.SetBlendState(rendres::blendStateDefaultRGB);
 
@@ -58,6 +58,7 @@ namespace pbe {
       for (auto [e, trans, terrain] : scene.GetEntitiesWith<SceneTransformComponent, TerrainComponent>().each()) {
          terrainCB.center = trans.position;
          terrainCB.color = terrain.color;
+         terrainCB.entityID = (uint)e;
 
          auto dynWaterCB = cmd.AllocDynConstantBuffer(terrainCB);
          terrainPass->SetCB<SWaterCB>(cmd, "gTerrainCB", *dynWaterCB.buffer, dynWaterCB.offset);

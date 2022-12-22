@@ -14,6 +14,7 @@
 
 #define SRV_SLOT_LIGHTS 64
 #define SRV_SLOT_SHADOWMAP 65
+// #define SRV_SLOT_UNDER_CURSOR_BUFFER 66
 
 struct SMaterial {
    float3 albedo;
@@ -100,7 +101,8 @@ struct SWaterCB {
    float fogUnderwaterLength;
 
    float softZ;
-   float3 _asfa2f23fd;
+   uint entityID;
+   float2 _asfa2f23fd;
 };
 
 struct STerrainCB {
@@ -116,7 +118,7 @@ struct STerrainCB {
    float _sdf2ccc;
 
    float3 center;
-   float _asdf3f2c;
+   uint entityID;
 
    float3 color;
    float _asdfsdf;

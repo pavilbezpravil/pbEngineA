@@ -285,6 +285,8 @@ namespace pbe {
       uint4 clearValue = { -1, -1, -1, -1 };
       cmd.pContext->ClearUnorderedAccessViewUint(underCursorBuffer->uav.Get(), &clearValue.x);
 
+      cameraContext.underCursorBuffer = underCursorBuffer;
+
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
@@ -376,10 +378,7 @@ namespace pbe {
                // baseColorPass->SetUAV(cmd, "gUnderCursorBuffer", *underCursorBuffer);
                // cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
 
-               // todo:
-               uint uavInitialCount = 0;
-               cmd.pContext->OMSetRenderTargetsAndUnorderedAccessViews(1, cameraContext.colorHDR->rtv.GetAddressOf(),
-                  cameraContext.depth->dsv.Get(), 1, 1, underCursorBuffer->uav.GetAddressOf(), &uavInitialCount);
+               cmd.SetRenderTargetsUAV(cameraContext.colorHDR, cameraContext.depth, underCursorBuffer);
 
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
                cmd.SetBlendState(rendres::blendStateDefaultRGB);
