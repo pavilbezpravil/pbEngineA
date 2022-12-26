@@ -141,6 +141,23 @@ namespace pbe {
       DrawAABBOrderPoints(points3, color);
    }
 
+   void DbgRend::DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const vec4& color) {
+      vec4 WHITE = vec4{ 1, 1, 1, 1 };
+      vec4 BLACK = vec4{ 0, 0, 0, 1 };
+      vec4 RED = vec4{ 1, 0, 0, 1 };
+      vec4 GREEN = vec4{ 0, 1, 0, 1 };
+      vec4 BLUE = vec4{ 0, 0, 1, 1 };
+      vec4 YELLOW = vec4{ 1, 1, 0, 1 };
+
+      vec4 colors[6] = { WHITE, BLACK, RED, GREEN, BLUE, YELLOW };
+
+      for (int i = 0; i < 6; ++i) {
+         const auto& outNormal = -frustum.planes[i].normal;
+         auto start = pos + forward * 2.f + outNormal;
+         DrawLine(start, start + outNormal, colors[i]);
+      }
+   }
+
    void DbgRend::Clear() {
       lines.clear();
    }

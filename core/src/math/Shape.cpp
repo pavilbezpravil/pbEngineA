@@ -24,4 +24,85 @@ namespace pbe {
       max = glm::max(max, aabb.max);
    }
 
+   Frustum::Frustum(const mat4& m) {
+      planes[RIGHT] = {
+         {
+            m[0][3] - m[0][0],
+            m[1][3] - m[1][0],
+            m[2][3] - m[2][0],
+         },
+         m[3][3] - m[3][0],
+      };
+
+      planes[LEFT] = {
+         {
+            m[0][3] + m[0][0],
+            m[1][3] + m[1][0],
+            m[2][3] + m[2][0],
+         },
+         m[3][3] + m[3][0],
+      };
+
+      planes[BOTTOM] = {
+         {
+            m[0][3] + m[0][1],
+            m[1][3] + m[1][1],
+            m[2][3] + m[2][1],
+         },
+         m[3][3] + m[3][1],
+      };
+
+      planes[TOP] = {
+         {
+            m[0][3] - m[0][1],
+            m[1][3] - m[1][1],
+            m[2][3] - m[2][1],
+         },
+         m[3][3] - m[3][1],
+      };
+
+      planes[BACK] = {
+         {
+            m[0][2],
+            m[1][2],
+            m[2][2],
+         },
+         m[3][2],
+      };
+
+      planes[FRONT] = {
+         {
+            m[0][3] - m[0][2],
+            m[1][3] - m[1][2],
+            m[2][3] - m[2][2],
+         },
+         m[3][3] - m[3][2],
+      };
+
+      for (int i = 0; i < 6; ++i) {
+         float mag = glm::length(planes[i].normal);
+         planes[i].normal /= mag;
+         planes[i].d /= mag;
+      }
+   }
+
+   bool Frustum::PointTest(vec3 p) {
+      for (int i = 0; i < 6; ++i) {
+         if (planes[i].Distance(p) <= 0.f) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   bool Frustum::SphereTest(const Sphere& s) {
+      for (int i = 0; i < 6; ++i) {
+         if (planes[i].Distance(s.center) <= -s.radius) {
+            return false;
+         }
+      }
+
+      return true;
+   }
 }

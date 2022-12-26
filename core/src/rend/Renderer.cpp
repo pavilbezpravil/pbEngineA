@@ -16,6 +16,7 @@
 namespace pbe {
 
    CVarValue<bool> cFreezeCullCamera{ "render/freeze cull camera", false };
+   CVarValue<bool> cUseFrustumCulling{ "render/use frustum culling", false };
 
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
@@ -45,6 +46,9 @@ namespace pbe {
 
       cameraCB.zNear = zNear;
       cameraCB.zFar = zFar;
+
+      Frustum frustum{GetViewProjection() };
+      memcpy(cameraCB.frustumPlanes, frustum.planes, sizeof(frustum.planes));
    }
 
    void Renderer::Init() {
@@ -99,9 +103,12 @@ namespace pbe {
       cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(SInstance));
    }
 
-   void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene) {
+   void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera) {
       opaqueObjs.clear();
       transparentObjs.clear();
+
+      // todo:
+      Frustum frustum{ cullCamera.GetViewProjection() };
 
       for (auto [e, sceneTrans, material] :
          scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
@@ -112,6 +119,15 @@ namespace pbe {
          // desc.material = { material, true };
          //
          // drawDescs.push_back(desc);
+
+         if (cUseFrustumCulling) {
+            // todo:
+            float sphereRadius = glm::max(sceneTrans.scale.x, sceneTrans.scale.y);
+            sphereRadius = glm::max(sphereRadius, sceneTrans.scale.z) * 2;
+            if (!frustum.SphereTest({ sceneTrans.position, })) {
+               continue;
+            }
+         }
 
          if (material.opaque) {
             opaqueObjs.emplace_back(sceneTrans, material);
@@ -183,7 +199,7 @@ namespace pbe {
          cullCamera = camera;
       }
 
-      RenderDataPrepare(cmd, scene);
+      RenderDataPrepare(cmd, scene, cullCamera);
 
       cmd.ClearRenderTarget(*cameraContext.colorLDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{0, 0, 0, 1});
@@ -545,8 +561,12 @@ namespace pbe {
          // auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
          // dbgRend.DrawViewProjection(shadowInvViewProjection);
 
-         auto cullCameraInvViewProjection = glm::inverse(cullCamera.GetViewProjection());
-         dbgRend.DrawViewProjection(cullCameraInvViewProjection);
+         if (cFreezeCullCamera) {
+            auto cullCameraInvViewProjection = glm::inverse(cullCamera.GetViewProjection());
+            dbgRend.DrawViewProjection(cullCameraInvViewProjection);
+
+            // dbgRend.DrawFrustum(Frustum{ cullCamera.GetViewProjection() },cullCamera.position, cullCamera.Forward());  
+         }
 
          for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });

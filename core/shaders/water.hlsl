@@ -70,11 +70,16 @@ float TessFactor(float3 p0, float3 p1) {
    return TessFactor(CentralPoint(p0, p1));
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Patch Constant Function
-////////////////////////////////////////////////////////////////////////////////
+
 ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint patchId : SV_PrimitiveID) {    
    ConstantOutputType output;
+
+   float3 posW = (patch[0].posW + patch[1].posW + patch[2].posW + patch[3].posW) / 4;
+
+   float sphereRadius = gWater.waterPatchSize; // todo:
+   if (!FrustumSphereTest(GetCullCamera().frustumPlanes, posW, sphereRadius)) {
+      return (ConstantOutputType)0;
+   }
 
    output.edges[0] = TessFactor(patch[2].posW, patch[0].posW);
    output.edges[1] = TessFactor(patch[0].posW, patch[1].posW);
@@ -86,9 +91,7 @@ ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint p
    return output;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Hull Shader
-////////////////////////////////////////////////////////////////////////////////
+
 [domain("quad")]
 // [partitioning("integer")]
 // [partitioning("fractional_even")]

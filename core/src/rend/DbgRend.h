@@ -6,6 +6,7 @@
 namespace pbe {
    struct AABB;
    struct Sphere;
+   struct Frustum;
    struct RenderCamera;
    struct VertexPosColor;
    class GpuProgram;
@@ -22,6 +23,7 @@ namespace pbe {
       void DrawAABB(const AABB& aabb, const vec4& color = vec4_One);
       void DrawAABBOrderPoints(const vec3 points[8], const vec4& color = vec4_One);
       void DrawViewProjection(const mat4& invViewProjection, const vec4& color = vec4_One);
+      void DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const vec4& color = vec4_One);
 
       void Clear();
 

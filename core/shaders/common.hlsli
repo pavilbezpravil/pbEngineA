@@ -98,4 +98,18 @@ float3 Distance(float3 p0, float3 p1) {
    return length(p0 - p1);
 }
 
+float PlaneDistance(float4 planeEq, float3 pos) {
+   return dot(planeEq, float4(pos, 1));
+}
+
+bool FrustumSphereTest(float4 planes[6], float3 center, float radius) {
+   for (int i = 0; i < 6; ++i) {
+      if (PlaneDistance(planes[i], center) <= -radius) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
 #endif

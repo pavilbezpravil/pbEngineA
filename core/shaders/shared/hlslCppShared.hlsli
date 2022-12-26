@@ -140,6 +140,8 @@ struct SCameraCB {
 
    int2 rtSize;
    float2 _dymmy3;
+
+   float4 frustumPlanes[6];
 };
 
 struct SDrawCallCB {

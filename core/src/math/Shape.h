@@ -21,4 +21,31 @@ namespace pbe {
 
    };
 
+   struct Plane {
+      vec3 normal;
+      float d;
+
+      float Distance(vec3 p) const {
+         return glm::dot(normal, p) + d;
+      }
+   };
+
+   struct Frustum {
+      enum Side {
+         RIGHT,
+         LEFT,
+         BOTTOM,
+         TOP,
+         BACK,
+         FRONT
+      };
+
+      Plane planes[6];
+
+      Frustum(const mat4& m);
+
+      bool PointTest(vec3 p);
+      bool SphereTest(const Sphere& s);
+   };
+
 }

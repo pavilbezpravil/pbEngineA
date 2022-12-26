@@ -72,6 +72,13 @@ float TessFactor(float3 p0, float3 p1) {
 ConstantOutputType WaterPatchConstantFunction(InputPatch<VsOut, 4> patch, uint patchId : SV_PrimitiveID) {    
    ConstantOutputType output;
 
+   float3 posW = (patch[0].posW + patch[1].posW + patch[2].posW + patch[3].posW) / 4;
+
+   float sphereRadius = gTerrain.waterPatchSize; // todo:
+   if (!FrustumSphereTest(GetCullCamera().frustumPlanes, posW, sphereRadius)) {
+      return (ConstantOutputType)0;
+   }
+
    output.edges[0] = TessFactor(patch[2].posW, patch[0].posW);
    output.edges[1] = TessFactor(patch[0].posW, patch[1].posW);
    output.edges[2] = TessFactor(patch[1].posW, patch[3].posW);

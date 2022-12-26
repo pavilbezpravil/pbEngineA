@@ -137,7 +137,7 @@ namespace pbe {
       void Init();
 
       void UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs);
-      void RenderDataPrepare(CommandList& cmd, Scene& scene);
+      void RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera);
 
       void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
       void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraContext& cameraContext);
