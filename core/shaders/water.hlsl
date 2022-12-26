@@ -146,12 +146,24 @@ void WaveParamFromWavelength(inout WaveData wave, float wavelength, float amplit
    // wave.direction = normalize(direction + directionOffset);
 }
 
+void AddGerstnerWaves(float3 posW, float waveScale, float polySize, inout float3 displacement, inout float3 tangent, inout float3 binormal) {
+   for (int iWave = 0; iWave < gWater.nWaves; ++iWave) {
+      WaveData wave = gWaves[iWave];
+
+      float antialiasingFade = 1.0f - saturate(polySize * wave.magnitude - 1.0f);
+      if (antialiasingFade <= 0) {
+         break;
+      }
+      wave.amplitude *= antialiasingFade * waveScale;
+
+      wave.amplitude *= gWater.waterWaveScale;
+      GertsnerWave(wave, posW, displacement, tangent, binormal);
+   }
+}
+
 // todo:
 #define FLOWMAP
 
-////////////////////////////////////////////////////////////////////////////////
-// Domain Shader
-////////////////////////////////////////////////////////////////////////////////
 #define WATER_PATCH_BC(patch, param, bc) (lerp(lerp(patch[0].param, patch[1].param, bc.x), lerp(patch[2].param, patch[3].param, bc.x), bc.y))
 // #define WATER_PATCH_BC(patch, param, bc) (bc.x * patch[0].param + bc.y * patch[1].param + bc.z * patch[2].param)
 [domain("quad")]
@@ -167,24 +179,22 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
    float3 tangent = float3(1, 0, 0);
    float3 binormal = float3(0, 0, 1);
 
-   float3 gertsnerWavePosW = posW;
    #ifdef FLOWMAP
-      const float2 flow = float2(3, 0);
-      gertsnerWavePosW.xz -= flow * gScene.animationTime;
+      // const float2 flow = float2(3, 0);
+      const float2 flow = normalize(posW.xz) * 5;
+
+      float timeScale = 0.5;
+      float phase0 = frac(gScene.animationTime * timeScale);
+      float phase1 = frac(phase0 + 0.5);
+
+      float w0 = 1 - 2 * abs(phase0 - 0.5);
+      float w1 = 1 - w0;
+
+      AddGerstnerWaves(posW - float3(flow.x, 0, flow.y) * phase0 / timeScale, w0, polySize, displacement, tangent, binormal);
+      AddGerstnerWaves(posW - float3(flow.x, 0, flow.y) * phase1 / timeScale, w1, polySize, displacement, tangent, binormal);
+   #else
+      AddGerstnerWaves(posW, 1, polySize, displacement, tangent, binormal);
    #endif
-
-   for (int iWave = 0; iWave < gWater.nWaves; ++iWave) {
-      WaveData wave = gWaves[iWave];
-
-      float antialiasingFade = 1.0f - saturate(polySize * wave.magnitude - 1.0f);
-      if (antialiasingFade <= 0) {
-         break;
-      }
-      wave.amplitude *= antialiasingFade;
-
-      wave.amplitude *= gWater.waterWaveScale;
-      GertsnerWave(wave, gertsnerWavePosW, displacement, tangent, binormal);
-   }
 
    float3 center = 0;
    float waveMask = SphericalMask(posW, center, 20, 20) * 0; // todo:
