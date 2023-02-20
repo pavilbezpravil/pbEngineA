@@ -4,6 +4,7 @@
 #include "tonemaping.hlsli"
 #include "noise.inl"
 #include "sky.hlsli"
+#include "lighting.hlsli"
 
 // todo:
 #define EDITOR
@@ -293,6 +294,19 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
 
    float softZ = exp(-underwaterLength / gWater.softZ);
    color = lerp(color, refractionColor, softZ);
+
+   Surface surface;
+   surface.metallic = 0;
+   surface.roughness = 0.15;
+
+   surface.posW = posW;
+   surface.normalW = normalW;
+
+   surface.albedo = 0;
+   surface.F0 = 0.04;
+
+   float3 Lo = Shade(surface, V);
+   color += Lo;
 
    // color = normalW;
    // color = rand2dTo1d(posW.xz);
