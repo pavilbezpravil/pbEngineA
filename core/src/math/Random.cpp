@@ -14,7 +14,7 @@ namespace pbe {
       }
 
       float Uniform(float min, float max) {
-         const std::uniform_real_distribution distribution{ min, max };
+         std::uniform_real_distribution distribution{ min, max };
          return distribution(sEng);
       }
 
