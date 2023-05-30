@@ -460,7 +460,7 @@ namespace pbe {
                   t.position = { 0, 0, 50 };
                   t.scale = { 100, 100, 1 };
                   auto& m = e.Add<SimpleMaterialComponent>();
-                  m.albedo = { 1, 0, 0 };
+                  m.baseColor = { 1, 0, 0 };
                }
 
                {
@@ -469,7 +469,7 @@ namespace pbe {
                   t.position = { 0, -10, 0 };
                   t.scale = { 100, 1, 100 };
                   auto& m = e.Add<SimpleMaterialComponent>();
-                  m.albedo = { 0, 1, 0 };
+                  m.baseColor = { 0, 1, 0 };
                }
 
                {
@@ -478,7 +478,7 @@ namespace pbe {
                   t.position = { 50, 0, 0 };
                   t.scale = { 1, 100, 100 };
                   auto& m = e.Add<SimpleMaterialComponent>();
-                  m.albedo = { 0, 0, 1 };
+                  m.baseColor = { 0, 0, 1 };
                }
 
                vec3 cubeSize{ 25, 10, 25 };
@@ -492,7 +492,7 @@ namespace pbe {
                   trans.rotation = Random::Uniform(vec3{ 0 }, vec3{ 30.f });
 
                   auto& material = e.GetOrAdd<SimpleMaterialComponent>();
-                  material.albedo = Random::Uniform(vec3_Zero, vec3_One);
+                  material.baseColor = Random::Uniform(vec3_Zero, vec3_One);
                   material.metallic = Random::Uniform(0, 1);
                   material.roughness = Random::Uniform(0, 1);
                   material.opaque = Random::Bool(0.75f);
@@ -635,7 +635,7 @@ namespace pbe {
 
    void EditorLayer::UnloadDll() {
       if (dllHandler) {
-         INFO("Unload prev dll");
+         INFO("Unload game dll");
          FreeLibrary(dllHandler);
          dllHandler = 0;
       }

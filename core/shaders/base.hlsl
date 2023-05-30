@@ -76,8 +76,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   surface.posW = posW;
   surface.normalW = normalW;
 
-  // todo: material.albedo -> material.baseColor
-  float3 baseColor = material.albedo;
+  float3 baseColor = material.baseColor;
 
   for (int iDecal = 0; iDecal < gScene.nDecals; ++iDecal) {
     SDecal decal = gDecals[iDecal];
@@ -87,7 +86,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
       continue;
     }
 
-    float alpha = decal.albedo.a;
+    float alpha = decal.baseColor.a;
 
     // float3 decalForward = float3(0, -1, 0);
     // alpha *= lerp(-3, 1, dot(decalForward, -surface.normalW));
@@ -98,13 +97,13 @@ PsOut ps_main(VsOut input) : SV_TARGET {
     float2 decalUV = NDCToTex(posDecalSpace.xy);
 
     // todo: decal.baseColor
-    baseColor = lerp(baseColor, decal.albedo.rgb, alpha);
+    baseColor = lerp(baseColor, decal.baseColor.rgb, alpha);
     surface.metallic = lerp(surface.metallic, decal.metallic, alpha);
     surface.roughness = lerp(surface.roughness, decal.roughness, alpha);
   }
 
   surface.albedo = baseColor * (1.0 - surface.metallic);
-  surface.F0 = lerp(0.04, surface.albedo, surface.metallic);
+  surface.F0 = lerp(0.04, baseColor, surface.metallic);
 
   // lighting
 

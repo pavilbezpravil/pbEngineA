@@ -36,7 +36,7 @@ namespace pbe {
          SRTObject obj;
          obj.position = trans.position;
          obj.halfSize = trans.scale / 2.f;
-         obj.albedo = material.albedo;
+         obj.baseColor = material.baseColor;
          obj.geomType = 1;
 
          objs.emplace_back(obj);

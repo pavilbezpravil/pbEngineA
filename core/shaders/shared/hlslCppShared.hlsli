@@ -18,7 +18,7 @@
 // #define SRV_SLOT_UNDER_CURSOR_BUFFER 66
 
 struct SMaterial {
-   float3 albedo;
+   float3 baseColor;
    float roughness;
 
    float metallic;
@@ -35,7 +35,7 @@ struct SInstance {
 
 struct SDecal {
    float4x4 viewProjection;
-   float4 albedo;
+   float4 baseColor;
 
    float metallic;
    float roughness;

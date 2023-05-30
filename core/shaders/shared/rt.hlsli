@@ -2,7 +2,7 @@ struct SRTObject {
     float3 position;
     float _wef32;
 
-    float3 albedo;
+    float3 baseColor;
     float _sdfsde;
     
     float3 halfSize;

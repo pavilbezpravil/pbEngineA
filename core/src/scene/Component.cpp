@@ -27,7 +27,7 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATE_DEF(SceneTransformComponent)
 
    TYPER_BEGIN(SimpleMaterialComponent)
-      TYPER_FIELD(albedo)
+      TYPER_FIELD(baseColor)
 
       TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(roughness)
@@ -59,7 +59,7 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATE_DEF(DirectLightComponent)
 
    TYPER_BEGIN(DecalComponent)
-      TYPER_FIELD(albedo)
+      TYPER_FIELD(baseColor)
       TYPER_FIELD(metallic)
       TYPER_FIELD(roughness)
    TYPER_END(DecalComponent)

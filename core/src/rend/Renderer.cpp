@@ -88,7 +88,7 @@ namespace pbe {
          mat4 transform = glm::transpose(trans.GetMatrix());
 
          SMaterial m;
-         m.albedo = material.albedo;
+         m.baseColor = material.baseColor;
          m.roughness = material.roughness;
          m.metallic = material.metallic;
 
@@ -221,7 +221,7 @@ namespace pbe {
             mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
             mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
             mat4 viewProjection = glm::transpose(projection * view);
-            decals.emplace_back(viewProjection, decal.albedo, decal.metallic, decal.roughness);
+            decals.emplace_back(viewProjection, decal.baseColor, decal.metallic, decal.roughness);
          }
 
          nDecals = (uint)decals.size();
@@ -601,7 +601,7 @@ namespace pbe {
          cb.instance.transform = glm::translate(mat4(1), trans.position);
          cb.instance.transform = glm::transpose(cb.instance.transform);
          cb.instance.material.roughness = material.roughness;
-         cb.instance.material.albedo = material.albedo;
+         cb.instance.material.baseColor = material.baseColor;
          cb.instance.material.metallic = material.metallic;
          cb.instance.entityID = (uint)trans.entity.GetID();
          cb.instanceStart = instanceID++;

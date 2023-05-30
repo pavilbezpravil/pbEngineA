@@ -169,7 +169,7 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    float3 baseColor = gTerrain.color;
 
    surface.albedo = baseColor * (1.0 - surface.metallic);
-   surface.F0 = lerp(0.04, surface.albedo, surface.metallic);
+   surface.F0 = lerp(0.04, baseColor, surface.metallic);
 
    float3 Lo = Shade(surface, V);
 

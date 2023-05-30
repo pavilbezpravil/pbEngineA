@@ -184,7 +184,7 @@ float3 RayColor(Ray ray) {
             // return hit.normal * 0.5f + 0.5f;
             SRTObject rtObject = gRtObjects[hit.materialID];
 
-            float3 albedo = rtObject.albedo;
+            float3 albedo = rtObject.baseColor;
 
             ray.origin = hit.position + hit.normal * 0.0001;
             if (1) {

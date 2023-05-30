@@ -86,7 +86,7 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATES_DECL(SceneTransformComponent);
 
    struct SimpleMaterialComponent {
-      vec3 albedo = vec3_One;
+      vec3 baseColor = vec3_One;
       float roughness = 0.1f;
       float metallic = 0;
       bool opaque = true;
@@ -113,7 +113,7 @@ namespace pbe {
    COMPONENT_EXPLICIT_TEMPLATES_DECL(DirectLightComponent);
 
    struct DecalComponent {
-      vec4 albedo = vec4_One;
+      vec4 baseColor = vec4_One;
       float metallic = 0.f;
       float roughness = 0.1f;
       DECL_COMPONENT(DecalComponent);
