@@ -65,8 +65,8 @@ namespace pbe {
       std::vector<TypeField> fields;
 
       std::function<void(const char*, byte*)> imguiFunc;
-      std::function<void(YAML::Emitter&, const char*, const byte*)> serialize;
-      std::function<void(const YAML::Node&, const char*, byte*)> deserialize;
+      std::function<void(YAML::Emitter&, const byte*)> serialize;
+      std::function<void(const YAML::Node&, byte*)> deserialize;
    };
 
    struct ComponentInfo {

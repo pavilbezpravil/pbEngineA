@@ -18,6 +18,7 @@ namespace pbe {
 
    struct EditorSettings {
       std::string scenePath;
+      vec3 cameraPos;
    };
 
    class EditorLayer : public Layer {

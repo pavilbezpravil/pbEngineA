@@ -196,11 +196,13 @@ namespace pbe {
    void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const {
       const auto& ti = types.at(typeID);
 
-      if (ti.serialize) {
-         ti.serialize(out, name.data(), value);
-      } else {
+      if (!name.empty()) {
          out << YAML::Key << name.data() << YAML::Value;
+      }
 
+      if (ti.serialize) {
+         ti.serialize(out, value);
+      } else {
          SERIALIZE_MAP(out);
 
          for (const auto& f : ti.fields) {
@@ -211,24 +213,27 @@ namespace pbe {
    }
 
    bool Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const {
-      if (!node[name.data()]) {
+      bool hasName = !name.empty();
+
+      if (hasName && !node[name.data()]) {
          WARN("Serialization failed! Cant find {}", name);
          return false;
       }
 
       const auto& ti = types.at(typeID);
 
-      if (ti.deserialize) {
-         ti.deserialize(node, name.data(), value);
-         return true; // todo: deserialize must return bool
-      }
-
-      const YAML::Node& nodeFields = node[name.data()];
+      const YAML::Node& nodeFields = hasName ? node[name.data()] : node;
 
       bool success = true;
-      for (const auto& f : ti.fields) {
-         byte* data = value + f.offset;
-         success &= DeserializeImpl(nodeFields, f.name, f.typeID, data);
+
+      if (ti.deserialize) {
+         ti.deserialize(nodeFields, value);
+         // todo: deserialize must return bool
+      } else {
+         for (const auto& f : ti.fields) {
+            byte* data = value + f.offset;
+            success &= DeserializeImpl(nodeFields, f.name, f.typeID, data);
+         }
       }
 
       return success;

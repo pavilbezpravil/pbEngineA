@@ -13,6 +13,7 @@
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
+#include "typer/Serialize.h"
 #include "typer/Typer.h"
 
 
@@ -22,6 +23,7 @@ namespace pbe {
 
    TYPER_BEGIN(EditorSettings)
       TYPER_FIELD(scenePath)
+      TYPER_FIELD(cameraPos)
    TYPER_END(EditorSettings)
 
    class SceneHierarchyWindow : public EditorWindow {
@@ -271,11 +273,7 @@ namespace pbe {
    };
 
    void EditorLayer::OnAttach() {
-      // todo:
-      if (fs::exists(editorSettingPath)) {
-         YAML::Node node = YAML::LoadFile(editorSettingPath);
-         Typer::Get().Deserialize(node, "settings", editorSettings);
-      }
+      Deserialize(editorSettingPath, editorSettings);
 
       ImGui::SetCurrentContext(GetImGuiContext());
 
@@ -336,17 +334,7 @@ namespace pbe {
       editorScene = {};
       UnloadDll();
 
-      // todo:
-      {
-         YAML::Emitter out;
-
-         out << YAML::BeginMap;
-         Typer::Get().Serialize(out, "settings", editorSettings);
-         out << YAML::EndMap;
-
-         std::ofstream fout{ editorSettingPath };
-         fout << out.c_str();
-      }
+      Serialize(editorSettingPath, editorSettings);
 
       Layer::OnDetach();
    }

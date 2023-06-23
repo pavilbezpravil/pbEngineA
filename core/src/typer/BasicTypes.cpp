@@ -122,8 +122,8 @@ namespace pbe {
    ti.typeSizeOf = sizeof(Type)
 
 #define DEFAULT_SER_DESER(Type) \
-   ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(Type*)value; }; \
-   ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(Type*)value = node[name].as<Type>(); };
+   ti.serialize = [](YAML::Emitter& emitter, const byte* value) { emitter << *(Type*)value; }; \
+   ti.deserialize = [](const YAML::Node& node, byte* value) { *(Type*)value = node.as<Type>(); };
 
 #define END_DECL_TYPE() \
    typer.RegisterType(ti.typeID, std::move(ti))

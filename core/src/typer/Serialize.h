@@ -2,6 +2,7 @@
 
 #include "core/Core.h"
 #include "core/Type.h"
+#include "fs/FileSystem.h"
 
 namespace YAML {
    class Node;
@@ -70,6 +71,22 @@ namespace pbe {
    private:
       Deserializer(YAML::Node node);
    };
+
+   template<typename T>
+   void Serialize(std::string_view filename, const T& value) {
+      Serializer ser;
+      ser.Ser("", value);
+      ser.SaveToFile(filename);
+   }
+
+   template<typename T>
+   bool Deserialize(std::string_view filename, T& value) {
+      if (!fs::exists(filename)) {
+         return false;
+      }
+      auto deser  = Deserializer::FromFile(filename);
+      return deser.Deser("", value);
+   }
 
    struct SerializeMap {
       SerializeMap(YAML::Emitter& out) : out(out) {
