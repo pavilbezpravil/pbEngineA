@@ -4,6 +4,9 @@
 namespace pbe {
 
    std::string ReadFileAsString(std::string_view filename) {
+      if (!fs::exists(filename)) {
+         return {};
+      }
       std::ifstream file(filename.data());
       std::stringstream buffer;
       buffer << file.rdbuf();

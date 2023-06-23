@@ -121,12 +121,12 @@ namespace pbe {
       void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const;
 
       template<typename T>
-      void Deserialize(const YAML::Node& node, std::string_view name, T& value) const {
+      bool Deserialize(const YAML::Node& node, std::string_view name, T& value) const {
          auto typeID = GetTypeID<T>();
-         DeserializeImpl(node, name, typeID, (byte*)&value);
+         return DeserializeImpl(node, name, typeID, (byte*)&value);
       }
 
-      void DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
+      bool DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
 
       std::unordered_map<TypeID, TypeInfo> types;
 

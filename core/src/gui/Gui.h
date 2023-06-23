@@ -51,7 +51,7 @@ namespace pbe {
          bool opened = false;
       };
 
-#define UI_TREE_NODE(Name) ui::TreeNode uiTreeNode{Name}
+#define UI_TREE_NODE(Name, ...) ui::TreeNode uiTreeNode{Name, __VA_ARGS__}
    }
 
    CORE_API ImGuiContext* GetImGuiContext();

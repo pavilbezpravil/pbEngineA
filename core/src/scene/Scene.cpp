@@ -7,6 +7,7 @@
 #include "fs/FileSystem.h"
 #include "rend/DbgRend.h"
 #include "script/NativeScript.h"
+#include "typer/Serialize.h"
 
 namespace pbe {
 
@@ -58,7 +59,7 @@ namespace pbe {
    }
 
    Entity Scene::Duplicate(Entity entity) {
-      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag);
+      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag + "_copy");
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
@@ -133,54 +134,49 @@ namespace pbe {
    }
 
    void SceneSerialize(std::string_view path, Scene& scene) {
-      YAML::Emitter out;
+      Serializer ser;
 
-      out << YAML::BeginMap;
       {
-         out << YAML::Key << "sceneName" << YAML::Value << "test_scene";
-
-         out << YAML::Key << "entities" << YAML::Value;
-         out << YAML::BeginSeq;
+         SERIALIZER_MAP(ser);
          {
-            for (auto [e, _] : scene.GetEntitiesWith<UUIDComponent>().each()) {
-               Entity entity{ e, &scene };
+            ser.KeyValue("sceneName", "test_scene");
 
-               out << YAML::BeginMap;
-               {
-                  auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
+            ser.KeyValue("entities");
+            SERIALIZER_SEQ(ser);
+            {
+               for (auto [e, _] : scene.GetEntitiesWith<UUIDComponent>().each()) {
+                  Entity entity{ e, &scene };
 
-                  out << YAML::Key << "uuid" << YAML::Value << uuid;
+                  SERIALIZER_MAP(ser);
+                  {
+                     auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
 
-                  if (const auto* c = entity.TryGet<TagComponent>()) {
-                     out << YAML::Key << "tag" << YAML::Value << c->tag;
-                  }
+                     ser.KeyValue("uuid", uuid);
 
-                  const auto& typer = Typer::Get();
+                     if (const auto* c = entity.TryGet<TagComponent>()) {
+                        ser.KeyValue("tag", c->tag);
+                     }
 
-                  // typer.SerializeImpl(out, SceneTransformComponent::GetName(),
-                  //    GetTypeID<SceneTransformComponent>(), (byte*)&entity.Get<SceneTransformComponent>());
+                     const auto& typer = Typer::Get();
 
-                  for (const auto ci : typer.components) {
-                     const auto& ti = typer.GetTypeInfo(ci.typeID);
+                     for (const auto ci : typer.components) {
+                        const auto& ti = typer.GetTypeInfo(ci.typeID);
 
-                     auto* ptr = (byte*)ci.tryGet(entity);
-                     if (ptr) {
-                        const char* name = ti.name.data();
-                        typer.SerializeImpl(out, name, ci.typeID, ptr);
+                        auto* ptr = (byte*)ci.tryGet(entity);
+                        if (ptr) {
+                           const char* name = ti.name.data();
+                           ser.Ser(name, ci.typeID, ptr);
+                        }
                      }
                   }
                }
-               out << YAML::EndMap;
             }
          }
-         out << YAML::EndSeq;
       }
-      out << YAML::EndMap;
 
       // todo:
-      // std::ofstream fout{ GetAssetsPath(path)};
-      std::ofstream fout{ path.data() };
-      fout << out.c_str();
+      // GetAssetsPath(path)
+      ser.SaveToFile(path);
    }
 
    Own<Scene> SceneDeserialize(std::string_view path) {
@@ -196,38 +192,35 @@ namespace pbe {
       gCurrentDeserializedScene = scene.get();
 
       // todo:
-      // YAML::Node root = YAML::LoadFile(GetAssetsPath(path));
-      YAML::Node root = YAML::LoadFile(path.data());
+      // GetAssetsPath(path);
+      auto deser = Deserializer::FromFile(path);
 
-      auto sceneName = root["sceneName"].as<string>();
+      auto sceneName = deser["sceneName"].As<string>();
 
-      YAML::Node entitiesNode = root["entities"];
+      auto entitiesNode = deser["entities"];
 
       // on first iteration create all entities
-      for (int i = 0; i < entitiesNode.size(); ++i) {
+      for (int i = 0; i < entitiesNode.Size(); ++i) {
          auto it = entitiesNode[i];
 
-         auto uuid = it["uuid"].as<uint64>();
+         auto uuid = it["uuid"].As<uint64>();
 
          string entityTag;
          if (it["tag"]) {
-            entityTag = it["tag"].as<string>();
+            entityTag = it["tag"].As<string>();
          }
 
          scene->CreateWithUUID(UUID{ uuid }, entityTag);
       }
 
       // on second iteration create all components
-      for (int i = 0; i < entitiesNode.size(); ++i) {
+      for (int i = 0; i < entitiesNode.Size(); ++i) {
          auto it = entitiesNode[i];
 
-         auto uuid = it["uuid"].as<uint64>();
+         auto uuid = it["uuid"].As<uint64>();
          Entity entity = scene->GetEntity(uuid);
 
          const auto& typer = Typer::Get();
-
-         // typer.DeserializeImpl(it, SceneTransformComponent::GetName(),
-         //    GetTypeID<SceneTransformComponent>(), (byte*)&entity.Get<SceneTransformComponent>());
 
          for (const auto ci : typer.components) {
             const auto& ti = typer.GetTypeInfo(ci.typeID);
@@ -236,7 +229,7 @@ namespace pbe {
 
             if (auto node = it[name]) {
                auto* ptr = (byte*)ci.getOrAdd(entity);
-               typer.DeserializeImpl(it, name, ci.typeID, ptr);
+               it.Deser(name, ci.typeID, ptr);
             }
          }
       }

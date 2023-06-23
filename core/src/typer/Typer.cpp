@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "Typer.h"
 #include "BasicTypes.h"
+#include "Serialize.h"
 #include "core/Assert.h"
 #include "fs/FileSystem.h"
+#include "gui/Gui.h"
 #include "scene/Component.h"
 
 namespace pbe {
@@ -86,30 +88,36 @@ namespace pbe {
       constexpr const char* testFilename = "test.yaml";
 
       if (ImGui::Button("test hard save yaml")) {
-         YAML::Emitter out;
-
-         out << YAML::BeginMap;
-         Serialize(out, "i", i);
-         Serialize(out, "f", f);
-         Serialize(out, "test", test);
-         Serialize(out, "testHard", testHard);
-         out << YAML::EndMap;
-
-         std::ofstream fout{ testFilename };
-         fout << out.c_str();
+         Serializer ser;
+         {
+            SERIALIZER_MAP(ser);
+            ser.Ser("i", i);
+            ser.Ser("f", f);
+            ser.Ser("test", test);
+            ser.Ser("testHard", testHard);
+         }
+         ser.SaveToFile(testFilename);
       }
 
       if (ImGui::Button("test hard load yaml")) {
          // std::string data = ReadFileAsString(testFilename);
          // YAML::Node node = YAML::Load(data);
 
-         std::ifstream fin{ testFilename };
-         YAML::Node node = YAML::Load(fin);
+         auto deser = Deserializer::FromFile(testFilename);
+         deser.Deser("i", i);
+         deser.Deser("f", f);
+         deser.Deser("test", test);
+         deser.Deser("testHard", testHard);
+      }
 
-         Deserialize(node, "i", i);
-         Deserialize(node, "f", f);
-         Deserialize(node, "test", test);
-         Deserialize(node, "testHard", testHard);
+      ImGui::Separator();
+      if (UI_TREE_NODE("Read file", ImGuiTreeNodeFlags_SpanFullWidth)) {
+         static std::string filename = testFilename;
+         filename.reserve(256);
+         ImGui::InputText("filename", filename.data(), filename.capacity());
+
+         std::string data = ReadFileAsString(filename.c_str());
+         ImGui::Text("%s", data.c_str());
       }
    }
 
@@ -172,7 +180,7 @@ namespace pbe {
       if (ti.imguiFunc) {
          ti.imguiFunc(name.data(), value);
       } else {
-         if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+         if (UI_TREE_NODE(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
             for (const auto& f : ti.fields) {
                byte* data = value + f.offset;
                if (f.uiFunc) {
@@ -181,8 +189,6 @@ namespace pbe {
                   ImGuiValueImpl(f.name, f.typeID, data);
                }
             }
-
-            ImGui::TreePop();
          }
       }
    }
@@ -190,49 +196,42 @@ namespace pbe {
    void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const {
       const auto& ti = types.at(typeID);
 
-      if (ti.imguiFunc) {
-         if (ti.serialize) {
-            ti.serialize(out, name.data(), value);
-         } else {
-            out << YAML::Key << name.data() << YAML::Value << "Cant serialize";
-            WARN("{} doesnt have serialize function", ti.name);
-         }
+      if (ti.serialize) {
+         ti.serialize(out, name.data(), value);
       } else {
          out << YAML::Key << name.data() << YAML::Value;
 
-         out << YAML::BeginMap;
+         SERIALIZE_MAP(out);
 
          for (const auto& f : ti.fields) {
             const byte* data = value + f.offset;
             SerializeImpl(out, f.name, f.typeID, data);
          }
-
-         out << YAML::EndMap;
       }
    }
 
-   void Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const {
-      const auto& ti = types.at(typeID);
-
+   bool Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const {
       if (!node[name.data()]) {
          WARN("Serialization failed! Cant find {}", name);
-         return;
+         return false;
       }
 
-      if (ti.imguiFunc) {
-         if (ti.deserialize) {
-            ti.deserialize(node, name.data(), value);
-         } else {
-            WARN("{} doesnt have deserialize function", ti.name);
-         }
-      } else {
-         const YAML::Node& nodeFields = node[name.data()];
+      const auto& ti = types.at(typeID);
 
-         for (const auto& f : ti.fields) {
-            byte* data = value + f.offset;
-            DeserializeImpl(nodeFields, f.name, f.typeID, data);
-         }
+      if (ti.deserialize) {
+         ti.deserialize(node, name.data(), value);
+         return true; // todo: deserialize must return bool
       }
+
+      const YAML::Node& nodeFields = node[name.data()];
+
+      bool success = true;
+      for (const auto& f : ti.fields) {
+         byte* data = value + f.offset;
+         success &= DeserializeImpl(nodeFields, f.name, f.typeID, data);
+      }
+
+      return success;
    }
 
 }
