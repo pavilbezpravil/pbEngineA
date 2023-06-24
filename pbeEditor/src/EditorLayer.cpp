@@ -36,7 +36,7 @@ namespace pbe {
          if (!pScene) {
             ImGui::Text("No scene");
          } else {
-            if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+            if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
                if (ImGui::MenuItem("Create Empty Entity")) {
                   auto createdEntity = pScene->Create();
                   ToggleSelectEntity(createdEntity);
@@ -53,11 +53,10 @@ namespace pbe {
                }
                if (ImGui::MenuItem("Direct Light")) {
                   auto createdEntity = pScene->Create();
-                  createdEntity.Get<SceneTransformComponent>().rotation = quat{vec3{PIHalf, 0, 0}};
+                  createdEntity.Get<SceneTransformComponent>().rotation = quat{ vec3{PIHalf, 0, 0} };
                   createdEntity.Add<DirectLightComponent>();
                   ToggleSelectEntity(createdEntity);
                }
-               ImGui::EndPopup();
             }
 
             for (auto [e, _] : pScene->GetEntitiesWith<UUIDComponent>().each()) {
@@ -77,11 +76,9 @@ namespace pbe {
                   | ImGuiTreeNodeFlags_SpanFullWidth
                   | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
-               if (ImGui::TreeNodeEx((void*)(size_t)entity.GetID(), nodeFlags, name)) {
-                  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                     ImGui::SetDragDropPayload(DRAG_DROP_ENTITY, &entity, sizeof(entity));
+               if (UI_TREE_NODE((void*)(size_t)entity.GetID(), nodeFlags, name)) {
+                  if (UI_DRAG_DROP_SOURCE(DRAG_DROP_ENTITY, &entity)) {
                      ImGui::Text("Drag&Drop Entity %s", name);
-                     ImGui::EndDragDropSource();
                   }
 
                   if (ImGui::IsItemClicked()) {
@@ -89,7 +86,7 @@ namespace pbe {
                      ToggleSelectEntity(entity);
                   }
 
-                  if (ImGui::BeginPopupContextItem()) {
+                  if (UI_POPUP_CONTEXT_ITEM()) {
                      ImGui::Text("This a popup for \"%s\"!", name);
 
                      ImGui::Separator();
@@ -105,15 +102,11 @@ namespace pbe {
                      if (ImGui::Button("Close")) {
                         ImGui::CloseCurrentPopup();
                      }
-
-                     ImGui::EndPopup();
                   }
 
                   // if (ImGui::IsItemHovered()) {
                   //    ImGui::SetTooltip("Right-click to open popup");
                   // }
-
-                  ImGui::TreePop();
                }
             }
          }

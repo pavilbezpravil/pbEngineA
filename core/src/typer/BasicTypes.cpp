@@ -189,13 +189,8 @@ namespace pbe {
             
          }
 
-         if (ImGui::BeginDragDropTarget()) {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(DRAG_DROP_ENTITY)) {
-               ASSERT(payload->DataSize == sizeof(Entity));
-               Entity ddEntity = *(Entity*)payload->Data;
-               *e = ddEntity;
-            }
-            ImGui::EndDragDropTarget();
+         if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY }) {
+            *e = *ddTarget.GetData<Entity>();
          }
       };
       DEFAULT_SER_DESER(Entity);
