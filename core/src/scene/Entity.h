@@ -67,6 +67,8 @@ namespace pbe {
       bool operator==(const Entity&) const = default;
 
       entt::entity GetID() const { return id; }
+      Scene* GetScene() const { return scene; }
+      const char* GetName() const;
 
    private:
       entt::entity id{ entt::null };

@@ -5,8 +5,10 @@
 #include "math/Types.h"
 #include "scene/Component.h"
 #include "scene/Entity.h"
+#include "typer/Serialize.h"
 
 namespace YAML {
+   // todo: it may be replaced inside Typer ser\seder functions
    template<>
    struct convert<glm::vec3> {
       // static Node encode(const glm::vec3& rhs) {
@@ -122,8 +124,8 @@ namespace pbe {
    ti.typeSizeOf = sizeof(Type)
 
 #define DEFAULT_SER_DESER(Type) \
-   ti.serialize = [](YAML::Emitter& emitter, const byte* value) { emitter << *(Type*)value; }; \
-   ti.deserialize = [](const YAML::Node& node, byte* value) { *(Type*)value = node.as<Type>(); };
+   ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(Type*)value; }; \
+   ti.deserialize = [](const Deserializer& deser, byte* value) { *(Type*)value = deser.node.as<Type>(); };
 
 #define END_DECL_TYPE() \
    typer.RegisterType(ti.typeID, std::move(ti))
@@ -147,8 +149,21 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(int64);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputInt(name, (int*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) {
+         // todo:
+         const char* format = "%d";
+         ImGui::InputScalar(name, ImGuiDataType_S64, value, NULL, NULL, format, 0);
+         // ImGui::InputInt(name, (int*)value);
+      };
       DEFAULT_SER_DESER(int64);
+      END_DECL_TYPE();
+
+      START_DECL_TYPE(uint64);
+      ti.imguiFunc = [](const char* name, byte* value) {
+         const char* format = "%d";
+         ImGui::InputScalar(name, ImGuiDataType_U64, value, NULL, NULL, format, 0);
+      };
+      DEFAULT_SER_DESER(uint64);
       END_DECL_TYPE();
 
       START_DECL_TYPE(string);
@@ -190,7 +205,7 @@ namespace pbe {
          }
 
          if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY }) {
-            *e = *ddTarget.GetData<Entity>();
+            *e = *ddTarget.GetPayload<Entity>();
          }
       };
       DEFAULT_SER_DESER(Entity);

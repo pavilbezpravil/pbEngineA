@@ -13,6 +13,7 @@ namespace pbe {
 
    Scene::Scene() {
       dbgRend = std::make_unique<DbgRend>();
+      // rootEntityId = Create("Scene").GetID();
    }
 
    Scene::~Scene() {
@@ -45,6 +46,10 @@ namespace pbe {
       return { uuidToEntities[(uint64)uuid], this };
    }
 
+   Entity Scene::GetRootEntity() {
+      return Entity{ rootEntityId, this };
+   }
+
    void Scene::Duplicate(Entity dst, Entity src) {
       const auto& typer = Typer::Get();
 
@@ -59,7 +64,7 @@ namespace pbe {
    }
 
    Entity Scene::Duplicate(Entity entity) {
-      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag + "_copy");
+      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag + " copy");
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
@@ -141,34 +146,20 @@ namespace pbe {
          {
             ser.KeyValue("sceneName", "test_scene");
 
-            ser.KeyValue("entities");
+            ser.Key("entities");
             SERIALIZER_SEQ(ser);
             {
-               for (auto [e, _] : scene.GetEntitiesWith<UUIDComponent>().each()) {
-                  Entity entity{ e, &scene };
+               std::vector<uint64> entitiesUuids;
 
-                  SERIALIZER_MAP(ser);
-                  {
-                     auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
+               for (auto [_, uuid] : scene.GetEntitiesWith<UUIDComponent>().each()) {
+                  entitiesUuids.emplace_back((uint64)uuid.uuid);
+               }
 
-                     ser.KeyValue("uuid", uuid);
+               std::ranges::sort(entitiesUuids);
 
-                     if (const auto* c = entity.TryGet<TagComponent>()) {
-                        ser.KeyValue("tag", c->tag);
-                     }
-
-                     const auto& typer = Typer::Get();
-
-                     for (const auto ci : typer.components) {
-                        const auto& ti = typer.GetTypeInfo(ci.typeID);
-
-                        auto* ptr = (byte*)ci.tryGet(entity);
-                        if (ptr) {
-                           const char* name = ti.name.data();
-                           ser.Ser(name, ci.typeID, ptr);
-                        }
-                     }
-                  }
+               for (auto uuid : entitiesUuids) {
+                  Entity entity = scene.GetEntity(uuid);
+                  EntitySerialize(ser, entity);
                }
             }
          }
@@ -239,4 +230,29 @@ namespace pbe {
       return scene;
    }
 
+   void EntitySerialize(Serializer& ser, Entity& entity)
+   {
+      SERIALIZER_MAP(ser);
+      {
+         auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
+
+         ser.KeyValue("uuid", uuid);
+
+         if (const auto* c = entity.TryGet<TagComponent>()) {
+            ser.KeyValue("tag", c->tag);
+         }
+
+         const auto& typer = Typer::Get();
+
+         for (const auto ci : typer.components) {
+            const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+            auto* ptr = (byte*)ci.tryGet(entity);
+            if (ptr) {
+               const char* name = ti.name.data();
+               ser.Ser(name, ci.typeID, ptr);
+            }
+         }
+      }
+   }
 }

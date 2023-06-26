@@ -8,6 +8,9 @@
 
 
 namespace pbe {
+   struct Deserializer;
+   struct Serializer;
+
    class DbgRend;
    class UUID;
 
@@ -22,6 +25,7 @@ namespace pbe {
       Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
 
       Entity GetEntity(UUID uuid);
+      Entity GetRootEntity();
 
       void Duplicate(Entity dst, Entity src);
       Entity Duplicate(Entity entity);
@@ -54,6 +58,7 @@ namespace pbe {
 
    private:
       entt::registry registry;
+      entt::entity rootEntityId;
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 
@@ -62,5 +67,9 @@ namespace pbe {
 
    CORE_API void SceneSerialize(std::string_view path, Scene& scene);
    CORE_API Own<Scene> SceneDeserialize(std::string_view path);
+
+   // todo: move to Entity.h
+   CORE_API void EntitySerialize(Serializer& ser, Entity& entity);
+   CORE_API void EntityDeserialize(const Deserializer& deser, Entity& entity);
 
 }

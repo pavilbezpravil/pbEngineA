@@ -174,6 +174,11 @@ namespace pbe {
       return types.at(typeID);
    }
 
+   TypeInfo& Typer::GetTypeInfo(TypeID typeID)
+   {
+      return types.at(typeID);
+   }
+
    void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
       const auto& ti = types.at(typeID);
 
@@ -193,36 +198,36 @@ namespace pbe {
       }
    }
 
-   void Typer::SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const {
+   void Typer::SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const {
       const auto& ti = types.at(typeID);
 
       if (!name.empty()) {
-         out << YAML::Key << name.data() << YAML::Value;
+         ser.out << YAML::Key << name.data() << YAML::Value;
       }
 
       if (ti.serialize) {
-         ti.serialize(out, value);
+         ti.serialize(ser, value);
       } else {
-         SERIALIZE_MAP(out);
+         SERIALIZER_MAP(ser);
 
          for (const auto& f : ti.fields) {
             const byte* data = value + f.offset;
-            SerializeImpl(out, f.name, f.typeID, data);
+            SerializeImpl(ser, f.name, f.typeID, data);
          }
       }
    }
 
-   bool Typer::DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const {
+   bool Typer::DeserializeImpl(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const {
       bool hasName = !name.empty();
 
-      if (hasName && !node[name.data()]) {
+      if (hasName && !deser[name.data()]) {
          WARN("Serialization failed! Cant find {}", name);
          return false;
       }
 
       const auto& ti = types.at(typeID);
 
-      const YAML::Node& nodeFields = hasName ? node[name.data()] : node;
+      const Deserializer& nodeFields = hasName ? deser[name.data()] : deser;
 
       bool success = true;
 

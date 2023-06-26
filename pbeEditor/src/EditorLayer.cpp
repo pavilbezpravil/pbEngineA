@@ -30,8 +30,15 @@ namespace pbe {
    public:
       using EditorWindow::EditorWindow;
 
+      void DragDropChangeParent(Entity entity = {}) {
+         if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY}) {
+            auto childEnt = *ddTarget.GetPayload<Entity>();
+            childEnt.Get<SceneTransformComponent>().SetParent(entity); // todo: add to pending not in all case
+         }
+      }
+
       void OnImGuiRender() override {
-         ImGui::Begin(name.c_str(), &show);
+         UI_WINDOW(name.c_str(), &show);
 
          if (!pScene) {
             ImGui::Text("No scene");
@@ -62,56 +69,96 @@ namespace pbe {
             for (auto [e, _] : pScene->GetEntitiesWith<UUIDComponent>().each()) {
                Entity entity{ e, pScene };
 
-               const auto* name = std::invoke([&] {
-                  auto c = entity.TryGet<TagComponent>();
-                  return c ? c->tag.data() : "Unnamed Entity";
-               });
+               const auto& trans = entity.Get<SceneTransformComponent>();
+               if (trans.HasParent()) {
+                  continue;
+               }
 
-               // const auto& trans = entity.Get<SceneTransformComponent>();
-               bool hasChilds = false;
+               UIEntity(entity);
+            }
 
-               ImGuiTreeNodeFlags nodeFlags =
-                  (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
-                  | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
-                  | ImGuiTreeNodeFlags_SpanFullWidth
-                  | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
+            // place item for drag&drop to root
+            // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
+            ImGui::Dummy(ImGui::GetContentRegionAvail());
+            DragDropChangeParent();
+         }
+      }
 
-               if (UI_TREE_NODE((void*)(size_t)entity.GetID(), nodeFlags, name)) {
-                  if (UI_DRAG_DROP_SOURCE(DRAG_DROP_ENTITY, &entity)) {
-                     ImGui::Text("Drag&Drop Entity %s", name);
+      void UIEntity(Entity& entity) {
+         // const
+         auto& trans = entity.Get<SceneTransformComponent>();
+         bool hasChilds = trans.HasChilds();
+
+         const auto* name = std::invoke([&] {
+            auto c = entity.TryGet<TagComponent>();
+            return c ? c->tag.data() : "Unnamed Entity";
+            });
+
+         auto entityUIAction = [&]() {
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip("Right-click to open popup %s", name);
+            }
+
+            if (UI_DRAG_DROP_SOURCE(DRAG_DROP_ENTITY, entity)) {
+               ImGui::Text("Drag&Drop Entity %s", name);
+            }
+
+            DragDropChangeParent(entity);
+
+            // IsItemToggledOpen: when node opened dont select entity
+            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+               ToggleSelectEntity(entity);
+            }
+
+            if (UI_POPUP_CONTEXT_ITEM()) {
+               ImGui::Text("This a popup for \"%s\"!", name);
+
+               ImGui::Separator();
+
+               if (ImGui::Button("Delete")) {
+                  // todo: add to pending
+                  pScene->DestroyImmediate(entity);
+                  if (selection) {
+                     selection->Unselect(entity);
                   }
+               }
 
-                  if (ImGui::IsItemClicked()) {
-                  // if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered(ImGuiHoveredFlags_None)) {
-                     ToggleSelectEntity(entity);
-                  }
+               if (ImGui::Button("Unparent")) {
+                  trans.SetParent();
+               }
 
-                  if (UI_POPUP_CONTEXT_ITEM()) {
-                     ImGui::Text("This a popup for \"%s\"!", name);
+               if (ImGui::Button("Close")) {
+                  ImGui::CloseCurrentPopup();
+               }
 
-                     ImGui::Separator();
+               if (ImGui::Button("Save to file")) {
+                  Serializer ser;
+                  EntitySerialize(ser, entity);
+                  ser.SaveToFile(std::format("{}.yaml", entity.GetName()));
+               }
 
-                     if (ImGui::Button("Delete")) {
-                        // todo: add to pending
-                        pScene->DestroyImmediate(entity);
-                        if (selection) {
-                           selection->Unselect(entity);
-                        }
-                     }
-
-                     if (ImGui::Button("Close")) {
-                        ImGui::CloseCurrentPopup();
-                     }
-                  }
-
-                  // if (ImGui::IsItemHovered()) {
-                  //    ImGui::SetTooltip("Right-click to open popup");
-                  // }
+               if (ImGui::Button("Load from file")) {
+                  auto deser = Deserializer::FromFile("entity.yaml");
+                  // todo:
                }
             }
-         }
+         };
 
-         ImGui::End();
+         ImGuiTreeNodeFlags nodeFlags =
+            (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
+            | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+            | ImGuiTreeNodeFlags_SpanFullWidth
+            | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
+
+         if (UI_TREE_NODE((void*)(size_t)entity.GetID(), nodeFlags, name)) {
+            entityUIAction();
+
+            for (auto child : trans.children) {
+               UIEntity(child);
+            }
+         } else {
+            entityUIAction();
+         }
       }
 
       void SetScene(Scene* scene) {
@@ -163,7 +210,7 @@ namespace pbe {
                }
             }
 
-            if (ImGui::BeginPopupContextItem("Add Component Popup")) {
+            if (UI_POPUP_CONTEXT_ITEM("Add Component Popup")) {
                for (const auto& ci : typer.components) {
                   auto* pComponent = ci.tryGet(entity);
                   if (!pComponent) {
@@ -173,8 +220,6 @@ namespace pbe {
                      }
                   }
                }
-
-               ImGui::EndPopup();
             }
 
             if (ImGui::Button("Add Component")) {

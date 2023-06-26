@@ -12,6 +12,24 @@ namespace pbe {
    constexpr char DRAG_DROP_ENTITY[] = "DD_ENTITY";
 
    namespace ui {
+      struct Window {
+         Window(const char* name, bool* p_open = NULL, ImGuiWindowFlags flags = 0) {
+            opened = ImGui::Begin(name, p_open, flags);
+         }
+
+         ~Window() {
+            if (opened) {
+               ImGui::End();
+            }
+         }
+
+         operator bool() const { return opened; }
+
+         bool opened = false;
+      };
+
+#define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}
+
       struct PushID {
          PushID(const void* ptrID) {
             ImGui::PushID(ptrID);
@@ -127,7 +145,7 @@ namespace pbe {
          }
 
          template<typename T>
-         T* GetData() {
+         T* GetPayload() {
             ASSERT(payload->DataSize == sizeof(T));
             return (T*)payload->Data;
          }
@@ -144,7 +162,8 @@ namespace pbe {
          const ImGuiPayload* payload = nullptr;
       };
 
-#define UI_DRAG_DROP_TARGET(type, ...) ui::DragDropTarget uiDragDropTarget{type, __VA_ARGS__}
+      // ui::DragDropTarget ddTarget{ type }
+#define UI_DRAG_DROP_TARGET(type, ...) ui::DragDropTarget ddTarget{type, __VA_ARGS__}
    }
 
    CORE_API ImGuiContext* GetImGuiContext();

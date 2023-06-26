@@ -13,6 +13,9 @@ namespace YAML {
 }
 
 namespace pbe {
+   struct Serializer;
+   struct Deserializer;
+
    class Entity;
    class Scene;
 
@@ -25,6 +28,12 @@ namespace pbe {
       ti.typeSizeOf = sizeof(type); \
       \
       TypeField f{};
+
+#define TYPER_SERIALIZE(...) \
+      ti.serialize = __VA_ARGS__;
+
+#define TYPER_DESERIALIZE(...) \
+      ti.deserialize = __VA_ARGS__;
 
    // todo: remove
 #define TYPER_FIELD(name) \
@@ -65,8 +74,8 @@ namespace pbe {
       std::vector<TypeField> fields;
 
       std::function<void(const char*, byte*)> imguiFunc;
-      std::function<void(YAML::Emitter&, const byte*)> serialize;
-      std::function<void(const YAML::Node&, byte*)> deserialize;
+      std::function<void(Serializer&, const byte*)> serialize;
+      std::function<void(const Deserializer&, byte*)> deserialize;
    };
 
    struct ComponentInfo {
@@ -102,7 +111,17 @@ namespace pbe {
       void RegisterNativeScript(NativeScriptInfo&& si);
       void UnregisterNativeScript(TypeID typeID);
 
+      template<typename T>
+      const TypeInfo& GetTypeInfo() const {
+         return GetTypeInfo(GetTypeID<T>());
+      }
       const TypeInfo& GetTypeInfo(TypeID typeID) const;
+
+      template<typename T>
+      TypeInfo& GetTypeInfo() {
+         return GetTypeInfo(GetTypeID<T>());
+      }
+      TypeInfo& GetTypeInfo(TypeID typeID);
 
       template<typename T>
       void ImGuiValue(std::string_view name, T& value) const {
@@ -113,20 +132,20 @@ namespace pbe {
       void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const;
 
       template<typename T>
-      void Serialize(YAML::Emitter& out, std::string_view name, const T& value) const {
+      void Serialize(Serializer& ser, std::string_view name, const T& value) const {
          auto typeID = GetTypeID<T>();
-         SerializeImpl(out, name, typeID, (byte*)&value);
+         SerializeImpl(ser, name, typeID, (byte*)&value);
       }
 
-      void SerializeImpl(YAML::Emitter& out, std::string_view name, TypeID typeID, const byte* value) const;
+      void SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const;
 
       template<typename T>
-      bool Deserialize(const YAML::Node& node, std::string_view name, T& value) const {
+      bool Deserialize(const Deserializer& deser, std::string_view name, T& value) const {
          auto typeID = GetTypeID<T>();
-         return DeserializeImpl(node, name, typeID, (byte*)&value);
+         return DeserializeImpl(deser, name, typeID, (byte*)&value);
       }
 
-      bool DeserializeImpl(const YAML::Node& node, std::string_view name, TypeID typeID, byte* value) const;
+      bool DeserializeImpl(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const;
 
       std::unordered_map<TypeID, TypeInfo> types;
 

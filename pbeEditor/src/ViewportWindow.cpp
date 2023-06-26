@@ -349,7 +349,8 @@ namespace pbe {
 
       bool snap = Input::IsKeyPressed(VK_CONTROL);
 
-      mat4 entityTransform = selectedEntity.Get<SceneTransformComponent>().GetMatrix();
+      auto& trans = selectedEntity.Get<SceneTransformComponent>();
+      mat4 entityTransform = trans.GetMatrix();
 
       float snapValue = 1;
       float snapValues[3] = { snapValue, snapValue, snapValue };
@@ -363,7 +364,18 @@ namespace pbe {
          snap ? snapValues : nullptr);
 
       if (ImGuizmo::IsUsing()) {
-         selectedEntity.Get<SceneTransformComponent>().SetMatrix(entityTransform);
+         auto [position, rotation, scale] = GetTransformDecomposition(entityTransform);
+         if (gizmoCfg.operation & ImGuizmo::OPERATION::TRANSLATE) {
+            trans.SetPosition(position);
+         }
+         if (gizmoCfg.operation & ImGuizmo::OPERATION::ROTATE) {
+            trans.SetRotation(rotation);
+         }
+         if (gizmoCfg.operation & ImGuizmo::OPERATION::SCALE) {
+            trans.SetScale(scale);
+         }
+
+         // trans.SetMatrix(entityTransform);
       }
    }
 }

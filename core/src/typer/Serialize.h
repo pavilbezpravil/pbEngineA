@@ -21,7 +21,7 @@ namespace pbe {
       void Ser(std::string_view name, TypeID typeID, const byte* value);
 
       template<typename Key>
-      void KeyValue(const Key& key) {
+      void Key(const Key& key) {
          out << YAML::Key << key << YAML::Value;
       }
 
@@ -39,12 +39,19 @@ namespace pbe {
       static Deserializer FromFile(string_view filename);
 
       template<typename T>
-      bool Deser(std::string_view name, T& value) {
+      T Deser(std::string_view name) const{
+         T value;
+         Deser(name, value);
+         return value;
+      }
+
+      template<typename T>
+      bool Deser(std::string_view name, T& value) const {
          const auto typeID = GetTypeID<T>();
          return Deser(name, typeID, (byte*)&value);
       }
 
-      bool Deser(std::string_view name, TypeID typeID, byte* value);
+      bool Deser(std::string_view name, TypeID typeID, byte* value) const;
 
       template <typename T>
       T As() const {
@@ -87,20 +94,6 @@ namespace pbe {
       auto deser  = Deserializer::FromFile(filename);
       return deser.Deser("", value);
    }
-
-   struct SerializeMap {
-      SerializeMap(YAML::Emitter& out) : out(out) {
-         out << YAML::BeginMap;
-      }
-
-      ~SerializeMap() {
-         out << YAML::EndMap;
-      }
-
-      YAML::Emitter& out;
-   };
-
-#define SERIALIZE_MAP(out) SerializeMap serializeMap{out}
 
    struct SerializerMap {
       SerializerMap(Serializer& ser) : ser(ser) {
