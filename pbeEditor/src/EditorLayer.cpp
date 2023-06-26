@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EditorLayer.h"
 #include "EditorWindow.h"
+#include "Undo.h"
 #include "ViewportWindow.h"
 #include "app/Event.h"
 #include "app/Input.h"
@@ -176,12 +177,21 @@ namespace pbe {
       EditorSelection* selection{};
    };
 
+   // todo: move to other file
+   template<typename T>
+   struct Component {
+      T* operator->() { return entity.TryGet<T>(); }
+      const T* operator->() const { return entity.TryGet<T>(); }
+
+      Entity entity;
+   };
+
    class InspectorWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
 
       void OnImGuiRender() override {
-         ImGui::Begin(name.c_str(), &show);
+         UI_WINDOW(name.c_str(), &show);
 
          Entity entity = selection ? selection->FirstSelected() : Entity{};
 
@@ -193,9 +203,14 @@ namespace pbe {
             std::string name = entity.Get<TagComponent>().tag;
             name.reserve(glm::max((int)name.size(), 64));
 
+            // todo: undo
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::InputText("Name", name.data(), name.capacity())) {
                entity.Get<TagComponent>().tag = name.c_str();
+            }
+
+            if (ImGui::IsItemEdited()) {
+               INFO("Edited");
             }
 
             ImGui::SameLine();
@@ -204,12 +219,49 @@ namespace pbe {
             const auto& typer = Typer::Get();
 
             for (const auto& ci : typer.components) {
+               std::vector<byte> data;
                if (auto* pComponent = ci.tryGet(entity)) {
                   const auto& ti = typer.GetTypeInfo(ci.typeID);
-                  EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
+
+                  // todo: move to Undo
+                  data.resize(typer.GetTypeInfo(ci.typeID).typeSizeOf);
+                  ci.duplicate(data.data(), pComponent);
+
+                  static Serializer serPrev;
+                  serPrev.Ser("", ci.typeID, data.data());
+
+                  bool edited = EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
+
+                  if (edited) {
+                     // Serializer ser;
+                     // ser.Ser(ti.name.data(), ci.typeID, (byte*)pComponent);
+                     // INFO("Edited: {} {} {}", name, ti.name, ser.out.c_str());
+
+                     // Serializer serPrev;
+                     // serPrev.Ser("", ci.typeID, data.data());
+
+                     Serializer serNew;
+                     serNew.Ser("", ci.typeID, (byte*)pComponent);
+
+                     INFO("Edited: {} {}\nprev:\n{}\nnew:\n{}", name, ti.name, serPrev.Str(), serNew.Str());
+
+                     // Undo::Get().Push([=]() {
+                     Undo::Get().Push([&ci, entity, data]() mutable {
+                        auto* pComponent = ci.tryGet(entity);
+
+                        auto deser = Deserializer::FromStr(serPrev.Str());
+                        // deser.Deser("", ci.typeID, data.data());
+                        deser.Deser("", ci.typeID, (byte*)pComponent);
+                        // ci.replace(entity, deser);
+
+                        // auto* pComponent = ci.tryGet(entity);
+                        // ci.duplicate(pComponent, data.data());
+                     });
+                  }
                }
             }
 
+            // todo: undo
             if (UI_POPUP_CONTEXT_ITEM("Add Component Popup")) {
                for (const auto& ci : typer.components) {
                   auto* pComponent = ci.tryGet(entity);
@@ -226,8 +278,6 @@ namespace pbe {
                ImGui::OpenPopup("Add Component Popup");
             }
          }
-
-         ImGui::End();
       }
       
       EditorSelection* selection{};
@@ -587,6 +637,10 @@ namespace pbe {
                auto duplicatedEntity = editorScene->Duplicate(entity);
                editorSelection.Select(duplicatedEntity, false);
             }
+         }
+
+         if (e->keyCode == 'Z' && Input::IsKeyPressed(VK_CONTROL)) {
+            Undo::Get().PopAction();
          }
       }
    }

@@ -134,17 +134,17 @@ namespace pbe {
       TypeInfo ti;
 
       START_DECL_TYPE(bool);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::Checkbox(name, (bool*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::Checkbox(name, (bool*)value); };
       DEFAULT_SER_DESER(bool);
       END_DECL_TYPE();
 
       START_DECL_TYPE(float);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat(name, (float*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputFloat(name, (float*)value); };
       DEFAULT_SER_DESER(float);
       END_DECL_TYPE();
 
       START_DECL_TYPE(int);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputInt(name, (int*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputInt(name, (int*)value); };
       DEFAULT_SER_DESER(int);
       END_DECL_TYPE();
 
@@ -152,7 +152,7 @@ namespace pbe {
       ti.imguiFunc = [](const char* name, byte* value) {
          // todo:
          const char* format = "%d";
-         ImGui::InputScalar(name, ImGuiDataType_S64, value, NULL, NULL, format, 0);
+         return ImGui::InputScalar(name, ImGuiDataType_S64, value, NULL, NULL, format, 0);
          // ImGui::InputInt(name, (int*)value);
       };
       DEFAULT_SER_DESER(int64);
@@ -161,24 +161,24 @@ namespace pbe {
       START_DECL_TYPE(uint64);
       ti.imguiFunc = [](const char* name, byte* value) {
          const char* format = "%d";
-         ImGui::InputScalar(name, ImGuiDataType_U64, value, NULL, NULL, format, 0);
+         return ImGui::InputScalar(name, ImGuiDataType_U64, value, NULL, NULL, format, 0);
       };
       DEFAULT_SER_DESER(uint64);
       END_DECL_TYPE();
 
       START_DECL_TYPE(string);
       // todo:
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::Text(((string*)value)->data()); };
+      ti.imguiFunc = [](const char* name, byte* value) { ImGui::Text(((string*)value)->data()); return false; };
       DEFAULT_SER_DESER(string);
       END_DECL_TYPE();
 
       START_DECL_TYPE(vec3);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::InputFloat3(name, (float*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputFloat3(name, (float*)value); };
       DEFAULT_SER_DESER(vec3);
       END_DECL_TYPE();
 
       START_DECL_TYPE(vec4);
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::ColorEdit4(name, (float*)value); };
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::ColorEdit4(name, (float*)value); };
       DEFAULT_SER_DESER(vec4);
       END_DECL_TYPE();
 
@@ -187,11 +187,14 @@ namespace pbe {
          auto angles = glm::degrees(glm::eulerAngles(*(quat*)value));
          if (ImGui::InputFloat3(name, &angles.x)) {
             *(quat*)value = glm::radians(angles);
+            return true;
          }
+         return false;
       };
       DEFAULT_SER_DESER(quat);
       END_DECL_TYPE();
 
+      // todo: it is not basic type
       START_DECL_TYPE(Entity);
       ti.imguiFunc = [](const char* name, byte* value) {
          Entity* e = (Entity*)value;
@@ -199,14 +202,17 @@ namespace pbe {
          ImGui::Text(name);
          ImGui::SameLine();
 
-         const char* entityName = e->Valid() ? e->Get<TagComponent>().tag.c_str() : "None";
+         const char* entityName = e->Valid() ? e->GetName() : "None";
          if (ImGui::Button(entityName)) {
             
          }
 
          if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY }) {
             *e = *ddTarget.GetPayload<Entity>();
+            return true;
          }
+
+         return false;
       };
       DEFAULT_SER_DESER(Entity);
       END_DECL_TYPE();

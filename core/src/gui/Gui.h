@@ -18,9 +18,7 @@ namespace pbe {
          }
 
          ~Window() {
-            if (opened) {
-               ImGui::End();
-            }
+            ImGui::End();
          }
 
          operator bool() const { return opened; }
@@ -28,7 +26,7 @@ namespace pbe {
          bool opened = false;
       };
 
-#define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}
+#define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}; if (!uiWindow) return;
 
       struct PushID {
          PushID(const void* ptrID) {
@@ -168,23 +166,23 @@ namespace pbe {
 
    CORE_API ImGuiContext* GetImGuiContext();
 
-   CORE_API void EditorUI(std::string_view name, TypeID typeID, byte* value);
+   CORE_API bool EditorUI(std::string_view name, TypeID typeID, byte* value);
 
    template<typename T>
-   void EditorUI(std::string_view name, T& value) {
+   bool EditorUI(std::string_view name, T& value) {
       const auto typeID = GetTypeID<T>();
-      EditorUI(name, typeID, (byte*)&value);
+      return EditorUI(name, typeID, (byte*)&value);
    }
 
-   void UIColorEdit3(const char* name, byte* value);
-   void UIColorPicker3(const char* name, byte* value);
+   bool UIColorEdit3(const char* name, byte* value);
+   bool UIColorPicker3(const char* name, byte* value);
 
    struct UISliderFloat {
       float min = 0;
       float max = 1;
 
-      void operator()(const char* name, byte* value) {
-         ImGui::SliderFloat(name, (float*)value, min, max);
+      bool operator()(const char* name, byte* value) const{
+         return ImGui::SliderFloat(name, (float*)value, min, max);
       }
    };
 

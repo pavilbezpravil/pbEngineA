@@ -179,23 +179,27 @@ namespace pbe {
       return types.at(typeID);
    }
 
-   void Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
+   bool Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
       const auto& ti = types.at(typeID);
 
+      bool edited = false;
+
       if (ti.imguiFunc) {
-         ti.imguiFunc(name.data(), value);
+         edited = ti.imguiFunc(name.data(), value);
       } else {
          if (UI_TREE_NODE(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
             for (const auto& f : ti.fields) {
                byte* data = value + f.offset;
                if (f.uiFunc) {
-                  f.uiFunc(f.name.c_str(), data);
+                  edited |= f.uiFunc(f.name.c_str(), data);
                } else {
-                  ImGuiValueImpl(f.name, f.typeID, data);
+                  edited |= ImGuiValueImpl(f.name, f.typeID, data);
                }
             }
          }
       }
+
+      return edited;
    }
 
    void Typer::SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const {

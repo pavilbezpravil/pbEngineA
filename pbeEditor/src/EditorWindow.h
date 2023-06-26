@@ -11,6 +11,7 @@ namespace pbe {
       EditorWindow(std::string_view name) : name(name) { }
       virtual ~EditorWindow() = default;
 
+      // todo: every implementation use Begin/End, only ImGuiShowDemoWindow not
       virtual void OnImGuiRender() = 0;
       virtual void OnUpdate(float dt) {}
 

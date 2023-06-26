@@ -54,6 +54,7 @@ namespace pbe {
       ti.fields.emplace_back(f); \
       f = {};
 
+   // todo: remove 'type'
 #define TYPER_END(type) \
       Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
    } \
@@ -63,7 +64,7 @@ namespace pbe {
       std::string name;
       TypeID typeID;
       size_t offset;
-      std::function<void(const char*, byte*)> uiFunc;
+      std::function<bool(const char*, byte*)> uiFunc;
    };
 
    struct TypeInfo {
@@ -73,7 +74,7 @@ namespace pbe {
 
       std::vector<TypeField> fields;
 
-      std::function<void(const char*, byte*)> imguiFunc;
+      std::function<bool(const char*, byte*)> imguiFunc;
       std::function<void(Serializer&, const byte*)> serialize;
       std::function<void(const Deserializer&, byte*)> deserialize;
    };
@@ -124,12 +125,12 @@ namespace pbe {
       TypeInfo& GetTypeInfo(TypeID typeID);
 
       template<typename T>
-      void ImGuiValue(std::string_view name, T& value) const {
+      bool ImGuiValue(std::string_view name, T& value) const {
          auto typeID = GetTypeID<T>();
-         ImGuiValueImpl(name, typeID, (byte*)&value);
+         return ImGuiValueImpl(name, typeID, (byte*)&value);
       }
 
-      void ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const;
+      bool ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const;
 
       template<typename T>
       void Serialize(Serializer& ser, std::string_view name, const T& value) const {

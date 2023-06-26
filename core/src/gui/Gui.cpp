@@ -8,16 +8,16 @@ namespace pbe {
       return ImGui::GetCurrentContext();
    }
 
-   void EditorUI(std::string_view name, TypeID typeID, byte* value) {
-      Typer::Get().ImGuiValueImpl(name, typeID, value);
+   bool EditorUI(std::string_view name, TypeID typeID, byte* value) {
+      return Typer::Get().ImGuiValueImpl(name, typeID, value);
    }
 
-   void UIColorEdit3(const char* name, byte* value) {
-      ImGui::ColorEdit3(name, (float*)value);
+   bool UIColorEdit3(const char* name, byte* value) {
+      return ImGui::ColorEdit3(name, (float*)value);
    }
 
-   void UIColorPicker3(const char* name, byte* value) {
-      ImGui::ColorPicker3(name, (float*)value);
+   bool UIColorPicker3(const char* name, byte* value) {
+      return ImGui::ColorPicker3(name, (float*)value);
    }
 
 }

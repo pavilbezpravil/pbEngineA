@@ -6,8 +6,8 @@
 #include "EditorLayer.h"
 #include "app/EntryPoint.h"
 #include "core/Log.h"
+#include "gui/Gui.h"
 #include "rend/Renderer.h"
-#include "rend/Texture2D.h"
 
 namespace pbe {
 
@@ -28,7 +28,7 @@ namespace pbe {
          static float f = 0.0f;
          static int counter = 0;
 
-         ImGui::Begin("Hello, world!", &show); // Create a window called "Hello, world!" and append into it.
+         UI_WINDOW("Hello, world!", &show); // Create a window called "Hello, world!" and append into it.
 
          ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
          // ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
@@ -44,7 +44,6 @@ namespace pbe {
 
          ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
             ImGui::GetIO().Framerate);
-         ImGui::End();
       }
    };
 
@@ -54,7 +53,7 @@ namespace pbe {
       using EditorWindow::EditorWindow;
 
       void OnImGuiRender() override {
-         ImGui::Begin(name.c_str(), &show);
+         UI_WINDOW(name.c_str(), &show);
 
          // ImGui::Text("cwd %ls", fs::current_path().c_str());
          // ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
@@ -65,7 +64,8 @@ namespace pbe {
             currentPath = currentPath.parent_path();
          }
 
-         ImGui::Columns(5, 0, false);
+         int columns = (int)std::ceil(ImGui::GetContentRegionAvail().x / 128);
+         ImGui::Columns(columns, 0, false);
 
          // for (auto& file : fs::recursive_directory_iterator(".")) {
          for (auto& file : fs::directory_iterator(currentPath)) {
@@ -79,8 +79,7 @@ namespace pbe {
                if (clicked) {
                   currentPath = file.path();
                }
-            }
-            else {
+            } else {
                // ImGui::Text("%ls", file.path().filename().c_str());
             }
 
@@ -88,12 +87,11 @@ namespace pbe {
          }
 
          ImGui::Columns(1);
-
-         ImGui::End();
       }
 
    private:
-      fs::path currentPath = fs::current_path();
+      // fs::path currentPath = fs::current_path();
+      fs::path currentPath = "../../assets";
    };
 
    class TyperWindow : public EditorWindow {
@@ -101,11 +99,8 @@ namespace pbe {
       using EditorWindow::EditorWindow;
 
       void OnImGuiRender() override {
-         ImGui::Begin(name.c_str(), &show);
-
+         UI_WINDOW(name.c_str(), &show);
          Typer::Get().ImGui();
-
-         ImGui::End();
       }
    };
 
@@ -128,5 +123,5 @@ namespace pbe {
 
 int main(int nArgs, char** args) {
    pbe::EditorApplication* app = new pbe::EditorApplication();
-   return    pbeMain(app, nArgs, args);;
+   return pbeMain(app, nArgs, args);
 }

@@ -30,6 +30,7 @@ namespace pbe {
          out << YAML::Key << key << YAML::Value << value;
       }
 
+      const char* Str() const { return out.c_str(); }
       bool SaveToFile(string_view filename);
 
       YAML::Emitter out;
@@ -37,6 +38,7 @@ namespace pbe {
 
    struct CORE_API Deserializer {
       static Deserializer FromFile(string_view filename);
+      static Deserializer FromStr(string_view data);
 
       template<typename T>
       T Deser(std::string_view name) const{
