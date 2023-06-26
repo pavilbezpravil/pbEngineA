@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+   <Type Name="pbe::Entity">
+      <DisplayString>{scene->registry.get&lt;pbe::TagComponent&gt;(id).tag.c_str()} {id}, {scene}</DisplayString>
+      <Expand HideRawView="1">
+         <Item Name="id">id</Item>
+         <Item Name="scene">scene</Item>
+         <Item Name="[name]" ExcludeView="simple">scene->registry.get&lt;pbe::TagComponent&gt;(id).tag.c_str()</Item>
+      </Expand>
+   </Type>
+
+</AutoVisualizer>

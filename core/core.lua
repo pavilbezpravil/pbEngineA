@@ -22,4 +22,4 @@ project "core"
    links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 
    defines { "CORE_API_EXPORT" }
-   files { "src/**.h", "src/**.cpp", "natvis/glm.natvis" }
+   files { "src/**.h", "src/**.cpp", "natvis/*.natvis" }
