@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/Common.h"
 #include "core/Core.h"
 #include "core/Type.h"
 
@@ -82,8 +83,13 @@ namespace pbe {
    struct ComponentInfo {
       TypeID typeID;
       std::function<void*(Entity&)> tryGet;
+      std::function<const void*(const Entity&)> tryGetConst;
       std::function<void*(Entity&)> getOrAdd;
       std::function<void(void*, const void*)> duplicate;
+
+      // ComponentInfo() = default;
+      // ComponentInfo(ComponentInfo&&) = default;
+      // ONLY_MOVE(ComponentInfo);
    };
 
    struct NativeScriptInfo {

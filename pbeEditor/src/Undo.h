@@ -1,33 +1,38 @@
 #pragma once
 #include "typer/Typer.h"
+#include "scene/Entity.h"
 
 namespace pbe {
 
-   class Entity;
+   // class Entity;
 
    class Undo {
    public:
       static Undo& Get();
 
-      void Mark(ComponentInfo& ci, const Entity& entity);
+      // todo: bad naming
 
-      void Push(std::function<void()> undoAction) {
-         // todo: add move
-         undoStack.push(undoAction);
-      }
+      void Delete(const Entity& entity);
+
+      void SaveForFuture(const Entity& entity, bool continuous = false);
+      void PushSave();
+
+      void SaveToStack(const Entity& entity, bool continuous = false);
 
       // todo: name
       void PopAction() {
          if (!undoStack.empty()) {
             auto undoFunc = undoStack.top();
             undoFunc();
-            // undoStack.top()();
             undoStack.pop();
          }
       }
 
    private:
       std::stack<std::function<void()>> undoStack;
+      std::function<void()> undoAction;
+
+      Entity entityContinuous;
    };
 
 }

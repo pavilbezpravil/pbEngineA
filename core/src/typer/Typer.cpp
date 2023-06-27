@@ -151,7 +151,7 @@ namespace pbe {
    void Typer::RegisterComponent(ComponentInfo&& ci) {
       auto it = std::ranges::find(components, ci.typeID, &ComponentInfo::typeID);
       ASSERT(it == components.end());
-      components.emplace_back(std::move(ci));
+      components.emplace_back(std::forward<ComponentInfo>(ci));
    }
 
    void Typer::UnregisterComponent(TypeID typeID) {

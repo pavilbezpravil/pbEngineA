@@ -17,12 +17,15 @@ namespace pbe {
    };
 
 #define INTERNAL_ADD_COMPONENT(Component) \
-      ci = {}; \
+   { \
+      ComponentInfo ci{}; \
       ci.typeID = GetTypeID<Component>(); \
       ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
+      ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
-      typer.RegisterComponent(std::move(ci))
+      typer.RegisterComponent(std::move(ci)); \
+   }   
 
 #define TYPER_REGISTER_COMPONENT(Component) \
    static void TyperComponentRegister_##Component() { \
@@ -76,7 +79,7 @@ namespace pbe {
       void AddChild(Entity child);
       void RemoveChild(int idx);
       void RemoveAllChild(Entity theirNewParent = {});
-      void SetParent(Entity newParent = {});
+      bool SetParent(Entity newParent = {});
    };
 
    struct SimpleMaterialComponent {

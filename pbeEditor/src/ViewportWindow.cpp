@@ -4,6 +4,7 @@
 #include "EditorWindow.h"
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "Undo.h"
 #include "app/Input.h"
 #include "core/CVar.h"
 #include "rend/Renderer.h"
@@ -364,6 +365,8 @@ namespace pbe {
          snap ? snapValues : nullptr);
 
       if (ImGuizmo::IsUsing()) {
+         Undo::Get().SaveToStack(selectedEntity, true);
+
          auto [position, rotation, scale] = GetTransformDecomposition(entityTransform);
          if (gizmoCfg.operation & ImGuizmo::OPERATION::TRANSLATE) {
             trans.SetPosition(position);

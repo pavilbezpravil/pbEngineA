@@ -56,11 +56,11 @@ namespace pbe {
       return Entity{ rootEntityId, this };
    }
 
-   void Scene::Duplicate(Entity dst, Entity src) {
+   void Scene::Duplicate(Entity& dst, const Entity& src) {
       const auto& typer = Typer::Get();
 
-      for (const auto ci : typer.components) {
-         auto* pSrc = ci.tryGet(src);
+      for (const auto& ci : typer.components) {
+         auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
             auto* pDst = ci.getOrAdd(dst);
@@ -69,7 +69,7 @@ namespace pbe {
       }
    }
 
-   Entity Scene::Duplicate(Entity entity) {
+   Entity Scene::Duplicate(const Entity& entity) {
       Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag + " copy");
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
@@ -225,7 +225,7 @@ namespace pbe {
       return scene;
    }
 
-   void EntitySerialize(Serializer& ser, Entity& entity) {
+   void EntitySerialize(Serializer& ser, const Entity& entity) {
       SERIALIZER_MAP(ser);
       {
          auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
@@ -238,10 +238,10 @@ namespace pbe {
 
          const auto& typer = Typer::Get();
 
-         for (const auto ci : typer.components) {
+         for (const auto& ci : typer.components) {
             const auto& ti = typer.GetTypeInfo(ci.typeID);
 
-            auto* ptr = (byte*)ci.tryGet(entity);
+            auto* ptr = (byte*)ci.tryGetConst(entity);
             if (ptr) {
                const char* name = ti.name.data();
                ser.Ser(name, ci.typeID, ptr);
@@ -271,7 +271,7 @@ namespace pbe {
 
       const auto& typer = Typer::Get();
 
-      for (const auto ci : typer.components) {
+      for (const auto& ci : typer.components) {
          const auto& ti = typer.GetTypeInfo(ci.typeID);
 
          const char* name = ti.name.data();

@@ -27,8 +27,8 @@ namespace pbe {
       Entity GetEntity(UUID uuid);
       Entity GetRootEntity();
 
-      void Duplicate(Entity dst, Entity src);
-      Entity Duplicate(Entity entity);
+      void Duplicate(Entity& dst, const Entity& src);
+      Entity Duplicate(const Entity& entity);
 
       void DestroyImmediate(Entity entity);
 
@@ -69,7 +69,7 @@ namespace pbe {
    CORE_API Own<Scene> SceneDeserialize(std::string_view path);
 
    // todo: move to Entity.h
-   CORE_API void EntitySerialize(Serializer& ser, Entity& entity);
+   CORE_API void EntitySerialize(Serializer& ser, const Entity& entity);
    CORE_API void EntityDeserialize(const Deserializer& deser, Scene& scene);
 
 }

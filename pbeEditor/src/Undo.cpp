@@ -1,32 +1,56 @@
 #include "pch.h"
 #include "Undo.h"
 #include "scene/Entity.h"
+#include "typer/Serialize.h"
 
 namespace pbe {
-   Undo& Undo::Get()
-   {
+   Undo& Undo::Get() {
       static Undo instance;
       return instance;
    }
 
-   void Undo::Mark(ComponentInfo& ci, const Entity& entity) {
-      // ci.get(entity, serPrev);
-      // auto* pComponent = ci.tryGet(entity);
-      //
-      // auto deser = Deserializer::FromStr(serPrev.Str());
-      // // deser.Deser("", ci.typeID, data.data());
-      // deser.Deser("", ci.typeID, (byte*)pComponent);
-      //
-      // Push([&ci, entity]() mutable {
-      //    auto* pComponent = ci.tryGet(entity);
-      //
-      //    auto deser = Deserializer::FromStr(serPrev.Str());
-      //    // deser.Deser("", ci.typeID, data.data());
-      //    deser.Deser("", ci.typeID, (byte*)pComponent);
-      //    // ci.replace(entity, deser);
-      //
-      //    // auto* pComponent = ci.tryGet(entity);
-      //    // ci.duplicate(pComponent, data.data());
-      // });
+   void Undo::Delete(const Entity& entity) {
+      // todo: dont work with scene hierarchy
+
+      SaveForFuture(entity, false);
+      PushSave();
    }
+
+   void Undo::SaveForFuture(const Entity& entity, bool continuous) {
+      if (continuous) {
+         if (entityContinuous == entity) {
+            return;
+         } else {
+            entityContinuous = entity;
+         }
+      } else {
+         entityContinuous = {};
+      }
+
+      // todo: dont work with scene hierarchy
+
+      Serializer ser;
+      EntitySerialize(ser, entity);
+      string saveData = ser.Str(); // todo: move to lambda
+
+      undoAction = [entity, saveData]() {
+         Deserializer deser = Deserializer::FromStr(saveData);
+         EntityDeserialize(deser, *entity.GetScene());
+      };
+   }
+
+   void Undo::PushSave() {
+      if (!undoAction) {
+         return;
+      }
+
+      undoStack.emplace(std::move(undoAction));
+      INFO("Edited"); // todo:
+   }
+
+   void Undo::SaveToStack(const Entity& entity, bool continuous) {
+      SaveForFuture(entity, continuous);
+      PushSave();
+   }
+
 }

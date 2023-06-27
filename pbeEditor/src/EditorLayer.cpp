@@ -34,7 +34,11 @@ namespace pbe {
       void DragDropChangeParent(Entity entity = {}) {
          if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY}) {
             auto childEnt = *ddTarget.GetPayload<Entity>();
-            childEnt.Get<SceneTransformComponent>().SetParent(entity); // todo: add to pending not in all case
+            Undo::Get().SaveForFuture(childEnt); // todo: dont work
+            bool changed = childEnt.Get<SceneTransformComponent>().SetParent(entity); // todo: add to pending not in all case
+            if (changed) {
+               Undo::Get().PushSave();
+            }
          }
       }
 
@@ -44,6 +48,9 @@ namespace pbe {
          if (!pScene) {
             ImGui::Text("No scene");
          } else {
+            // todo: undo on delete entity
+
+            // todo: undo
             if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
                if (ImGui::MenuItem("Create Empty Entity")) {
                   auto createdEntity = pScene->Create();
@@ -82,11 +89,13 @@ namespace pbe {
             // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
             ImGui::Dummy(ImGui::GetContentRegionAvail());
             DragDropChangeParent();
+            if (ImGui::IsItemClicked() && !Input::IsKeyPressed(VK_CONTROL)) {
+               selection->ClearSelection();
+            }
          }
       }
 
       void UIEntity(Entity& entity) {
-         // const
          auto& trans = entity.Get<SceneTransformComponent>();
          bool hasChilds = trans.HasChilds();
 
@@ -118,6 +127,7 @@ namespace pbe {
 
                if (ImGui::Button("Delete")) {
                   // todo: add to pending
+                  Undo::Get().Delete(entity);
                   pScene->DestroyImmediate(entity);
                   if (selection) {
                      selection->Unselect(entity);
@@ -198,19 +208,19 @@ namespace pbe {
          if (!entity.Valid()) {
             ImGui::Text("No entity");
          } else {
+            Undo::Get().SaveForFuture(entity);
+
+            bool edited = false;
+
             // ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
 
             std::string name = entity.Get<TagComponent>().tag;
             name.reserve(glm::max((int)name.size(), 64));
 
-            // todo: undo
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
             if (ImGui::InputText("Name", name.data(), name.capacity())) {
                entity.Get<TagComponent>().tag = name.c_str();
-            }
-
-            if (ImGui::IsItemEdited()) {
-               INFO("Edited");
+               edited = true;
             }
 
             ImGui::SameLine();
@@ -219,49 +229,12 @@ namespace pbe {
             const auto& typer = Typer::Get();
 
             for (const auto& ci : typer.components) {
-               std::vector<byte> data;
                if (auto* pComponent = ci.tryGet(entity)) {
                   const auto& ti = typer.GetTypeInfo(ci.typeID);
-
-                  // todo: move to Undo
-                  data.resize(typer.GetTypeInfo(ci.typeID).typeSizeOf);
-                  ci.duplicate(data.data(), pComponent);
-
-                  static Serializer serPrev;
-                  serPrev.Ser("", ci.typeID, data.data());
-
-                  bool edited = EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
-
-                  if (edited) {
-                     // Serializer ser;
-                     // ser.Ser(ti.name.data(), ci.typeID, (byte*)pComponent);
-                     // INFO("Edited: {} {} {}", name, ti.name, ser.out.c_str());
-
-                     // Serializer serPrev;
-                     // serPrev.Ser("", ci.typeID, data.data());
-
-                     Serializer serNew;
-                     serNew.Ser("", ci.typeID, (byte*)pComponent);
-
-                     INFO("Edited: {} {}\nprev:\n{}\nnew:\n{}", name, ti.name, serPrev.Str(), serNew.Str());
-
-                     // Undo::Get().Push([=]() {
-                     Undo::Get().Push([&ci, entity, data]() mutable {
-                        auto* pComponent = ci.tryGet(entity);
-
-                        auto deser = Deserializer::FromStr(serPrev.Str());
-                        // deser.Deser("", ci.typeID, data.data());
-                        deser.Deser("", ci.typeID, (byte*)pComponent);
-                        // ci.replace(entity, deser);
-
-                        // auto* pComponent = ci.tryGet(entity);
-                        // ci.duplicate(pComponent, data.data());
-                     });
-                  }
+                  edited |= EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
                }
             }
 
-            // todo: undo
             if (UI_POPUP_CONTEXT_ITEM("Add Component Popup")) {
                for (const auto& ci : typer.components) {
                   auto* pComponent = ci.tryGet(entity);
@@ -269,6 +242,7 @@ namespace pbe {
                      auto text = std::format("Add {}", typer.GetTypeInfo(ci.typeID).name);
                      if (ImGui::Button(text.data())) {
                         ci.getOrAdd(entity);
+                        edited = true;
                      }
                   }
                }
@@ -276,6 +250,10 @@ namespace pbe {
 
             if (ImGui::Button("Add Component")) {
                ImGui::OpenPopup("Add Component Popup");
+            }
+
+            if (edited) {
+               Undo::Get().PushSave();
             }
          }
       }
@@ -625,6 +603,7 @@ namespace pbe {
          }
          if (e->keyCode == VK_DELETE) {
             for (auto entity : editorSelection.selected) {
+               Undo::Get().Delete(entity); // todo: undo not each but all at once
                editorScene->DestroyImmediate(entity);
             }
             editorSelection.ClearSelection();

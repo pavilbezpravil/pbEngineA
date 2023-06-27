@@ -16,3 +16,7 @@
    Type(Type&&) = delete; \
    Type& operator=(Type&) = delete; \
    Type& operator=(Type&&) = delete;
+
+#define ONLY_MOVE(Type) \
+   Type(Type&) = delete; \
+   Type& operator=(Type&) = delete; \

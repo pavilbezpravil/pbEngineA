@@ -237,7 +237,11 @@ namespace pbe {
       ASSERT(!HasChilds());
    }
 
-   void SceneTransformComponent::SetParent(Entity newParent) {
+   bool SceneTransformComponent::SetParent(Entity newParent) {
+      if (newParent == entity) {
+         return false;
+      }
+
       auto pos = Position();
       auto rot = Rotation();
       auto scale = Scale();
@@ -256,11 +260,11 @@ namespace pbe {
       SetPosition(pos);
       SetRotation(rot);
       SetScale(scale);
+
+      return true;
    }
 
    void RegisterBasicComponents(Typer& typer) {
-      ComponentInfo ci{};
-
       INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
