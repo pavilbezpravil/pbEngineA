@@ -40,6 +40,9 @@ namespace pbe {
    void TransDeserialize(const Deserializer& deser, byte* value) {
       auto& trans = *(SceneTransformComponent*)value;
 
+      // todo:
+      trans.RemoveAllChild();
+
       deser.Deser("position", trans.position);
       deser.Deser("rotation", trans.rotation);
       deser.Deser("scale", trans.scale);

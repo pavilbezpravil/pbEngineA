@@ -82,12 +82,35 @@ namespace pbe {
             } else {
                // ImGui::Text("%ls", file.path().filename().c_str());
             }
-
             ImGui::NextColumn();
          }
 
          ImGui::Columns(1);
+
+         if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+            if (ImGui::MenuItem("Create file")) {
+               WriteStringToFile("hello", currentPath.append("test.txt").string().c_str());
+            }
+            if (ImGui::MenuItem("Open folder explorer")) {
+               // write code to open file explorer in windows
+               // write bubble sort algorithm
+               ShellExecuteA(NULL, "open", currentPath.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+            }
+            ImGui::EndPopup();
+         }
       }
+
+      void WriteStringToFile(std::string_view str, std::string_view filename) {
+         std::ofstream file(filename.data());
+         file << str;
+         file.close();
+      }
+
+      // write code to open folder in explorer
+
+
+
+
 
    private:
       // fs::path currentPath = fs::current_path();

@@ -217,26 +217,7 @@ namespace pbe {
       // on second iteration create all components
       for (int i = 0; i < entitiesNode.Size(); ++i) {
          auto it = entitiesNode[i];
-
-         // todo:
-         // EntityDeserialize(it, *scene);
-         // continue;
-
-         auto uuid = it["uuid"].As<uint64>();
-         Entity entity = scene->GetEntity(uuid);
-
-         const auto& typer = Typer::Get();
-
-         for (const auto ci : typer.components) {
-            const auto& ti = typer.GetTypeInfo(ci.typeID);
-
-            const char* name = ti.name.data();
-
-            if (auto node = it[name]) {
-               auto* ptr = (byte*)ci.getOrAdd(entity);
-               it.Deser(name, ci.typeID, ptr);
-            }
-         }
+         EntityDeserialize(it, *scene);
       }
 
       gCurrentDeserializedScene = nullptr;
@@ -270,13 +251,13 @@ namespace pbe {
    }
 
    void EntityDeserialize(const Deserializer& deser, Scene& scene) {
-      // todo: dont know how to remove all components from entity, so remove and create again
-
       auto uuid = deser["uuid"].As<uint64>();
 
       Entity entity = scene.GetEntity(uuid);
       if (entity) {
-         entity.DestroyImmediate();
+         entity.RemoveAll<UUIDComponent, TagComponent, SceneTransformComponent>();
+      } else {
+         entity = scene.CreateWithUUID(uuid);
       }
 
       string name = std::invoke([&] {
@@ -286,7 +267,7 @@ namespace pbe {
          return string{};
       });
 
-      entity = scene.CreateWithUUID(uuid, name);
+      entity.GetOrAdd<TagComponent>().tag = name;
 
       const auto& typer = Typer::Get();
 

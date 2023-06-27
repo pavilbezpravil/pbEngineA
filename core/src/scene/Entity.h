@@ -7,6 +7,15 @@
 
 namespace pbe {
 
+   template<typename... T>
+   void remove_all_with_filter(entt::registry& registry, entt::entity entt) {
+      for (auto [id, storage] : registry.storage()) {
+         if (((storage.type() != entt::type_id<T>()) && ...)) {
+            storage.remove(entt);
+         }
+      }
+   }
+
    class CORE_API Entity {
    public:
       Entity() = default;
@@ -22,6 +31,11 @@ namespace pbe {
       void Remove() {
          ASSERT(!Has<T>());
          scene->registry.erase<T>(id);
+      }
+
+      template<typename... Exclude>
+      void RemoveAll() {
+         remove_all_with_filter<Exclude...>(scene->registry, id);
       }
 
       template<typename T>
