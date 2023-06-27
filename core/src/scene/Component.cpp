@@ -227,6 +227,13 @@ namespace pbe {
       children[idx].Get<SceneTransformComponent>().SetParent(); // todo: mb set to scene root?
    }
 
+   void SceneTransformComponent::RemoveAllChild(Entity theirNewParent) {
+      for (int i = (int)children.size() - 1; i >= 0; --i) {
+         children[i].Get<SceneTransformComponent>().SetParent(theirNewParent);
+      }
+      ASSERT(!HasChilds());
+   }
+
    void SceneTransformComponent::SetParent(Entity newParent) {
       auto pos = Position();
       auto rot = Rotation();

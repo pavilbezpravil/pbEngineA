@@ -135,12 +135,12 @@ namespace pbe {
                if (ImGui::Button("Save to file")) {
                   Serializer ser;
                   EntitySerialize(ser, entity);
-                  ser.SaveToFile(std::format("{}.yaml", entity.GetName()));
+                  // ser.SaveToFile(std::format("{}.yaml", entity.GetName()));
+                  ser.SaveToFile("entity.yaml");
                }
-
                if (ImGui::Button("Load from file")) {
                   auto deser = Deserializer::FromFile("entity.yaml");
-                  // todo:
+                  EntityDeserialize(deser, *entity.GetScene());
                }
             }
          };

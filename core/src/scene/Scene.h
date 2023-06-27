@@ -70,6 +70,6 @@ namespace pbe {
 
    // todo: move to Entity.h
    CORE_API void EntitySerialize(Serializer& ser, Entity& entity);
-   CORE_API void EntityDeserialize(const Deserializer& deser, Entity& entity);
+   CORE_API void EntityDeserialize(const Deserializer& deser, Scene& scene);
 
 }

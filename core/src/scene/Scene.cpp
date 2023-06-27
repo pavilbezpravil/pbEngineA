@@ -14,10 +14,14 @@ namespace pbe {
    Scene::Scene() {
       dbgRend = std::make_unique<DbgRend>();
       // rootEntityId = Create("Scene").GetID();
+
+      // todo:
+      // RemoveAllChild();
+      // SetParent();
+      // registry.on_construct<SceneTransformComponent>().connect<&Scene::OnUUIDComponentAdded>(this);
    }
 
-   Scene::~Scene() {
-   }
+   Scene::~Scene() {}
 
    Entity Scene::Create(std::string_view name) {
       return CreateWithUUID(UUID{}, name);
@@ -37,13 +41,15 @@ namespace pbe {
 
       e.Add<SceneTransformComponent>().entity = e;
 
-      uuidToEntities[(uint64)uuid] = entityID;
+      ASSERT(uuidToEntities.find(uuid) == uuidToEntities.end());
+      uuidToEntities[uuid] = entityID;
 
       return e;
    }
 
    Entity Scene::GetEntity(UUID uuid) {
-      return { uuidToEntities[(uint64)uuid], this };
+      auto it = uuidToEntities.find(uuid);
+      return it == uuidToEntities.end() ? Entity{} : Entity{ uuidToEntities[(uint64)uuid], this };
    }
 
    Entity Scene::GetRootEntity() {
@@ -70,6 +76,10 @@ namespace pbe {
    }
 
    void Scene::DestroyImmediate(Entity entity) {
+      // todo:
+      entity.Get<SceneTransformComponent>().RemoveAllChild();
+
+      uuidToEntities.erase(entity.GetUUID());
       registry.destroy(entity.GetID());
    }
 
@@ -208,6 +218,10 @@ namespace pbe {
       for (int i = 0; i < entitiesNode.Size(); ++i) {
          auto it = entitiesNode[i];
 
+         // todo:
+         // EntityDeserialize(it, *scene);
+         // continue;
+
          auto uuid = it["uuid"].As<uint64>();
          Entity entity = scene->GetEntity(uuid);
 
@@ -230,8 +244,7 @@ namespace pbe {
       return scene;
    }
 
-   void EntitySerialize(Serializer& ser, Entity& entity)
-   {
+   void EntitySerialize(Serializer& ser, Entity& entity) {
       SERIALIZER_MAP(ser);
       {
          auto uuid = (uint64)entity.Get<UUIDComponent>().uuid;
@@ -252,6 +265,39 @@ namespace pbe {
                const char* name = ti.name.data();
                ser.Ser(name, ci.typeID, ptr);
             }
+         }
+      }
+   }
+
+   void EntityDeserialize(const Deserializer& deser, Scene& scene) {
+      // todo: dont know how to remove all components from entity, so remove and create again
+
+      auto uuid = deser["uuid"].As<uint64>();
+
+      Entity entity = scene.GetEntity(uuid);
+      if (entity) {
+         entity.DestroyImmediate();
+      }
+
+      string name = std::invoke([&] {
+         if (deser["tag"]) {
+            return deser["tag"].As<string>();
+         }
+         return string{};
+      });
+
+      entity = scene.CreateWithUUID(uuid, name);
+
+      const auto& typer = Typer::Get();
+
+      for (const auto ci : typer.components) {
+         const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+         const char* name = ti.name.data();
+
+         if (auto node = deser[name]) {
+            auto* ptr = (byte*)ci.getOrAdd(entity);
+            deser.Deser(name, ci.typeID, ptr);
          }
       }
    }

@@ -75,6 +75,7 @@ namespace pbe {
 
       void AddChild(Entity child);
       void RemoveChild(int idx);
+      void RemoveAllChild(Entity theirNewParent = {});
       void SetParent(Entity newParent = {});
    };
 

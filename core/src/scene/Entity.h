@@ -59,6 +59,8 @@ namespace pbe {
          return Add<T>();
       }
 
+      void DestroyImmediate();
+
       bool Valid() const {
          return id != entt::null;
       }
@@ -68,7 +70,9 @@ namespace pbe {
 
       entt::entity GetID() const { return id; }
       Scene* GetScene() const { return scene; }
+
       const char* GetName() const;
+      UUID GetUUID() const;
 
    private:
       entt::entity id{ entt::null };
