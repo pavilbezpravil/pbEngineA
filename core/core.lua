@@ -3,6 +3,7 @@ project "core"
 
    libsinfo.core = {}
    libsinfo.core.includepath = os.getcwd().."/src"
+   libsinfo.core.natvis = os.getcwd().."/natvis/*.natvis"
 
    pchheader "pch.h"
    pchsource "src/pch.cpp"
@@ -22,4 +23,4 @@ project "core"
    links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
 
    defines { "CORE_API_EXPORT" }
-   files { "src/**.h", "src/**.cpp", "natvis/*.natvis" }
+   files { "src/**.h", "src/**.cpp", libsinfo.core.natvis, libsinfo.glm.natvis, libsinfo.entt.natvis }

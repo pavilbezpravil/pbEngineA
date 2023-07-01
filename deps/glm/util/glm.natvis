@@ -44,7 +44,7 @@
   </Type>
   
   <Type Name="glm::vec&lt;2,*,*&gt;">
-    <DisplayString>[{x,g}, {y,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x,g</Item>
       <Item Name="y">y,g</Item>
@@ -52,7 +52,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;3,*,*&gt;">
-    <DisplayString>[{x,g}, {y,g}, {z,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x,g</Item>
       <Item Name="y">y,g</Item>
@@ -61,7 +61,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;4,*,*&gt;">
-    <DisplayString>[{x,g}, {y,g}, {z,g}, {w,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g} {w,g}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x,g</Item>
       <Item Name="y">y,g</Item>
@@ -78,7 +78,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;2,bool,*&gt;" Priority="High">
-    <DisplayString>[{(int)x}, {(int)y}]</DisplayString>
+    <DisplayString>[{(int)x} {(int)y}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x</Item>
       <Item Name="y">y</Item>
@@ -86,7 +86,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;3,bool,*&gt;" Priority="High">
-    <DisplayString>[{(int)x,g}, {(int)y,g}, {(int)z,g}]</DisplayString>
+    <DisplayString>[{(int)x,g} {(int)y,g} {(int)z,g}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x</Item>
       <Item Name="y">y</Item>
@@ -95,7 +95,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;4,bool,*&gt;" Priority="High">
-    <DisplayString>[{(int)x,g}, {(int)y,g}, {(int)z,g}, {(int)w,g}]</DisplayString>
+    <DisplayString>[{(int)x,g} {(int)y,g} {(int)z,g} {(int)w,g}]</DisplayString>
     <Expand HideRawView="1">
       <Item Name="x">x</Item>
       <Item Name="y">y</Item>
@@ -105,7 +105,7 @@
   </Type>
   
   <Type Name="glm::vec&lt;2,float,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->
@@ -129,7 +129,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;3,float,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}, {z,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->
@@ -164,7 +164,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;4,float,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}, {z,g}, {w,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g} {w,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->
@@ -201,7 +201,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;2,double,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->
@@ -225,7 +225,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;3,double,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}, {z,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->
@@ -250,7 +250,7 @@
   </Type>
 
   <Type Name="glm::vec&lt;4,double,*&gt;" Priority="High">
-    <DisplayString>[{x,g}, {y,g}, {z,g}, {w,g}]</DisplayString>
+    <DisplayString>[{x,g} {y,g} {z,g} {w,g}]</DisplayString>
     <Expand HideRawView="1">
       <CustomListItems MaxItemsPerView="1">
         <!-- calculate length using fast inverse sqrt -->

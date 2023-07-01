@@ -73,4 +73,4 @@ namespace glm
 	/// @}
 }//namespace glm
 
-#include "common.hlsli"
+#include "common.inl"
