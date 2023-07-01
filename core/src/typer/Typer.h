@@ -36,19 +36,15 @@ namespace pbe {
 #define TYPER_DESERIALIZE(...) \
       ti.deserialize = __VA_ARGS__;
 
-   // todo: remove
-#define TYPER_FIELD(name) \
-      ti.fields.emplace_back(#name, GetTypeID<decltype(CurrentType{}.name)>(), offsetof(CurrentType, name));
-
-   //  for handle initialization like this 'TYPE_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'
+   //  for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'
    // problem with ','
-#define TYPE_FIELD_UI(...) \
+#define TYPER_FIELD_UI(...) \
       f.uiFunc = __VA_ARGS__;
    // similar to this define
-   // #define TYPE_FIELD_UI(func) \
+   // #define TYPER_FIELD_UI(func) \
    //       f.uiFunc = func;
 
-#define TYPE_FIELD(_name) \
+#define TYPER_FIELD(_name) \
       f.name = #_name; \
       f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
       f.offset = offsetof(CurrentType, _name); \

@@ -19,17 +19,6 @@ namespace pbe {
    TYPER_FIELD(i);
    TYPER_END(Test);
 
-   struct EditorShowWindowsConfig {
-      bool contentBrowser = true;
-      bool viewport = true;
-   };
-
-   TYPER_BEGIN(EditorShowWindowsConfig);
-   TYPER_FIELD(contentBrowser);
-   TYPER_FIELD(viewport);
-   TYPER_END(EditorShowWindowsConfig);
-
-
    struct TestHard {
       Test test;
       int i2;

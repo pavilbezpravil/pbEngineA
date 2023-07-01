@@ -256,8 +256,8 @@ namespace pbe {
       if (Input::IsKeyPressed(VK_RBUTTON)) {
          ImGui::SetWindowFocus(name.data());
 
-         float cameraMouseSpeed = 10;
-         cameraAngle += vec2(Input::GetMouseDelta()) * dt * cameraMouseSpeed * vec2(-1, -1);
+         float cameraMouseSpeed = 0.2f;
+         cameraAngle += vec2(Input::GetMouseDelta()) * cameraMouseSpeed * vec2(-1, -1);
          cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
 
          // todo: update use prev view matrix

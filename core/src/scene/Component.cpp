@@ -74,13 +74,13 @@ namespace pbe {
    TYPER_END(SceneTransformComponent)
 
    TYPER_BEGIN(SimpleMaterialComponent)
-      TYPE_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(baseColor)
 
-      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
+      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(roughness)
 
-      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
+      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(metallic)
 
       TYPER_FIELD(opaque)
@@ -93,11 +93,11 @@ namespace pbe {
    TYPER_END(LightComponent)
 
    TYPER_BEGIN(DirectLightComponent)
-      TYPE_FIELD_UI(UIColorEdit3)
-      TYPE_FIELD(color)
+      TYPER_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD(color)
 
-      TYPE_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
-      TYPE_FIELD(intensity)
+      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
+      TYPER_FIELD(intensity)
    TYPER_END(DirectLightComponent)
 
    TYPER_BEGIN(DecalComponent)
@@ -107,23 +107,23 @@ namespace pbe {
    TYPER_END(DecalComponent)
 
    TYPER_BEGIN(SkyComponent)
-      TYPE_FIELD(directLight)
+      TYPER_FIELD(directLight)
 
-      TYPE_FIELD_UI(UIColorEdit3)
-      TYPE_FIELD(color)
+      TYPER_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD(color)
    TYPER_END(SkyComponent)
 
    TYPER_BEGIN(WaterComponent)
-      TYPE_FIELD_UI(UIColorEdit3)
-      TYPE_FIELD(fogColor)
+      TYPER_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD(fogColor)
 
-      TYPE_FIELD(fogUnderwaterLength)
-      TYPE_FIELD(softZ)
+      TYPER_FIELD(fogUnderwaterLength)
+      TYPER_FIELD(softZ)
    TYPER_END(WaterComponent)
 
    TYPER_BEGIN(TerrainComponent)
-      TYPE_FIELD_UI(UIColorEdit3)
-      TYPE_FIELD(color)
+      TYPER_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD(color)
    TYPER_END(TerrainComponent)
 
    ComponentRegisterGuard::~ComponentRegisterGuard() {

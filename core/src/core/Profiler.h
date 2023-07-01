@@ -17,8 +17,12 @@ namespace pbe {
       }
 
       float ElapsedMs(bool restart = false) {
+         return Elapsed(restart) * 1000.f;
+      }
+
+      float Elapsed(bool restart = false) {
          std::chrono::time_point tEnd = std::chrono::high_resolution_clock::now();
-         float elapsed = std::chrono::duration<float, std::milli>(tEnd - tStart).count();
+         float elapsed = std::chrono::duration<float>(tEnd - tStart).count();
 
          if (restart) {
             tStart = tEnd;

@@ -124,6 +124,9 @@ namespace pbe {
 
       CpuTimer frameTimer{};
 
+      float fpsTimer = 0;
+      int frames = 0;
+
       // Main loop
       while (running) {
          OPTICK_FRAME("MainThread");
@@ -133,8 +136,22 @@ namespace pbe {
             ThreadSleepMs(50);
          }
 
+         {
+            OPTICK_EVENT("Window Update");
+            sWindow->Update();
+         }
+
          float dt = frameTimer.ElapsedMs(true) / 1000.f;
-         // INFO("DeltaTime: {}", dt);
+         // INFO("DeltaTime: {} ms", dt * 1000.f);
+
+         fpsTimer += dt;
+         frames++;
+         if (fpsTimer > 1) {
+            float fps = (float)frames / fpsTimer;
+            INFO("fps: {}", fps);
+            fpsTimer -= 1;
+            frames = 0;
+         }
 
          // debug handle
          if (dt > 1.f) {
@@ -193,9 +210,6 @@ namespace pbe {
             OPTICK_EVENT("Present");
             sDevice->Present();
          }
-
-         OPTICK_EVENT("Window Update");
-         sWindow->Update();
       }
 
       for (auto* layer : layerStack) {

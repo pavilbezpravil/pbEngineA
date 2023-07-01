@@ -34,8 +34,8 @@ namespace pbe {
 
       for (auto [e, trans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
          SRTObject obj;
-         obj.position = trans.position;
-         obj.halfSize = trans.scale / 2.f;
+         obj.position = trans.Position();
+         obj.halfSize = trans.Scale() / 2.f;
          obj.baseColor = material.baseColor;
          obj.geomType = 1;
 
