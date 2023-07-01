@@ -107,8 +107,9 @@ namespace pbe {
    };
 
    struct SkyComponent {
-      Entity directLight;
+      Entity directLight; // todo: remove
       vec3 color = vec3_One;
+      float intensity = 1;
    };
 
    struct WaterComponent {

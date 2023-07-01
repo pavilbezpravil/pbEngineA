@@ -1,7 +1,8 @@
 #include "shared/rt.hlsli"
 #include "commonResources.hlsli"
 #include "common.hlsli"
-#include "noise.inl"
+#include "math.hlsli"
+#include "sky.hlsli"
 
 RWTexture2D<float4> gColor;
 
@@ -47,8 +48,11 @@ uint pcg_hash(uint input) {
 
 float RandomFloat(inout uint seed) {
     seed = pcg_hash(seed);
-    // return (float)seed / (float)uint(-1);
-    return (float)seed / (float)uint(0xFFFFFFFF);
+    return (float)seed / (float)uint(-1);
+}
+
+float2 RandomFloat2(inout uint seed) {
+    return float2(RandomFloat(seed), RandomFloat(seed));
 }
 
 float3 RandomFloat3(inout uint seed) {
@@ -71,6 +75,7 @@ float3 RandomInHemisphere(float3 normal, inout uint seed) {
     return p * sign(dot(p, normal));
 }
 
+// todo: test struct fucntion call
 // struct asdf {
 //     uint seed;
 //     float Rng() {
@@ -175,21 +180,6 @@ RayHit Trace(Ray ray) {
     return bestHit;
 }
 
-// todo:ununsed
-float3 Shade(inout Ray ray, RayHit hit) {
-    if (hit.distance < INF) {
-        // Return the normal
-        return hit.normal * 0.5f + 0.5f;
-    } else {
-        // // Sample the skybox and write it
-        // float theta = acos(ray.direction.y) / -PI;
-        // float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-        // return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz;
-        float t = 0.5 * (ray.direction.y + 1);
-        return lerp(1, float3(0.5, 0.7, 1.0), t);
-    }
-}
-
 float3 RayColor(Ray ray, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
@@ -211,8 +201,8 @@ float3 RayColor(Ray ray, inout uint seed) {
                 Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.distance == INF) {
-                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color;
-                    color += directLightShade * energy; // todo: devide by 2 pi?
+                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color / PI_2;
+                    color += directLightShade * energy;
                 }
 
                 ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
@@ -227,11 +217,10 @@ float3 RayColor(Ray ray, inout uint seed) {
                 energy *= specular;
             }
         } else {
-            // todo: fix sky
-            float t = 0.5 * (ray.direction.y + 1);
-            float3 skyColor = lerp(1, float3(0.5, 0.7, 1.0), t);
-            skyColor = 0;
-            // skyColor *= 0.1;
+            float3 skyColor = GetSkyColor(ray.direction);
+
+            // remove sky bounce
+            if (depth != 0) { break; }
 
             color += skyColor * energy;
             break;
@@ -256,7 +245,7 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
     float3 color = 0;
 
     for (int i = 0; i < nRays; i++) {
-        float2 offset = rand1dTo2d(id.xy + i + gRTConstants.random01); // todo: halton sequence
+        float2 offset = RandomFloat2(seed); // todo: halton sequence
         float2 uv = float2(id.xy + offset) / float2(width, height);
 
         Ray ray = CreateCameraRay(uv);

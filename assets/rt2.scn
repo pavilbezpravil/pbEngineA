@@ -37,7 +37,7 @@ entities:
     tag: direct light
     SceneTransformComponent:
       position: [0, 2.88278151, 0]
-      rotation: [43.552433, 12.5394964, -56.4971313]
+      rotation: [43.5524368, 12.5394974, -56.4971313]
       scale: [1, 1, 1]
     DirectLightComponent:
       color: [1, 1, 1]

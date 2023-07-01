@@ -147,6 +147,7 @@ namespace pbe {
          fpsTimer += dt;
          frames++;
          if (fpsTimer > 1) {
+            // todo: show it editor
             float fps = (float)frames / fpsTimer;
             // INFO("fps: {}", fps);
             fpsTimer -= 1;

@@ -111,6 +111,7 @@ namespace pbe {
 
       TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(color)
+      TYPER_FIELD(intensity)
    TYPER_END(SkyComponent)
 
    TYPER_BEGIN(WaterComponent)
