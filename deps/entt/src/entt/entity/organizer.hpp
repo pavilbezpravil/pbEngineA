@@ -1,15 +1,15 @@
 #ifndef ENTT_ENTITY_ORGANIZER_HPP
 #define ENTT_ENTITY_ORGANIZER_HPP
 
-#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include "../container/dense_map.hpp"
 #include "../core/type_info.hpp"
 #include "../core/type_traits.hpp"
 #include "../core/utility.hpp"
+#include "../graph/adjacency_matrix.hpp"
+#include "../graph/flow.hpp"
 #include "fwd.hpp"
 #include "helper.hpp"
 
@@ -25,8 +25,8 @@ namespace internal {
 template<typename>
 struct is_view: std::false_type {};
 
-template<typename Entity, typename... Component, typename... Exclude>
-struct is_view<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>>: std::true_type {};
+template<typename... Args>
+struct is_view<basic_view<Args...>>: std::true_type {};
 
 template<typename Type>
 inline constexpr bool is_view_v = is_view<Type>::value;
@@ -54,15 +54,15 @@ template<typename... Args, typename... Override>
 struct unpack_type<const basic_registry<Args...>, type_list<Override...>>
     : unpack_type<basic_registry<Args...>, type_list<Override...>> {};
 
-template<typename Entity, typename... Component, typename... Exclude, typename... Override>
-struct unpack_type<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>> {
-    using ro = type_list_cat_t<type_list<Exclude...>, typename unpack_type<Component, type_list<Override...>>::ro...>;
-    using rw = type_list_cat_t<typename unpack_type<Component, type_list<Override...>>::rw...>;
+template<typename... Get, typename... Exclude, typename... Override>
+struct unpack_type<basic_view<get_t<Get...>, exclude_t<Exclude...>>, type_list<Override...>> {
+    using ro = type_list_cat_t<type_list<typename Exclude::value_type...>, typename unpack_type<constness_as_t<typename Get::value_type, Get>, type_list<Override...>>::ro...>;
+    using rw = type_list_cat_t<typename unpack_type<constness_as_t<typename Get::value_type, Get>, type_list<Override...>>::rw...>;
 };
 
-template<typename Entity, typename... Component, typename... Exclude, typename... Override>
-struct unpack_type<const basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>>
-    : unpack_type<basic_view<Entity, get_t<Component...>, exclude_t<Exclude...>>, type_list<Override...>> {};
+template<typename... Get, typename... Exclude, typename... Override>
+struct unpack_type<const basic_view<get_t<Get...>, exclude_t<Exclude...>>, type_list<Override...>>
+    : unpack_type<basic_view<get_t<Get...>, exclude_t<Exclude...>>, type_list<Override...>> {};
 
 template<typename, typename>
 struct resource_traits;
@@ -126,7 +126,7 @@ class basic_organizer final {
         if constexpr(std::is_same_v<Type, Registry>) {
             return reg;
         } else if constexpr(internal::is_view_v<Type>) {
-            return as_view{reg};
+            return static_cast<Type>(as_view{reg});
         } else {
             return reg.ctx().template emplace<std::remove_reference_t<Type>>();
         }
@@ -143,87 +143,22 @@ class basic_organizer final {
             return {};
         } else {
             const type_info *info[sizeof...(Type)]{&type_id<Type>()...};
-            const auto length = (std::min)(count, sizeof...(Type));
-            std::copy_n(info, length, buffer);
+            const auto length = count < sizeof...(Type) ? count : sizeof...(Type);
+
+            for(std::size_t pos{}; pos < length; ++pos) {
+                buffer[pos] = info[pos];
+            }
+
             return length;
         }
     }
 
     template<typename... RO, typename... RW>
     void track_dependencies(std::size_t index, const bool requires_registry, type_list<RO...>, type_list<RW...>) {
-        dependencies[type_hash<Registry>::value()].emplace_back(index, requires_registry || (sizeof...(RO) + sizeof...(RW) == 0u));
-        (dependencies[type_hash<RO>::value()].emplace_back(index, false), ...);
-        (dependencies[type_hash<RW>::value()].emplace_back(index, true), ...);
-    }
-
-    [[nodiscard]] std::vector<bool> adjacency_matrix() {
-        const auto length = vertices.size();
-        std::vector<bool> edges(length * length, false);
-
-        // creates the adjacency matrix
-        for(const auto &deps: dependencies) {
-            const auto last = deps.second.cend();
-            auto it = deps.second.cbegin();
-
-            while(it != last) {
-                if(it->second) {
-                    // rw item
-                    if(auto curr = it++; it != last) {
-                        if(it->second) {
-                            edges[curr->first * length + it->first] = true;
-                        } else {
-                            if(const auto next = std::find_if(it, last, [](const auto &elem) { return elem.second; }); next != last) {
-                                for(; it != next; ++it) {
-                                    edges[curr->first * length + it->first] = true;
-                                    edges[it->first * length + next->first] = true;
-                                }
-                            } else {
-                                for(; it != next; ++it) {
-                                    edges[curr->first * length + it->first] = true;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // ro item, possibly only on first iteration
-                    if(const auto next = std::find_if(it, last, [](const auto &elem) { return elem.second; }); next != last) {
-                        for(; it != next; ++it) {
-                            edges[it->first * length + next->first] = true;
-                        }
-                    } else {
-                        it = last;
-                    }
-                }
-            }
-        }
-
-        // computes the transitive closure
-        for(std::size_t vk{}; vk < length; ++vk) {
-            for(std::size_t vi{}; vi < length; ++vi) {
-                for(std::size_t vj{}; vj < length; ++vj) {
-                    edges[vi * length + vj] = edges[vi * length + vj] || (edges[vi * length + vk] && edges[vk * length + vj]);
-                }
-            }
-        }
-
-        // applies the transitive reduction
-        for(std::size_t vert{}; vert < length; ++vert) {
-            edges[vert * length + vert] = false;
-        }
-
-        for(std::size_t vj{}; vj < length; ++vj) {
-            for(std::size_t vi{}; vi < length; ++vi) {
-                if(edges[vi * length + vj]) {
-                    for(std::size_t vk{}; vk < length; ++vk) {
-                        if(edges[vj * length + vk]) {
-                            edges[vi * length + vk] = false;
-                        }
-                    }
-                }
-            }
-        }
-
-        return edges;
+        builder.bind(static_cast<id_type>(index));
+        builder.set(type_hash<Registry>::value(), requires_registry || (sizeof...(RO) + sizeof...(RW) == 0u));
+        (builder.ro(type_hash<RO>::value()), ...);
+        (builder.rw(type_hash<RW>::value()), ...);
     }
 
 public:
@@ -443,28 +378,19 @@ public:
      * @return The adjacency list of the task graph.
      */
     std::vector<vertex> graph() {
-        const auto edges = adjacency_matrix();
-
-        // creates the adjacency list
         std::vector<vertex> adjacency_list{};
         adjacency_list.reserve(vertices.size());
+        auto adjacency_matrix = builder.graph();
 
-        for(std::size_t col{}, length = vertices.size(); col < length; ++col) {
+        for(auto curr: adjacency_matrix.vertices()) {
+            const auto iterable = adjacency_matrix.in_edges(curr);
             std::vector<std::size_t> reachable{};
-            const auto row = col * length;
-            bool is_top_level = true;
 
-            for(std::size_t next{}; next < length; ++next) {
-                if(edges[row + next]) {
-                    reachable.push_back(next);
-                }
+            for(auto &&edge: adjacency_matrix.out_edges(curr)) {
+                reachable.push_back(edge.second);
             }
 
-            for(std::size_t next{}; next < length && is_top_level; ++next) {
-                is_top_level = !edges[next * length + col];
-            }
-
-            adjacency_list.emplace_back(is_top_level, vertices[col], std::move(reachable));
+            adjacency_list.emplace_back(iterable.cbegin() == iterable.cend(), vertices[curr], std::move(reachable));
         }
 
         return adjacency_list;
@@ -472,13 +398,13 @@ public:
 
     /*! @brief Erases all elements from a container. */
     void clear() {
-        dependencies.clear();
+        builder.clear();
         vertices.clear();
     }
 
 private:
-    dense_map<id_type, std::vector<std::pair<std::size_t, bool>>, identity> dependencies;
     std::vector<vertex_data> vertices;
+    flow builder;
 };
 
 } // namespace entt

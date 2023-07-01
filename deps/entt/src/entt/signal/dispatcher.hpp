@@ -1,8 +1,8 @@
 #ifndef ENTT_SIGNAL_DISPATCHER_HPP
 #define ENTT_SIGNAL_DISPATCHER_HPP
 
-#include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -75,7 +75,7 @@ public:
 
     template<typename... Args>
     void enqueue(Args &&...args) {
-        if constexpr(std::is_aggregate_v<Type>) {
+        if constexpr(std::is_aggregate_v<Type> && (sizeof...(Args) != 0u || !std::is_default_constructible_v<Type>)) {
             events.push_back(Type{std::forward<Args>(args)...});
         } else {
             events.emplace_back(std::forward<Args>(args)...);
@@ -118,12 +118,12 @@ class basic_dispatcher {
     using handler_type = internal::dispatcher_handler<Type, Allocator>;
 
     using key_type = id_type;
-    // std::shared_ptr because of its type erased allocator which is pretty useful here
+    // std::shared_ptr because of its type erased allocator which is useful here
     using mapped_type = std::shared_ptr<internal::basic_dispatcher_handler>;
 
     using alloc_traits = std::allocator_traits<Allocator>;
     using container_allocator = typename alloc_traits::template rebind_alloc<std::pair<const key_type, mapped_type>>;
-    using container_type = dense_map<id_type, mapped_type, identity, std::equal_to<id_type>, container_allocator>;
+    using container_type = dense_map<key_type, mapped_type, identity, std::equal_to<key_type>, container_allocator>;
 
     template<typename Type>
     [[nodiscard]] handler_type<Type> &assure(const id_type id) {
@@ -131,7 +131,7 @@ class basic_dispatcher {
         auto &&ptr = pools.first()[id];
 
         if(!ptr) {
-            const auto &allocator = pools.second();
+            const auto &allocator = get_allocator();
             ptr = std::allocate_shared<handler_type<Type>>(allocator, allocator);
         }
 
@@ -141,9 +141,8 @@ class basic_dispatcher {
     template<typename Type>
     [[nodiscard]] const handler_type<Type> *assure(const id_type id) const {
         static_assert(std::is_same_v<Type, std::decay_t<Type>>, "Non-decayed types not allowed");
-        auto &container = pools.first();
 
-        if(const auto it = container.find(id); it != container.end()) {
+        if(auto it = pools.first().find(id); it != pools.first().cend()) {
             return static_cast<const handler_type<Type> *>(it->second.get());
         }
 
@@ -180,7 +179,9 @@ public:
      * @param allocator The allocator to use.
      */
     basic_dispatcher(basic_dispatcher &&other, const allocator_type &allocator) noexcept
-        : pools{container_type{std::move(other.pools.first()), allocator}, allocator} {}
+        : pools{container_type{std::move(other.pools.first()), allocator}, allocator} {
+        ENTT_ASSERT(alloc_traits::is_always_equal::value || pools.second() == other.pools.second(), "Copying a dispatcher is not allowed");
+    }
 
     /**
      * @brief Move assignment operator.
@@ -188,6 +189,8 @@ public:
      * @return This dispatcher.
      */
     basic_dispatcher &operator=(basic_dispatcher &&other) noexcept {
+        ENTT_ASSERT(alloc_traits::is_always_equal::value || pools.second() == other.pools.second(), "Copying a dispatcher is not allowed");
+
         pools = std::move(other.pools);
         return *this;
     }
@@ -217,7 +220,7 @@ public:
      */
     template<typename Type>
     size_type size(const id_type id = type_hash<Type>::value()) const noexcept {
-        const auto *cpool = assure<Type>(id);
+        const auto *cpool = assure<std::decay_t<Type>>(id);
         return cpool ? cpool->size() : 0u;
     }
 

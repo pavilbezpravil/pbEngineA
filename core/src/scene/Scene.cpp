@@ -121,7 +121,7 @@ namespace pbe {
    }
 
    uint Scene::EntitiesCount() const {
-      return (uint)registry.alive();
+      return (uint)uuidToEntities.size();
    }
 
    Own<Scene> Scene::Copy() {

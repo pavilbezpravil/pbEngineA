@@ -1,13 +1,15 @@
 #ifndef ENTT_ENTITY_HELPER_HPP
 #define ENTT_ENTITY_HELPER_HPP
 
+#include <memory>
 #include <type_traits>
+#include <utility>
 #include "../core/fwd.hpp"
 #include "../core/type_traits.hpp"
 #include "../signal/delegate.hpp"
-#include "component.hpp"
 #include "fwd.hpp"
-#include "registry.hpp"
+#include "group.hpp"
+#include "view.hpp"
 
 namespace entt {
 
@@ -16,11 +18,17 @@ namespace entt {
  * @tparam Registry Basic registry type.
  */
 template<typename Registry>
-struct as_view {
+class as_view {
+    template<typename... Get, typename... Exclude>
+    auto dispatch(get_t<Get...>, exclude_t<Exclude...>) const {
+        return reg.template view<constness_as_t<typename Get::value_type, Get>...>(exclude_t<constness_as_t<typename Exclude::value_type, Exclude>...>{});
+    }
+
+public:
     /*! @brief Type of registry to convert. */
     using registry_type = Registry;
     /*! @brief Underlying entity identifier. */
-    using entity_type = std::remove_const_t<typename registry_type::entity_type>;
+    using entity_type = typename registry_type::entity_type;
 
     /**
      * @brief Constructs a converter for a given registry.
@@ -31,13 +39,13 @@ struct as_view {
 
     /**
      * @brief Conversion function from a registry to a view.
-     * @tparam Exclude Types of components used to filter the view.
-     * @tparam Component Type of components used to construct the view.
+     * @tparam Get Type of storage used to construct the view.
+     * @tparam Exclude Types of storage used to filter the view.
      * @return A newly created view.
      */
-    template<typename Exclude, typename... Component>
-    operator basic_view<entity_type, get_t<Component...>, Exclude>() const {
-        return reg.template view<Component...>(Exclude{});
+    template<typename Get, typename Exclude>
+    operator basic_view<Get, Exclude>() const {
+        return dispatch(Get{}, Exclude{});
     }
 
 private:
@@ -49,11 +57,21 @@ private:
  * @tparam Registry Basic registry type.
  */
 template<typename Registry>
-struct as_group {
+class as_group {
+    template<typename... Owned, typename... Get, typename... Exclude>
+    auto dispatch(owned_t<Owned...>, get_t<Get...>, exclude_t<Exclude...>) const {
+        if constexpr(std::is_const_v<registry_type>) {
+            return reg.template group_if_exists<typename Owned::value_type...>(get_t<typename Get::value_type...>{}, exclude_t<typename Exclude::value_type...>{});
+        } else {
+            return reg.template group<constness_as_t<typename Owned::value_type, Owned>...>(get_t<constness_as_t<typename Get::value_type, Get>...>{}, exclude_t<constness_as_t<typename Exclude::value_type, Exclude>...>{});
+        }
+    }
+
+public:
     /*! @brief Type of registry to convert. */
     using registry_type = Registry;
     /*! @brief Underlying entity identifier. */
-    using entity_type = std::remove_const_t<typename registry_type::entity_type>;
+    using entity_type = typename registry_type::entity_type;
 
     /**
      * @brief Constructs a converter for a given registry.
@@ -64,18 +82,14 @@ struct as_group {
 
     /**
      * @brief Conversion function from a registry to a group.
-     * @tparam Get Types of components observed by the group.
-     * @tparam Exclude Types of components used to filter the group.
-     * @tparam Owned Types of components owned by the group.
+     * @tparam Owned Types of _owned_ by the group.
+     * @tparam Get Types of storage _observed_ by the group.
+     * @tparam Exclude Types of storage used to filter the group.
      * @return A newly created group.
      */
-    template<typename Get, typename Exclude, typename... Owned>
-    operator basic_group<entity_type, owned_t<Owned...>, Get, Exclude>() const {
-        if constexpr(std::is_const_v<registry_type>) {
-            return reg.template group_if_exists<Owned...>(Get{}, Exclude{});
-        } else {
-            return reg.template group<Owned...>(Get{}, Exclude{});
-        }
+    template<typename Owned, typename Get, typename Exclude>
+    operator basic_group<Owned, Get, Exclude>() const {
+        return dispatch(Owned{}, Get{}, Exclude{});
     }
 
 private:
@@ -89,7 +103,7 @@ private:
  * @param reg A registry that contains the given entity and its components.
  * @param entt Entity from which to get the component.
  */
-template<auto Member, typename Registry = std::remove_const_t<std::remove_reference_t<nth_argument_t<0u, Member>>>>
+template<auto Member, typename Registry = std::decay_t<nth_argument_t<0u, Member>>>
 void invoke(Registry &reg, const typename Registry::entity_type entt) {
     static_assert(std::is_member_function_pointer_v<decltype(Member)>, "Invalid pointer to non-static member function");
     delegate<void(Registry &, const typename Registry::entity_type)> func;
@@ -112,18 +126,132 @@ void invoke(Registry &reg, const typename Registry::entity_type entt) {
  */
 template<typename Registry, typename Component>
 typename Registry::entity_type to_entity(const Registry &reg, const Component &instance) {
-    const auto &storage = reg.template storage<Component>();
-    const typename Registry::base_type &base = storage;
-    const auto *addr = std::addressof(instance);
+    if(const auto *storage = reg.template storage<Component>(); storage) {
+        constexpr auto page_size = std::remove_const_t<std::remove_pointer_t<decltype(storage)>>::traits_type::page_size;
+        const typename Registry::common_type &base = *storage;
+        const auto *addr = std::addressof(instance);
 
-    for(auto it = base.rbegin(), last = base.rend(); it < last; it += component_traits<Component>::page_size) {
-        if(const auto dist = (addr - std::addressof(storage.get(*it))); dist >= 0 && dist < static_cast<decltype(dist)>(component_traits<Component>::page_size)) {
-            return *(it + dist);
+        for(auto it = base.rbegin(), last = base.rend(); it < last; it += page_size) {
+            if(const auto dist = (addr - std::addressof(storage->get(*it))); dist >= 0 && dist < static_cast<decltype(dist)>(page_size)) {
+                return *(it + dist);
+            }
         }
     }
 
     return null;
 }
+
+/*! @brief Primary template isn't defined on purpose. */
+template<typename...>
+struct sigh_helper;
+
+/**
+ * @brief Signal connection helper for registries.
+ * @tparam Registry Basic registry type.
+ */
+template<typename Registry>
+struct sigh_helper<Registry> {
+    /*! @brief Registry type. */
+    using registry_type = Registry;
+
+    /**
+     * @brief Constructs a helper for a given registry.
+     * @param ref A valid reference to a registry.
+     */
+    sigh_helper(registry_type &ref)
+        : bucket{&ref} {}
+
+    /**
+     * @brief Binds a properly initialized helper to a given signal type.
+     * @tparam Type Type of signal to bind the helper to.
+     * @param id Optional name for the underlying storage to use.
+     * @return A helper for a given registry and signal type.
+     */
+    template<typename Type>
+    auto with(const id_type id = type_hash<Type>::value()) noexcept {
+        return sigh_helper<registry_type, Type>{*bucket, id};
+    }
+
+    /**
+     * @brief Returns a reference to the underlying registry.
+     * @return A reference to the underlying registry.
+     */
+    [[nodiscard]] registry_type &registry() noexcept {
+        return *bucket;
+    }
+
+private:
+    registry_type *bucket;
+};
+
+/**
+ * @brief Signal connection helper for registries.
+ * @tparam Registry Basic registry type.
+ * @tparam Type Type of signal to connect listeners to.
+ */
+template<typename Registry, typename Type>
+struct sigh_helper<Registry, Type> final: sigh_helper<Registry> {
+    /*! @brief Registry type. */
+    using registry_type = Registry;
+
+    /**
+     * @brief Constructs a helper for a given registry.
+     * @param ref A valid reference to a registry.
+     * @param id Optional name for the underlying storage to use.
+     */
+    sigh_helper(registry_type &ref, const id_type id = type_hash<Type>::value())
+        : sigh_helper<Registry>{ref},
+          name{id} {}
+
+    /**
+     * @brief Forwards the call to `on_construct` on the underlying storage.
+     * @tparam Candidate Function or member to connect.
+     * @tparam Args Type of class or type of payload, if any.
+     * @param args A valid object that fits the purpose, if any.
+     * @return This helper.
+     */
+    template<auto Candidate, typename... Args>
+    auto on_construct(Args &&...args) {
+        this->registry().template on_construct<Type>(name).template connect<Candidate>(std::forward<Args>(args)...);
+        return *this;
+    }
+
+    /**
+     * @brief Forwards the call to `on_update` on the underlying storage.
+     * @tparam Candidate Function or member to connect.
+     * @tparam Args Type of class or type of payload, if any.
+     * @param args A valid object that fits the purpose, if any.
+     * @return This helper.
+     */
+    template<auto Candidate, typename... Args>
+    auto on_update(Args &&...args) {
+        this->registry().template on_update<Type>(name).template connect<Candidate>(std::forward<Args>(args)...);
+        return *this;
+    }
+
+    /**
+     * @brief Forwards the call to `on_destroy` on the underlying storage.
+     * @tparam Candidate Function or member to connect.
+     * @tparam Args Type of class or type of payload, if any.
+     * @param args A valid object that fits the purpose, if any.
+     * @return This helper.
+     */
+    template<auto Candidate, typename... Args>
+    auto on_destroy(Args &&...args) {
+        this->registry().template on_destroy<Type>(name).template connect<Candidate>(std::forward<Args>(args)...);
+        return *this;
+    }
+
+private:
+    id_type name;
+};
+
+/**
+ * @brief Deduction guide.
+ * @tparam Registry Basic registry type.
+ */
+template<typename Registry>
+sigh_helper(Registry &) -> sigh_helper<Registry>;
 
 } // namespace entt
 

@@ -1,14 +1,96 @@
 #ifndef ENTT_ENTITY_HANDLE_HPP
 #define ENTT_ENTITY_HANDLE_HPP
 
+#include <iterator>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include "../core/iterator.hpp"
 #include "../core/type_traits.hpp"
+#include "entity.hpp"
 #include "fwd.hpp"
-#include "registry.hpp"
 
 namespace entt {
+
+/**
+ * @cond TURN_OFF_DOXYGEN
+ * Internal details not to be documented.
+ */
+
+namespace internal {
+
+template<typename It>
+class handle_storage_iterator final {
+    template<typename Other>
+    friend class handle_storage_iterator;
+
+    using underlying_type = std::remove_reference_t<typename It::value_type::second_type>;
+    using entity_type = typename underlying_type::entity_type;
+
+public:
+    using value_type = typename std::iterator_traits<It>::value_type;
+    using pointer = input_iterator_pointer<value_type>;
+    using reference = value_type;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::input_iterator_tag;
+
+    constexpr handle_storage_iterator() noexcept
+        : entt{null},
+          it{},
+          last{} {}
+
+    constexpr handle_storage_iterator(entity_type value, It from, It to) noexcept
+        : entt{value},
+          it{from},
+          last{to} {
+        while(it != last && !it->second.contains(entt)) {
+            ++it;
+        }
+    }
+
+    constexpr handle_storage_iterator &operator++() noexcept {
+        while(++it != last && !it->second.contains(entt)) {}
+        return *this;
+    }
+
+    constexpr handle_storage_iterator operator++(int) noexcept {
+        handle_storage_iterator orig = *this;
+        return ++(*this), orig;
+    }
+
+    [[nodiscard]] constexpr reference operator*() const noexcept {
+        return *it;
+    }
+
+    [[nodiscard]] constexpr pointer operator->() const noexcept {
+        return operator*();
+    }
+
+    template<typename ILhs, typename IRhs>
+    friend constexpr bool operator==(const handle_storage_iterator<ILhs> &, const handle_storage_iterator<IRhs> &) noexcept;
+
+private:
+    entity_type entt;
+    It it;
+    It last;
+};
+
+template<typename ILhs, typename IRhs>
+[[nodiscard]] constexpr bool operator==(const handle_storage_iterator<ILhs> &lhs, const handle_storage_iterator<IRhs> &rhs) noexcept {
+    return lhs.it == rhs.it;
+}
+
+template<typename ILhs, typename IRhs>
+[[nodiscard]] constexpr bool operator!=(const handle_storage_iterator<ILhs> &lhs, const handle_storage_iterator<IRhs> &rhs) noexcept {
+    return !(lhs == rhs);
+}
+
+} // namespace internal
+
+/**
+ * Internal details not to be documented.
+ * @endcond
+ */
 
 /**
  * @brief Non-owning handle to an entity.
@@ -44,8 +126,24 @@ struct basic_handle {
           entt{value} {}
 
     /**
+     * @brief Returns an iterable object to use to _visit_ a handle.
+     *
+     * The iterable object returns a pair that contains the name and a reference
+     * to the current storage.<br/>
+     * Returned storage are those that contain the entity associated with the
+     * handle.
+     *
+     * @return An iterable object to use to _visit_ the handle.
+     */
+    [[nodiscard]] auto storage() const noexcept {
+        auto iterable = reg->storage();
+        using iterator_type = internal::handle_storage_iterator<typename decltype(iterable)::iterator>;
+        return iterable_adaptor{iterator_type{entt, iterable.begin(), iterable.end()}, iterator_type{entt, iterable.end(), iterable.end()}};
+    }
+
+    /**
      * @brief Constructs a const handle from a non-const one.
-     * @tparam Other A valid entity type (see entt_traits for more details).
+     * @tparam Other A valid entity type.
      * @tparam Args Scope of the handle to construct.
      * @return A const handle referring to the same registry and the same
      * entity.
@@ -98,26 +196,21 @@ struct basic_handle {
         return entt;
     }
 
-    /**
-     * @brief Destroys the entity associated with a handle.
-     * @sa basic_registry::destroy
-     */
+    /*! @brief Destroys the entity associated with a handle. */
     void destroy() {
-        reg->destroy(entt);
+        reg->destroy(std::exchange(entt, null));
     }
 
     /**
      * @brief Destroys the entity associated with a handle.
-     * @sa basic_registry::destroy
      * @param version A desired version upon destruction.
      */
     void destroy(const version_type version) {
-        reg->destroy(entt, version);
+        reg->destroy(std::exchange(entt, null), version);
     }
 
     /**
      * @brief Assigns the given component to a handle.
-     * @sa basic_registry::emplace
      * @tparam Component Type of component to create.
      * @tparam Args Types of arguments to use to construct the component.
      * @param args Parameters to use to initialize the component.
@@ -131,7 +224,6 @@ struct basic_handle {
 
     /**
      * @brief Assigns or replaces the given component for a handle.
-     * @sa basic_registry::emplace_or_replace
      * @tparam Component Type of component to assign or replace.
      * @tparam Args Types of arguments to use to construct the component.
      * @param args Parameters to use to initialize the component.
@@ -145,7 +237,6 @@ struct basic_handle {
 
     /**
      * @brief Patches the given component for a handle.
-     * @sa basic_registry::patch
      * @tparam Component Type of component to patch.
      * @tparam Func Types of the function objects to invoke.
      * @param func Valid function objects.
@@ -159,7 +250,6 @@ struct basic_handle {
 
     /**
      * @brief Replaces the given component for a handle.
-     * @sa basic_registry::replace
      * @tparam Component Type of component to replace.
      * @tparam Args Types of arguments to use to construct the component.
      * @param args Parameters to use to initialize the component.
@@ -173,7 +263,6 @@ struct basic_handle {
 
     /**
      * @brief Removes the given components from a handle.
-     * @sa basic_registry::remove
      * @tparam Component Types of components to remove.
      * @return The number of components actually removed.
      */
@@ -185,7 +274,6 @@ struct basic_handle {
 
     /**
      * @brief Erases the given components from a handle.
-     * @sa basic_registry::erase
      * @tparam Component Types of components to erase.
      */
     template<typename... Component>
@@ -196,7 +284,6 @@ struct basic_handle {
 
     /**
      * @brief Checks if a handle has all the given components.
-     * @sa basic_registry::all_of
      * @tparam Component Components for which to perform the check.
      * @return True if the handle has all the components, false otherwise.
      */
@@ -207,7 +294,6 @@ struct basic_handle {
 
     /**
      * @brief Checks if a handle has at least one of the given components.
-     * @sa basic_registry::any_of
      * @tparam Component Components for which to perform the check.
      * @return True if the handle has at least one of the given components,
      * false otherwise.
@@ -219,7 +305,6 @@ struct basic_handle {
 
     /**
      * @brief Returns references to the given components for a handle.
-     * @sa basic_registry::get
      * @tparam Component Types of components to get.
      * @return References to the components owned by the handle.
      */
@@ -231,7 +316,6 @@ struct basic_handle {
 
     /**
      * @brief Returns a reference to the given component for a handle.
-     * @sa basic_registry::get_or_emplace
      * @tparam Component Type of component to get.
      * @tparam Args Types of arguments to use to construct the component.
      * @param args Parameters to use to initialize the component.
@@ -245,7 +329,6 @@ struct basic_handle {
 
     /**
      * @brief Returns pointers to the given components for a handle.
-     * @sa basic_registry::try_get
      * @tparam Component Types of components to get.
      * @return Pointers to the components owned by the handle.
      */
@@ -261,30 +344,6 @@ struct basic_handle {
      */
     [[nodiscard]] bool orphan() const {
         return reg->orphan(entt);
-    }
-
-    /**
-     * @brief Visits a handle and returns the pools for its components.
-     *
-     * The signature of the function should be equivalent to the following:
-     *
-     * @code{.cpp}
-     * void(id_type, const basic_sparse_set<entity_type> &);
-     * @endcode
-     *
-     * Returned pools are those that contain the entity associated with the
-     * handle.
-     *
-     * @tparam Func Type of the function object to invoke.
-     * @param func A valid function object.
-     */
-    template<typename Func>
-    void visit(Func &&func) const {
-        for(auto [id, storage]: reg->storage()) {
-            if(storage.contains(entt)) {
-                func(id, storage);
-            }
-        }
     }
 
 private:
