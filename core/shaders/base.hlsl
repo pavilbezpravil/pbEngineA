@@ -113,7 +113,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
   float ssaoMask = gSsao.SampleLevel(gSamplerLinear, screenUV, 0).x;
 
   // float ao = ssaoMask; // todo:
-  float ao = 1; // todo:
+  float ao = 0; // todo:
   float3 ambient = 0.02 * surface.albedo * ao;
   float3 color = ambient + Lo;
 

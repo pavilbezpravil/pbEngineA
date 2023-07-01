@@ -2,6 +2,7 @@
 #include "commonResources.hlsli"
 #include "common.hlsli"
 #include "math.hlsli"
+#include "pbr.hlsli"
 #include "sky.hlsli"
 
 RWTexture2D<float4> gColor;
@@ -192,9 +193,15 @@ float3 RayColor(Ray ray, inout uint seed) {
             SRTObject rtObject = gRtObjects[hit.materialID];
 
             float3 albedo = rtObject.baseColor;
-
             ray.origin = hit.position + hit.normal * 0.0001;
-            if (1) {
+
+            float3 V = -ray.direction;
+            float3 N = hit.normal;
+            float3 F0 = 0.04; // todo:
+            float3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
+
+            // if (0) {
+            if (RandomFloat(seed) > F.x) {
                 // Shadow test ray
                 float3 L = -gScene.directLight.direction;
                 const float spread = 0.1; // todo:
@@ -212,7 +219,8 @@ float3 RayColor(Ray ray, inout uint seed) {
                 float3 specular = 0.5;
                 specular = albedo;
 
-                ray.direction = reflect(ray.direction, hit.normal);
+                float roughness = 0.0;//rtObject.roughness;
+                ray.direction = reflect(ray.direction, hit.normal + RandomInUnitSphere(seed) * roughness);
 
                 energy *= specular;
             }
@@ -220,7 +228,7 @@ float3 RayColor(Ray ray, inout uint seed) {
             float3 skyColor = GetSkyColor(ray.direction);
 
             // remove sky bounce
-            if (depth != 0) { break; }
+            // if (depth != 0) { break; }
 
             color += skyColor * energy;
             break;
