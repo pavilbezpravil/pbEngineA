@@ -19,6 +19,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 // todo:
 template<typename OStream>
