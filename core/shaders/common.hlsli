@@ -87,8 +87,16 @@ float min4(float v1, float v2, float v3, float v4) {
   return max(min(v1, v2), min(v3, v4));
 }
 
-float ComponentSum(float4 v) {
+float SumComponents(float3 v) {
+    return v.x + v.y + v.z;
+}
+
+float SumComponents(float4 v) {
   return v.x + v.y + v.z + v.w;
+}
+
+float Sdot(float3 x, float3 y, float f = 1.0f) {
+    return saturate(dot(x, y) * f);
 }
 
 float3 CentralPoint(float3 p0, float3 p1) {

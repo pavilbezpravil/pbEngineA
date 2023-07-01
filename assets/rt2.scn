@@ -1,0 +1,44 @@
+sceneName: test_scene
+entities:
+  - uuid: 4513277486991032202
+    tag: cube
+    SceneTransformComponent:
+      position: [-0.807469428, -0.100500822, -0.243905485]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SimpleMaterialComponent:
+      baseColor: [0.755274296, 0.19758229, 0.19758229]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 5149250398784041482
+    tag: wall
+    SceneTransformComponent:
+      position: [-1.04078436, 0, 1.55635381]
+      rotation: [0, -0, 0]
+      scale: [7.49906397, 3.66151547, 1]
+    SimpleMaterialComponent:
+      baseColor: [0.169417292, 0.772151887, 0.642449498]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 6706076201866816664
+    tag: ground
+    SceneTransformComponent:
+      position: [0, -1.05676425, 0]
+      rotation: [0, -0, 0]
+      scale: [10.5085974, 1, 10.5356522]
+    SimpleMaterialComponent:
+      baseColor: [0.815686285, 0.815686285, 0.815686285]
+      roughness: 0.100000001
+      metallic: 0
+      opaque: true
+  - uuid: 17941021247240787344
+    tag: direct light
+    SceneTransformComponent:
+      position: [0, 2.88278151, 0]
+      rotation: [43.552433, 12.5394964, -56.4971313]
+      scale: [1, 1, 1]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1.09599996

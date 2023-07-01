@@ -148,7 +148,7 @@ namespace pbe {
          frames++;
          if (fpsTimer > 1) {
             float fps = (float)frames / fpsTimer;
-            INFO("fps: {}", fps);
+            // INFO("fps: {}", fps);
             fpsTimer -= 1;
             frames = 0;
          }

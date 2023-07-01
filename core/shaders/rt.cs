@@ -39,6 +39,45 @@ Ray CreateCameraRay(float2 uv) {
 
 #define INF 1000000
 
+uint pcg_hash(uint input) {
+    uint state = input * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float RandomFloat(inout uint seed) {
+    seed = pcg_hash(seed);
+    // return (float)seed / (float)uint(-1);
+    return (float)seed / (float)uint(0xFFFFFFFF);
+}
+
+float3 RandomFloat3(inout uint seed) {
+    return float3(RandomFloat(seed), RandomFloat(seed), RandomFloat(seed));
+}
+
+// todo: mb find better way?
+float3 RandomInUnitSphere(inout uint seed) {
+    for (int i = 0; i < 100; i++) {
+        float3 p = RandomFloat3(seed) * 2 - 1;
+        if (length(p) < 1) {
+            return p;
+        }
+    }
+    return 0;
+}
+
+float3 RandomInHemisphere(float3 normal, inout uint seed) {
+    float3 p = RandomInUnitSphere(seed);
+    return p * sign(dot(p, normal));
+}
+
+// struct asdf {
+//     uint seed;
+//     float Rng() {
+//         return RandomFloat(seed);
+//     }
+// };
+
 struct RayHit {
     float3 position;
     float distance;
@@ -136,6 +175,7 @@ RayHit Trace(Ray ray) {
     return bestHit;
 }
 
+// todo:ununsed
 float3 Shade(inout Ray ray, RayHit hit) {
     if (hit.distance < INF) {
         // Return the normal
@@ -150,30 +190,7 @@ float3 Shade(inout Ray ray, RayHit hit) {
     }
 }
 
-float3 RandomInUnitSphere(float randValue) {
-    for (int i = 0; i < 100; i++) {
-        float3 p = rand1dTo3d(randValue + i) * 2 - 1;
-        if (length(p) < 1) {
-            return p;
-        }
-    }
-    return 0;
-}
-
-float3 RandomInHemisphere(float3 normal, float randValue) {
-    float3 p = RandomInUnitSphere(randValue);
-    return p * sign(dot(p, normal));
-}
-
-float SumComponents(float3 v) {
-    return v.x + v.y + v.z;
-}
-
-float sdot(float3 x, float3 y, float f = 1.0f) {
-    return saturate(dot(x, y) * f);
-}
-
-float3 RayColor(Ray ray) {
+float3 RayColor(Ray ray, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
 
@@ -188,22 +205,19 @@ float3 RayColor(Ray ray) {
 
             ray.origin = hit.position + hit.normal * 0.0001;
             if (1) {
-                float randomValue = frac(ray.direction * 1000) * 1000 + gRTConstants.random01 * 1;
-
                 // Shadow test ray
-                bool shadow = false;
                 float3 L = -gScene.directLight.direction;
-                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(randomValue + 2) * 0.1));
+                const float spread = 0.1; // todo:
+                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.distance == INF) {
                     float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color;
-                    color += directLightShade * energy;
+                    color += directLightShade * energy; // todo: devide by 2 pi?
                 }
 
-                // ray.direction = RandomInHemisphere(hit.normal, SumComponents(ray.direction) * 1000 + gRTConstants.random01 * 0);
-                ray.direction = normalize(RandomInHemisphere(hit.normal, randomValue));
+                ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
 
-                energy *= albedo * dot(hit.normal, ray.direction);
+                energy *= albedo;
             } else {
                 float3 specular = 0.5;
                 specular = albedo;
@@ -213,9 +227,11 @@ float3 RayColor(Ray ray) {
                 energy *= specular;
             }
         } else {
+            // todo: fix sky
             float t = 0.5 * (ray.direction.y + 1);
             float3 skyColor = lerp(1, float3(0.5, 0.7, 1.0), t);
             skyColor = 0;
+            // skyColor *= 0.1;
 
             color += skyColor * energy;
             break;
@@ -227,6 +243,8 @@ float3 RayColor(Ray ray) {
 
 [numthreads(8, 8, 1)]
 void rtCS (uint3 id : SV_DispatchThreadID) {
+    uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
+
     // Get the dimensions of the RenderTexture
     uint width, height;
     gColor.GetDimensions(width, height);
@@ -238,15 +256,14 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
     float3 color = 0;
 
     for (int i = 0; i < nRays; i++) {
-        float2 offset = rand1dTo2d(id.xy + i + gRTConstants.random01);
+        float2 offset = rand1dTo2d(id.xy + i + gRTConstants.random01); // todo: halton sequence
         float2 uv = float2(id.xy + offset) / float2(width, height);
 
         Ray ray = CreateCameraRay(uv);
-
-        color += RayColor(ray);
+        color += RayColor(ray, seed);
     }
 
-    color /= nRays;;
+    color /= nRays;
 
     gColor[id.xy] = float4(color, 1);
 }
