@@ -1,23 +1,24 @@
 struct SRTObject {
-    float3 position;
-    float  _wef32;
+   float3 position;
+   float  _wef32;
 
-    float3 baseColor;
-    float  _sdfsde;
+   float3 baseColor;
+   float  _sdfsde;
     
-    float3 emissiveColor;
-    float  roughness;
+   float3 emissiveColor;
+   float  roughness;
 
-    float3 halfSize;
-    int    geomType;
+   float3 halfSize;
+   int    geomType;
 };
 
 struct SRTConstants {
-    int2 rtSize;
-    int rayDepth;
-    int nObjects;
+   uint2 rtSize;
+   int rayDepth;
+   int nObjects;
 
-    int nRays;
-    float random01;
-    float2 _wef32;
+   int nRays;
+   float random01;
+   float historyWeight;
+   float _wef32;
 };

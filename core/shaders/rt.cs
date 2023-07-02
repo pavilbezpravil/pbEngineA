@@ -240,6 +240,10 @@ float3 RayColor(Ray ray, inout uint seed) {
 
 [numthreads(8, 8, 1)]
 void rtCS (uint3 id : SV_DispatchThreadID) {
+    // if (id.xy >= gRTConstants.rtSize) {
+    //     return;
+    // }
+
     uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
 
     // Get the dimensions of the RenderTexture
@@ -263,4 +267,20 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
     color /= nRays;
 
     gColor[id.xy] = float4(color, 1);
+}
+
+
+RWTexture2D<float4> gHistory;
+
+[numthreads(8, 8, 1)]
+void HistoryAccCS (uint3 id : SV_DispatchThreadID) {
+    // if (id.xy >= gRTConstants.rtSize) { // todo: use getdimension or cb value
+    //     return;
+    // }
+
+    int w = gRTConstants.historyWeight;
+    float3 history = gHistory[id.xy] * w + gColor[id.xy] * (1 - w);
+
+    gColor[id.xy] = float4(history, 1);
+    gHistory[id.xy] = float4(history, 1);
 }

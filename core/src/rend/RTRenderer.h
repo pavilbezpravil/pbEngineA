@@ -3,6 +3,7 @@
 
 
 namespace pbe {
+   class Texture2D;
 
    class Buffer;
    class Scene;
@@ -18,8 +19,8 @@ namespace pbe {
 
       void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
 
-      Ref<GpuProgram> rayTracePass;
       Ref<Buffer> rtObjectsBuffer;
+      Ref<Texture2D> history;
 
    };
 
