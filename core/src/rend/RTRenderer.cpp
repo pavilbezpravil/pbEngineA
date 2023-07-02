@@ -70,9 +70,9 @@ namespace pbe {
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
       static mat4 cameraMatr;
-
       static int accumulatedFrames = 0;
-      if (cvClearHistory || cameraMatr != camera.GetViewProjection()) {
+
+      if (cvClearHistory || cameraMatr != camera.GetViewProjection() || !cvAccumulate) {
          cmd.ClearUAVFloat(*history); // todo: unnecessary
 
          cameraMatr = camera.GetViewProjection();
@@ -80,7 +80,9 @@ namespace pbe {
       }
 
       float historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
-      accumulatedFrames += cvNRays;
+      if (cvAccumulate) {
+         accumulatedFrames += cvNRays;
+      }
 
       SRTConstants rtCB;
       rtCB.rtSize = cameraContext.colorHDR->GetDesc().size;

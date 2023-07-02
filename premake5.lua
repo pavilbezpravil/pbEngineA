@@ -59,6 +59,7 @@ end
 -- include "src/imgui_test/premake5.lua"
 -- include "src/core/premake5.lua"
 -- include "src/pbeEditor/premake5.lua"
+include "src/mcpp/premake5.lua"
 
 group "tests"
    include "src/dll_test/premake5.lua"

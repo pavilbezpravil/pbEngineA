@@ -29,8 +29,10 @@ namespace pbe {
          return true;
 
       if (!sWindow || !sWindow->eventCallback) {
-         return ::DefWindowProc(hWnd, msg, wParam, lParam);;
+         return ::DefWindowProc(hWnd, msg, wParam, lParam);
       }
+
+      auto& io = ImGui::GetIO();
 
       switch (msg) {
       case WM_SIZE: if (wParam != SIZE_MINIMIZED) {
@@ -44,11 +46,19 @@ namespace pbe {
       case WM_DESTROY: ::PostQuitMessage(0);
          return 0;
       case WM_KEYDOWN: {
+         if (io.WantCaptureKeyboard) {
+            break;
+         }
+
          KeyPressedEvent e{ (int)wParam };
          sWindow->eventCallback(e);
          return 0;
       }
       case WM_KEYUP: {
+         if (io.WantCaptureKeyboard) {
+            break;
+         }
+
          KeyReleasedEvent e{ (int)wParam };
          sWindow->eventCallback(e);
          return 0;
