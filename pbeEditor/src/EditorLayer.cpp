@@ -72,6 +72,11 @@ namespace pbe {
                   createdEntity.Add<DirectLightComponent>();
                   ToggleSelectEntity(createdEntity);
                }
+               if (ImGui::MenuItem("Sky")) {
+                  auto createdEntity = pScene->Create();
+                  createdEntity.Add<SkyComponent>();
+                  ToggleSelectEntity(createdEntity);
+               }
             }
 
             for (auto [e, _] : pScene->GetEntitiesWith<UUIDComponent>().each()) {

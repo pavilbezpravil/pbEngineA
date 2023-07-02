@@ -1,6 +1,6 @@
 sceneName: test_scene
 entities:
-  - uuid: 1031566818124009718
+  - uuid: 2170966516242636815
     tag: sky
     SceneTransformComponent:
       position: [0, 0, 0]
@@ -9,14 +9,7 @@ entities:
     SkyComponent:
       directLight: 18446744073709551615
       color: [1, 1, 1]
-      intensity: 1
-  - uuid: 2446345801747236087
-    tag: ent mirror
-    SceneTransformComponent:
-      position: [-0.369421899, 1.08329248, -4.36693478]
-      rotation: [0, -0, 0]
-      scale: [3.18594337, 2.5314095, 1]
-      children: [14058855803419366819]
+      intensity: 0
   - uuid: 4513277486991032202
     tag: cube
     SceneTransformComponent:
@@ -30,30 +23,42 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
-  - uuid: 5149250398784041482
-    tag: wall
+  - uuid: 5079568519492316975
+    tag: emissive cube
     SceneTransformComponent:
-      position: [-0.831312895, 0, 1.70368648]
+      position: [-0.117909074, 3.35636067, 1.97598624]
       rotation: [0, -0, 0]
-      scale: [7.49906397, 3.66151547, 1]
+      scale: [5.81724119, 0.137674779, 1]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 5
+      opaque: true
+  - uuid: 5149250398784041482
+    tag: wall far
+    SceneTransformComponent:
+      position: [-0.176622987, 0.855010509, 3.8425734]
+      rotation: [0, -0, 0]
+      scale: [7.49906397, 6, 1]
     SimpleMaterialComponent:
       baseColor: [0.169417292, 0.772151887, 0.642449498]
-      roughness: 0.275999993
-      metallic: 1
+      roughness: 0.100000001
+      metallic: 0
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
-  - uuid: 6485567355113573356
-    tag: perfect mirorr
+  - uuid: 6515603774512827482
+    tag: ground copy
     SceneTransformComponent:
-      position: [0, 0, 0.0199999996]
+      position: [-0.31456846, 3.66837788, 2.0742898]
       rotation: [0, -0, 0]
-      scale: [0.899999976, 0.899999976, 1]
-      parent: 14058855803419366819
+      scale: [8, 0.5, 8]
     SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
-      roughness: 0
-      metallic: 1
+      baseColor: [0.815686285, 0.815686285, 0.815686285]
+      roughness: 0.100000001
+      metallic: 0
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
@@ -62,7 +67,7 @@ entities:
     SceneTransformComponent:
       position: [0, -1.05676425, 0]
       rotation: [0, -0, 0]
-      scale: [10.5085974, 1, 10.5356522]
+      scale: [20, 1, 20]
     SimpleMaterialComponent:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
@@ -70,16 +75,27 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
-  - uuid: 14058855803419366819
-    tag: mirror box
+  - uuid: 8150080313549777686
+    tag: wall right
     SceneTransformComponent:
-      position: [0, 0, 0]
+      position: [3.58865452, 0.855010509, 0.984455884]
       rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-      parent: 2446345801747236087
-      children: [6485567355113573356]
+      scale: [0.682625473, 6, 5.76288176]
     SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
+      baseColor: [0.169417292, 0.772151887, 0.642449498]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+  - uuid: 14905986889041417783
+    tag: wall left
+    SceneTransformComponent:
+      position: [-4.07046032, 0.855010509, 0.984455884]
+      rotation: [0, -0, 0]
+      scale: [0.682625473, 6, 5.76288176]
+    SimpleMaterialComponent:
+      baseColor: [0.169417292, 0.772151887, 0.642449498]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -93,4 +109,4 @@ entities:
       scale: [1, 1, 1]
     DirectLightComponent:
       color: [1, 1, 1]
-      intensity: 1.05299997
+      intensity: 0

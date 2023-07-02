@@ -269,7 +269,7 @@ namespace pbe {
       if (hasDirectLight) {
          auto [_, trans, directLight] = *directLightsView.each().begin();
 
-         sceneCB.directLight.color = directLight.color;
+         sceneCB.directLight.color = directLight.color * directLight.intensity;
          sceneCB.directLight.direction = trans.Forward();
 
          const float halfSize = 25;
@@ -289,6 +289,17 @@ namespace pbe {
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
          sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
+      }
+
+      // set sky
+      auto skyView = scene.GetEntitiesWith<SkyComponent>();
+      if (skyView.size() > 0) {
+         // auto [_, sky] = *skyView.each().begin();
+         auto [_, sky] = *skyView.each().begin();
+
+         sceneCB.skyIntensity = sky.intensity;
+      } else {
+         sceneCB.skyIntensity = 0;
       }
 
       cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);

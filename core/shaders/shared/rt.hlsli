@@ -3,8 +3,8 @@ struct SRTObject {
    float  _wef32;
 
    float3 baseColor;
-   float  _sdfsde;
-    
+   float  metallic;
+
    float3 emissiveColor;
    float  roughness;
 

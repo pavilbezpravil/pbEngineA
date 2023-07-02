@@ -181,6 +181,11 @@ RayHit Trace(Ray ray) {
     return bestHit;
 }
 
+// write luminance from rgb
+float Luminance(float3 color) {
+    return dot(color, float3(0.299f, 0.587f, 0.114f));
+}
+
 float3 RayColor(Ray ray, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
@@ -190,18 +195,23 @@ float3 RayColor(Ray ray, inout uint seed) {
         if (hit.distance < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
             // return hit.normal * 0.5f + 0.5f;
-            SRTObject rtObject = gRtObjects[hit.materialID];
+            SRTObject obj = gRtObjects[hit.materialID];
 
-            float3 albedo = rtObject.baseColor;
             ray.origin = hit.position + hit.normal * 0.0001;
 
             float3 V = -ray.direction;
             float3 N = hit.normal;
-            float3 F0 = 0.04; // todo:
+            float3 F0 = lerp(0.04, obj.baseColor, obj.metallic);
             float3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
 
+            color += obj.emissiveColor * energy; // todo: device by PI_2?
+
             // if (0) {
-            if (RandomFloat(seed) > F.x) {
+            if (RandomFloat(seed) > Luminance(F)) { // todo: is it ok?
+                // todo: metallic?
+                // float3 albedo = obj.baseColor;
+                float3 albedo = obj.baseColor * (1 - obj.metallic);
+
                 // Shadow test ray
                 float3 L = -gScene.directLight.direction;
                 const float spread = 0.1; // todo:
@@ -216,11 +226,14 @@ float3 RayColor(Ray ray, inout uint seed) {
 
                 energy *= albedo;
             } else {
-                float3 specular = 0.5;
-                specular = albedo;
+                // todo:
+                // float3 specular = obj.baseColor;
+                float3 specular = F;
 
-                float roughness = 0.0;//rtObject.roughness;
-                ray.direction = reflect(ray.direction, hit.normal + RandomInUnitSphere(seed) * roughness);
+                float roughness = obj.roughness * obj.roughness; // todo:
+                // ray.direction = reflect(ray.direction, hit.normal + RandomInUnitSphere(seed) * roughness);
+                ray.direction = reflect(ray.direction, hit.normal);
+                ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness);
 
                 energy *= specular;
             }

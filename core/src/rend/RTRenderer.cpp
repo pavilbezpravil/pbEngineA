@@ -39,6 +39,9 @@ namespace pbe {
          obj.position = trans.Position();
          obj.halfSize = trans.Scale() / 2.f;
          obj.baseColor = material.baseColor;
+         obj.metallic = material.metallic;
+         obj.roughness = material.roughness;
+         obj.emissiveColor = material.emissiveColor * material.emissivePower;
          obj.geomType = 1;
 
          objs.emplace_back(obj);

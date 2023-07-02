@@ -83,6 +83,11 @@ namespace pbe {
       TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       TYPER_FIELD(metallic)
 
+      TYPER_FIELD_UI(UIColorEdit3)
+      TYPER_FIELD(emissiveColor)
+
+      TYPER_FIELD(emissivePower)
+
       TYPER_FIELD(opaque)
    TYPER_END(SimpleMaterialComponent)
 

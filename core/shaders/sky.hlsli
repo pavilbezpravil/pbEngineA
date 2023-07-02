@@ -27,7 +27,7 @@ float3 GetSkyColor(float3 rd ) {
     col += float3(1.0, .8, .55) * pow( max(dot(rd,sundir),0.), 15. ) * .6; // Sun
     col += pow(max(dot(rd, sundir),0.), 150.0) *.15;
     
-    return col;
+    return col * gScene.skyIntensity;
 }
 
 #endif

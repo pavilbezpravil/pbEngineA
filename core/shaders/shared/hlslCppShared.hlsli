@@ -80,7 +80,7 @@ struct SSceneCB {
    SLight directLight;
    float4x4 toShadowSpace;
 
-   int _asdf3221;
+   float skyIntensity;
    int fogNSteps;
    float exposition;
    float _sdfsdg;
