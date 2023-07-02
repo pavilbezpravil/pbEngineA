@@ -89,6 +89,10 @@ namespace pbe {
          pContext->Unmap(resource, 0);
       }
 
+      void ClearUAVFloat(GPUResource& r, const vec4& v = vec4_Zero) {
+         pContext->ClearUnorderedAccessViewFloat(r.uav.Get(), &v.x);
+      }
+
       void ClearDepthTarget(Texture2D& depth, float depthValue, uint8 stencilValue = 0, uint clearFlags = D3D11_CLEAR_DEPTH) {
          pContext->ClearDepthStencilView(depth.dsv.Get(), clearFlags, depthValue, stencilValue);
       }

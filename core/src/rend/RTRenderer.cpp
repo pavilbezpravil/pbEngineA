@@ -69,13 +69,26 @@ namespace pbe {
 
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
+      static mat4 cameraMatr;
+
+      static int accumulatedFrames = 0;
+      if (cvClearHistory || cameraMatr != camera.GetViewProjection()) {
+         cmd.ClearUAVFloat(*history); // todo: unnecessary
+
+         cameraMatr = camera.GetViewProjection();
+         accumulatedFrames = 0;
+      }
+
+      float historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
+      accumulatedFrames += cvNRays;
+
       SRTConstants rtCB;
       rtCB.rtSize = cameraContext.colorHDR->GetDesc().size;
       rtCB.rayDepth = cvRayDepth;
       rtCB.nObjects = nObj;
       rtCB.nRays = cvNRays;
       rtCB.random01 = Random::Uniform(0.f, 1.f);
-      rtCB.historyWeight = 0.9f; // todo:
+      rtCB.historyWeight = historyWeight;
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       {
@@ -87,11 +100,13 @@ namespace pbe {
 
          rayTracePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
-         rayTracePass->Dispatch2D(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+         rayTracePass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{8, 8});
       }
 
       if (cvAccumulate) {
-         auto historyPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "rtCS"));
+         cmd.pContext->Flush(); // todo:
+
+         auto historyPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "HistoryAccCS"));
 
          historyPass->Activate(cmd); // todo: remove activate
 
@@ -100,7 +115,7 @@ namespace pbe {
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
          historyPass->SetUAV(cmd, "gHistory", *history);
 
-         historyPass->Dispatch2D(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+         historyPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8, 8 });
       }
 
 

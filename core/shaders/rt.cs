@@ -278,9 +278,10 @@ void HistoryAccCS (uint3 id : SV_DispatchThreadID) {
     //     return;
     // }
 
-    int w = gRTConstants.historyWeight;
-    float3 history = gHistory[id.xy] * w + gColor[id.xy] * (1 - w);
+    float w = gRTConstants.historyWeight;
+    float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+    float4 color = float4(history, 1);
 
-    gColor[id.xy] = float4(history, 1);
-    gHistory[id.xy] = float4(history, 1);
+    gColor[id.xy] = color;
+    gHistory[id.xy] = color;
 }
