@@ -37,11 +37,16 @@ namespace pbe {
       return translate * scale;
    }
 
+   void RenderCamera::NextFrame() {
+      prevViewProjection = GetViewProjection();
+   }
+
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
       cameraCB.view = glm::transpose(view);
       cameraCB.projection = glm::transpose(projection);
       cameraCB.viewProjection = glm::transpose(GetViewProjection());
       cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+      cameraCB.prevViewProjection = glm::transpose(prevViewProjection);
       cameraCB.position = position;
 
       cameraCB.zNear = zNear;

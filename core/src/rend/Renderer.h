@@ -21,11 +21,13 @@ struct SCameraCB;
 namespace pbe {
    // class RTRenderer;
 
-   struct RenderCamera {
+   struct CORE_API RenderCamera {
       vec3 position{};
 
       mat4 view;
       mat4 projection;
+
+      mat4 prevViewProjection;
 
       float zNear;
       float zFar;
@@ -45,6 +47,8 @@ namespace pbe {
       mat4 GetViewProjection() const {
          return projection * view;
       }
+
+      void NextFrame();
 
       void FillSCameraCB(SCameraCB& cameraCB) const;
    };

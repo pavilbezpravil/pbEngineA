@@ -7,7 +7,7 @@
 
 RWTexture2D<float4> gColor;
 
-cbuffer gRTConstantsCB {
+cbuffer gRTConstantsCB : register(b0) {
   SRTConstants gRTConstants;
 }
 
@@ -251,6 +251,38 @@ float3 RayColor(Ray ray, inout uint seed) {
     return color;
 }
 
+RWTexture2D<float> gDepth;
+RWTexture2D<float4> gNormal;
+
+[numthreads(8, 8, 1)]
+void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
+    // if (id.xy >= gRTConstants.rtSize) {
+    //     return;
+    // }
+
+    // Get the dimensions of the RenderTexture
+    uint width, height;
+    gColor.GetDimensions(width, height);
+
+    float2 uv = float2(id.xy + 0.5) / float2(width, height);
+    Ray ray = CreateCameraRay(uv);
+
+    float3 color = 0;
+
+    RayHit hit = Trace(ray);
+    if (hit.distance < INF) {
+        // SRTObject obj = gRtObjects[hit.materialID];
+
+        gNormal[id.xy] = float4(hit.normal * 0.5f + 0.5f, 1);
+
+        float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
+        gDepth[id.xy] = posH.z / posH.w;
+    } else {
+        gNormal[id.xy] = 0;
+        gDepth[id.xy] = 0;
+    }
+}
+
 [numthreads(8, 8, 1)]
 void rtCS (uint3 id : SV_DispatchThreadID) {
     // if (id.xy >= gRTConstants.rtSize) {
@@ -285,16 +317,27 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
 
 RWTexture2D<float4> gHistory;
 
+#define ENABLE_REPROJECTION
+
 [numthreads(8, 8, 1)]
 void HistoryAccCS (uint3 id : SV_DispatchThreadID) {
     // if (id.xy >= gRTConstants.rtSize) { // todo: use getdimension or cb value
     //     return;
     // }
 
-    float w = gRTConstants.historyWeight;
-    float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
-    float4 color = float4(history, 1);
+    #ifdef ENABLE_REPROJECTION
+        float w = gRTConstants.historyWeight;
+        float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+        float4 color = float4(history, 1);
 
-    gColor[id.xy] = color;
-    gHistory[id.xy] = color;
+        gColor[id.xy] = color;
+        gHistory[id.xy] = color;
+    #else
+        float w = gRTConstants.historyWeight;
+        float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+        float4 color = float4(history, 1);
+
+        gColor[id.xy] = color;
+        gHistory[id.xy] = color;
+    #endif
 }

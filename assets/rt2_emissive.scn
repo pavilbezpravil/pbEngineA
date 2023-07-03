@@ -23,6 +23,12 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    TestScript:
+      values:
+        floatValue: 2
+        intValue: 2
+      speed: 1
+      doMove: true
   - uuid: 5079568519492316975
     tag: emissive cube
     SceneTransformComponent:

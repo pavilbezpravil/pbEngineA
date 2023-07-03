@@ -30,7 +30,7 @@ namespace pbe {
       void OnUpdate(float dt) override {
          if (doMove) {
             auto& tran= owner.Get<SceneTransformComponent>();
-            tran.position.x += speed * dt;
+            tran.position.y += speed * dt;
          }
       }
 

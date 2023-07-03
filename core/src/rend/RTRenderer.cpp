@@ -58,16 +58,32 @@ namespace pbe {
       cmd.UpdateSubresource(*rtObjectsBuffer, objs.data(), 0, nObj * sizeof(SRTObject));
 
       auto& outTexture = *cameraContext.colorHDR;
+      auto outTexSize = outTexture.GetDesc().size;
 
-      if (!history || history->GetDesc().size != cameraContext.colorHDR->GetDesc().size) {
+      if (!historyTex || historyTex->GetDesc().size != cameraContext.colorHDR->GetDesc().size) {
          Texture2D::Desc texDesc{
-            .size = outTexture.GetDesc().size,
+            .size = outTexSize,
             .format = outTexture.GetDesc().format,
             .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
             .name = "rt history",
          };
+         historyTex = Texture2D::Create(texDesc);
 
-         history = Texture2D::Create(texDesc);
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_TYPELESS, // todo:
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
+            .name = "rt depth",
+         };
+         depthTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
+            .name = "rt normal",
+         };
+         normalTex = Texture2D::Create(texDesc);
       }
 
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
@@ -76,7 +92,7 @@ namespace pbe {
       static int accumulatedFrames = 0;
 
       if (cvClearHistory || cameraMatr != camera.GetViewProjection() || !cvAccumulate) {
-         cmd.ClearUAVFloat(*history); // todo: unnecessary
+         cmd.ClearUAVFloat(*historyTex); // todo: unnecessary
 
          cameraMatr = camera.GetViewProjection();
          accumulatedFrames = 0;
@@ -88,7 +104,7 @@ namespace pbe {
       }
 
       SRTConstants rtCB;
-      rtCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+      rtCB.rtSize = outTexSize;
       rtCB.rayDepth = cvRayDepth;
       rtCB.nObjects = nObj;
       rtCB.nRays = cvNRays;
@@ -97,6 +113,28 @@ namespace pbe {
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       {
+         GPU_MARKER("GBuffer");
+         PROFILE_GPU("GBuffer");
+
+         auto gbufferPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "GBufferCS"));
+         gbufferPass->Activate(cmd);
+
+         gbufferPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
+         gbufferPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
+
+         gbufferPass->SetUAV(cmd, "gDepth", *depthTex);
+         gbufferPass->SetUAV(cmd, "gNormal", *normalTex);
+
+         gbufferPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+      }
+
+      // cmd.CopyResource(*cameraContext.colorHDR, *normalTex);
+      // return;
+
+      {
+         GPU_MARKER("Ray Trace");
+         PROFILE_GPU("Ray Trace");
+
          auto rayTracePass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "rtCS"));
          rayTracePass->Activate(cmd);
 
@@ -105,11 +143,12 @@ namespace pbe {
 
          rayTracePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
-         rayTracePass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{8, 8});
+         rayTracePass->Dispatch2D(cmd, outTexSize, int2{8, 8});
       }
 
       if (cvAccumulate) {
-         cmd.pContext->Flush(); // todo:
+         GPU_MARKER("Reproject");
+         PROFILE_GPU("Reproject");
 
          auto historyPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "HistoryAccCS"));
 
@@ -118,9 +157,9 @@ namespace pbe {
          historyPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
 
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
-         historyPass->SetUAV(cmd, "gHistory", *history);
+         historyPass->SetUAV(cmd, "gHistory", *historyTex);
 
-         historyPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8, 8 });
+         historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
       }
 
 

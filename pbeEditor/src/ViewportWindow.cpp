@@ -179,6 +179,8 @@ namespace pbe {
 
          vec2 pixelIdxFloat = (mousePos - cursorPos);
 
+         camera.NextFrame(); // todo:
+
          cmd.SetCommonSamplers();
          if (scene) {
             int2 cursorPixelIdx{ pixelIdxFloat + EPSILON };
