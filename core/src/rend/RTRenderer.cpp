@@ -21,6 +21,8 @@ namespace pbe {
    CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 128 };
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
+   CVarValue<bool> cvUseHistoryWeight{ "render/rt/use history weight", false };
+   CVarSlider<float> cvHistoryWeight{ "render/rt/history weight", 0.9f, 0, 1 };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    void RTRenderer::Init() {
@@ -75,6 +77,11 @@ namespace pbe {
       float historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
       if (cvAccumulate) {
          accumulatedFrames += cvNRays;
+      }
+
+      if (cvUseHistoryWeight) {
+         accumulatedFrames = 0;
+         historyWeight = cvHistoryWeight;
       }
 
       SRTConstants rtCB;
