@@ -21,8 +21,10 @@ namespace pbe {
    CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 128 };
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
-   CVarValue<bool> cvUseHistoryWeight{ "render/rt/use history weight", false };
-   CVarSlider<float> cvHistoryWeight{ "render/rt/history weight", 0.9f, 0, 1 };
+   CVarValue<bool> cvHistoryResetOnCameraMove{ "render/rt/history reset on camera move", false };
+   CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
+   CVarValue<bool> cvUseHistoryWeight{ "render/rt/use history weight", true };
+   CVarSlider<float> cvHistoryWeight{ "render/rt/history weight", 0.97f, 0, 1 };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    void RTRenderer::Init() {
@@ -67,7 +69,9 @@ namespace pbe {
       static mat4 cameraMatr;
       static int accumulatedFrames = 0;
 
-      if (cvClearHistory || cameraMatr != camera.GetViewProjection() || !cvAccumulate) {
+      bool resetOnCameraMove = cvHistoryResetOnCameraMove ? cameraMatr != camera.GetViewProjection() : false;
+
+      if (cvClearHistory || resetOnCameraMove || !cvAccumulate) {
          // cmd.ClearUAVFloat(*historyTex); // todo: unnecessary
 
          cameraMatr = camera.GetViewProjection();
@@ -131,7 +135,12 @@ namespace pbe {
          GPU_MARKER("Reproject");
          PROFILE_GPU("Reproject");
 
-         auto historyPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "HistoryAccCS"));
+         auto desc = ProgramDesc::Cs("rt.cs", "HistoryAccCS");
+         if (cvHistoryReprojection) {
+            desc.cs.defines.AddDefine("ENABLE_REPROJECTION");
+         }
+
+         auto historyPass = GetGpuProgram(desc);
 
          historyPass->Activate(cmd); // todo: remove activate
 

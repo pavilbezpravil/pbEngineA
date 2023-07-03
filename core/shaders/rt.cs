@@ -279,7 +279,7 @@ void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
         gDepthOut[id.xy] = posH.z / posH.w;
     } else {
         gNormalOut[id.xy] = 0;
-        gDepthOut[id.xy] = 0;
+        gDepthOut[id.xy] = 1;
     }
 }
 
@@ -319,21 +319,54 @@ Texture2D<float> gDepth;
 Texture2D<float4> gNormal;
 RWTexture2D<float4> gHistoryOut;
 
-#define ENABLE_REPROJECTION
+// #define ENABLE_REPROJECTION
 
 [numthreads(8, 8, 1)]
-void HistoryAccCS (uint3 id : SV_DispatchThreadID) {
+void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
     // if (id.xy >= gRTConstants.rtSize) { // todo: use getdimension or cb value
     //     return;
     // }
 
     #ifdef ENABLE_REPROJECTION
-        float w = gRTConstants.historyWeight;
-        float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
-        float4 color = float4(history, 1);
+        float3 normalW = gNormal[id];
 
-        gColor[id.xy] = color;
-        gHistoryOut[id.xy] = color;
+        float depthRaw = gDepth[id];
+        // float depth = LinearizeDepth(depthRaw);
+
+        float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
+        float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
+
+        // float4 sample = mul(float4(posW, 1), gCamera.viewProjection);
+        float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
+        prevSample /= prevSample.w;
+        // float samplePosDepth = sample.z;
+
+        float3 color = 0;
+        if (all(prevSample.xy > -0.9 && prevSample.xy < 0.9) && depthRaw != 1) {
+            // uint2 sampleIdx = id;
+            uint2 sampleIdx = NDCToTex(prevSample.xy) * gCamera.rtSize;
+
+            float w = gRTConstants.historyWeight;
+            color = gHistoryOut[sampleIdx].xyz * w + gColor[sampleIdx].xyz * (1 - w);
+        } else {
+            color = gColor[id.xy].xyz;
+        }
+
+        #if 0
+            float4 sample = mul(float4(posW, 1), gCamera.viewProjection);
+            sample /= sample.w;
+
+            color = 0;
+            float2 diff = sample.xy - prevSample.xy;
+            color.xy = 0.5 + diff;
+            // color.xy = frac((sample.xy - prevSample.xy) * 10);
+            // color.xy = abs((sample.xy - prevSample.xy) * 10000);
+        #endif
+
+        float4 color4 = float4(color, 1);
+
+        gColor[id] = color4;
+        gHistoryOut[id] = color4;
     #else
         float w = gRTConstants.historyWeight;
         float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);

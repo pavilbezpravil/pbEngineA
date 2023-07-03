@@ -209,7 +209,7 @@ namespace pbe {
 
          vec2 pixelIdxFloat = (mousePos - cursorPos);
 
-         camera.NextFrame(); // todo:
+         // camera.NextFrame(); // todo:
 
          cmd.SetCommonSamplers();
          if (scene) {
@@ -280,6 +280,8 @@ namespace pbe {
       if (!enableInput) {
          return;
       }
+
+      camera.NextFrame(); // todo:
 
       if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          selectEntityUnderCursor = true;
