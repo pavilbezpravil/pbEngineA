@@ -146,6 +146,9 @@ namespace pbe {
 
          historyPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
 
+         // todo: remove
+         historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
+
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
 

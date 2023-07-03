@@ -267,8 +267,6 @@ void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
     float2 uv = float2(id.xy + 0.5) / float2(width, height);
     Ray ray = CreateCameraRay(uv);
 
-    float3 color = 0;
-
     RayHit hit = Trace(ray);
     if (hit.distance < INF) {
         // SRTObject obj = gRtObjects[hit.materialID];
@@ -336,25 +334,44 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
         float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
 
-        // float4 sample = mul(float4(posW, 1), gCamera.viewProjection);
+        float historyWeight = gRTConstants.historyWeight;
+
+        #if 0
+            // float2 uv = float2(id.xy + 0.5) / float2(width, height);
+            Ray ray = CreateCameraRay(uv);
+
+            RayHit hit = Trace(ray);
+            if (hit.distance < INF) {
+                // SRTObject obj = gRtObjects[hit.materialID];
+                posW = hit.position;
+            } else {
+                historyWeight = 0;
+            }
+        #endif
+
         float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
         prevSample /= prevSample.w;
-        // float samplePosDepth = sample.z;
 
-        float3 color = 0;
-        if (all(prevSample.xy > -0.9 && prevSample.xy < 0.9) && depthRaw != 1) {
-            // uint2 sampleIdx = id;
-            uint2 sampleIdx = NDCToTex(prevSample.xy) * gCamera.rtSize;
+        float3 color = gColor[id].xyz;
 
-            float w = gRTConstants.historyWeight;
-            color = gHistoryOut[sampleIdx].xyz * w + gColor[sampleIdx].xyz * (1 - w);
+        float2 prevUV = NDCToTex(prevSample.xy);
+        if (all(prevUV > 0.1 && prevUV < 0.9) && depthRaw != 1) {
+
         } else {
-            color = gColor[id.xy].xyz;
+            historyWeight = 0;
+        }
+
+        if (historyWeight > 0) {
+            // uint2 sampleIdx = id;
+            uint2 sampleIdx = prevUV * gCamera.rtSize;
+
+            color = lerp(color, gHistoryOut[sampleIdx].xyz, historyWeight);
         }
 
         #if 0
             float4 sample = mul(float4(posW, 1), gCamera.viewProjection);
             sample /= sample.w;
+            // float samplePosDepth = sample.z;
 
             color = 0;
             float2 diff = sample.xy - prevSample.xy;
