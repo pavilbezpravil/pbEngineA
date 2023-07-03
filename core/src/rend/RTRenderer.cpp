@@ -18,7 +18,7 @@
 
 namespace pbe {
 
-   CVarSlider<int> cvNRays{ "render/rt/nRays", 5, 1, 128 };
+   CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 128 };
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
@@ -60,39 +60,13 @@ namespace pbe {
       auto& outTexture = *cameraContext.colorHDR;
       auto outTexSize = outTexture.GetDesc().size;
 
-      if (!historyTex || historyTex->GetDesc().size != cameraContext.colorHDR->GetDesc().size) {
-         Texture2D::Desc texDesc{
-            .size = outTexSize,
-            .format = outTexture.GetDesc().format,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
-            .name = "rt history",
-         };
-         historyTex = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R32_TYPELESS, // todo:
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
-            .name = "rt depth",
-         };
-         depthTex = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS,
-            .name = "rt normal",
-         };
-         normalTex = Texture2D::Create(texDesc);
-      }
-
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
       static mat4 cameraMatr;
       static int accumulatedFrames = 0;
 
       if (cvClearHistory || cameraMatr != camera.GetViewProjection() || !cvAccumulate) {
-         cmd.ClearUAVFloat(*historyTex); // todo: unnecessary
+         // cmd.ClearUAVFloat(*historyTex); // todo: unnecessary
 
          cameraMatr = camera.GetViewProjection();
          accumulatedFrames = 0;
@@ -122,8 +96,8 @@ namespace pbe {
          gbufferPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
          gbufferPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
-         gbufferPass->SetUAV(cmd, "gDepth", *depthTex);
-         gbufferPass->SetUAV(cmd, "gNormal", *normalTex);
+         gbufferPass->SetUAV(cmd, "gDepthOut", *cameraContext.depthTex);
+         gbufferPass->SetUAV(cmd, "gNormalOut", *cameraContext.normalTex);
 
          gbufferPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
       }
@@ -156,8 +130,11 @@ namespace pbe {
 
          historyPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
 
+         historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
+         historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
+
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
-         historyPass->SetUAV(cmd, "gHistory", *historyTex);
+         historyPass->SetUAV(cmd, "gHistoryOut", *cameraContext.historyTex);
 
          historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
       }

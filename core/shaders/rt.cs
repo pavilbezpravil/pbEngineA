@@ -251,8 +251,8 @@ float3 RayColor(Ray ray, inout uint seed) {
     return color;
 }
 
-RWTexture2D<float> gDepth;
-RWTexture2D<float4> gNormal;
+RWTexture2D<float> gDepthOut;
+RWTexture2D<float4> gNormalOut;
 
 [numthreads(8, 8, 1)]
 void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
@@ -262,7 +262,7 @@ void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
 
     // Get the dimensions of the RenderTexture
     uint width, height;
-    gColor.GetDimensions(width, height);
+    gNormalOut.GetDimensions(width, height);
 
     float2 uv = float2(id.xy + 0.5) / float2(width, height);
     Ray ray = CreateCameraRay(uv);
@@ -273,13 +273,13 @@ void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
     if (hit.distance < INF) {
         // SRTObject obj = gRtObjects[hit.materialID];
 
-        gNormal[id.xy] = float4(hit.normal * 0.5f + 0.5f, 1);
+        gNormalOut[id.xy] = float4(hit.normal * 0.5f + 0.5f, 1);
 
         float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
-        gDepth[id.xy] = posH.z / posH.w;
+        gDepthOut[id.xy] = posH.z / posH.w;
     } else {
-        gNormal[id.xy] = 0;
-        gDepth[id.xy] = 0;
+        gNormalOut[id.xy] = 0;
+        gDepthOut[id.xy] = 0;
     }
 }
 
@@ -315,7 +315,9 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
 }
 
 
-RWTexture2D<float4> gHistory;
+Texture2D<float> gDepth;
+Texture2D<float4> gNormal;
+RWTexture2D<float4> gHistoryOut;
 
 #define ENABLE_REPROJECTION
 
@@ -327,17 +329,17 @@ void HistoryAccCS (uint3 id : SV_DispatchThreadID) {
 
     #ifdef ENABLE_REPROJECTION
         float w = gRTConstants.historyWeight;
-        float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+        float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
         float4 color = float4(history, 1);
 
         gColor[id.xy] = color;
-        gHistory[id.xy] = color;
+        gHistoryOut[id.xy] = color;
     #else
         float w = gRTConstants.historyWeight;
-        float3 history = gHistory[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+        float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
         float4 color = float4(history, 1);
 
         gColor[id.xy] = color;
-        gHistory[id.xy] = color;
+        gHistoryOut[id.xy] = color;
     #endif
 }

@@ -67,6 +67,13 @@ namespace pbe {
 
       Ref<Texture2D> shadowMap;
 
+      // todo: simplify adding new rt
+      // rt
+      Ref<Texture2D> historyTex;
+      Ref<Texture2D> depthTex;
+      Ref<Texture2D> normalTex;
+
+
       Ref<Buffer> underCursorBuffer; // todo:
 
       int2 cursorPixelIdx{-1}; // todo:

@@ -21,10 +21,6 @@ namespace pbe {
 
       Ref<Buffer> rtObjectsBuffer;
 
-      Ref<Texture2D> historyTex;
-      Ref<Texture2D> depthTex;
-      Ref<Texture2D> normalTex;
-
    };
 
 }

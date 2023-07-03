@@ -69,7 +69,7 @@ namespace pbe {
       renderer->cfg = cfg;
 
       static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "LinearDepth", "Normal", "Position", "SSAO", "ShadowMap"};
+      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "LinearDepth", "Normal", "Position", "SSAO", "ShadowMap", "RT Depth", "RT Normal"};
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -169,6 +169,36 @@ namespace pbe {
                cameraContext.shadowMap = Texture2D::Create(texDesc);
             }
 
+            // rt
+            {
+               auto& outTexture = *cameraContext.colorHDR;
+               auto outTexSize = outTexture.GetDesc().size;
+
+               Texture2D::Desc texDesc{
+                  .size = outTexSize,
+                  .format = outTexture.GetDesc().format,
+                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+                  .name = "rt history",
+               };
+               cameraContext.historyTex = Texture2D::Create(texDesc);
+
+               texDesc = {
+                  .size = outTexSize,
+                  .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
+                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+                  .name = "rt depth",
+               };
+               cameraContext.depthTex = Texture2D::Create(texDesc);
+
+               texDesc = {
+                  .size = outTexSize,
+                  .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+                  .name = "rt normal",
+               };
+               cameraContext.normalTex = Texture2D::Create(texDesc);
+            }
+
             camera.zNear = 0.1f;
             camera.zFar = 1000.f;
             camera.projection = glm::perspectiveFov(90.f / (180) * PI, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
@@ -189,7 +219,7 @@ namespace pbe {
          }
          cmd.pContext->ClearState(); // todo:
 
-         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap };
+         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap, cameraContext.depthTex, cameraContext.normalTex };
          auto srv = sceneRTs[item_current]->srv.Get();
 
          ImGui::Image(srv, imSize);
