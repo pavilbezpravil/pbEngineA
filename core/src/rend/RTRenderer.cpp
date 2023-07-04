@@ -150,10 +150,10 @@ namespace pbe {
          // todo: remove
          historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
-         historyPass->SetUAV(cmd, "gReprojectCount", *cameraContext.reprojectCountTex2);
+         historyPass->SetSRV(cmd, "gReprojectCount", *cameraContext.reprojectCountTex2);
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
-         historyPass->SetUAV(cmd, "gHistory", *cameraContext.historyTex2);
+         historyPass->SetSRV(cmd, "gHistory", *cameraContext.historyTex2);
 
          historyPass->SetUAV(cmd, "gReprojectCountOut", *cameraContext.reprojectCountTex);
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);

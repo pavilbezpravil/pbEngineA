@@ -308,10 +308,8 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
 Texture2D<float> gDepth;
 Texture2D<float4> gNormal;
-
-// todo: why i need rw?
-RWTexture2D<float4> gHistory;
-RWTexture2D<uint> gReprojectCount;
+Texture2D<float4> gHistory;
+Texture2D<uint> gReprojectCount;
 
 RWTexture2D<float4> gHistoryOut;
 RWTexture2D<uint> gReprojectCountOut;
@@ -367,8 +365,8 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         if (historyWeight > 0) {
             // todo: cant sample uav with sampler
-            // float3 historyColor = gHistoryOut.SampleLevel(gSamplerPoint, prevUV, 0);
-            // float3 historyColor = gHistoryOut.SampleLevel(gSamplerLinear, prevUV, 0);
+            // float3 historyColor = gHistory.SampleLevel(gSamplerPoint, prevUV, 0);
+            // float3 historyColor = gHistory.SampleLevel(gSamplerLinear, prevUV, 0);
             float3 historyColor = gHistory[prevSampleIdx].xyz;
             // historyColor = 0;
             // float3 historyColor = gHistory[id].xyz;
