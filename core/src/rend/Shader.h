@@ -47,7 +47,9 @@ namespace pbe {
             auto& l = lhs[i];
             auto& r = rhs[i];
 
-            if (strcmp(l.Name, r.Name) != 0 || l.Definition == r.Definition || strcmp(l.Definition, r.Definition) == 0) {
+            if (strcmp(l.Name, r.Name) != 0
+               || (l.Definition != nullptr && r.Definition != nullptr && (strcmp(l.Definition, r.Definition) == 0))
+               ) {
                return false;
             }
          }

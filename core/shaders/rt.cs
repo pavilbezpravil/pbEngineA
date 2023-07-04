@@ -255,45 +255,38 @@ RWTexture2D<float> gDepthOut;
 RWTexture2D<float4> gNormalOut;
 
 [numthreads(8, 8, 1)]
-void GBufferCS (uint3 id : SV_DispatchThreadID) { // todo: may i use uint2?
-    // if (id.xy >= gRTConstants.rtSize) {
-    //     return;
-    // }
+void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
 
-    // Get the dimensions of the RenderTexture
-    uint width, height;
-    gNormalOut.GetDimensions(width, height);
-
-    float2 uv = float2(id.xy + 0.5) / float2(width, height);
+    float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
     if (hit.distance < INF) {
         // SRTObject obj = gRtObjects[hit.materialID];
 
-        gNormalOut[id.xy] = float4(hit.normal * 0.5f + 0.5f, 1);
+        gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
         float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
-        gDepthOut[id.xy] = posH.z / posH.w;
+        // posH.z / posH.w;
+        // gDepthOut[int2(posH.xy * gRTConstants.rtSize)] = posH.z;
+        // gDepthOut[id] = posH.z;
+        gDepthOut[id] = posH.z / posH.w;
     } else {
-        gNormalOut[id.xy] = 0;
-        gDepthOut[id.xy] = 1;
+        gNormalOut[id] = 0;
+        gDepthOut[id] = 1;
     }
 }
 
 [numthreads(8, 8, 1)]
-void rtCS (uint3 id : SV_DispatchThreadID) {
-    // if (id.xy >= gRTConstants.rtSize) {
-    //     return;
-    // }
+void rtCS (uint2 id : SV_DispatchThreadID) {
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
 
     uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
-
-    // Get the dimensions of the RenderTexture
-    uint width, height;
-    gColor.GetDimensions(width, height);
-    // Transform pixel to [-1,1] range
-    // float2 uv = float2((id.xy + float2(0.5f, 0.5f)) / float2(width, height) * 2.0f - 1.0f);
 
     int nRays = gRTConstants.nRays;
 
@@ -301,7 +294,7 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         float2 offset = RandomFloat2(seed); // todo: halton sequence
-        float2 uv = float2(id.xy + offset) / float2(width, height);
+        float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
 
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
@@ -315,18 +308,24 @@ void rtCS (uint3 id : SV_DispatchThreadID) {
 
 Texture2D<float> gDepth;
 Texture2D<float4> gNormal;
+
+// todo: why i need rw?
+RWTexture2D<float4> gHistory;
+RWTexture2D<uint> gReprojectCount;
+
 RWTexture2D<float4> gHistoryOut;
+RWTexture2D<uint> gReprojectCountOut;
 
 // #define ENABLE_REPROJECTION
 
 [numthreads(8, 8, 1)]
 void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
-    // if (id.xy >= gRTConstants.rtSize) { // todo: use getdimension or cb value
-    //     return;
-    // }
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
 
     #ifdef ENABLE_REPROJECTION
-        float3 normalW = gNormal[id];
+        float3 normalW = gNormal[id].xyz;
 
         float depthRaw = gDepth[id];
         // float depth = LinearizeDepth(depthRaw);
@@ -336,54 +335,51 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float historyWeight = gRTConstants.historyWeight;
 
-        #if 0
-            // float2 uv = float2(id.xy + 0.5) / float2(width, height);
-            Ray ray = CreateCameraRay(uv);
-
-            RayHit hit = Trace(ray);
-            if (hit.distance < INF) {
-                // SRTObject obj = gRtObjects[hit.materialID];
-                posW = hit.position;
-            } else {
-                historyWeight = 0;
-            }
-        #endif
-
         float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
         prevSample /= prevSample.w;
 
+        float2 prevUV = NDCToTex(prevSample.xy);
+        uint2 prevSampleIdx = prevUV * gCamera.rtSize;
+
         float3 color = gColor[id].xyz;
 
-        float2 prevUV = NDCToTex(prevSample.xy);
-        if (all(prevUV > 0.1 && prevUV < 0.9) && depthRaw != 1) {
+        bool validDepth = depthRaw != 1;
+        // validDepth = depthRaw != 1
+        //            || gDepth[id + int2( 1, 0)] != 1
+        //            || gDepth[id + int2(-1, 0)] != 1
+        //            || gDepth[id + int2( 0, 1)] != 1
+        //            || gDepth[id + int2( 0,-1)] != 1
+        //            ;
 
+        if (all(prevSample.xy > -1 && prevSample.xy < 1) && validDepth) {
+            int nRays = gRTConstants.nRays;
+
+            uint oldCount = gReprojectCount[prevSampleIdx];
+            uint nextCount = oldCount + nRays;
+            // historyWeight = float(oldCount) / float(nextCount);
+
+            // todo: race
+            gReprojectCountOut[id] = min(nextCount, 255);
         } else {
+            gReprojectCountOut[id] = 0;
             historyWeight = 0;
         }
 
         if (historyWeight > 0) {
-            // uint2 sampleIdx = id;
-            uint2 sampleIdx = prevUV * gCamera.rtSize;
-
-            color = lerp(color, gHistoryOut[sampleIdx].xyz, historyWeight);
+            // todo: cant sample uav with sampler
+            // float3 historyColor = gHistoryOut.SampleLevel(gSamplerPoint, prevUV, 0);
+            // float3 historyColor = gHistoryOut.SampleLevel(gSamplerLinear, prevUV, 0);
+            float3 historyColor = gHistory[prevSampleIdx].xyz;
+            // historyColor = 0;
+            // float3 historyColor = gHistory[id].xyz;
+            color = lerp(color, historyColor, historyWeight);
         }
-
-        #if 0
-            float4 sample = mul(float4(posW, 1), gCamera.viewProjection);
-            sample /= sample.w;
-            // float samplePosDepth = sample.z;
-
-            color = 0;
-            float2 diff = sample.xy - prevSample.xy;
-            color.xy = 0.5 + diff;
-            // color.xy = frac((sample.xy - prevSample.xy) * 10);
-            // color.xy = abs((sample.xy - prevSample.xy) * 10000);
-        #endif
 
         float4 color4 = float4(color, 1);
 
-        gColor[id] = color4;
         gHistoryOut[id] = color4;
+        // color4.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
+        gColor[id] = color4;        
     #else
         float w = gRTConstants.historyWeight;
         float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);

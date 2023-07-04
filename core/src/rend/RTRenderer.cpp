@@ -72,7 +72,8 @@ namespace pbe {
       bool resetOnCameraMove = cvHistoryResetOnCameraMove ? cameraMatr != camera.GetViewProjection() : false;
 
       if (cvClearHistory || resetOnCameraMove || !cvAccumulate) {
-         // cmd.ClearUAVFloat(*historyTex); // todo: unnecessary
+         cmd.ClearUAVUint(*cameraContext.reprojectCountTex2);
+         cmd.ClearUAVFloat(*cameraContext.historyTex2);
 
          cameraMatr = camera.GetViewProjection();
          accumulatedFrames = 0;
@@ -149,13 +150,21 @@ namespace pbe {
          // todo: remove
          historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
+         historyPass->SetUAV(cmd, "gReprojectCount", *cameraContext.reprojectCountTex2);
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
+         historyPass->SetUAV(cmd, "gHistory", *cameraContext.historyTex2);
 
+         historyPass->SetUAV(cmd, "gReprojectCountOut", *cameraContext.reprojectCountTex);
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
          historyPass->SetUAV(cmd, "gHistoryOut", *cameraContext.historyTex);
 
          historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+
+         if (cvHistoryReprojection) {
+            std::swap(cameraContext.historyTex, cameraContext.historyTex2);
+            std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTex2);
+         }
       }
 
 

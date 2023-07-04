@@ -70,8 +70,11 @@ namespace pbe {
       // todo: simplify adding new rt
       // rt
       Ref<Texture2D> historyTex;
+      Ref<Texture2D> historyTex2;
       Ref<Texture2D> depthTex;
       Ref<Texture2D> normalTex;
+      Ref<Texture2D> reprojectCountTex;
+      Ref<Texture2D> reprojectCountTex2;
 
 
       Ref<Buffer> underCursorBuffer; // todo:
