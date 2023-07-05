@@ -208,6 +208,15 @@ namespace pbe {
                };
                cameraContext.reprojectCountTex = Texture2D::Create(texDesc);
                cameraContext.reprojectCountTex2 = Texture2D::Create(texDesc);
+
+               texDesc = {
+                  .size = outTexSize,
+                  .format = DXGI_FORMAT_R32_UINT,
+                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+                  .name = "rt obj id",
+               };
+               cameraContext.objIDTex = Texture2D::Create(texDesc);
+               cameraContext.objIDTexPrev = Texture2D::Create(texDesc);
             }
 
             camera.zNear = 0.1f;

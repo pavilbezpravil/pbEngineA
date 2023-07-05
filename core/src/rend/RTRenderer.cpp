@@ -41,6 +41,7 @@ namespace pbe {
       for (auto [e, trans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
          SRTObject obj;
          obj.position = trans.Position();
+         obj.id = (uint)e;
          obj.halfSize = trans.Scale() / 2.f;
          obj.baseColor = material.baseColor;
          obj.metallic = material.metallic;
@@ -110,8 +111,11 @@ namespace pbe {
 
          gbufferPass->SetUAV(cmd, "gDepthOut", *cameraContext.depthTex);
          gbufferPass->SetUAV(cmd, "gNormalOut", *cameraContext.normalTex);
+         gbufferPass->SetUAV(cmd, "gObjIDOut", *cameraContext.objIDTex);
 
          gbufferPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+
+         cmd.ClearUAV_CS();
       }
 
       // cmd.CopyResource(*cameraContext.colorHDR, *normalTex);
@@ -130,6 +134,8 @@ namespace pbe {
          rayTracePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
 
          rayTracePass->Dispatch2D(cmd, outTexSize, int2{8, 8});
+
+         cmd.ClearUAV_CS();
       }
 
       if (cvAccumulate) {
@@ -154,6 +160,8 @@ namespace pbe {
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
          historyPass->SetSRV(cmd, "gHistory", *cameraContext.historyTex2);
+         historyPass->SetSRV(cmd, "gObjIDPrev", *cameraContext.objIDTexPrev);
+         historyPass->SetSRV(cmd, "gObjID", *cameraContext.objIDTex);
 
          historyPass->SetUAV(cmd, "gReprojectCountOut", *cameraContext.reprojectCountTex);
          historyPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
@@ -161,9 +169,12 @@ namespace pbe {
 
          historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
 
+         cmd.ClearUAV_CS();
+
          if (cvHistoryReprojection) {
             std::swap(cameraContext.historyTex, cameraContext.historyTex2);
             std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTex2);
+            std::swap(cameraContext.objIDTex, cameraContext.objIDTexPrev);
          }
       }
 

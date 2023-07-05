@@ -206,8 +206,8 @@ float3 RayColor(Ray ray, inout uint seed) {
 
             color += obj.emissiveColor * energy; // todo: device by PI_2?
 
-            // if (0) {
-            if (RandomFloat(seed) > Luminance(F)) { // todo: is it ok?
+            if (1) {
+            // if (RandomFloat(seed) > Luminance(F)) { // todo: is it ok?
                 // todo: metallic?
                 // float3 albedo = obj.baseColor;
                 float3 albedo = obj.baseColor * (1 - obj.metallic);
@@ -253,6 +253,7 @@ float3 RayColor(Ray ray, inout uint seed) {
 
 RWTexture2D<float> gDepthOut;
 RWTexture2D<float4> gNormalOut;
+RWTexture2D<uint> gObjIDOut;
 
 [numthreads(8, 8, 1)]
 void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
@@ -260,21 +261,21 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
         return;
     }
 
+    // todo: jitter
     float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
     if (hit.distance < INF) {
-        // SRTObject obj = gRtObjects[hit.materialID];
+        SRTObject obj = gRtObjects[hit.materialID];
 
+        gObjIDOut[id] = obj.id;
         gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
         float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
-        // posH.z / posH.w;
-        // gDepthOut[int2(posH.xy * gRTConstants.rtSize)] = posH.z;
-        // gDepthOut[id] = posH.z;
         gDepthOut[id] = posH.z / posH.w;
     } else {
+        gObjIDOut[id] = -1;
         gNormalOut[id] = 0;
         gDepthOut[id] = 1;
     }
@@ -294,7 +295,8 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         float2 offset = RandomFloat2(seed); // todo: halton sequence
-        float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
+        // float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
+        float2 uv = float2(id.xy + 0.5) / float2(gRTConstants.rtSize);
 
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
@@ -308,8 +310,10 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
 Texture2D<float> gDepth;
 Texture2D<float4> gNormal;
-Texture2D<float4> gHistory;
-Texture2D<uint> gReprojectCount;
+Texture2D<float4> gHistory; // prev
+Texture2D<uint> gReprojectCount; // prev
+Texture2D<uint> gObjIDPrev;
+Texture2D<uint> gObjID;
 
 RWTexture2D<float4> gHistoryOut;
 RWTexture2D<uint> gReprojectCountOut;
@@ -331,7 +335,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
         float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
 
-        float historyWeight = gRTConstants.historyWeight;
+        float historyWeight = 1;
 
         float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
         prevSample /= prevSample.w;
@@ -341,6 +345,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float3 color = gColor[id].xyz;
 
+        bool inScreen = all(prevUV > 0 && prevUV < 1); // todo: get info from neigh that are in screen
         bool validDepth = depthRaw != 1;
         // validDepth = depthRaw != 1
         //            || gDepth[id + int2( 1, 0)] != 1
@@ -349,34 +354,52 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         //            || gDepth[id + int2( 0,-1)] != 1
         //            ;
 
-        if (all(prevSample.xy > -1 && prevSample.xy < 1) && validDepth) {
+        float3 dbgColor = 0;
+
+        bool successReproject = validDepth;
+
+        if (inScreen) {
+            uint objIDPrev = gObjIDPrev[prevSampleIdx];
+            uint objID = gObjID[id];
+            if (objIDPrev != objID) {
+                historyWeight = 0;
+                successReproject = false;
+                // dbgColor.r += 1;
+            }
+        } else {
+            historyWeight = 0;
+        }
+
+        // if (inScreen) {
+        if (successReproject) {
             int nRays = gRTConstants.nRays;
 
             uint oldCount = gReprojectCount[prevSampleIdx];
             uint nextCount = oldCount + nRays;
-            // historyWeight = float(oldCount) / float(nextCount);
+            // historyWeight *= float(oldCount) / float(nextCount);
+            historyWeight *= gRTConstants.historyWeight;
 
             // todo: race
             gReprojectCountOut[id] = min(nextCount, 255);
         } else {
             gReprojectCountOut[id] = 0;
-            historyWeight = 0;
         }
 
         if (historyWeight > 0) {
-            // todo: cant sample uav with sampler
             // float3 historyColor = gHistory.SampleLevel(gSamplerPoint, prevUV, 0);
             // float3 historyColor = gHistory.SampleLevel(gSamplerLinear, prevUV, 0);
             float3 historyColor = gHistory[prevSampleIdx].xyz;
             // historyColor = 0;
-            // float3 historyColor = gHistory[id].xyz;
             color = lerp(color, historyColor, historyWeight);
         }
 
         float4 color4 = float4(color, 1);
 
         gHistoryOut[id] = color4;
-        // color4.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
+        // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
+        // uint objID = gObjID[id] + 100;
+        // dbgColor = RandomFloat3(objID);
+        color4.xyz += dbgColor;
         gColor[id] = color4;        
     #else
         float w = gRTConstants.historyWeight;

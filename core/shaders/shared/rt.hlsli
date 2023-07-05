@@ -1,6 +1,6 @@
 struct SRTObject {
    float3 position;
-   float  _wef32;
+   uint   id;
 
    float3 baseColor;
    float  metallic;

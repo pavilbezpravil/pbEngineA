@@ -19,6 +19,11 @@ namespace pbe {
       }
    }
 
+   void CommandList::ClearUAV_CS() {
+      ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      pContext->CSSetUnorderedAccessViews(0, 8, uavs, nullptr);
+   }
+
    void CommandList::SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size) {
       auto dxBuffer = buffer->GetBuffer();
 

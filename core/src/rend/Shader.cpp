@@ -407,7 +407,7 @@ namespace pbe {
       SetSRV(cmd, name, resource.srv.Get());
    }
 
-   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav) {
+   void GpuProgram::SetUAV_Dx11(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav) {
       size_t id = StrHash(name);
 
       if (cs) {
@@ -416,13 +416,22 @@ namespace pbe {
          auto iter = reflection.find(id);
          if (iter != reflection.end()) {
             const auto& bi = iter->second;
-            cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, &uav, nullptr);
+            if (uav) {
+               cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, &uav, nullptr);
+            } else {
+               ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
+               cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, _countof(viewsUAV), viewsUAV, nullptr);
+            }
          }
       }
    }
 
+   void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource* resource) {
+      SetUAV_Dx11(cmd, name, resource ? resource->uav.Get() : nullptr);
+   }
+
    void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource) {
-      SetUAV(cmd, name, resource.uav.Get());
+      SetUAV(cmd, name, &resource);
    }
 
    void GpuProgram::DrawInstanced(CommandList& cmd, uint vertCount, uint instCount, uint startVert) {

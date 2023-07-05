@@ -481,7 +481,7 @@ namespace pbe {
             linearizeDepthPass->Activate(cmd);
 
             linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
-            linearizeDepthPass->SetUAV(cmd, "gDepthOut", cameraContext.linearDepth->GetMipUav(0));
+            linearizeDepthPass->SetUAV_Dx11(cmd, "gDepthOut", cameraContext.linearDepth->GetMipUav(0));
 
             linearizeDepthPass->Dispatch2D(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
 
@@ -506,7 +506,7 @@ namespace pbe {
                size /= 2;
 
                downsampleDepthPass->SetSRV(cmd, "gDepth", texture->GetMipSrv(iMip));
-               downsampleDepthPass->SetUAV(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
+               downsampleDepthPass->SetUAV_Dx11(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
 
                downsampleDepthPass->Dispatch2D(cmd, size, int2{ 8 });
 

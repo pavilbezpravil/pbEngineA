@@ -76,6 +76,9 @@ namespace pbe {
       Ref<Texture2D> reprojectCountTex;
       Ref<Texture2D> reprojectCountTex2;
 
+      Ref<Texture2D> objIDTex;
+      Ref<Texture2D> objIDTexPrev;
+
 
       Ref<Buffer> underCursorBuffer; // todo:
 

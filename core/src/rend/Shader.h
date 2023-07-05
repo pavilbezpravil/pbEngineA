@@ -161,8 +161,9 @@ namespace pbe {
       void SetSRV(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv);
       void SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource);
 
-      void SetUAV(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav);
-      void SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource);
+      void SetUAV_Dx11(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav);
+      void SetUAV(CommandList& cmd, std::string_view name, GPUResource* resource = nullptr);
+      void SetUAV(CommandList& cmd, std::string_view name, GPUResource& resource); // todo: remove
 
       void DrawInstanced(CommandList& cmd, uint vertCount, uint instCount = 1, uint startVert = 0);
       void DrawIndexedInstanced(CommandList& cmd, uint indexCount, uint instCount = 1, uint indexStart = 0, uint startVert = 0);

@@ -142,6 +142,8 @@ namespace pbe {
          pContext->RSSetViewports(1, &viewport);
       }
 
+      void ClearUAV_CS(); // todo: first 8
+
       void BeginEvent(std::string_view name) {
          pContext->BeginEventInt(std::wstring(name.begin(), name.end()).data(), 0);
       }
