@@ -1,3 +1,8 @@
+#define DBG_FLAG_SHOW_NEW_PIXEL 1
+#define DBG_FLAG_REPR_OBJ_ID 2
+#define DBG_FLAG_REPR_NORMAL 4
+#define DBG_FLAG_REPR_DEPTH 8
+
 struct SRTObject {
    float3 position;
    uint   id;
@@ -21,4 +26,7 @@ struct SRTConstants {
    float random01;
    float historyWeight;
    uint importanceSampleObjIdx; // todo:
+
+   uint debugFlags;
+   float3 _dymmy23;
 };

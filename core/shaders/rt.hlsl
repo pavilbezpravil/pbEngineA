@@ -447,7 +447,10 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
             if (objIDPrev != objID || normalFail) {
                 historyWeight = 0;
                 successReproject = false;
-                // dbgColor.r += 1;
+
+                if (gRTConstants.debugFlags & DBG_FLAG_SHOW_NEW_PIXEL) {
+                    dbgColor += float3(1, 0, 0);
+                }
             }
         } else {
             successReproject = false;

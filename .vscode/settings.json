@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.hlsli": "hlsl",
+        "*.csh": "hlsl",
         "random": "cpp"
     }
 }

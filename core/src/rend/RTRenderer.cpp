@@ -24,8 +24,13 @@ namespace pbe {
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", true };
-   CVarSlider<float> cvHistoryWeight{ "render/rt/reprojection history weight", 1, 0, 1 };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
+
+   CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 1, 0, 1 };
+   CVarValue<bool> cvReprojectionShowNewPixel{ "render/rt/reprojection/show new pixel", false };
+   CVarValue<bool> cvReprojectionObjID{ "render/rt/reprojection/obj id", true };
+   CVarValue<bool> cvReprojectionNormal{ "render/rt/reprojection/normal", true };
+   CVarValue<bool> cvReprojectionDepth{ "render/rt/reprojection/depth", true };
 
    void RTRenderer::Init() {
 
@@ -78,7 +83,7 @@ namespace pbe {
 
       bool resetHistory = cvClearHistory;
 
-      float historyWeight = cvHistoryWeight;
+      float historyWeight = cvReprojectionHistoryWeight;
 
       if (cvAccumulate) {
          if (cvHistoryReprojection) {
@@ -109,13 +114,20 @@ namespace pbe {
       rtCB.random01 = Random::Uniform(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
       rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
+
+      rtCB.debugFlags = 0;
+      rtCB.debugFlags |= cvReprojectionShowNewPixel ? DBG_FLAG_SHOW_NEW_PIXEL : 0;
+      rtCB.debugFlags |= cvReprojectionObjID ? DBG_FLAG_REPR_OBJ_ID : 0;
+      rtCB.debugFlags |= cvReprojectionNormal ? DBG_FLAG_REPR_NORMAL : 0;
+      rtCB.debugFlags |= cvReprojectionDepth ? DBG_FLAG_REPR_DEPTH : 0;
+
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       if (cvHistoryReprojection) {
          GPU_MARKER("GBuffer");
          PROFILE_GPU("GBuffer");
 
-         auto gbufferPass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "GBufferCS"));
+         auto gbufferPass = GetGpuProgram(ProgramDesc::Cs("rt.hlsl", "GBufferCS"));
          gbufferPass->Activate(cmd);
 
          gbufferPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
@@ -139,7 +151,7 @@ namespace pbe {
          GPU_MARKER("Ray Trace");
          PROFILE_GPU("Ray Trace");
 
-         auto desc = ProgramDesc::Cs("rt.cs", "rtCS");
+         auto desc = ProgramDesc::Cs("rt.hlsl", "rtCS");
          if (cvImportanceSampling) {
             desc.cs.defines.AddDefine("IMPORTANCE_SAMPLING");
          }
@@ -161,7 +173,7 @@ namespace pbe {
          GPU_MARKER("Reproject");
          PROFILE_GPU("Reproject");
 
-         auto desc = ProgramDesc::Cs("rt.cs", "HistoryAccCS");
+         auto desc = ProgramDesc::Cs("rt.hlsl", "HistoryAccCS");
          if (cvHistoryReprojection) {
             desc.cs.defines.AddDefine("ENABLE_REPROJECTION");
          }
