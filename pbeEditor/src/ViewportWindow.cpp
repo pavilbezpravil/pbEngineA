@@ -190,6 +190,7 @@ namespace pbe {
                   .name = "rt depth",
                };
                cameraContext.depthTex = Texture2D::Create(texDesc);
+               cameraContext.depthTexPrev = Texture2D::Create(texDesc);
 
                texDesc = {
                   .size = outTexSize,

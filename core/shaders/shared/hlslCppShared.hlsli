@@ -131,6 +131,7 @@ struct SCameraCB {
    float4x4 viewProjection;
    float4x4 invViewProjection;
    float4x4 prevViewProjection;
+   float4x4 prevInvViewProjection;
 
    float3 position;
    int _sdfsdf2;

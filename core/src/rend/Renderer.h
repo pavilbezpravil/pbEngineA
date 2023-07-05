@@ -72,6 +72,7 @@ namespace pbe {
       Ref<Texture2D> historyTex;
       Ref<Texture2D> historyTex2;
       Ref<Texture2D> depthTex;
+      Ref<Texture2D> depthTexPrev;
       Ref<Texture2D> normalTex;
       Ref<Texture2D> normalTexPrev;
       Ref<Texture2D> reprojectCountTex;

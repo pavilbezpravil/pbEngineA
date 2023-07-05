@@ -368,11 +368,15 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 }
 
 
+Texture2D<float> gDepthPrev;
 Texture2D<float> gDepth;
+
 Texture2D<float4> gNormalPrev;
 Texture2D<float4> gNormal;
+
 Texture2D<float4> gHistory; // prev
 Texture2D<uint> gReprojectCount; // prev
+
 Texture2D<uint> gObjIDPrev;
 Texture2D<uint> gObjID;
 
@@ -405,10 +409,10 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
     }
 
     #ifdef ENABLE_REPROJECTION
-        float depthRaw = gDepth[id];
+        float depth = gDepth[id];
 
         float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
-        float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
+        float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
 
         float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
         prevSample /= prevSample.w;
@@ -444,7 +448,18 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
             bool normalFail = normalCoeff <= 0;
             historyWeight *= normalCoeff;
 
-            if (objIDPrev != objID || normalFail) {
+            float prevDepth = gDepthPrev[prevSampleIdx];
+            float3 prevPosW = GetWorldPositionFromDepth(prevUV, prevDepth, gCamera.prevInvViewProjection);
+
+            // gRTConstants.historyMaxDistance
+            float depthCoeff = saturate(2 - distance(posW, prevPosW) / 0.1);
+            depthCoeff = 1;
+            bool depthFail = depthCoeff <= 0;
+            historyWeight *= depthCoeff;
+
+            // dbgColor.r += 1 - depthCoeff;
+
+            if (objIDPrev != objID || normalFail || depthFail) {
                 historyWeight = 0;
                 successReproject = false;
 

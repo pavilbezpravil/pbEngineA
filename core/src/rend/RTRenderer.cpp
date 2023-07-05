@@ -188,6 +188,7 @@ namespace pbe {
          historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
          historyPass->SetSRV(cmd, "gReprojectCount", *cameraContext.reprojectCountTexPrev);
+         historyPass->SetSRV(cmd, "gDepthPrev", *cameraContext.depthTexPrev);
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
          historyPass->SetSRV(cmd, "gNormalPrev", *cameraContext.normalTexPrev);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
@@ -208,6 +209,7 @@ namespace pbe {
             std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTexPrev);
             std::swap(cameraContext.objIDTex, cameraContext.objIDTexPrev);
             std::swap(cameraContext.normalTex, cameraContext.normalTexPrev);
+            std::swap(cameraContext.depthTex, cameraContext.depthTexPrev);
          }
       }
 
