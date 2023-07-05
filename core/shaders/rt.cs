@@ -361,10 +361,6 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
     }
- 
-    if (IsNaN(color.x)) {
-        color = 1000000;
-    }
 
     color /= nRays;
 
@@ -385,8 +381,19 @@ RWTexture2D<uint> gReprojectCountOut;
 
 // #define ENABLE_REPROJECTION
 
+float3 SafeNormalize(float3 v) {
+    float len = length(v);
+    if (len > 0) {
+        return v / len;
+    } else {
+        return 0;
+    }
+}
+
 float3 NormalFromTex(float4 normal) {
-    return normal.xyz * 2 - 1;
+    // todo: dont know why, but it produce artifacts
+    // return normal.xyz * 2 - 1;
+    return SafeNormalize(normal.xyz * 2 - 1);
 }
 
 // todo:
@@ -415,7 +422,6 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float historyWeight = gRTConstants.historyWeight;
 
         float3 color = gColor[id].xyz;
-        // color = max(color);
 
         uint objID = gObjID[id];
         float3 normal = NormalFromTex(gNormal[id]);
@@ -434,9 +440,8 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
             uint objIDPrev = gObjIDPrev[prevSampleIdx];
             float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
 
-            float normalCoeff = pow(max(dot(normal, normalPrev), 0), 8);
-            // normalCoeff = 1;
-            bool normalFail = normalCoeff < 0.01; // todo:
+            float normalCoeff = pow(max(dot(normal, normalPrev), 0), 3); // todo:
+            bool normalFail = normalCoeff <= 0;
             historyWeight *= normalCoeff;
 
             if (objIDPrev != objID || normalFail) {
@@ -469,13 +474,9 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float4 color4 = float4(color, 1);
 
         gHistoryOut[id] = color4;
-        // gHistoryOut[id] = max(color4, 0);
         // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
         color4.xyz += dbgColor;
         // color4.xyz = normal;
-        if (IsNaN(color4.x)) {
-            color4.r = 1000000;
-        }
         gColor[id] = color4;
     #else
         float w = gRTConstants.historyWeight;
