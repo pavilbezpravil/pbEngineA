@@ -36,6 +36,9 @@ namespace pbe {
 #define TYPER_DESERIALIZE(...) \
       ti.deserialize = __VA_ARGS__;
 
+#define TYPER_UI(...) \
+      ti.imguiFunc = __VA_ARGS__;
+
    //  for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'
    // problem with ','
 #define TYPER_FIELD_UI(...) \

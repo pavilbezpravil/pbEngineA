@@ -13,13 +13,18 @@ entities:
     tag: blue
     SceneTransformComponent:
       position: [1, 0.500457227, 1]
-      rotation: [11.6504774, -22.3420715, 22.0491085]
+      rotation: [11.6504784, -22.3420715, 22.0491085]
       scale: [0.999999702, 0.999999702, 0.999999702]
     SimpleMaterialComponent:
-      albedo: [0, 0, 1]
+      baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
@@ -33,10 +38,15 @@ entities:
       rotation: [0, -0, 35.7865944]
       scale: [0.999999821, 0.999999821, 1]
     SimpleMaterialComponent:
-      albedo: [0, 1, 0]
+      baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 16365464828659249094
     tag: red
     SceneTransformComponent:
@@ -44,7 +54,12 @@ entities:
       rotation: [0, 42.1929283, 0]
       scale: [0.999999464, 1, 0.999999464]
     SimpleMaterialComponent:
-      albedo: [1, 0, 0]
+      baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]

@@ -60,6 +60,29 @@ namespace pbe {
       }
    }
 
+   bool GeomUI(const char* name, byte* value) {
+      auto& geom = *(GeometryComponent*)value;
+
+      bool editted = false;
+
+      if (UI_TREE_NODE(name, ImGuiTreeNodeFlags_SpanFullWidth)) {
+         // editted |= ImGui::Combo("Type", (int*)&geom.type, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0");
+         editted |= EditorUI("type", geom.type);
+
+         if (geom.type == GeomType::Sphere) {
+            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+         } else if (geom.type == GeomType::Box) {
+            editted |= ImGui::InputFloat3("Size", &geom.sizeData.x);
+         } else {
+            // Cylinder, Cone, Capsule
+            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+            editted |= ImGui::InputFloat("Height", &geom.sizeData.y);
+         }
+      }
+
+      return editted;
+   }
+
    TYPER_BEGIN(TagComponent)
       TYPER_FIELD(tag)
    TYPER_END(TagComponent)
@@ -90,6 +113,21 @@ namespace pbe {
 
       TYPER_FIELD(opaque)
    TYPER_END(SimpleMaterialComponent)
+
+   // TYPER_BEGIN(GeomType)
+   // todo: try
+      // TYPER_FIELD_UI(UICombo{ .items = { "Box", "Sphere", "Cylinder", "Capsule", "Cone", "Plane" } })
+      // TYPER_FIELD(type)
+      //
+      // TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
+      // TYPER_FIELD(sizeData)
+   // TYPER_END(GeomType)
+
+   TYPER_BEGIN(GeometryComponent)
+      TYPER_UI(GeomUI)
+      TYPER_FIELD(type)
+      TYPER_FIELD(sizeData)
+   TYPER_END(GeometryComponent)
 
    TYPER_BEGIN(LightComponent)
       TYPER_FIELD(color)
@@ -271,8 +309,34 @@ namespace pbe {
    }
 
    void RegisterBasicComponents(Typer& typer) {
+      // todo: copy paste
+#define START_DECL_TYPE(Type) \
+   ti = {}; \
+   ti.name = STRINGIFY(Type); \
+   ti.typeID = GetTypeID<Type>(); \
+   ti.typeSizeOf = sizeof(Type)
+
+#define DEFAULT_SER_DESER(Type) \
+   ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(Type*)value; }; \
+   ti.deserialize = [](const Deserializer& deser, byte* value) { *(Type*)value = deser.node.as<Type>(); };
+
+#define END_DECL_TYPE() \
+   typer.RegisterType(ti.typeID, std::move(ti))
+
+      // todo:
+      TypeInfo ti;
+
+      // todo:
+      START_DECL_TYPE(GeomType);
+      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0"); };
+      ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(int*)value; }; \
+      ti.deserialize = [](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); };
+      END_DECL_TYPE();
+
+
       INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
+      INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);

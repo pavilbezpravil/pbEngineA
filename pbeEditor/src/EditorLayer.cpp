@@ -570,6 +570,17 @@ namespace pbe {
                }
             }
 
+            if (ImGui::MenuItem("Add Geom if Material is presents", nullptr, false, !!GetActiveScene())) {
+               auto scene = GetActiveScene();
+
+               auto view = scene->GetEntitiesWith<SimpleMaterialComponent>();
+               for (auto _e : view) {
+                  Entity e{ _e, scene };
+                  auto& geom = e.GetOrAdd<GeometryComponent>();
+                  geom.type = GeomType::Box;
+               }
+            }
+
             ImGui::EndMenu();
          }
 

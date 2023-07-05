@@ -38,16 +38,18 @@ namespace pbe {
 
       std::vector<SRTObject> objs;
 
-      for (auto [e, trans, material] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+      for (auto [e, trans, material, geom] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent, GeometryComponent>().each()) {
          SRTObject obj;
          obj.position = trans.Position();
          obj.id = (uint)e;
-         obj.halfSize = trans.Scale() / 2.f;
+
+         obj.geomType = (int)geom.type;
+         obj.halfSize = geom.sizeData / 2.f * trans.Scale();
+
          obj.baseColor = material.baseColor;
          obj.metallic = material.metallic;
          obj.roughness = material.roughness;
          obj.emissiveColor = material.emissiveColor * material.emissivePower;
-         obj.geomType = 1;
 
          objs.emplace_back(obj);
       }

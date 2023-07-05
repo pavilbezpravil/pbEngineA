@@ -13,6 +13,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
@@ -42,6 +45,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
@@ -61,6 +67,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
@@ -80,6 +89,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 5
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 5149250398784041482
     tag: wall far
     SceneTransformComponent:
@@ -93,6 +105,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 6515603774512827482
     tag: ground copy
     SceneTransformComponent:
@@ -106,6 +121,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 6706076201866816664
     tag: ground
     SceneTransformComponent:
@@ -119,6 +137,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 8150080313549777686
     tag: wall right
     SceneTransformComponent:
@@ -132,6 +153,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 14905986889041417783
     tag: wall left
     SceneTransformComponent:
@@ -145,6 +169,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 17941021247240787344
     tag: direct light
     SceneTransformComponent:

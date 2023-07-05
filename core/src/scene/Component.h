@@ -93,6 +93,19 @@ namespace pbe {
       bool opaque = true;
    };
 
+   enum class GeomType {
+      Sphere,
+      Box,
+      Cylinder,
+      Cone,
+      Capsule,
+   };
+
+   struct GeometryComponent {
+      GeomType type;
+      vec3 sizeData = vec3_One; // todo: full size
+   };
+
    struct LightComponent {
       vec3 color{1};
       float intensity = 1;

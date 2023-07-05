@@ -1,15 +1,21 @@
 sceneName: test_scene
 entities:
-  - uuid: 5113038764324791803
-    tag: Decal
+  - uuid: 1847165637693708521
+    tag: Cube
     SceneTransformComponent:
-      position: [0, 0, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    DecalComponent:
-      albedo: [1, 1, 1, 1]
-      metallic: 0
+      position: [0.611874938, 0.259331584, 0.676922023]
+      rotation: [-36.7518234, -8.5377369e-06, 47.7065125]
+      scale: [0.999999821, 0.999999523, 0.999999881]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
       roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 4049793853344634632
     tag: Ground
     SceneTransformComponent:
@@ -17,10 +23,25 @@ entities:
       rotation: [0, -0, 0]
       scale: [12.3530703, 1, 14.8547649]
     SimpleMaterialComponent:
-      albedo: [0, 1, 0]
+      baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 5113038764324791803
+    tag: Decal
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    DecalComponent:
+      baseColor: [1, 1, 1, 1]
+      metallic: 0
+      roughness: 0.100000001
   - uuid: 6434437596515755455
     tag: Direct Light
     SceneTransformComponent:
@@ -30,14 +51,3 @@ entities:
     DirectLightComponent:
       color: [1, 1, 1]
       intensity: 1
-  - uuid: 1847165637693708521
-    tag: Cube
-    SceneTransformComponent:
-      position: [0.611874938, 0.259331584, 0.676922023]
-      rotation: [-36.7518234, -8.5377369e-06, 47.7065125]
-      scale: [0.999999821, 0.999999523, 0.999999881]
-    SimpleMaterialComponent:
-      albedo: [1, 0, 0]
-      roughness: 0.100000001
-      metallic: 0
-      opaque: true

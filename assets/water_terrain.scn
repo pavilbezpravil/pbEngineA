@@ -8,16 +8,31 @@ entities:
       scale: [1, 1, 1]
     TerrainComponent:
       color: [0.0679734498, 0.700421929, 0.180052876]
-  - uuid: 7193068985296031994
-    tag: water
+  - uuid: 4494813099674761447
+    tag: green
     SceneTransformComponent:
-      position: [0, 2.28470802, 0]
+      position: [0, 0, 1]
       rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    WaterComponent:
-      fogColor: [0.0186851211, 0.0929371044, 0.176470593]
-      fogUnderwaterLength: 5
-      softZ: 0.100000001
+      scale: [39.3040085, 0.999999821, 25.0262299]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 5536664833689235849
+    tag: Direct Light
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [58.7625618, 6.83018925e-06, -41.6738739]
+      scale: [0.999997139, 0.999997795, 0.999997914]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1
   - uuid: 6806257574526974542
     tag: cei
     SceneTransformComponent:
@@ -28,22 +43,28 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
         intValue: 2
       speed: 1
       doMove: true
-  - uuid: 5536664833689235849
-    tag: Direct Light
+  - uuid: 7193068985296031994
+    tag: water
     SceneTransformComponent:
-      position: [0, 0, 0]
-      rotation: [58.7625618, 6.83018925e-06, -41.6738739]
-      scale: [0.999997139, 0.999997795, 0.999997914]
-    DirectLightComponent:
-      color: [1, 1, 1]
-      intensity: 1
+      position: [0, 2.28470802, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    WaterComponent:
+      fogColor: [0.0186851211, 0.0929371044, 0.176470593]
+      fogUnderwaterLength: 5
+      softZ: 0.100000001
   - uuid: 8246439013926450448
     tag: blue
     SceneTransformComponent:
@@ -54,7 +75,12 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
     TestScript:
       values:
         floatValue: 2
@@ -71,7 +97,12 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 16365464828659249094
     tag: red
     SceneTransformComponent:
@@ -82,15 +113,9 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
       opaque: true
-  - uuid: 4494813099674761447
-    tag: green
-    SceneTransformComponent:
-      position: [0, 0, 1]
-      rotation: [0, -0, 0]
-      scale: [39.3040085, 0.999999821, 25.0262299]
-    SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
-      roughness: 0.100000001
-      metallic: 0
-      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]

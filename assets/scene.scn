@@ -1,38 +1,5 @@
 sceneName: test_scene
 entities:
-  - uuid: 8246439013926450448
-    tag: blue
-    SceneTransformComponent:
-      position: [1, 0, 1]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SimpleMaterialComponent:
-      albedo: [0, 0, 1]
-      roughness: 0.100000001
-      metallic: 0
-      opaque: true
-  - uuid: 12468854452323807279
-    tag: green
-    SceneTransformComponent:
-      position: [0, 0, 1]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SimpleMaterialComponent:
-      albedo: [0, 1, 0]
-      roughness: 0.100000001
-      metallic: 0
-      opaque: true
-  - uuid: 16365464828659249094
-    tag: red
-    SceneTransformComponent:
-      position: [-1, 0, 1]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SimpleMaterialComponent:
-      albedo: [1, 0, 0]
-      roughness: 0.100000001
-      metallic: 0
-      opaque: true
   - uuid: 3093749986635836342
     tag: Direct Light
     SceneTransformComponent:
@@ -42,3 +9,51 @@ entities:
     DirectLightComponent:
       color: [1, 1, 1]
       intensity: 1
+  - uuid: 8246439013926450448
+    tag: blue
+    SceneTransformComponent:
+      position: [1, 0, 1]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 12468854452323807279
+    tag: green
+    SceneTransformComponent:
+      position: [0, 0, 1]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 16365464828659249094
+    tag: red
+    SceneTransformComponent:
+      position: [-1, 0, 1]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]

@@ -30,6 +30,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 5149250398784041482
     tag: wall
     SceneTransformComponent:
@@ -43,12 +46,15 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 6485567355113573356
     tag: perfect mirorr
     SceneTransformComponent:
-      position: [0, 0, 0.0199999996]
+      position: [0.115953691, -0.427940428, 4.38693476]
       rotation: [0, -0, 0]
-      scale: [0.899999976, 0.899999976, 1]
+      scale: [0.282490879, 0.355533153, 1]
       parent: 14058855803419366819
     SimpleMaterialComponent:
       baseColor: [1, 1, 1]
@@ -57,6 +63,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 6706076201866816664
     tag: ground
     SceneTransformComponent:
@@ -70,6 +79,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 14058855803419366819
     tag: mirror box
     SceneTransformComponent:
@@ -85,6 +97,9 @@ entities:
       emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
   - uuid: 17941021247240787344
     tag: direct light
     SceneTransformComponent:

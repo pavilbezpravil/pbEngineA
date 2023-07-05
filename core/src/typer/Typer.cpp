@@ -192,6 +192,7 @@ namespace pbe {
    }
 
    void Typer::SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const {
+      ASSERT(types.find(typeID) != types.end());
       const auto& ti = types.at(typeID);
 
       if (!name.empty()) {
