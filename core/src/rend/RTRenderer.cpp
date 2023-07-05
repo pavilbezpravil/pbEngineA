@@ -20,11 +20,10 @@ namespace pbe {
 
    CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 128 };
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
+
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
-   CVarValue<bool> cvHistoryResetOnCameraMove{ "render/rt/history reset on camera move", false };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
-   CVarValue<bool> cvUseHistoryWeight{ "render/rt/use history weight", true };
-   CVarSlider<float> cvHistoryWeight{ "render/rt/history weight", 0.97f, 0, 1 };
+   CVarSlider<float> cvHistoryWeight{ "render/rt/reprojection history weight", 1, 0, 1 };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    void RTRenderer::Init() {
@@ -69,27 +68,31 @@ namespace pbe {
 
       // cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{ 0, 0, 0, 1 });
 
-      static mat4 cameraMatr;
       static int accumulatedFrames = 0;
 
-      bool resetOnCameraMove = cvHistoryResetOnCameraMove ? cameraMatr != camera.GetViewProjection() : false;
+      bool resetHistory = cvClearHistory;
 
-      if (cvClearHistory || resetOnCameraMove || !cvAccumulate) {
+      float historyWeight = cvHistoryWeight;
+
+      if (cvAccumulate) {
+         if (cvHistoryReprojection) {
+            accumulatedFrames = 0;
+         } else {
+            historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
+            accumulatedFrames += cvNRays;
+
+            resetHistory |= camera.prevViewProjection != camera.GetViewProjection();
+         }
+      } else {
+         accumulatedFrames = 0;
+      }
+
+
+      if (resetHistory || !cvAccumulate) {
          cmd.ClearUAVUint(*cameraContext.reprojectCountTexPrev);
          cmd.ClearUAVFloat(*cameraContext.historyTex2);
 
-         cameraMatr = camera.GetViewProjection();
          accumulatedFrames = 0;
-      }
-
-      float historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
-      if (cvAccumulate) {
-         accumulatedFrames += cvNRays;
-      }
-
-      if (cvUseHistoryWeight) {
-         accumulatedFrames = 0;
-         historyWeight = cvHistoryWeight;
       }
 
       SRTConstants rtCB;
@@ -101,7 +104,7 @@ namespace pbe {
       rtCB.historyWeight = historyWeight;
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
-      {
+      if (cvHistoryReprojection) {
          GPU_MARKER("GBuffer");
          PROFILE_GPU("GBuffer");
 

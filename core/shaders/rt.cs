@@ -402,8 +402,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
             uint oldCount = gReprojectCount[prevSampleIdx];
             uint nextCount = oldCount + nRays;
-            historyWeight *= float(oldCount) / float(nextCount);
-            // historyWeight *= gRTConstants.historyWeight;
+            historyWeight *= float(oldCount) / float(nextCount) * gRTConstants.historyWeight;
 
             gReprojectCountOut[id] = min(nextCount, 255);
         } else {
