@@ -73,11 +73,11 @@ namespace pbe {
          running = false;
       }
       if (event.GetEvent<AppLoseFocusEvent>()) {
-         INFO("Lose Focus");
+         // INFO("Lose Focus");
          focused = false;
       }
       if (event.GetEvent<AppGetFocusEvent>()) {
-         INFO("Get Focus");
+         // INFO("Get Focus");
          focused = true;
       }
 
@@ -149,7 +149,7 @@ namespace pbe {
          if (fpsTimer > 1) {
             // todo: show it editor
             float fps = (float)frames / fpsTimer;
-            INFO("fps: {}", fps);
+            // INFO("fps: {}", fps);
             fpsTimer -= 1;
             frames = 0;
          }

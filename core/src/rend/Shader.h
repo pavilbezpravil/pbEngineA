@@ -158,7 +158,8 @@ namespace pbe {
       }
       void SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes, uint size);
 
-      void SetSRV(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv);
+      void SetSRV_Dx11(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv);
+      void SetSRV(CommandList& cmd, std::string_view name, GPUResource* resource);
       void SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource);
 
       void SetUAV_Dx11(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav);

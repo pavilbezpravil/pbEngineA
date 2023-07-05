@@ -24,6 +24,7 @@ namespace pbe {
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", true };
+   CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 1, 0, 1 };
@@ -166,6 +167,7 @@ namespace pbe {
 
          rayTracePass->Dispatch2D(cmd, outTexSize, int2{8, 8});
 
+         cmd.ClearSRV_CS();
          cmd.ClearUAV_CS();
       }
 
@@ -202,6 +204,7 @@ namespace pbe {
 
          historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
 
+         cmd.ClearSRV_CS();
          cmd.ClearUAV_CS();
 
          if (cvHistoryReprojection) {
@@ -211,6 +214,39 @@ namespace pbe {
             std::swap(cameraContext.normalTex, cameraContext.normalTexPrev);
             std::swap(cameraContext.depthTex, cameraContext.depthTexPrev);
          }
+      }
+
+      if (cvDenoise && cvAccumulate) { // todo: cvAccumulate
+         GPU_MARKER("Denoise");
+         PROFILE_GPU("Denoise");
+
+         auto desc = ProgramDesc::Cs("rt.hlsl", "DenoiseCS");
+         auto denoisePass = GetGpuProgram(desc);
+
+         denoisePass->Activate(cmd);
+
+         denoisePass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
+
+         // here *prev means current frame
+         denoisePass->SetSRV(cmd, "gReprojectCount", *cameraContext.reprojectCountTexPrev);
+         denoisePass->SetSRV(cmd, "gDepth", *cameraContext.depthTexPrev);
+         denoisePass->SetSRV(cmd, "gNormal", *cameraContext.normalTexPrev);
+         denoisePass->SetSRV(cmd, "gHistory", *cameraContext.historyTex2); // read data from this
+         denoisePass->SetSRV(cmd, "gObjID", *cameraContext.objIDTexPrev);
+
+         denoisePass->SetUAV(cmd, "gHistoryOut", *cameraContext.historyTex); // read data from this
+         denoisePass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
+
+         denoisePass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+
+         cmd.ClearSRV_CS();
+         cmd.ClearUAV_CS();
+
+         std::swap(cameraContext.historyTex, cameraContext.historyTex2);
+         // std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTexPrev);
+         // std::swap(cameraContext.objIDTex, cameraContext.objIDTexPrev);
+         // std::swap(cameraContext.normalTex, cameraContext.normalTexPrev);
+         // std::swap(cameraContext.depthTex, cameraContext.depthTexPrev);
       }
 
 

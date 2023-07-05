@@ -352,7 +352,7 @@ namespace pbe {
       }
    }
 
-   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv) {
+   void GpuProgram::SetSRV_Dx11(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv) {
       size_t id = StrHash(name);
 
       if (vs) {
@@ -403,8 +403,12 @@ namespace pbe {
       }
    }
 
+   void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource* resource) {
+      SetSRV_Dx11(cmd, name, resource ? resource->srv.Get() : nullptr);
+   }
+
    void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource& resource) {
-      SetSRV(cmd, name, resource.srv.Get());
+      SetSRV(cmd, name, &resource);
    }
 
    void GpuProgram::SetUAV_Dx11(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav) {

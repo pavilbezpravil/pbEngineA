@@ -506,7 +506,7 @@ namespace pbe {
             for (int iMip = 0; iMip < nMips - 1; ++iMip) {
                size /= 2;
 
-               downsampleDepthPass->SetSRV(cmd, "gDepth", texture->GetMipSrv(iMip));
+               downsampleDepthPass->SetSRV_Dx11(cmd, "gDepth", texture->GetMipSrv(iMip));
                downsampleDepthPass->SetUAV_Dx11(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
 
                downsampleDepthPass->Dispatch2D(cmd, size, int2{ 8 });

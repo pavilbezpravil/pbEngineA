@@ -19,6 +19,11 @@ namespace pbe {
       }
    }
 
+   void CommandList::ClearSRV_CS() {
+      ID3D11ShaderResourceView* srvs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      pContext->CSSetShaderResources(0, 8, srvs);
+   }
+
    void CommandList::ClearUAV_CS() {
       ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
       pContext->CSSetUnorderedAccessViews(0, 8, uavs, nullptr);

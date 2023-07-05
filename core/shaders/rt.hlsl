@@ -356,7 +356,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     for (int i = 0; i < nRays; i++) {
         float2 offset = RandomFloat2(seed); // todo: halton sequence
         // float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
-        float2 uv = float2(id.xy + 0.5) / float2(gRTConstants.rtSize);
+        float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
 
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
@@ -504,4 +504,73 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         gColor[id.xy] = color;
         gHistoryOut[id.xy] = color;
     #endif
+}
+
+void DenoiseSample() {
+    
+}
+
+[numthreads(8, 8, 1)]
+void DenoiseCS (uint2 id : SV_DispatchThreadID) {
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
+
+    uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
+
+    // uint nSamples = gRTConstants.nSamples;
+    uint nSamples = 20;
+
+    float2 uv = (float2(id) + 0.5) / float2(gRTConstants.rtSize);
+    float2 invSize = 1 / float2(gRTConstants.rtSize);
+
+    uint objID = gObjID[id];
+    float3 posW = GetWorldPositionFromDepth(uv, gDepth[id], gCamera.invViewProjection);
+    float3 normal = NormalFromTex(gNormalPrev[id]);
+    uint reprojectCount = gReprojectCount[id];
+    
+    float3 color = 0;
+
+    float successSamples = 1;
+    color += gHistory[id].xyz;
+
+    for (int i = 0; i < nSamples; i++) {
+        float2 offset = RandomFloat2(seed) * 2 - 1;
+        float2 kernelSize = 2; // todo:
+        float2 sampleUv = uv + offset * invSize * kernelSize;
+
+        if (any(sampleUv < 0 || sampleUv > 1)) {
+            continue; // todo: return to screen
+        }
+
+        uint2 sampleIdx = sampleUv * gCamera.rtSize;
+
+        uint sampleObjID = gObjID[sampleIdx];
+        float3 samplePosW = GetWorldPositionFromDepth(uv, gDepth[sampleIdx], gCamera.invViewProjection);
+        float3 sampleNormal = NormalFromTex(gNormalPrev[sampleIdx]);
+        // uint sampleReprojectCount = gReprojectCount[sampleIdx];
+
+        if (objID != sampleObjID) {
+            continue;
+        }
+        
+        color += gHistory[sampleIdx].xyz;
+        successSamples += 1;
+    }
+
+    color /= successSamples;
+
+    // float4 color = gHistory[id];
+
+    // color = gHistory[id] 
+    //       + gHistory[id + int2( 1, 0)]
+    //       + gHistory[id + int2(-1, 0)]
+    //       + gHistory[id + int2( 0, 1)]
+    //       + gHistory[id + int2( 0,-1)];
+    // color /= 5;
+
+
+    // color.r = 0.001;
+    gHistoryOut[id] = float4(color, 1);
+    gColor[id] = float4(color, 1);
 }

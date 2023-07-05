@@ -142,6 +142,7 @@ namespace pbe {
          pContext->RSSetViewports(1, &viewport);
       }
 
+      void ClearSRV_CS(); // todo: first 8
       void ClearUAV_CS(); // todo: first 8
 
       void BeginEvent(std::string_view name) {
