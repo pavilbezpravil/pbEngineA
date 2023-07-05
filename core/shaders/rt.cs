@@ -255,6 +255,12 @@ RWTexture2D<float> gDepthOut;
 RWTexture2D<float4> gNormalOut;
 RWTexture2D<uint> gObjIDOut;
 
+// todo:
+#define EDITOR
+#ifdef EDITOR
+  #include "editor.hlsli"
+#endif
+
 [numthreads(8, 8, 1)]
 void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
     if (any(id >= gRTConstants.rtSize)) {
@@ -274,6 +280,10 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
 
         float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
         gDepthOut[id] = posH.z / posH.w;
+
+        #if defined(EDITOR)
+            SetEntityUnderCursor(id, obj.id);
+        #endif
     } else {
         gObjIDOut[id] = -1;
         gNormalOut[id] = 0;

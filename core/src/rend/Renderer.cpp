@@ -321,7 +321,7 @@ namespace pbe {
 
       cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
 
-      uint4 clearValue = { -1, -1, -1, -1 };
+      uint4 clearValue = uint4{ (uint)-1 };
       cmd.pContext->ClearUnorderedAccessViewUint(underCursorBuffer->uav.Get(), &clearValue.x);
 
       cameraContext.underCursorBuffer = underCursorBuffer;

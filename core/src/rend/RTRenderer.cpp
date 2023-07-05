@@ -115,6 +115,8 @@ namespace pbe {
          gbufferPass->SetUAV(cmd, "gNormalOut", *cameraContext.normalTex);
          gbufferPass->SetUAV(cmd, "gObjIDOut", *cameraContext.objIDTex);
 
+         gbufferPass->SetUAV(cmd, "gUnderCursorBuffer", *cameraContext.underCursorBuffer); // todo: only for editor
+
          gbufferPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
 
          cmd.ClearUAV_CS();
