@@ -20,5 +20,5 @@ struct SRTConstants {
    int nRays;
    float random01;
    float historyWeight;
-   float _wef32;
+   uint importanceSampleObjIdx; // todo:
 };

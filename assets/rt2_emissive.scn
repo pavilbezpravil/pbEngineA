@@ -79,9 +79,9 @@ entities:
   - uuid: 5079568519492316975
     tag: emissive cube
     SceneTransformComponent:
-      position: [-0.117909074, 3.35636067, 2.09448457]
+      position: [-0.117909074, 2.55918622, 2.09448457]
       rotation: [0, -0, 0]
-      scale: [5.81724119, 0.137674779, 1]
+      scale: [1, 1, 1]
     SimpleMaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
@@ -90,7 +90,7 @@ entities:
       emissivePower: 5
       opaque: true
     GeometryComponent:
-      type: 1
+      type: 0
       sizeData: [1, 1, 1]
   - uuid: 5149250398784041482
     tag: wall far

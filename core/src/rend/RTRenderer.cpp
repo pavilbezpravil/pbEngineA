@@ -23,6 +23,7 @@ namespace pbe {
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
+   CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", true };
    CVarSlider<float> cvHistoryWeight{ "render/rt/reprojection history weight", 1, 0, 1 };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
@@ -34,6 +35,8 @@ namespace pbe {
                                 CameraContext& cameraContext) {
       GPU_MARKER("RT Scene");
       PROFILE_GPU("RT Scene");
+
+      uint importanceSampleObjIdx = -1;
 
       std::vector<SRTObject> objs;
 
@@ -49,6 +52,9 @@ namespace pbe {
          obj.metallic = material.metallic;
          obj.roughness = material.roughness;
          obj.emissiveColor = material.emissiveColor * material.emissivePower;
+         if (material.emissivePower > 0) {
+            importanceSampleObjIdx = (uint)objs.size();
+         }
 
          objs.emplace_back(obj);
       }
@@ -102,6 +108,7 @@ namespace pbe {
       rtCB.nRays = cvNRays;
       rtCB.random01 = Random::Uniform(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
+      rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       if (cvHistoryReprojection) {
@@ -132,7 +139,12 @@ namespace pbe {
          GPU_MARKER("Ray Trace");
          PROFILE_GPU("Ray Trace");
 
-         auto rayTracePass = GetGpuProgram(ProgramDesc::Cs("rt.cs", "rtCS"));
+         auto desc = ProgramDesc::Cs("rt.cs", "rtCS");
+         if (cvImportanceSampling) {
+            desc.cs.defines.AddDefine("IMPORTANCE_SAMPLING");
+         }
+
+         auto rayTracePass = GetGpuProgram(desc);
          rayTracePass->Activate(cmd);
 
          rayTracePass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);

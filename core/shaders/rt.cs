@@ -186,6 +186,51 @@ float Luminance(float3 color) {
     return dot(color, float3(0.299f, 0.587f, 0.114f));
 }
 
+#ifdef IMPORTANCE_SAMPLING
+float3 RayColor(Ray ray, inout uint seed) {
+    float3 color = 0;
+    float3 energy = 1;
+
+    for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
+        RayHit hit = Trace(ray);
+        if (hit.distance < INF) {
+            SRTObject obj = gRtObjects[hit.materialID];
+
+            ray.origin = hit.position + hit.normal * 0.0001;
+
+            color += obj.emissiveColor * energy; // todo: device by PI_2?
+
+            float3 albedo = obj.baseColor * (1 - obj.metallic);
+
+            #if 0
+                // Shadow test ray
+                float3 L = -gScene.directLight.direction;
+                const float spread = 0.1; // todo:
+                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                RayHit shadowHit = Trace(shadowRay);
+                if (shadowHit.distance == INF) {
+                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color / PI_2;
+                    color += directLightShade * energy;
+                }
+            #endif
+
+            ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
+
+            energy *= albedo;
+        } else {
+            float3 skyColor = GetSkyColor(ray.direction);
+
+            // remove sky bounce
+            // if (depth != 0) { break; }
+
+            color += skyColor * energy;
+            break;
+        }
+    }
+
+    return color;
+}
+#else
 float3 RayColor(Ray ray, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
@@ -250,6 +295,7 @@ float3 RayColor(Ray ray, inout uint seed) {
 
     return color;
 }
+#endif
 
 RWTexture2D<float> gDepthOut;
 RWTexture2D<float4> gNormalOut;
@@ -389,6 +435,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
             float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
 
             float normalCoeff = pow(max(dot(normal, normalPrev), 0), 8);
+            // normalCoeff = 1;
             bool normalFail = normalCoeff < 0.01; // todo:
             historyWeight *= normalCoeff;
 
