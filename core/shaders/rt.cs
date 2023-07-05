@@ -291,6 +291,10 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
     }
 }
 
+bool IsNaN(float x) {
+  return !(x < 0.0f || x > 0.0f || x == 0.0f);
+}
+
 [numthreads(8, 8, 1)]
 void rtCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -310,6 +314,10 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
+    }
+ 
+    if (IsNaN(color.x)) {
+        color = 1000000;
     }
 
     color /= nRays;
@@ -344,15 +352,10 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
     }
 
     #ifdef ENABLE_REPROJECTION
-        float3 normalW = gNormal[id].xyz;
-
         float depthRaw = gDepth[id];
-        // float depth = LinearizeDepth(depthRaw);
 
         float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
         float3 posW = GetWorldPositionFromDepth(uv, depthRaw, gCamera.invViewProjection);
-
-        float historyWeight = 1;
 
         float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
         prevSample /= prevSample.w;
@@ -360,11 +363,13 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float2 prevUV = NDCToTex(prevSample.xy);
         uint2 prevSampleIdx = prevUV * gCamera.rtSize;
 
+        bool prevInScreen = all(prevUV > 0 && prevUV < 1); // todo: get info from neigh that are in screen
+        // bool prevInScreen = all(prevUV > 0.02 && prevUV < 0.98); // todo: get info from neigh that are in screen
+
+        float historyWeight = gRTConstants.historyWeight;
+
         float3 color = gColor[id].xyz;
         // color = max(color);
-
-        bool inScreen = all(prevUV > 0 && prevUV < 1); // todo: get info from neigh that are in screen
-        // bool inScreen = all(prevUV > 0.02 && prevUV < 0.98); // todo: get info from neigh that are in screen
 
         uint objID = gObjID[id];
         float3 normal = NormalFromTex(gNormal[id]);
@@ -377,23 +382,23 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float3 dbgColor = 0;
 
-        bool successReproject = objID != -1;
+        bool successReproject = true;
 
-        if (successReproject && inScreen) {
+        if (objID != -1 && prevInScreen) {
             uint objIDPrev = gObjIDPrev[prevSampleIdx];
             float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
 
             float normalCoeff = pow(max(dot(normal, normalPrev), 0), 8);
-            bool normalFail = normalCoeff < 0.1; // todo:
+            bool normalFail = normalCoeff < 0.01; // todo:
             historyWeight *= normalCoeff;
 
             if (objIDPrev != objID || normalFail) {
-            // if (objIDPrev != objID) {
                 historyWeight = 0;
                 successReproject = false;
                 // dbgColor.r += 1;
             }
         } else {
+            successReproject = false;
             historyWeight = 0;
         }
 
@@ -402,21 +407,16 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
             uint oldCount = gReprojectCount[prevSampleIdx];
             uint nextCount = oldCount + nRays;
-            historyWeight *= float(oldCount) / float(nextCount) * gRTConstants.historyWeight;
+            historyWeight *= float(oldCount) / float(nextCount);
 
             gReprojectCountOut[id] = min(nextCount, 255);
-        } else {
-            gReprojectCountOut[id] = 0;
-        }
 
-        // todo: gix black holes
-        if (historyWeight > 0 && successReproject && inScreen) {
-        // if (historyWeight > 0) {
             // float3 historyColor = gHistory.SampleLevel(gSamplerPoint, prevUV, 0);
             // float3 historyColor = gHistory.SampleLevel(gSamplerLinear, prevUV, 0);
             float3 historyColor = gHistory[prevSampleIdx].xyz;
-            // historyColor = 0;
             color = lerp(color, historyColor, historyWeight);
+        } else {
+            gReprojectCountOut[id] = 0;
         }
 
         float4 color4 = float4(color, 1);
@@ -426,7 +426,10 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
         color4.xyz += dbgColor;
         // color4.xyz = normal;
-        gColor[id] = color4;        
+        if (IsNaN(color4.x)) {
+            color4.r = 1000000;
+        }
+        gColor[id] = color4;
     #else
         float w = gRTConstants.historyWeight;
         float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
