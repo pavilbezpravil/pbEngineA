@@ -309,6 +309,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
 
 Texture2D<float> gDepth;
+Texture2D<float4> gNormalPrev;
 Texture2D<float4> gNormal;
 Texture2D<float4> gHistory; // prev
 Texture2D<uint> gReprojectCount; // prev
@@ -320,6 +321,12 @@ RWTexture2D<uint> gReprojectCountOut;
 
 // #define ENABLE_REPROJECTION
 
+float3 NormalFromTex(float4 normal) {
+    return normal.xyz * 2 - 1;
+}
+
+// todo:
+// 1. neight sample
 [numthreads(8, 8, 1)]
 void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -344,9 +351,13 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         uint2 prevSampleIdx = prevUV * gCamera.rtSize;
 
         float3 color = gColor[id].xyz;
+        // color = max(color);
 
         bool inScreen = all(prevUV > 0 && prevUV < 1); // todo: get info from neigh that are in screen
-        bool validDepth = depthRaw != 1;
+        // bool inScreen = all(prevUV > 0.02 && prevUV < 0.98); // todo: get info from neigh that are in screen
+
+        uint objID = gObjID[id];
+        float3 normal = NormalFromTex(gNormal[id]);
         // validDepth = depthRaw != 1
         //            || gDepth[id + int2( 1, 0)] != 1
         //            || gDepth[id + int2(-1, 0)] != 1
@@ -356,12 +367,18 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float3 dbgColor = 0;
 
-        bool successReproject = validDepth;
+        bool successReproject = objID != -1;
 
-        if (inScreen) {
+        if (successReproject && inScreen) {
             uint objIDPrev = gObjIDPrev[prevSampleIdx];
-            uint objID = gObjID[id];
-            if (objIDPrev != objID) {
+            float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
+
+            float normalCoeff = pow(max(dot(normal, normalPrev), 0), 8);
+            bool normalFail = normalCoeff < 0.1; // todo:
+            historyWeight *= normalCoeff;
+
+            if (objIDPrev != objID || normalFail) {
+            // if (objIDPrev != objID) {
                 historyWeight = 0;
                 successReproject = false;
                 // dbgColor.r += 1;
@@ -370,22 +387,22 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
             historyWeight = 0;
         }
 
-        // if (inScreen) {
         if (successReproject) {
             int nRays = gRTConstants.nRays;
 
             uint oldCount = gReprojectCount[prevSampleIdx];
             uint nextCount = oldCount + nRays;
-            // historyWeight *= float(oldCount) / float(nextCount);
-            historyWeight *= gRTConstants.historyWeight;
+            historyWeight *= float(oldCount) / float(nextCount);
+            // historyWeight *= gRTConstants.historyWeight;
 
-            // todo: race
             gReprojectCountOut[id] = min(nextCount, 255);
         } else {
             gReprojectCountOut[id] = 0;
         }
 
-        if (historyWeight > 0) {
+        // todo: gix black holes
+        if (historyWeight > 0 && successReproject && inScreen) {
+        // if (historyWeight > 0) {
             // float3 historyColor = gHistory.SampleLevel(gSamplerPoint, prevUV, 0);
             // float3 historyColor = gHistory.SampleLevel(gSamplerLinear, prevUV, 0);
             float3 historyColor = gHistory[prevSampleIdx].xyz;
@@ -396,10 +413,10 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float4 color4 = float4(color, 1);
 
         gHistoryOut[id] = color4;
+        // gHistoryOut[id] = max(color4, 0);
         // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
-        // uint objID = gObjID[id] + 100;
-        // dbgColor = RandomFloat3(objID);
         color4.xyz += dbgColor;
+        // color4.xyz = normal;
         gColor[id] = color4;        
     #else
         float w = gRTConstants.historyWeight;

@@ -73,7 +73,7 @@ namespace pbe {
       bool resetOnCameraMove = cvHistoryResetOnCameraMove ? cameraMatr != camera.GetViewProjection() : false;
 
       if (cvClearHistory || resetOnCameraMove || !cvAccumulate) {
-         cmd.ClearUAVUint(*cameraContext.reprojectCountTex2);
+         cmd.ClearUAVUint(*cameraContext.reprojectCountTexPrev);
          cmd.ClearUAVFloat(*cameraContext.historyTex2);
 
          cameraMatr = camera.GetViewProjection();
@@ -156,8 +156,9 @@ namespace pbe {
          // todo: remove
          historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
 
-         historyPass->SetSRV(cmd, "gReprojectCount", *cameraContext.reprojectCountTex2);
+         historyPass->SetSRV(cmd, "gReprojectCount", *cameraContext.reprojectCountTexPrev);
          historyPass->SetSRV(cmd, "gDepth", *cameraContext.depthTex);
+         historyPass->SetSRV(cmd, "gNormalPrev", *cameraContext.normalTexPrev);
          historyPass->SetSRV(cmd, "gNormal", *cameraContext.normalTex);
          historyPass->SetSRV(cmd, "gHistory", *cameraContext.historyTex2);
          historyPass->SetSRV(cmd, "gObjIDPrev", *cameraContext.objIDTexPrev);
@@ -173,8 +174,9 @@ namespace pbe {
 
          if (cvHistoryReprojection) {
             std::swap(cameraContext.historyTex, cameraContext.historyTex2);
-            std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTex2);
+            std::swap(cameraContext.reprojectCountTex, cameraContext.reprojectCountTexPrev);
             std::swap(cameraContext.objIDTex, cameraContext.objIDTexPrev);
+            std::swap(cameraContext.normalTex, cameraContext.normalTexPrev);
          }
       }
 

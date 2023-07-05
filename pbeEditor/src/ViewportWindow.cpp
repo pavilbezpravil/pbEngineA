@@ -181,7 +181,6 @@ namespace pbe {
                   .name = "rt history",
                };
                cameraContext.historyTex = Texture2D::Create(texDesc);
-               texDesc.name = "rt history 2";
                cameraContext.historyTex2 = Texture2D::Create(texDesc);
 
                texDesc = {
@@ -199,6 +198,7 @@ namespace pbe {
                   .name = "rt normal",
                };
                cameraContext.normalTex = Texture2D::Create(texDesc);
+               cameraContext.normalTexPrev = Texture2D::Create(texDesc);
 
                texDesc = {
                   .size = outTexSize,
@@ -207,7 +207,7 @@ namespace pbe {
                   .name = "rt reproject count",
                };
                cameraContext.reprojectCountTex = Texture2D::Create(texDesc);
-               cameraContext.reprojectCountTex2 = Texture2D::Create(texDesc);
+               cameraContext.reprojectCountTexPrev = Texture2D::Create(texDesc);
 
                texDesc = {
                   .size = outTexSize,

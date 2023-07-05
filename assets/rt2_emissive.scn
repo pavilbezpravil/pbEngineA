@@ -70,7 +70,7 @@ entities:
   - uuid: 5079568519492316975
     tag: emissive cube
     SceneTransformComponent:
-      position: [-0.117909074, 3.35636067, 1.97598624]
+      position: [-0.117909074, 3.35636067, 2.09448457]
       rotation: [0, -0, 0]
       scale: [5.81724119, 0.137674779, 1]
     SimpleMaterialComponent:
@@ -87,7 +87,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [7.49906397, 6, 1]
     SimpleMaterialComponent:
-      baseColor: [0.169417292, 0.772151887, 0.642449498]
+      baseColor: [0.728764951, 0.818565369, 0.799241245]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -126,7 +126,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
     SimpleMaterialComponent:
-      baseColor: [0.169417292, 0.772151887, 0.642449498]
+      baseColor: [0.200395256, 0.848101258, 0.249587983]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -139,7 +139,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
     SimpleMaterialComponent:
-      baseColor: [0.169417292, 0.772151887, 0.642449498]
+      baseColor: [0.839662433, 0.0992006063, 0.0992006063]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
