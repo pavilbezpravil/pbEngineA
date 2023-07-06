@@ -453,7 +453,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
             // gRTConstants.historyMaxDistance
             float depthCoeff = saturate(2 - distance(posW, prevPosW) / 0.1);
-            depthCoeff = 1;
+            // depthCoeff = 1;
             bool depthFail = depthCoeff <= 0;
             historyWeight *= depthCoeff;
 
