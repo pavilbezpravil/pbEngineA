@@ -11,4 +11,16 @@ namespace pbe {
       // return typeid(T).hash_code(); // todo:
    }
 
+   template<typename UnregFunc>
+   struct RegisterGuardT {
+      template<typename RegFunc>
+      RegisterGuardT(RegFunc f, TypeID typeID) : typeID(typeID) {
+         f();
+      }
+      ~RegisterGuardT() {
+         UnregFunc()(typeID);
+      }
+      TypeID typeID;
+   };
+
 }

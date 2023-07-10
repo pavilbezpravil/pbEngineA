@@ -8,10 +8,6 @@
 #include "core/Core.h"
 #include "core/Type.h"
 
-namespace YAML {
-   class Node;
-   class Emitter;
-}
 
 namespace pbe {
    struct Serializer;
@@ -159,15 +155,8 @@ namespace pbe {
       std::vector<NativeScriptInfo> nativeScripts;
    };
 
-   struct TypeRegisterGuard {
-      template<typename Func>
-      TypeRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
-         f();
-      }
-      ~TypeRegisterGuard() {
-         Typer::Get().UnregisterType(typeID);
-      }
-      TypeID typeID;
+   struct TypeRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { Typer::Get().UnregisterType(typeID); }) > {
+      using RegisterGuardT::RegisterGuardT;
    };
 
 }

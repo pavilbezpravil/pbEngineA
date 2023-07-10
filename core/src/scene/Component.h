@@ -7,13 +7,10 @@
 
 namespace pbe {
 
-   struct CORE_API ComponentRegisterGuard {
-      template<typename Func>
-      ComponentRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
-         f();
-      }
-      ~ComponentRegisterGuard();
-      TypeID typeID;
+   void __ComponentUnreg(TypeID typeID);
+
+   struct CORE_API ComponentRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ComponentUnreg(typeID); }) > {
+      using RegisterGuardT::RegisterGuardT;
    };
 
 #define INTERNAL_ADD_COMPONENT(Component) \

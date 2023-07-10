@@ -170,7 +170,7 @@ namespace pbe {
       TYPER_FIELD(color)
    TYPER_END(TerrainComponent)
 
-   ComponentRegisterGuard::~ComponentRegisterGuard() {
+   void __ComponentUnreg(TypeID typeID) {
       Typer::Get().UnregisterComponent(typeID);
    }
 
