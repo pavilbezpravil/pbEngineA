@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "NativeScript.h"
+#include "Script.h"
 #include "typer/Typer.h"
 
 #include "scene/Component.h"
@@ -7,10 +7,10 @@
 namespace pbe {
 
    void __ScriptUnreg(TypeID typeID) {
-      Typer::Get().UnregisterNativeScript(typeID);
+      Typer::Get().UnregisterScript(typeID);
    }
 
-   const char* NativeScript::GetName() const {
+   const char* Script::GetName() const {
       return owner.GetName();
    }
 

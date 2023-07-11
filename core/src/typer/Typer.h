@@ -86,8 +86,8 @@ namespace pbe {
       // ONLY_MOVE(ComponentInfo);
    };
 
-   struct NativeScriptInfo {
-      using ApplyFunc = std::function<void(class NativeScript&)>;
+   struct ScriptInfo {
+      using ApplyFunc = std::function<void(class Script&)>;
 
       TypeID typeID;
       std::function<void(Scene&)> initialize;
@@ -109,8 +109,8 @@ namespace pbe {
       void RegisterComponent(ComponentInfo&& ci);
       void UnregisterComponent(TypeID typeID);
 
-      void RegisterNativeScript(NativeScriptInfo&& si);
-      void UnregisterNativeScript(TypeID typeID);
+      void RegisterScript(ScriptInfo&& si);
+      void UnregisterScript(TypeID typeID);
 
       template<typename T>
       const TypeInfo& GetTypeInfo() const {
@@ -151,7 +151,7 @@ namespace pbe {
       std::unordered_map<TypeID, TypeInfo> types;
 
       std::vector<ComponentInfo> components;
-      std::vector<NativeScriptInfo> nativeScripts;
+      std::vector<ScriptInfo> scripts;
    };
 
    struct TypeRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { Typer::Get().UnregisterType(typeID); }) > {

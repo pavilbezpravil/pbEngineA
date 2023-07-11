@@ -6,15 +6,15 @@ namespace pbe {
 
    void __ScriptUnreg(TypeID typeID);
 
-   struct CORE_API NativeScriptRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ScriptUnreg(typeID); }) > {
+   struct CORE_API ScriptRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ScriptUnreg(typeID); }) > {
       using RegisterGuardT::RegisterGuardT;
    };
 
-#define TYPER_REGISTER_NATIVE_SCRIPT(Script) \
+#define TYPER_REGISTER_SCRIPT(Script) \
    static void TyperScriptRegister_##Script() { \
       auto& typer = Typer::Get(); \
       \
-      NativeScriptInfo si{}; \
+      ScriptInfo si{}; \
       si.typeID = GetTypeID<Script>(); \
       \
       si.initialize = [] (Scene& scene) { \
@@ -23,19 +23,19 @@ namespace pbe {
          } \
       }; \
       \
-      si.sceneApplyFunc = [] (Scene& scene, const NativeScriptInfo::ApplyFunc& func) { \
+      si.sceneApplyFunc = [] (Scene& scene, const ScriptInfo::ApplyFunc& func) { \
          for (auto [_, script] : scene.GetEntitiesWith<Script>().each()) { \
             func(script); \
          } \
       }; \
       \
-      typer.RegisterNativeScript(std::move(si)); \
+      typer.RegisterScript(std::move(si)); \
    } \
-   static NativeScriptRegisterGuard NativeScriptRegisterGuard_##Script = {GetTypeID<Script>(), TyperScriptRegister_##Script}
+   static ScriptRegisterGuard ScriptRegisterGuard_##Script = {GetTypeID<Script>(), TyperScriptRegister_##Script}
 
-   class CORE_API NativeScript {
+   class CORE_API Script {
    public:
-      virtual ~NativeScript() = default;
+      virtual ~Script() = default;
 
       virtual void OnEnable() {}
       virtual void OnDisable() {}

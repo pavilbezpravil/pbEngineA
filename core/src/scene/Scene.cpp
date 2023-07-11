@@ -6,7 +6,7 @@
 #include "typer/Typer.h"
 #include "fs/FileSystem.h"
 #include "rend/DbgRend.h"
-#include "script/NativeScript.h"
+#include "script/Script.h"
 #include "typer/Serialize.h"
 
 namespace pbe {
@@ -86,28 +86,28 @@ namespace pbe {
    void Scene::OnStart() {
       const auto& typer = Typer::Get();
 
-      for (const auto& si : typer.nativeScripts) {
+      for (const auto& si : typer.scripts) {
          si.initialize(*this);
       }
 
-      for (const auto& si : typer.nativeScripts) {
-         si.sceneApplyFunc(*this, [](NativeScript& script) { script.OnEnable(); });
+      for (const auto& si : typer.scripts) {
+         si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
       }
    }
 
    void Scene::OnUpdate(float dt) {
       const auto& typer = Typer::Get();
 
-      for (const auto& si : typer.nativeScripts) {
-         si.sceneApplyFunc(*this, [dt](NativeScript& script) { script.OnUpdate(dt); });
+      for (const auto& si : typer.scripts) {
+         si.sceneApplyFunc(*this, [dt](Script& script) { script.OnUpdate(dt); });
       }
    }
 
    void Scene::OnStop() {
       const auto& typer = Typer::Get();
 
-      for (const auto& si : typer.nativeScripts) {
-         si.sceneApplyFunc(*this, [](NativeScript& script) { script.OnDisable(); });
+      for (const auto& si : typer.scripts) {
+         si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
       }
    }
 

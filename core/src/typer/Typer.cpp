@@ -148,15 +148,15 @@ namespace pbe {
       components.erase(it);
    }
 
-   void Typer::RegisterNativeScript(NativeScriptInfo&& si) {
-      auto it = std::ranges::find(nativeScripts, si.typeID, &NativeScriptInfo::typeID);
-      ASSERT(it == nativeScripts.end());
-      nativeScripts.emplace_back(std::move(si));
+   void Typer::RegisterScript(ScriptInfo&& si) {
+      auto it = std::ranges::find(scripts, si.typeID, &ScriptInfo::typeID);
+      ASSERT(it == scripts.end());
+      scripts.emplace_back(std::move(si));
    }
 
-   void Typer::UnregisterNativeScript(TypeID typeID) {
-      auto it = std::ranges::find(nativeScripts, typeID, &NativeScriptInfo::typeID);
-      nativeScripts.erase(it);
+   void Typer::UnregisterScript(TypeID typeID) {
+      auto it = std::ranges::find(scripts, typeID, &ScriptInfo::typeID);
+      scripts.erase(it);
    }
 
    const TypeInfo& Typer::GetTypeInfo(TypeID typeID) const {

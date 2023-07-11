@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include "scene/Component.h"
-#include "script/NativeScript.h"
+#include "script/Script.h"
 #include "typer/Typer.h"
 
 
@@ -17,7 +17,7 @@ namespace pbe {
       TYPER_FIELD(intValue)
    TYPER_END()
 
-   class TestScript : public NativeScript {
+   class TestScript : public Script {
    public:
       void OnEnable() override {
          INFO("OnEnable {}", GetName());
@@ -45,6 +45,6 @@ namespace pbe {
       TYPER_FIELD(doMove)
    TYPER_END()
    TYPER_REGISTER_COMPONENT(TestScript);
-   TYPER_REGISTER_NATIVE_SCRIPT(TestScript);
+   TYPER_REGISTER_SCRIPT(TestScript);
 
 }
