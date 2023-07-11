@@ -6,12 +6,12 @@
 
 namespace pbe {
 
-   NativeScriptRegisterGuard::~NativeScriptRegisterGuard() {
+   void __ScriptUnreg(TypeID typeID) {
       Typer::Get().UnregisterNativeScript(typeID);
    }
 
    const char* NativeScript::GetName() const {
-      return owner.Get<TagComponent>().tag.data();
+      return owner.GetName();
    }
 
 }

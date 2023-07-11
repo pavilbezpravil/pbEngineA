@@ -15,7 +15,7 @@ namespace pbe {
    TYPER_BEGIN(TestValues)
       TYPER_FIELD(floatValue)
       TYPER_FIELD(intValue)
-   TYPER_END(TestValues)
+   TYPER_END()
 
    class TestScript : public NativeScript {
    public:
@@ -43,7 +43,7 @@ namespace pbe {
       TYPER_FIELD(values)
       TYPER_FIELD(speed)
       TYPER_FIELD(doMove)
-   TYPER_END(TestScript)
+   TYPER_END()
    TYPER_REGISTER_COMPONENT(TestScript);
    TYPER_REGISTER_NATIVE_SCRIPT(TestScript);
 

@@ -17,7 +17,8 @@ namespace pbe {
    class Scene;
 
 #define TYPER_BEGIN(type) \
-   void TyperRegister_##type() { \
+   static TypeRegisterGuard TypeRegisterGuard_##type = {GetTypeID<type>(), \
+         [] () { \
       using CurrentType = type; \
       TypeInfo ti; \
       ti.name = #type; \
@@ -50,11 +51,9 @@ namespace pbe {
       ti.fields.emplace_back(f); \
       f = {};
 
-   // todo: remove 'type'
-#define TYPER_END(type) \
+#define TYPER_END() \
       Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
-   } \
-   static TypeRegisterGuard TypeInfo_##type = {TyperRegister_##type, GetTypeID<type>()};
+   }};
 
    struct TypeField {
       std::string name;

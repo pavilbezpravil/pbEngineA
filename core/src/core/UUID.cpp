@@ -14,7 +14,7 @@ namespace pbe {
    TYPER_BEGIN(UUID)
    // ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(Type*)value; }; \
    // ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(Type*)value = node[name].as<Type>(); };
-   TYPER_END(UUID)
+   TYPER_END()
    
 
    UUID::UUID() : uuid(sDistribution(sEng)) {

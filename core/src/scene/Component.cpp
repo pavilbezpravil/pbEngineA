@@ -85,7 +85,7 @@ namespace pbe {
 
    TYPER_BEGIN(TagComponent)
       TYPER_FIELD(tag)
-   TYPER_END(TagComponent)
+   TYPER_END()
 
    TYPER_BEGIN(SceneTransformComponent)
       TYPER_SERIALIZE(TransSerialize)
@@ -94,7 +94,7 @@ namespace pbe {
       TYPER_FIELD(position)
       TYPER_FIELD(rotation)
       TYPER_FIELD(scale)
-   TYPER_END(SceneTransformComponent)
+   TYPER_END()
 
    TYPER_BEGIN(SimpleMaterialComponent)
       TYPER_FIELD_UI(UIColorEdit3)
@@ -112,7 +112,7 @@ namespace pbe {
       TYPER_FIELD(emissivePower)
 
       TYPER_FIELD(opaque)
-   TYPER_END(SimpleMaterialComponent)
+   TYPER_END()
 
    // TYPER_BEGIN(GeomType)
    // todo: try
@@ -127,13 +127,13 @@ namespace pbe {
       TYPER_UI(GeomUI)
       TYPER_FIELD(type)
       TYPER_FIELD(sizeData)
-   TYPER_END(GeometryComponent)
+   TYPER_END()
 
    TYPER_BEGIN(LightComponent)
       TYPER_FIELD(color)
       TYPER_FIELD(intensity)
       TYPER_FIELD(radius)
-   TYPER_END(LightComponent)
+   TYPER_END()
 
    TYPER_BEGIN(DirectLightComponent)
       TYPER_FIELD_UI(UIColorEdit3)
@@ -141,13 +141,13 @@ namespace pbe {
 
       TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
       TYPER_FIELD(intensity)
-   TYPER_END(DirectLightComponent)
+   TYPER_END()
 
    TYPER_BEGIN(DecalComponent)
       TYPER_FIELD(baseColor)
       TYPER_FIELD(metallic)
       TYPER_FIELD(roughness)
-   TYPER_END(DecalComponent)
+   TYPER_END()
 
    TYPER_BEGIN(SkyComponent)
       TYPER_FIELD(directLight)
@@ -155,7 +155,7 @@ namespace pbe {
       TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(color)
       TYPER_FIELD(intensity)
-   TYPER_END(SkyComponent)
+   TYPER_END()
 
    TYPER_BEGIN(WaterComponent)
       TYPER_FIELD_UI(UIColorEdit3)
@@ -163,12 +163,12 @@ namespace pbe {
 
       TYPER_FIELD(fogUnderwaterLength)
       TYPER_FIELD(softZ)
-   TYPER_END(WaterComponent)
+   TYPER_END()
 
    TYPER_BEGIN(TerrainComponent)
       TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(color)
-   TYPER_END(TerrainComponent)
+   TYPER_END()
 
    void __ComponentUnreg(TypeID typeID) {
       Typer::Get().UnregisterComponent(typeID);

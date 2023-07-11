@@ -25,7 +25,7 @@ namespace pbe {
    TYPER_BEGIN(EditorSettings)
       TYPER_FIELD(scenePath)
       TYPER_FIELD(cameraPos)
-   TYPER_END(EditorSettings)
+   TYPER_END()
 
    class SceneHierarchyWindow : public EditorWindow {
    public:

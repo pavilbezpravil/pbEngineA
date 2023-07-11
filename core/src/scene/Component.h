@@ -22,7 +22,7 @@ namespace pbe {
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       typer.RegisterComponent(std::move(ci)); \
-   }   
+   }
 
 #define TYPER_REGISTER_COMPONENT(Component) \
    static void TyperComponentRegister_##Component() { \
@@ -30,7 +30,7 @@ namespace pbe {
       ComponentInfo ci{}; \
       INTERNAL_ADD_COMPONENT(Component); \
    } \
-   static ComponentRegisterGuard ComponentInfo_##Component = {TyperComponentRegister_##Component, GetTypeID<Component>()};
+   static ComponentRegisterGuard ComponentInfo_##Component = {GetTypeID<Component>(), TyperComponentRegister_##Component};
 
    struct UUIDComponent {
       UUID uuid;

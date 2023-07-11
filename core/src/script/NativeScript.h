@@ -4,13 +4,10 @@
 
 namespace pbe {
 
-   struct CORE_API NativeScriptRegisterGuard {
-      template<typename Func>
-      NativeScriptRegisterGuard(Func f, TypeID typeID) : typeID(typeID) {
-         f();
-      }
-      ~NativeScriptRegisterGuard();
-      TypeID typeID;
+   void __ScriptUnreg(TypeID typeID);
+
+   struct CORE_API NativeScriptRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ScriptUnreg(typeID); }) > {
+      using RegisterGuardT::RegisterGuardT;
    };
 
 #define TYPER_REGISTER_NATIVE_SCRIPT(Script) \
@@ -34,7 +31,7 @@ namespace pbe {
       \
       typer.RegisterNativeScript(std::move(si)); \
    } \
-   static NativeScriptRegisterGuard NativeScriptRegisterGuard_##Script = {TyperScriptRegister_##Script, GetTypeID<Script>()}
+   static NativeScriptRegisterGuard NativeScriptRegisterGuard_##Script = {GetTypeID<Script>(), TyperScriptRegister_##Script}
 
    class CORE_API NativeScript {
    public:

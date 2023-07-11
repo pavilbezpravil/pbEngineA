@@ -15,9 +15,9 @@ namespace pbe {
    };
 
    TYPER_BEGIN(Test);
-   TYPER_FIELD(f);
-   TYPER_FIELD(i);
-   TYPER_END(Test);
+      TYPER_FIELD(f);
+      TYPER_FIELD(i);
+   TYPER_END();
 
    struct TestHard {
       Test test;
@@ -26,10 +26,10 @@ namespace pbe {
    };
 
    TYPER_BEGIN(TestHard);
-   TYPER_FIELD(test);
-   TYPER_FIELD(i2);
-   TYPER_FIELD(b);
-   TYPER_END(TestHard);
+      TYPER_FIELD(test);
+      TYPER_FIELD(i2);
+      TYPER_FIELD(b);
+   TYPER_END();
 
    // int TyperRegister_bool() {
    //    TypeInfo ti;

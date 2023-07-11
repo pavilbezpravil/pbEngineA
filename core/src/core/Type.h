@@ -14,7 +14,7 @@ namespace pbe {
    template<typename UnregFunc>
    struct RegisterGuardT {
       template<typename RegFunc>
-      RegisterGuardT(RegFunc f, TypeID typeID) : typeID(typeID) {
+      RegisterGuardT(TypeID typeID, RegFunc f) : typeID(typeID) {
          f();
       }
       ~RegisterGuardT() {
