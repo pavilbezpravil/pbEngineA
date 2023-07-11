@@ -114,13 +114,16 @@ namespace pbe {
       TYPER_FIELD(opaque)
    TYPER_END()
 
+   TYPER_BEGIN(GeomType)
+      TYPER_SERIALIZE([](Serializer& ser, const byte* value) { ser.out << *(int*)value; })
+      TYPER_DESERIALIZE([](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); })
+      TYPER_UI([](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0"); })
+   TYPER_END()
+
    // TYPER_BEGIN(GeomType)
    // todo: try
       // TYPER_FIELD_UI(UICombo{ .items = { "Box", "Sphere", "Cylinder", "Capsule", "Cone", "Plane" } })
       // TYPER_FIELD(type)
-      //
-      // TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
-      // TYPER_FIELD(sizeData)
    // TYPER_END(GeomType)
 
    TYPER_BEGIN(GeometryComponent)
@@ -309,31 +312,6 @@ namespace pbe {
    }
 
    void RegisterBasicComponents(Typer& typer) {
-      // todo: copy paste
-#define START_DECL_TYPE(Type) \
-   ti = {}; \
-   ti.name = STRINGIFY(Type); \
-   ti.typeID = GetTypeID<Type>(); \
-   ti.typeSizeOf = sizeof(Type)
-
-#define DEFAULT_SER_DESER(Type) \
-   ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(Type*)value; }; \
-   ti.deserialize = [](const Deserializer& deser, byte* value) { *(Type*)value = deser.node.as<Type>(); };
-
-#define END_DECL_TYPE() \
-   typer.RegisterType(ti.typeID, std::move(ti))
-
-      // todo:
-      TypeInfo ti;
-
-      // todo:
-      START_DECL_TYPE(GeomType);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0"); };
-      ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(int*)value; }; \
-      ti.deserialize = [](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); };
-      END_DECL_TYPE();
-
-
       INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
