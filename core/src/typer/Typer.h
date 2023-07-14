@@ -80,6 +80,8 @@ namespace pbe {
       std::function<const void*(const Entity&)> tryGetConst;
       std::function<void*(Entity&)> getOrAdd;
       std::function<void(void*, const void*)> duplicate;
+      std::function<void(Entity&, const void*)> copyCtor;
+      std::function<void(Entity&, const void*)> moveCtor;
 
       // ComponentInfo() = default;
       // ComponentInfo(ComponentInfo&&) = default;

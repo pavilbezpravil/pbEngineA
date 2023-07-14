@@ -15,12 +15,15 @@ namespace pbe {
 
 #define INTERNAL_ADD_COMPONENT(Component) \
    { \
+      static_assert(std::is_move_assignable_v<Component>); \
       ComponentInfo ci{}; \
       ci.typeID = GetTypeID<Component>(); \
       ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
       ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
+      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
+      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
       typer.RegisterComponent(std::move(ci)); \
    }
 
@@ -98,9 +101,33 @@ namespace pbe {
       Capsule,
    };
 
+   // todo:
+   struct GeomSphere {
+      float radius = 1.f;
+   };
+
+   struct GeomBox {
+      vec3 extends;
+   };
+
+   struct Geom {
+      GeomType type;
+
+      union {
+         GeomSphere sphere;
+         GeomBox box;
+      };
+   };
+
    struct GeometryComponent {
       GeomType type;
       vec3 sizeData = vec3_One; // todo: full size
+   };
+
+   struct RigidBodyComponent {
+      bool dynamic = true;
+
+      physx::PxRigidActor* pxRigidActor = nullptr;
    };
 
    struct LightComponent {

@@ -23,8 +23,8 @@ namespace pbe {
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", true };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", true };
-   CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", true };
-   CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
+   CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
+   CVarValue<bool> cvDenoise{ "render/rt/denoise", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 1, 0, 1 };

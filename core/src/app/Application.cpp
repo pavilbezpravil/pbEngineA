@@ -11,6 +11,7 @@
 #include "core/CVar.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
+#include "physics/PhysicsScene.h"
 #include "rend/RendRes.h"
 #include "rend/Shader.h"
 
@@ -37,6 +38,8 @@ namespace pbe {
          return;
       }
 
+      InitPhysics();
+
       rendres::Init();
 
       Profiler::Init();
@@ -55,6 +58,9 @@ namespace pbe {
    void Application::OnTerm() {
       rendres::Term();
       TermGpuPrograms();
+
+      TermPhysics();
+
       layerStack.Clear();
 
       ImGui::DestroyContext();
