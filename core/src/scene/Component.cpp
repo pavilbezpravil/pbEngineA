@@ -320,6 +320,26 @@ namespace pbe {
       return true;
    }
 
+   template<typename T>
+   concept HasSerialize = requires(T a, Serializer& ser) {
+      { a.Serialize(ser) };
+   };
+
+   struct Test {
+      void Serialize(Serializer& ser) {
+         // INFO("Serialize");
+      }
+   };
+
+   template<typename T>
+   auto GetSerialize() {
+      if constexpr (HasSerialize<T>) {
+         return [] (Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
+      } else {
+         return nullptr;
+      }
+   }
+
    void RegisterBasicComponents(Typer& typer) {
       INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
@@ -332,6 +352,16 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(SkyComponent);
       INTERNAL_ADD_COMPONENT(WaterComponent);
       INTERNAL_ADD_COMPONENT(TerrainComponent);
+
+      // todo:
+      Test t;
+      Serializer ser;
+
+      auto s = GetSerialize<Test>();
+      std::function<void(Serializer&, const byte*)> f = s;
+      if (f) {
+         f(ser, (byte*)&t);
+      }
    }
 
 }
