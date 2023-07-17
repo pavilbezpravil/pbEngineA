@@ -6,7 +6,6 @@
 
 .vscode
 
-imgui.ini
 bin/
 bin-int/
 
