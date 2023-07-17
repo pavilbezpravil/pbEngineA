@@ -130,6 +130,13 @@ namespace pbe {
       physx::PxRigidActor* pxRigidActor = nullptr;
    };
 
+   struct DistanceJointComponent {
+      Entity entity0;
+      Entity entity1;
+
+      physx::PxDistanceJoint* pxDistanceJoint = nullptr;
+   };
+
    struct LightComponent {
       vec3 color{1};
       float intensity = 1;

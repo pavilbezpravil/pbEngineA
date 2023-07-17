@@ -31,6 +31,9 @@ namespace pbe {
       // todo:
       registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(pPhysics);
       registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(pPhysics);
+
+      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(pPhysics);
+      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(pPhysics);
    }
 
    Scene::~Scene() {

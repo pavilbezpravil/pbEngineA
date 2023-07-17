@@ -27,15 +27,6 @@ namespace pbe {
       gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
       gDispatcher = PxDefaultCpuDispatcherCreate(2);
       gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-
-      // PxRigidStatic* groundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
-      // gScene->addActor(*groundPlane);
-
-      // for (PxU32 i = 0; i < 5; i++)
-      //    createStack(PxTransform(PxVec3(0, 0, stackZ -= 10.0f)), 10, 2.0f);
-      //
-      // if (!interactive)
-      //    createDynamic(PxTransform(PxVec3(0, 40, 100)), PxSphereGeometry(10), PxVec3(0, -50, -100));
    }
 
    void TermPhysics() {
@@ -158,5 +149,32 @@ namespace pbe {
    void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
       Entity e{ entity, &scene };
       RemoveRigidActor(e);
+   }
+
+   void PhysicsScene::OnConstructDistanceJoint(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+
+      auto& dj = e.Get<DistanceJointComponent>();
+
+      // todo: one of them must be dynamic
+
+      auto getPxActor = [] (Entity e) -> PxRigidActor* {
+         if (!e) return nullptr;
+
+         auto rb = e.TryGet<RigidBodyComponent>();
+         return rb ? rb->pxRigidActor : nullptr;
+      };
+
+      auto actor0 = getPxActor(dj.entity0);
+      auto actor1 = getPxActor(dj.entity0);
+
+      if (!actor0 || !actor1) {
+         return;
+      }
+
+      dj.pxDistanceJoint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+   }
+
+   void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity) {
    }
 }
