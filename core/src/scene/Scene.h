@@ -76,12 +76,8 @@ namespace pbe {
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 
-
       // todo: move to scene component?
       Own<PhysicsScene> pPhysics;
-
-      void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
-      void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
 
       friend Entity;
    };

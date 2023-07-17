@@ -26,15 +26,11 @@ namespace pbe {
       dbgRend = std::make_unique<DbgRend>();
       // rootEntityId = Create("Scene").GetID();
 
-      // todo:
-      // RemoveAllChild();
-      // SetParent();
-      // registry.on_construct<SceneTransformComponent>().connect<&Scene::OnUUIDComponentAdded>(this);
-      // registry.on_construct<RigidBodyComponent>().connect<&RigidConstruct>();
-      registry.on_construct<RigidBodyComponent>().connect<&Scene::OnConstructRigidBody>(this);
-      registry.on_destroy<RigidBodyComponent>().connect<&Scene::OnDestroyRigidBody>(this);
-
       pPhysics = std::make_unique<PhysicsScene>(*this); // todo: for all scene is it needed?
+
+      // todo:
+      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(pPhysics);
+      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(pPhysics);
    }
 
    Scene::~Scene() {
@@ -175,16 +171,6 @@ namespace pbe {
 
    string GetAssetsPath(string_view path) {
       return gAssetsPath + path.data();
-   }
-
-   void Scene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, this };
-      pPhysics->AddRigidActor(e);
-   }
-
-   void Scene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, this };
-      pPhysics->RemoveRigidActor(e);
    }
 
    void SceneSerialize(std::string_view path, Scene& scene) {

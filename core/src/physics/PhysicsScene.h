@@ -31,6 +31,10 @@ namespace pbe {
    private:
       PxScene* pxScene = nullptr;
       Scene& scene;
+
+      friend class Scene;
+      void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
+      void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
    };
 
 }

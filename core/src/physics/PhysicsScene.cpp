@@ -149,4 +149,14 @@ namespace pbe {
 
       rb.pxRigidActor = nullptr;
    }
+
+   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+      AddRigidActor(e);
+   }
+
+   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+      RemoveRigidActor(e);
+   }
 }
