@@ -53,20 +53,6 @@ function consoleCppApp()
    setBuildDirs()
 end
 
--- todo: remove
--- include "src/tests/premake5.lua"
--- include "src/dll_example/premake5.lua"
--- include "src/imgui/premake5.lua"
--- include "src/imgui_test/premake5.lua"
--- include "src/core/premake5.lua"
--- include "src/pbeEditor/premake5.lua"
-include "src/mcpp/premake5.lua"
-
--- todo: remove
-group "tests"
-   include "src/dll_test/premake5.lua"
-group ""
-
 include "deps/deps.lua"
 
 group "deps"

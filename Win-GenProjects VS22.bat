@@ -1,1 +1,1 @@
-call tools\premake5.exe vs2022
+call deps\premake\premake5.exe vs2022
