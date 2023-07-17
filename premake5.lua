@@ -9,7 +9,7 @@ workspace "pbEngine"
       symbols "On"
 
    filter "configurations:Release"
-      defines { "RELEASE" }
+      defines { "RELEASE", "NDEBUG" }
       optimize "On"
 
    filter {}
@@ -53,6 +53,7 @@ function consoleCppApp()
    setBuildDirs()
 end
 
+-- todo: remove
 -- include "src/tests/premake5.lua"
 -- include "src/dll_example/premake5.lua"
 -- include "src/imgui/premake5.lua"
@@ -61,6 +62,7 @@ end
 -- include "src/pbeEditor/premake5.lua"
 include "src/mcpp/premake5.lua"
 
+-- todo: remove
 group "tests"
    include "src/dll_test/premake5.lua"
 group ""

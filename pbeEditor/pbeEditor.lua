@@ -13,5 +13,8 @@ project "pbeEditor"
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
                  libsinfo.entt.includepath,
-                 libsinfo.shaders.includepath }
+                 libsinfo.shaders.includepath,
+                 libsinfo.physx.includepath,
+               }
+    -- remove yaml
    links { "core", "imgui", "yaml" }

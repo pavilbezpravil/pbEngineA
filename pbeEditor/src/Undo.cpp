@@ -45,7 +45,7 @@ namespace pbe {
       }
 
       undoStack.emplace(std::move(undoAction));
-      INFO("Edited"); // todo:
+      // INFO("Edited"); // todo:
    }
 
    void Undo::SaveToStack(const Entity& entity, bool continuous) {

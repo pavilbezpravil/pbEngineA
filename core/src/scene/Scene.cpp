@@ -8,8 +8,19 @@
 #include "rend/DbgRend.h"
 #include "script/Script.h"
 #include "typer/Serialize.h"
+#include "physics/PhysicsScene.h"
 
 namespace pbe {
+
+   // todo: mb add physics as scene component?
+   // Entity GetEntityFromRegistry() {
+   //    return Entity{ rootEntityId, this };
+   // }
+
+   // todo: think about scene func or static private func
+   // void RigidConstruct(entt::registry& registry, entt::entity entity) {
+   //    INFO("RigidConstruct");
+   // }
 
    Scene::Scene() {
       dbgRend = std::make_unique<DbgRend>();
@@ -19,9 +30,16 @@ namespace pbe {
       // RemoveAllChild();
       // SetParent();
       // registry.on_construct<SceneTransformComponent>().connect<&Scene::OnUUIDComponentAdded>(this);
+      // registry.on_construct<RigidBodyComponent>().connect<&RigidConstruct>();
+      registry.on_construct<RigidBodyComponent>().connect<&Scene::OnConstructRigidBody>(this);
+      registry.on_destroy<RigidBodyComponent>().connect<&Scene::OnDestroyRigidBody>(this);
+
+      pPhysics = std::make_unique<PhysicsScene>(); // todo: for all scene is it needed?
    }
 
-   Scene::~Scene() {}
+   Scene::~Scene() {
+      registry.clear(); // registry doesn't have call destructor for components without direct call clear
+   }
 
    Entity Scene::Create(std::string_view name) {
       return CreateWithUUID(UUID{}, name);
@@ -63,8 +81,15 @@ namespace pbe {
          auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
-            auto* pDst = ci.getOrAdd(dst);
-            ci.duplicate(pDst, pSrc);
+            // todo:
+            auto* pDst = ci.tryGet(dst);
+            if (pDst) {
+               // scene trasform component and tag already exist
+               // think how to remove this branch
+               ci.duplicate(pDst, pSrc);
+            } else {
+               ci.copyCtor(dst, pSrc);
+            }
          }
       }
    }
@@ -96,6 +121,10 @@ namespace pbe {
    }
 
    void Scene::OnUpdate(float dt) {
+      if (pPhysics) {
+         pPhysics->Simulation(dt);
+      }
+
       const auto& typer = Typer::Get();
 
       for (const auto& si : typer.scripts) {
@@ -146,6 +175,16 @@ namespace pbe {
 
    string GetAssetsPath(string_view path) {
       return gAssetsPath + path.data();
+   }
+
+   void Scene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, this };
+      pPhysics->AddRigidActor(e);
+   }
+
+   void Scene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, this };
+      pPhysics->RemoveRigidActor(e);
    }
 
    void SceneSerialize(std::string_view path, Scene& scene) {
@@ -271,12 +310,17 @@ namespace pbe {
 
       const auto& typer = Typer::Get();
 
+      // std::array<byte, 128> data; // todo:
+
       for (const auto& ci : typer.components) {
          const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+         // ASSERT(ti.typeSizeOf < data.size());
 
          const char* name = ti.name.data();
 
          if (auto node = deser[name]) {
+            // todo: use move ctor
             auto* ptr = (byte*)ci.getOrAdd(entity);
             deser.Deser(name, ci.typeID, ptr);
          }

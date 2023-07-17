@@ -1,0 +1,39 @@
+sceneName: test_scene
+entities:
+  - uuid: 2170966516242636815
+    tag: sky
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SkyComponent:
+      directLight: 18446744073709551615
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 17036710735013480906
+    tag: cube
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SimpleMaterialComponent:
+      baseColor: [0, 0.759494305, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+  - uuid: 17941021247240787344
+    tag: direct light
+    SceneTransformComponent:
+      position: [0, 2.88278151, 0]
+      rotation: [43.5524368, 12.5394974, -56.4971313]
+      scale: [1, 1, 1]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 0.875999987

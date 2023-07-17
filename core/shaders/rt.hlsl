@@ -154,7 +154,20 @@ bool IntersectAABB(Ray ray, inout RayHit bestHit, float3 center, float3 halfSize
         return true;
     }
     return false;
-};
+}
+
+bool IntersectOBB(Ray ray, inout RayHit bestHit, float3 center, float4 rotation, float3 halfSize) {
+    float4 rotationInv = QuatConjugate(rotation);
+    Ray rayL = CreateRay(QuatMulVec3(rotationInv, ray.origin - center), QuatMulVec3(rotationInv, ray.direction));
+
+    if (IntersectAABB(rayL, bestHit, 0, halfSize)) {
+        bestHit.position = QuatMulVec3(rotation, bestHit.position) + center;
+        bestHit.normal = QuatMulVec3(rotation, bestHit.normal);
+        return true;
+    }
+
+    return false;
+}
 
 RayHit Trace(Ray ray) {
     RayHit bestHit = CreateRayHit();
@@ -163,16 +176,17 @@ RayHit Trace(Ray ray) {
     // }
 
     for (int iObject = 0; iObject < gRTConstants.nObjects; iObject++) {
-        SRTObject rtObject = gRtObjects[iObject];
-        int geomType = rtObject.geomType;
+        SRTObject obj = gRtObjects[iObject];
+        int geomType = obj.geomType;
 
         // geomType = 0;
         if (geomType == 1) {
-            if (IntersectAABB(ray, bestHit, rtObject.position, rtObject.halfSize)) {
+            // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
+            if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
                 bestHit.materialID = iObject;
             }
         } else {
-            if (IntersectSphere(ray, bestHit, float4(rtObject.position, rtObject.halfSize.x))) {
+            if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
                 bestHit.materialID = iObject;
             }
         }

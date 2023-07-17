@@ -16,12 +16,6 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    TestScript:
-      values:
-        floatValue: 2
-        intValue: 2
-      speed: 1
-      doMove: true
   - uuid: 2170966516242636815
     tag: sky
     SceneTransformComponent:
@@ -48,12 +42,6 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    TestScript:
-      values:
-        floatValue: 2
-        intValue: 2
-      speed: 1
-      doMove: true
   - uuid: 5020023358067959166
     tag: cube copy
     SceneTransformComponent:
@@ -70,12 +58,6 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    TestScript:
-      values:
-        floatValue: 2
-        intValue: 2
-      speed: 1
-      doMove: true
   - uuid: 5079568519492316975
     tag: emissive cube
     SceneTransformComponent:

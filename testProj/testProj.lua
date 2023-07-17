@@ -12,5 +12,7 @@ project "testProj"
                  libsinfo.spdlog.includepath,
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
-                 libsinfo.entt.includepath }
+                 libsinfo.entt.includepath,
+                 libsinfo.physx.includepath,
+                }
    links { "core" }

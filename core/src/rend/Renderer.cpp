@@ -22,7 +22,7 @@ namespace pbe {
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", true };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
-   CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
+   CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", true };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
    CVarValue<bool> applyFog{ "render/fog/enable", true };

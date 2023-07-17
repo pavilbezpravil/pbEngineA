@@ -11,4 +11,25 @@ float Eerp(float a, float b, float t) {
     return pow(a, 1 - t) * pow(b, t);
 }
 
+float4 QuatConjugate(float4 q) {
+    return float4(q.x, -q.yzw);
+}
+
+// todo: not sure
+float4 QuatDot(float4 q) {
+    return dot(q, q);
+}
+
+float4 QuatInv(float4 q) {
+    return QuatConjugate(q) / QuatDot(q);
+}
+
+float3 QuatMulVec3(float4 qInv, float3 v) {
+	float3 QuatVector = qInv.yzw;
+    float3 uv = cross(QuatVector, v);
+	float3 uuv = cross(QuatVector, uv);
+
+    return v + ((uv * qInv.x) + uuv) * 2;
+}
+
 #endif

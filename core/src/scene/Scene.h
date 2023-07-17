@@ -8,6 +8,7 @@
 
 
 namespace pbe {
+   class PhysicsScene;
    struct Deserializer;
    struct Serializer;
 
@@ -42,6 +43,17 @@ namespace pbe {
          return registry.view<Component, Other...>();
       }
 
+      // todo: return multiple
+      template<typename Component>
+      Component* GetAnyWithComponent() {
+         auto view = registry.view<Component>();
+         if (view.empty()) {
+            return nullptr;
+         } else {
+            return registry.try_get<Component>(view.front());
+         }
+      }
+
       void OnStart();
       void OnUpdate(float dt);
       void OnStop();
@@ -49,6 +61,8 @@ namespace pbe {
       Entity FindByName(std::string_view name);
 
       uint EntitiesCount() const;
+
+      PhysicsScene* GetPhysics() { return pPhysics.get(); }
 
       Own<Scene> Copy(); // todo: const
 
@@ -61,6 +75,13 @@ namespace pbe {
       entt::entity rootEntityId;
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
+
+
+      // todo: move to scene component?
+      Own<PhysicsScene> pPhysics;
+
+      void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
+      void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
 
       friend Entity;
    };

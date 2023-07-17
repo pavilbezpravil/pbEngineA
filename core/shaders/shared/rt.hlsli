@@ -7,6 +7,8 @@ struct SRTObject {
    float3 position;
    uint   id;
 
+   float4 rotation;
+
    float3 baseColor;
    float  metallic;
 

@@ -51,6 +51,8 @@ namespace pbe {
          obj.position = trans.Position();
          obj.id = (uint)e;
 
+         obj.rotation = glm::make_vec4(glm::value_ptr(trans.Rotation()));
+
          obj.geomType = (int)geom.type;
          obj.halfSize = geom.sizeData / 2.f * trans.Scale();
 

@@ -39,3 +39,5 @@ OStream& operator<<(OStream& os, const ImVec2& v)
 #include <glm/gtc/quaternion.hpp>
 
 #include <entt/entt.hpp>
+
+#include "PxPhysicsAPI.h"

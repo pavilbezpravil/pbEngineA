@@ -18,9 +18,26 @@ project "core"
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
                  libsinfo.entt.includepath,
-                 libsinfo.shaders.includepath }
+                 libsinfo.shaders.includepath,
+                 libsinfo.physx.includepath,
+                }
 
-   links { "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib" }
+   libdirs {
+      "%{libsinfo.physx.libDir}",
+   }
+
+   links {
+       "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib",
+       "PhysX_64",
+       "PhysXCommon_64",
+       "PhysXExtensions_static_64",
+       "PhysXFoundation_64",
+       "PhysXPvdSDK_static_64",
+   }
+
+   postbuildcommands {
+      '{COPY} "%{libsinfo.physx.libDir}/*.dll" "%{cfg.targetdir}"',
+   }
 
    defines { "CORE_API_EXPORT" }
    files { "src/**.h", "src/**.cpp", libsinfo.core.natvis, libsinfo.glm.natvis, libsinfo.entt.natvis }
