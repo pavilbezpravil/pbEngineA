@@ -41,26 +41,23 @@ namespace pbe {
    void TermPhysics() {
       PX_RELEASE(gDispatcher);
       PX_RELEASE(gPhysics);
-      if (gPvd)
-      {
+      if (gPvd) {
          PxPvdTransport* transport = gPvd->getTransport();
          gPvd->release();	gPvd = NULL;
          PX_RELEASE(transport);
       }
       PX_RELEASE(gFoundation);
-
-      printf("SnippetHelloWorld done.\n");
    }
 
-   PhysicsScene::PhysicsScene() {
+   PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
       PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
       sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
       sceneDesc.cpuDispatcher = gDispatcher;
       sceneDesc.filterShader = PxDefaultSimulationFilterShader;
       sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-      pScene = gPhysics->createScene(sceneDesc);
+      pxScene = gPhysics->createScene(sceneDesc);
 
-      PxPvdSceneClient* pvdClient = pScene->getScenePvdClient();
+      PxPvdSceneClient* pvdClient = pxScene->getScenePvdClient();
       if (pvdClient) {
          pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
          pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
@@ -69,26 +66,31 @@ namespace pbe {
    }
 
    PhysicsScene::~PhysicsScene() {
-      ASSERT(pScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
-      PX_RELEASE(pScene);
+      ASSERT(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+      PX_RELEASE(pxScene);
    }
 
    void PhysicsScene::SyncPhysicsWithScene() {
-      // todo: iterate through all entities and update transform
+      // todo: only for changed entities
+      for (auto [_, trans, rb] :
+         scene.GetEntitiesWith<SceneTransformComponent, RigidBodyComponent>().each()) {
+         PxTransform pxTrans{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
+         rb.pxRigidActor->setGlobalPose(pxTrans);
+      }
    }
 
    void PhysicsScene::Simulation(float dt) {
       SyncPhysicsWithScene();
 
-      pScene->simulate(dt); // todO: fixed time step
-      pScene->fetchResults(true);
+      pxScene->simulate(dt); // todO: fixed time step
+      pxScene->fetchResults(true);
 
       UpdateSceneAfterPhysics(); // todo:
    }
 
    void PhysicsScene::UpdateSceneAfterPhysics() {
       PxU32 nbActiveActors;
-      PxActor** activeActors = pScene->getActiveActors(nbActiveActors);
+      PxActor** activeActors = pxScene->getActiveActors(nbActiveActors);
 
       for (PxU32 i = 0; i < nbActiveActors; ++i) {
          Entity entity = *static_cast<Entity*>(activeActors[i]->userData);
@@ -134,7 +136,7 @@ namespace pbe {
 
       actor->userData = new Entity{entity}; // todo: use fixed allocator
 
-      pScene->addActor(*actor);
+      pxScene->addActor(*actor);
 
       rb.pxRigidActor = actor;
    }
@@ -142,7 +144,7 @@ namespace pbe {
    void PhysicsScene::RemoveRigidActor(Entity entity) {
       auto& rb = entity.Get<RigidBodyComponent>();
 
-      pScene->removeActor(*rb.pxRigidActor);
+      pxScene->removeActor(*rb.pxRigidActor);
       delete (Entity*)rb.pxRigidActor->userData;
 
       rb.pxRigidActor = nullptr;

@@ -34,7 +34,7 @@ namespace pbe {
       registry.on_construct<RigidBodyComponent>().connect<&Scene::OnConstructRigidBody>(this);
       registry.on_destroy<RigidBodyComponent>().connect<&Scene::OnDestroyRigidBody>(this);
 
-      pPhysics = std::make_unique<PhysicsScene>(); // todo: for all scene is it needed?
+      pPhysics = std::make_unique<PhysicsScene>(*this); // todo: for all scene is it needed?
    }
 
    Scene::~Scene() {

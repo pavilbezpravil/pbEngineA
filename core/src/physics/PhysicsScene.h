@@ -12,7 +12,7 @@ namespace pbe {
 
    class PhysicsScene : public PxSimulationEventCallback {
    public:
-      PhysicsScene();
+      PhysicsScene(Scene& scene);
       ~PhysicsScene() override;
 
       void SyncPhysicsWithScene();
@@ -29,7 +29,8 @@ namespace pbe {
       void onTrigger(PxTriggerPair* pairs, PxU32 count) override {}
       void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override {}
    private:
-      PxScene* pScene;
+      PxScene* pxScene = nullptr;
+      Scene& scene;
    };
 
 }
