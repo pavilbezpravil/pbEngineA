@@ -87,7 +87,7 @@ namespace pbe {
       dstTrans.scale = srcTrans.scale;
 
       for (auto child : srcTrans.children) {
-         Entity duplicatedChild = Create(dst);
+         Entity duplicatedChild = Create(dst, child.GetName());
          Duplicate(duplicatedChild, child);
       }
 
@@ -113,9 +113,20 @@ namespace pbe {
    }
 
    Entity Scene::Duplicate(const Entity& entity) {
-      // todo:
-      // Entity duplicatedEntity = Create(std::format("%1 copy", entity.GetName()));
-      Entity duplicatedEntity = Create(entity.GetTransform().parent, entity.GetName());
+      // todo: dirty code
+      auto name = entity.GetName();
+      int nameLen = (int)strlen(name);
+
+      int iter = nameLen - 1;
+      while (iter >= 0 && (std::isdigit(name[iter]) || name[iter] == ' ')) {
+         iter--;
+      }
+
+      int idx = iter + 1 != nameLen ? atoi(name + iter + 1) : 0;
+      string_view namePrefix = string_view(name, iter + 1);
+
+      Entity duplicatedEntity = Create(entity.GetTransform().parent,
+         std::format("{} {}", namePrefix, ++idx));
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
