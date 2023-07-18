@@ -1,0 +1,89 @@
+sceneName: test_scene
+entities:
+  - uuid: 477224917462902871
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [0, -1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 1642139650404649384
+      children: [5828533532484115732]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 1642139650404649384
+    tag: Cube
+    SceneTransformComponent:
+      position: [0, 6, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      children: [477224917462902871]
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 3052968500309839073
+    tag: Sky
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SkyComponent:
+      directLight: 18446744073709551615
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 3958001838523825605
+    tag: Direct light
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [90, -0, 0]
+      scale: [1, 1, 1]
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 5828533532484115732
+    tag: Cube 2
+    SceneTransformComponent:
+      position: [2, -2, -3.7252903e-09]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 477224917462902871
+    SimpleMaterialComponent:
+      baseColor: [1, 1, 1]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+  - uuid: 18292536327249334443
+    tag: Ground
+    SceneTransformComponent:
+      position: [0, -2, 0]
+      rotation: [0, -0, 0]
+      scale: [20, 1, 20]
+    SimpleMaterialComponent:
+      baseColor: [0.544591606, 0.877637148, 0.125905752]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]

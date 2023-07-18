@@ -77,6 +77,11 @@ namespace pbe {
       const auto& typer = Typer::Get();
 
       for (const auto& ci : typer.components) {
+         // todo:
+         // if (ci.typeID == GetTypeID<SceneTransformComponent>()) {
+         //    continue;
+         // }
+
          auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
@@ -94,7 +99,22 @@ namespace pbe {
    }
 
    Entity Scene::Duplicate(const Entity& entity) {
-      Entity duplicatedEntity = Create(entity.Get<TagComponent>().tag + " copy");
+      // todo:
+      // Entity duplicatedEntity = Create(std::format("%1 copy", entity.GetName()));
+      Entity duplicatedEntity = Create(entity.GetName());
+
+      for (auto child : entity.Get<SceneTransformComponent>().children) {
+         Entity duplicatedChild = Duplicate(child);
+         auto& duplicatedChildTrans = duplicatedChild.GetTransform();
+         duplicatedChildTrans.SetParent(duplicatedEntity);
+
+         // todo:
+         auto& childTrans = child.GetTransform();
+         duplicatedChildTrans.position = childTrans.position;
+         duplicatedChildTrans.rotation = childTrans.rotation;
+         duplicatedChildTrans.scale = childTrans.scale;
+      }
+
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
@@ -264,6 +284,8 @@ namespace pbe {
             ser.KeyValue("tag", c->tag);
          }
 
+         ser.Ser("SceneTransformComponent", entity.GetTransform());
+
          const auto& typer = Typer::Get();
 
          for (const auto& ci : typer.components) {
@@ -296,6 +318,8 @@ namespace pbe {
       });
 
       entity.GetOrAdd<TagComponent>().tag = name;
+
+      deser.Deser("SceneTransformComponent", entity.GetTransform());
 
       const auto& typer = Typer::Get();
 

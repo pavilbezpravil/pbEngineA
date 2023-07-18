@@ -55,7 +55,7 @@ namespace pbe {
 
          for (auto child : children.node) {
             uint64 childUuid = child.as<uint64>();
-            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid));
+            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), true);
          }
       }
    }
@@ -277,8 +277,8 @@ namespace pbe {
       SetScale(scale_);
    }
 
-   void SceneTransformComponent::AddChild(Entity child) {
-      child.Get<SceneTransformComponent>().SetParent(entity);
+   void SceneTransformComponent::AddChild(Entity child, bool keepLocalTransform) {
+      child.Get<SceneTransformComponent>().SetParent(entity, keepLocalTransform);
    }
 
    void SceneTransformComponent::RemoveChild(int idx) {
@@ -293,7 +293,7 @@ namespace pbe {
       ASSERT(!HasChilds());
    }
 
-   bool SceneTransformComponent::SetParent(Entity newParent) {
+   bool SceneTransformComponent::SetParent(Entity newParent, bool keepLocalTransform) {
       if (newParent == entity) {
          return false;
       }
@@ -313,9 +313,11 @@ namespace pbe {
          pTrans.children.push_back(entity); // todo: set by idx?
       }
 
-      SetPosition(pos);
-      SetRotation(rot);
-      SetScale(scale);
+      if (!keepLocalTransform) {
+         SetPosition(pos);
+         SetRotation(rot);
+         SetScale(scale);
+      }
 
       return true;
    }
@@ -341,7 +343,7 @@ namespace pbe {
    }
 
    void RegisterBasicComponents(Typer& typer) {
-      INTERNAL_ADD_COMPONENT(SceneTransformComponent);
+      // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(RigidBodyComponent);

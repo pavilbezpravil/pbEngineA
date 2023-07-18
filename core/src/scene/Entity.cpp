@@ -13,6 +13,14 @@ namespace pbe {
       (*this) = {};
    }
 
+   SceneTransformComponent& Entity::GetTransform() {
+      return Get<SceneTransformComponent>();
+   }
+
+   const SceneTransformComponent& Entity::GetTransform() const {
+      return Get<SceneTransformComponent>();
+   }
+
    const char* Entity::GetName() const {
       return Get<TagComponent>().tag.c_str();
    }

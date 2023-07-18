@@ -76,10 +76,10 @@ namespace pbe {
       bool HasParent() const { return (bool)parent; }
       bool HasChilds() const { return !children.empty(); }
 
-      void AddChild(Entity child);
+      void AddChild(Entity child, bool keepLocalTransform = false);
       void RemoveChild(int idx);
       void RemoveAllChild(Entity theirNewParent = {});
-      bool SetParent(Entity newParent = {});
+      bool SetParent(Entity newParent = {}, bool keepLocalTransform = false);
    };
 
    struct SimpleMaterialComponent {
@@ -120,7 +120,7 @@ namespace pbe {
    };
 
    struct GeometryComponent {
-      GeomType type;
+      GeomType type = GeomType::Box;
       vec3 sizeData = vec3_One; // todo: full size
    };
 

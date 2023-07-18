@@ -64,6 +64,7 @@ namespace pbe {
                if (ImGui::MenuItem("Create Cube")) {
                   auto createdEntity = pScene->Create();
                   createdEntity.Add<SimpleMaterialComponent>();
+                  createdEntity.Add<GeometryComponent>();
                   ToggleSelectEntity(createdEntity);
                }
                if (ImGui::MenuItem("Direct Light")) {
@@ -230,6 +231,8 @@ namespace pbe {
 
             ImGui::SameLine();
             ImGui::Text("0x%jx", (uint64)entity.Get<UUIDComponent>().uuid);
+
+            edited |= EditorUI("Scene Transform", entity.GetTransform());
 
             const auto& typer = Typer::Get();
 
