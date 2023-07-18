@@ -41,27 +41,31 @@ namespace pbe {
    }
 
    Entity Scene::Create(std::string_view name) {
-      return CreateWithUUID(UUID{}, name);
+      return CreateWithUUID(UUID{}, Entity{}, name);
    }
 
-   Entity Scene::CreateWithUUID(UUID uuid, std::string_view name) {
+   Entity Scene::Create(const Entity& parent, std::string_view name) {
+      return CreateWithUUID(UUID{}, parent, name);
+   }
+
+   Entity Scene::CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name) {
       auto entityID = registry.create();
 
-      auto e = Entity{ entityID, this };
-      e.Add<UUIDComponent>(uuid);
+      auto entity = Entity{ entityID, this };
+      entity.Add<UUIDComponent>(uuid);
       if (!name.empty()) {
-         e.Add<TagComponent>(name.data());
+         entity.Add<TagComponent>(name.data());
       } else {
          // todo:
-         e.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
+         entity.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
       }
 
-      e.Add<SceneTransformComponent>().entity = e;
+      entity.Add<SceneTransformComponent>(entity, parent);
 
       ASSERT(uuidToEntities.find(uuid) == uuidToEntities.end());
       uuidToEntities[uuid] = entityID;
 
-      return e;
+      return entity;
    }
 
    Entity Scene::GetEntity(UUID uuid) {
@@ -74,26 +78,36 @@ namespace pbe {
    }
 
    void Scene::Duplicate(Entity& dst, const Entity& src) {
+      auto& srcTrans = src.GetTransform();
+
+      // todo:
+      auto& dstTrans = dst.GetTransform();
+      dstTrans.position = srcTrans.position;
+      dstTrans.rotation = srcTrans.rotation;
+      dstTrans.scale = srcTrans.scale;
+
+      for (auto child : srcTrans.children) {
+         Entity duplicatedChild = Create(dst);
+         Duplicate(duplicatedChild, child);
+      }
+
       const auto& typer = Typer::Get();
 
       for (const auto& ci : typer.components) {
-         // todo:
-         // if (ci.typeID == GetTypeID<SceneTransformComponent>()) {
-         //    continue;
-         // }
-
          auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
+            ci.copyCtor(dst, pSrc);
+
             // todo:
-            auto* pDst = ci.tryGet(dst);
-            if (pDst) {
-               // scene trasform component and tag already exist
-               // think how to remove this branch
-               ci.duplicate(pDst, pSrc);
-            } else {
-               ci.copyCtor(dst, pSrc);
-            }
+            // auto* pDst = ci.tryGet(dst);
+            // if (pDst) {
+            //    // scene trasform component and tag already exist
+            //    // think how to remove this branch
+            //    ci.duplicate(pDst, pSrc);
+            // } else {
+            //    ci.copyCtor(dst, pSrc);
+            // }
          }
       }
    }
@@ -101,20 +115,7 @@ namespace pbe {
    Entity Scene::Duplicate(const Entity& entity) {
       // todo:
       // Entity duplicatedEntity = Create(std::format("%1 copy", entity.GetName()));
-      Entity duplicatedEntity = Create(entity.GetName());
-
-      for (auto child : entity.Get<SceneTransformComponent>().children) {
-         Entity duplicatedChild = Duplicate(child);
-         auto& duplicatedChildTrans = duplicatedChild.GetTransform();
-         duplicatedChildTrans.SetParent(duplicatedEntity);
-
-         // todo:
-         auto& childTrans = child.GetTransform();
-         duplicatedChildTrans.position = childTrans.position;
-         duplicatedChildTrans.rotation = childTrans.rotation;
-         duplicatedChildTrans.scale = childTrans.scale;
-      }
-
+      Entity duplicatedEntity = Create(entity.GetTransform().parent, entity.GetName());
       Duplicate(duplicatedEntity, entity);
       return duplicatedEntity;
    }
@@ -177,7 +178,7 @@ namespace pbe {
 
       for (auto [e, uuid] : GetEntitiesWith<UUIDComponent>().each()) {
          Entity src{e, this};
-         Entity dst = pScene->CreateWithUUID(uuid.uuid, registry.get<TagComponent>(e).tag);
+         Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, registry.get<TagComponent>(e).tag);
          Duplicate(dst, src);
       }
 
@@ -259,7 +260,7 @@ namespace pbe {
             entityTag = it["tag"].As<string>();
          }
 
-         scene->CreateWithUUID(UUID{ uuid }, entityTag);
+         scene->CreateWithUUID(UUID{ uuid }, Entity{}, entityTag);
       }
 
       // on second iteration create all components
@@ -307,7 +308,7 @@ namespace pbe {
       if (entity) {
          entity.RemoveAll<UUIDComponent, TagComponent, SceneTransformComponent>();
       } else {
-         entity = scene.CreateWithUUID(uuid);
+         entity = scene.CreateWithUUID(uuid, Entity{});
       }
 
       string name = std::invoke([&] {

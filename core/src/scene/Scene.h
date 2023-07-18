@@ -23,7 +23,8 @@ namespace pbe {
       ~Scene();
 
       Entity Create(std::string_view name = {});
-      Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
+      Entity Create(const Entity& parent, std::string_view name = {});
+      Entity CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name = {});
 
       Entity GetEntity(UUID uuid);
       Entity GetRootEntity();

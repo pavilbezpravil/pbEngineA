@@ -268,6 +268,11 @@ namespace pbe {
       return { translation, orientation, scale };
    }
 
+   SceneTransformComponent::SceneTransformComponent(Entity entity, Entity parent)
+         : entity(entity) {
+      SetParent(parent);
+   }
+
    void SceneTransformComponent::SetMatrix(const mat4& transform) {
       auto [position_, rotation_, scale_] = GetTransformDecomposition(transform);
 
@@ -294,7 +299,7 @@ namespace pbe {
    }
 
    bool SceneTransformComponent::SetParent(Entity newParent, bool keepLocalTransform) {
-      if (newParent == entity) {
+      if (newParent == entity || parent == newParent) {
          return false;
       }
 
