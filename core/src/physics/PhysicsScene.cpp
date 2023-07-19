@@ -26,7 +26,7 @@ namespace pbe {
 
       gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
       gDispatcher = PxDefaultCpuDispatcherCreate(2);
-      gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+      gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
    }
 
    void TermPhysics() {
@@ -71,7 +71,8 @@ namespace pbe {
    }
 
    void PhysicsScene::Simulation(float dt) {
-      SyncPhysicsWithScene();
+      // todo: update only changed entities
+      // SyncPhysicsWithScene();
 
       pxScene->simulate(dt); // todO: fixed time step
       pxScene->fetchResults(true);
@@ -176,5 +177,6 @@ namespace pbe {
    }
 
    void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity) {
+      // todo: destroy joint
    }
 }

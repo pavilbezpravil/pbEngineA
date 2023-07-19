@@ -187,10 +187,15 @@ namespace pbe {
    Own<Scene> Scene::Copy() {
       auto pScene = std::make_unique<Scene>();
 
-      for (auto [e, uuid] : GetEntitiesWith<UUIDComponent>().each()) {
+      for (auto [e, uuid, trans] : GetEntitiesWith<UUIDComponent, SceneTransformComponent>().each()) {
+         // todo:
+         if (trans.HasParent()) {
+            continue;
+         }
+
          Entity src{e, this};
          Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, registry.get<TagComponent>(e).tag);
-         Duplicate(dst, src);
+         pScene->Duplicate(dst, src);
       }
 
       return pScene;
