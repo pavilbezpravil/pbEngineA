@@ -584,6 +584,24 @@ namespace pbe {
                }
             }
 
+            if (ImGui::MenuItem("Create stack", nullptr, false, !!GetActiveScene())) {
+               auto scene = GetActiveScene();
+
+               Entity stackRoot = scene->Create("Stack");
+
+               int size = 5;
+
+               int iCube = 0;
+               for (int i = 0; i < size; ++i) {
+                  Entity e = scene->Create(stackRoot, std::format("Cube {}", iCube));
+                  e.GetTransform().position = { 0, i * 2, 0 };
+                  e.Add<GeometryComponent>();
+                  e.Add<RigidBodyComponent>().dynamic = true;
+                  auto& material = e.GetOrAdd<SimpleMaterialComponent>();
+                  material.baseColor = Random::Uniform(vec3_Zero, vec3_One);
+               }
+            }
+
             ImGui::EndMenu();
          }
 

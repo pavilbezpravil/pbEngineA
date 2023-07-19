@@ -128,7 +128,7 @@ namespace pbe {
    };
 
    struct RigidBodyComponent {
-      bool dynamic = true;
+      bool dynamic = false;
 
       physx::PxRigidActor* pxRigidActor = nullptr;
    };
