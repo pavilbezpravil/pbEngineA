@@ -34,14 +34,9 @@ namespace pbe {
 
       void DestroyImmediate(Entity entity);
 
-      template<typename Component, typename... Other>
-      auto GetEntitiesWith() const {
-         return registry.view<Component, Other...>();
-      }
-
-      template<typename Component, typename... Other>
-      auto GetEntitiesWith() {
-         return registry.view<Component, Other...>();
+      template<typename Type, typename... Other, typename... Exclude>
+      auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
+         return registry.view<Type, Other...>(excludes);
       }
 
       // todo: return multiple

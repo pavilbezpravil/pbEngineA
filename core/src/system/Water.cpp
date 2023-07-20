@@ -335,7 +335,7 @@ namespace pbe {
 
       waterCB.waterWaveScale = waterWaveScale;
 
-      for (auto [e, trans, water] : scene.GetEntitiesWith<SceneTransformComponent, WaterComponent>().each()) {
+      for (auto [e, trans, water] : scene.View<SceneTransformComponent, WaterComponent>().each()) {
          waterCB.planeHeight = trans.position.y;
 
          waterCB.fogColor = water.fogColor;

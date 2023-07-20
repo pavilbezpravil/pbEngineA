@@ -172,7 +172,7 @@ namespace pbe {
    }
 
    Entity Scene::FindByName(std::string_view name) {
-      for (auto [e, tag] : GetEntitiesWith<TagComponent>().each()) {
+      for (auto [e, tag] : View<TagComponent>().each()) {
          if (tag.tag == name) {
             return Entity{e, this};
          }
@@ -187,7 +187,7 @@ namespace pbe {
    Own<Scene> Scene::Copy() {
       auto pScene = std::make_unique<Scene>();
 
-      for (auto [e, uuid, trans] : GetEntitiesWith<UUIDComponent, SceneTransformComponent>().each()) {
+      for (auto [e, uuid, trans] : View<UUIDComponent, SceneTransformComponent>().each()) {
          // todo:
          if (trans.HasParent()) {
             continue;
@@ -226,7 +226,7 @@ namespace pbe {
             {
                std::vector<uint64> entitiesUuids;
 
-               for (auto [_, uuid] : scene.GetEntitiesWith<UUIDComponent>().each()) {
+               for (auto [_, uuid] : scene.View<UUIDComponent>().each()) {
                   entitiesUuids.emplace_back((uint64)uuid.uuid);
                }
 

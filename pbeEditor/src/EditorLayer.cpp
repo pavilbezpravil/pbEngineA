@@ -80,7 +80,7 @@ namespace pbe {
                }
             }
 
-            for (auto [e, _] : pScene->GetEntitiesWith<UUIDComponent>().each()) {
+            for (auto [e, _] : pScene->View<UUIDComponent>().each()) {
                Entity entity{ e, pScene };
 
                const auto& trans = entity.Get<SceneTransformComponent>();
@@ -576,7 +576,7 @@ namespace pbe {
             if (ImGui::MenuItem("Add Geom if Material is presents", nullptr, false, !!GetActiveScene())) {
                auto scene = GetActiveScene();
 
-               auto view = scene->GetEntitiesWith<SimpleMaterialComponent>();
+               auto view = scene->View<SimpleMaterialComponent>();
                for (auto _e : view) {
                   Entity e{ _e, scene };
                   auto& geom = e.GetOrAdd<GeometryComponent>();

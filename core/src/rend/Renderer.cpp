@@ -117,7 +117,7 @@ namespace pbe {
       Frustum frustum{ cullCamera.GetViewProjection() };
 
       for (auto [e, sceneTrans, material] :
-         scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+         scene.View<SceneTransformComponent, SimpleMaterialComponent>().each()) {
 
          // DrawDesc desc;
          // desc.entityID = (uint)e;
@@ -148,7 +148,7 @@ namespace pbe {
       }
 
       {
-         auto nLights = (uint)scene.GetEntitiesWith<LightComponent>().size();
+         auto nLights = (uint)scene.View<LightComponent>().size();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
             auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(SLight));
             lightBuffer = Buffer::Create(bufferDesc);
@@ -157,7 +157,7 @@ namespace pbe {
          std::vector<SLight> lights;
          lights.reserve(nLights);
 
-         for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
+         for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
             SLight l;
             l.position = trans.position;
             l.color = light.color;
@@ -219,7 +219,7 @@ namespace pbe {
          std::vector<SDecal> decals;
 
          SimpleMaterialComponent decalDefault{}; // todo:
-         for (auto [e, trans, decal] : scene.GetEntitiesWith<SceneTransformComponent, DecalComponent>().each()) {
+         for (auto [e, trans, decal] : scene.View<SceneTransformComponent, DecalComponent>().each()) {
             decalObjs.emplace_back(trans, decalDefault);
 
             vec3 size = trans.scale * 0.5f;
@@ -260,7 +260,7 @@ namespace pbe {
 
       sceneCB.fogNSteps = fogNSteps;
 
-      sceneCB.nLights = (int)scene.GetEntitiesWith<LightComponent>().size();
+      sceneCB.nLights = (int)scene.View<LightComponent>().size();
       sceneCB.nDecals = (int)nDecals;
 
       sceneCB.exposition = tonemapExposition;
@@ -269,7 +269,7 @@ namespace pbe {
       sceneCB.directLight.direction = vec3{1, 0, 0};
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
 
-      auto directLightsView = scene.GetEntitiesWith<SceneTransformComponent, DirectLightComponent>();
+      auto directLightsView = scene.View<SceneTransformComponent, DirectLightComponent>();
       bool hasDirectLight = directLightsView.size_hint() > 0;
 
       if (hasDirectLight) {
@@ -298,7 +298,7 @@ namespace pbe {
       }
 
       // set sky
-      auto skyView = scene.GetEntitiesWith<SkyComponent>();
+      auto skyView = scene.View<SkyComponent>();
       if (skyView.size() > 0) {
          // auto [_, sky] = *skyView.each().begin();
          auto [_, sky] = *skyView.each().begin();
@@ -586,7 +586,7 @@ namespace pbe {
             // dbgRend.DrawFrustum(Frustum{ cullCamera.GetViewProjection() },cullCamera.position, cullCamera.Forward());  
          }
 
-         for (auto [e, trans, light] : scene.GetEntitiesWith<SceneTransformComponent, LightComponent>().each()) {
+         for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
          }
 

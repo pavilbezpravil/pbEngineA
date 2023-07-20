@@ -18,13 +18,13 @@ namespace pbe {
       si.typeID = GetTypeID<Script>(); \
       \
       si.initialize = [] (Scene& scene) { \
-         for (auto [e, script] : scene.GetEntitiesWith<Script>().each()) { \
+         for (auto [e, script] : scene.View<Script>().each()) { \
             script.owner = Entity{e, &scene}; \
          } \
       }; \
       \
       si.sceneApplyFunc = [] (Scene& scene, const ScriptInfo::ApplyFunc& func) { \
-         for (auto [_, script] : scene.GetEntitiesWith<Script>().each()) { \
+         for (auto [_, script] : scene.View<Script>().each()) { \
             func(script); \
          } \
       }; \

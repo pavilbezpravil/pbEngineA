@@ -64,7 +64,7 @@ namespace pbe {
    void PhysicsScene::SyncPhysicsWithScene() {
       // todo: only for changed entities
       for (auto [_, trans, rb] :
-         scene.GetEntitiesWith<SceneTransformComponent, RigidBodyComponent>().each()) {
+         scene.View<SceneTransformComponent, RigidBodyComponent>().each()) {
          PxTransform pxTrans{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
          rb.pxRigidActor->setGlobalPose(pxTrans);
       }
