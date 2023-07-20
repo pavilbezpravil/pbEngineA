@@ -32,6 +32,8 @@ namespace pbe {
       PxScene* pxScene = nullptr;
       Scene& scene;
 
+      float timeAccumulator = 0;
+
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
       void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);

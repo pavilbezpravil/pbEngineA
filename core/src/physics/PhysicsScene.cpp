@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "PhysicsScene.h"
 #include "PhysXTypeConvet.h"
+#include "core/Profiler.h"
 #include "scene/Component.h"
 #include "scene/Entity.h"
 
@@ -71,13 +72,29 @@ namespace pbe {
    }
 
    void PhysicsScene::Simulation(float dt) {
+      PROFILE_CPU("Phys simulate");
+
       // todo: update only changed entities
       // SyncPhysicsWithScene();
 
-      pxScene->simulate(dt); // todO: fixed time step
-      pxScene->fetchResults(true);
+      timeAccumulator += dt;
 
-      UpdateSceneAfterPhysics(); // todo:
+      // todo: config
+      const float fixedDt = 1.0f / 60.0f;
+      int steps = (int)(timeAccumulator / fixedDt);
+      timeAccumulator -= steps * fixedDt;
+
+      if (steps > 2) {
+         timeAccumulator = 0;
+         steps = 2;
+      }
+
+      for (int i = 0; i < steps; ++i) {
+         pxScene->simulate(fixedDt);
+         pxScene->fetchResults(true);
+
+         UpdateSceneAfterPhysics();
+      }
    }
 
    void PhysicsScene::UpdateSceneAfterPhysics() {

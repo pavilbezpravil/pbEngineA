@@ -92,7 +92,7 @@ namespace pbe {
          }
       }
 
-      void UIEntity(Entity entity, bool defaultOpen = false) {
+      void UIEntity(Entity entity, bool sceneRoot = false) {
          auto& trans = entity.Get<SceneTransformComponent>();
          bool hasChilds = trans.HasChilds();
 
@@ -102,6 +102,10 @@ namespace pbe {
             });
 
          auto entityUIAction = [&]() {
+            if (sceneRoot) {
+               return;
+            }
+
             if (ImGui::IsItemHovered()) {
                ImGui::SetTooltip("Right-click to open popup %s", name);
             }
@@ -154,7 +158,7 @@ namespace pbe {
 
          ImGuiTreeNodeFlags nodeFlags =
             (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
-            | (defaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0)
+            | (sceneRoot ? ImGuiTreeNodeFlags_DefaultOpen : 0)
             | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
             | ImGuiTreeNodeFlags_SpanFullWidth
             | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
@@ -644,8 +648,6 @@ namespace pbe {
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyPressedEvent>()) {
          // INFO("KeyCode {}", e->keyCode);
-         // auto& io = ImGui::GetIO();
-         // INFO("io.WantCaptureKeyboard {}", io.WantCaptureKeyboard);
 
          if (e->keyCode == VK_ESCAPE) {
             editorSelection.ClearSelection();
@@ -653,7 +655,7 @@ namespace pbe {
          if (e->keyCode == VK_DELETE) {
             for (auto entity : editorSelection.selected) {
                Undo::Get().Delete(entity); // todo: undo not each but all at once
-               editorScene->DestroyImmediate(entity);
+               GetActiveScene()->DestroyImmediate(entity);
             }
             editorSelection.ClearSelection();
          }
@@ -668,7 +670,8 @@ namespace pbe {
          }
 
          if (e->keyCode == 'Z' && Input::IsKeyPressed(VK_CONTROL)) {
-            Undo::Get().PopAction();
+            // todo: dont work
+            // Undo::Get().PopAction();
          }
       }
    }
