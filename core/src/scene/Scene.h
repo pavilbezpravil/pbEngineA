@@ -19,17 +19,22 @@ namespace pbe {
 
    class CORE_API Scene {
    public:
-      Scene();
+      Scene(bool withRoot = true);
       ~Scene();
 
       Entity Create(std::string_view name = {});
       Entity Create(const Entity& parent, std::string_view name = {});
+
+      // todo: to private
       Entity CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name = {});
 
       Entity GetEntity(UUID uuid);
-      Entity GetRootEntity();
 
-      void Duplicate(Entity& dst, const Entity& src);
+      Entity GetRootEntity();
+      void SetRootEntity(const Entity& entity);
+
+      // todo: to private
+      void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
       void DestroyImmediate(Entity entity, bool withChilds = true);
@@ -73,7 +78,7 @@ namespace pbe {
 
    private:
       entt::registry registry;
-      entt::entity rootEntityId;
+      entt::entity rootEntityId { entt::null };
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 

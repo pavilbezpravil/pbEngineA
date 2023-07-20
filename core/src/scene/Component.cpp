@@ -299,6 +299,12 @@ namespace pbe {
    }
 
    bool SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
+      // todo:
+      // if (!newParent) {
+      //    newParent = entity.GetScene()->GetRootEntity();
+      // }
+      // ASSERT_MESSAGE(newParent, "New parent must be valid entity");
+
       if (newParent == entity || parent == newParent) { // todo: may be the same
          return false;
       }

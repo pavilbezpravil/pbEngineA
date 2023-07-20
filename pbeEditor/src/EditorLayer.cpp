@@ -80,16 +80,7 @@ namespace pbe {
                }
             }
 
-            for (auto [e, _] : pScene->View<UUIDComponent>().each()) {
-               Entity entity{ e, pScene };
-
-               const auto& trans = entity.Get<SceneTransformComponent>();
-               if (trans.HasParent()) {
-                  continue;
-               }
-
-               UIEntity(entity);
-            }
+            UIEntity(pScene->GetRootEntity(), true);
 
             // place item for drag&drop to root
             // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
@@ -101,7 +92,7 @@ namespace pbe {
          }
       }
 
-      void UIEntity(Entity& entity) {
+      void UIEntity(Entity entity, bool defaultOpen = false) {
          auto& trans = entity.Get<SceneTransformComponent>();
          bool hasChilds = trans.HasChilds();
 
@@ -163,11 +154,12 @@ namespace pbe {
 
          ImGuiTreeNodeFlags nodeFlags =
             (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
+            | (defaultOpen ? ImGuiTreeNodeFlags_DefaultOpen : 0)
             | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
             | ImGuiTreeNodeFlags_SpanFullWidth
             | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
-         if (UI_TREE_NODE((void*)(size_t)entity.GetID(), nodeFlags, name)) {
+         if (UI_TREE_NODE((void*)(uint64)entity.GetUUID(), nodeFlags, name)) {
             entityUIAction();
 
             for (auto child : trans.children) {
@@ -482,7 +474,7 @@ namespace pbe {
          if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene", nullptr, false, canChangeScene)) {
                editorSettings.scenePath = {};
-               Own<Scene> scene{ new Scene() };
+               Own<Scene> scene = std::make_unique<Scene>(false);
                SetEditorScene(std::move(scene));
             }
 

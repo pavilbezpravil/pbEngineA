@@ -12,19 +12,12 @@
 
 namespace pbe {
 
-   // todo: mb add physics as scene component?
-   // Entity GetEntityFromRegistry() {
-   //    return Entity{ rootEntityId, this };
-   // }
-
-   // todo: think about scene func or static private func
-   // void RigidConstruct(entt::registry& registry, entt::entity entity) {
-   //    INFO("RigidConstruct");
-   // }
-
-   Scene::Scene() {
+   Scene::Scene(bool withRoot) {
       dbgRend = std::make_unique<DbgRend>();
-      // rootEntityId = Create("Scene").GetID();
+
+      if (withRoot) {
+         SetRootEntity(CreateWithUUID(UUID{}, Entity{}, "Scene"));
+      }
 
       pPhysics = std::make_unique<PhysicsScene>(*this); // todo: for all scene is it needed?
 
@@ -37,14 +30,16 @@ namespace pbe {
    }
 
    Scene::~Scene() {
+      // todo: destroy root entity
       registry.clear(); // registry doesn't have call destructor for components without direct call clear
    }
 
    Entity Scene::Create(std::string_view name) {
-      return CreateWithUUID(UUID{}, Entity{}, name);
+      return CreateWithUUID(UUID{}, GetRootEntity(), name);
    }
 
    Entity Scene::Create(const Entity& parent, std::string_view name) {
+      ASSERT(parent);
       return CreateWithUUID(UUID{}, parent, name);
    }
 
@@ -56,7 +51,7 @@ namespace pbe {
       if (!name.empty()) {
          entity.Add<TagComponent>(name.data());
       } else {
-         // todo:
+         // todo: support entity without name
          entity.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
       }
 
@@ -77,7 +72,15 @@ namespace pbe {
       return Entity{ rootEntityId, this };
    }
 
-   void Scene::Duplicate(Entity& dst, const Entity& src) {
+   void Scene::SetRootEntity(const Entity& entity) {
+      ASSERT(entity.GetTransform().HasParent() == false);
+      ASSERT(rootEntityId == entt::null);
+      rootEntityId = entity.GetID();
+   }
+
+   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID) {
+      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
+
       auto& srcTrans = src.GetTransform();
 
       // todo:
@@ -87,8 +90,8 @@ namespace pbe {
       dstTrans.scale = srcTrans.scale;
 
       for (auto child : srcTrans.children) {
-         Entity duplicatedChild = Create(dst, child.GetName());
-         Duplicate(duplicatedChild, child);
+         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
+         Duplicate(duplicatedChild, child, copyUUID);
       }
 
       const auto& typer = Typer::Get();
@@ -127,7 +130,7 @@ namespace pbe {
 
       Entity duplicatedEntity = Create(entity.GetTransform().parent,
          std::format("{} {}", namePrefix, ++idx));
-      Duplicate(duplicatedEntity, entity);
+      Duplicate(duplicatedEntity, entity, false);
       return duplicatedEntity;
    }
 
@@ -195,18 +198,12 @@ namespace pbe {
    }
 
    Own<Scene> Scene::Copy() const {
-      auto pScene = std::make_unique<Scene>();
+      auto pScene = std::make_unique<Scene>(false);
 
-      for (auto [e, uuid, trans] : View<UUIDComponent, SceneTransformComponent>().each()) {
-         // todo:
-         if (trans.HasParent()) {
-            continue;
-         }
-
-         Entity src{e, const_cast<Scene*>(this)};
-         Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, src.GetName());
-         pScene->Duplicate(dst, src);
-      }
+      Entity srcRoot{ rootEntityId, const_cast<Scene*>(this) };
+      Entity dstRoot = pScene->CreateWithUUID(srcRoot.GetUUID(), Entity{}, srcRoot.GetName());
+      pScene->SetRootEntity(dstRoot);
+      pScene->Duplicate(dstRoot, srcRoot, true);
 
       return pScene;
    }
@@ -229,7 +226,7 @@ namespace pbe {
       {
          SERIALIZER_MAP(ser);
          {
-            ser.KeyValue("sceneName", "test_scene");
+            // ser.KeyValue("sceneName", "test_scene");
 
             ser.Key("entities");
             SERIALIZER_SEQ(ser);
@@ -263,7 +260,7 @@ namespace pbe {
          return {};
       }
 
-      Own<Scene> scene = std::make_unique<Scene>();
+      Own<Scene> scene = std::make_unique<Scene>(false);
 
       gCurrentDeserializedScene = scene.get();
 
@@ -271,7 +268,7 @@ namespace pbe {
       // GetAssetsPath(path);
       auto deser = Deserializer::FromFile(path);
 
-      auto sceneName = deser["sceneName"].As<string>();
+      // auto sceneName = deser["sceneName"].As<string>();
 
       auto entitiesNode = deser["entities"];
 
@@ -294,6 +291,33 @@ namespace pbe {
          auto it = entitiesNode[i];
          EntityDeserialize(it, *scene);
       }
+
+      entt::entity rootEntityId = entt::null;
+      for (auto [e, trans] : scene->View<SceneTransformComponent>().each()) {
+         if (trans.parent) {
+            continue;
+         }
+
+         if (rootEntityId != entt::null) {
+            WARN("Scene has several roots. Create new root and parenting to it all entities without parent");
+            auto newRoot = scene->CreateWithUUID(UUID{}, Entity{}, "Scene");
+            rootEntityId = newRoot.GetID();
+
+            for (auto [e, trans] : scene->View<SceneTransformComponent>().each()) {
+               if (!trans.parent) {
+                  trans.SetParent(newRoot);
+               }
+            }
+
+            break;
+         }
+
+         rootEntityId = e;
+         // todo: remove after all scenes will have root entity
+         // break;
+      }
+
+      scene->SetRootEntity(Entity{ rootEntityId, scene.get() });
 
       gCurrentDeserializedScene = nullptr;
 
@@ -334,6 +358,7 @@ namespace pbe {
       if (entity) {
          entity.RemoveAll<UUIDComponent, TagComponent, SceneTransformComponent>();
       } else {
+         ASSERT(false);
          entity = scene.CreateWithUUID(uuid, Entity{});
       }
 
