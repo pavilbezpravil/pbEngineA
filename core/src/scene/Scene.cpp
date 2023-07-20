@@ -135,7 +135,6 @@ namespace pbe {
    }
 
    void Scene::DestroyImmediate(Entity entity, bool withChilds) {
-      // todo:
       auto& trans = entity.GetTransform();
 
       for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
@@ -145,6 +144,9 @@ namespace pbe {
          } else {
             child.GetTransform().SetParent(trans.parent);
          }
+
+         // todo: scene component may be shrink during child destroy
+         trans = entity.GetTransform();
       }
       entity.Get<SceneTransformComponent>().SetParent();
 

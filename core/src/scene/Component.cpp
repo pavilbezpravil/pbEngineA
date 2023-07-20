@@ -8,6 +8,7 @@
 
 #include "gui/Gui.h"
 #include "typer/Serialize.h"
+#include "physics/PhysXTypeConvet.h"
 
 namespace pbe {
 
@@ -340,6 +341,12 @@ namespace pbe {
       }
 
       return true;
+   }
+
+   void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
+      // todo:
+      auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
+      dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
    template<typename T>

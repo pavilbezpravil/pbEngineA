@@ -127,10 +127,12 @@ namespace pbe {
       vec3 sizeData = vec3_One; // todo: full size
    };
 
-   struct RigidBodyComponent {
+   struct CORE_API RigidBodyComponent {
       bool dynamic = false;
 
       physx::PxRigidActor* pxRigidActor = nullptr;
+
+      void SetLinearVelocity(const vec3& v, bool autowake = true);
    };
 
    struct DistanceJointComponent {
