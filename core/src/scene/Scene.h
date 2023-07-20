@@ -65,7 +65,7 @@ namespace pbe {
 
       PhysicsScene* GetPhysics() { return pPhysics.get(); }
 
-      Own<Scene> Copy() const; // todo: const
+      Own<Scene> Copy() const;
 
       Own<DbgRend> dbgRend; // todo:
 

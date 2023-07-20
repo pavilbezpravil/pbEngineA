@@ -133,7 +133,12 @@ namespace pbe {
 
    void Scene::DestroyImmediate(Entity entity) {
       // todo:
-      entity.Get<SceneTransformComponent>().RemoveAllChild();
+      auto& trans = entity.GetTransform();
+
+      for (int iChild = trans.children.size() - 1; iChild >= 0; --iChild) {
+         trans.children[iChild].GetTransform().SetParent(trans.parent);
+      }
+      entity.Get<SceneTransformComponent>().SetParent();
 
       uuidToEntities.erase(entity.GetUUID());
       registry.destroy(entity.GetID());
