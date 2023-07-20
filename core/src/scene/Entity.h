@@ -75,7 +75,7 @@ namespace pbe {
          return Add<T>();
       }
 
-      void DestroyImmediate();
+      void DestroyImmediate(bool withChilds = true);
 
       bool Valid() const {
          return id != entt::null;

@@ -131,12 +131,17 @@ namespace pbe {
       return duplicatedEntity;
    }
 
-   void Scene::DestroyImmediate(Entity entity) {
+   void Scene::DestroyImmediate(Entity entity, bool withChilds) {
       // todo:
       auto& trans = entity.GetTransform();
 
       for (int iChild = trans.children.size() - 1; iChild >= 0; --iChild) {
-         trans.children[iChild].GetTransform().SetParent(trans.parent);
+         auto& child = trans.children[iChild];
+         if (withChilds) {
+            DestroyImmediate(child, true);
+         } else {
+            child.GetTransform().SetParent(trans.parent);
+         }
       }
       entity.Get<SceneTransformComponent>().SetParent();
 

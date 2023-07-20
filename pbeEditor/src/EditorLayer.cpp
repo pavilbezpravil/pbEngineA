@@ -134,10 +134,10 @@ namespace pbe {
                if (ImGui::Button("Delete")) {
                   // todo: add to pending
                   Undo::Get().Delete(entity);
-                  pScene->DestroyImmediate(entity);
                   if (selection) {
                      selection->Unselect(entity);
                   }
+                  pScene->DestroyImmediate(entity);
                }
 
                if (ImGui::Button("Unparent")) {

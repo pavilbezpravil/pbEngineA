@@ -32,7 +32,7 @@ namespace pbe {
       void Duplicate(Entity& dst, const Entity& src);
       Entity Duplicate(const Entity& entity);
 
-      void DestroyImmediate(Entity entity);
+      void DestroyImmediate(Entity entity, bool withChilds = true);
 
       template<typename Type, typename... Other, typename... Exclude>
       const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {
