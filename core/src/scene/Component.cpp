@@ -55,7 +55,7 @@ namespace pbe {
 
          for (auto child : children.node) {
             uint64 childUuid = child.as<uint64>();
-            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), true);
+            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), -1, true);
          }
       }
    }
@@ -282,8 +282,8 @@ namespace pbe {
       SetScale(scale_);
    }
 
-   void SceneTransformComponent::AddChild(Entity child, bool keepLocalTransform) {
-      child.Get<SceneTransformComponent>().SetParent(entity, keepLocalTransform);
+   void SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {
+      child.Get<SceneTransformComponent>().SetParent(entity, iChild, keepLocalTransform);
    }
 
    void SceneTransformComponent::RemoveChild(int idx) {
@@ -298,8 +298,8 @@ namespace pbe {
       ASSERT(!HasChilds());
    }
 
-   bool SceneTransformComponent::SetParent(Entity newParent, bool keepLocalTransform) {
-      if (newParent == entity || parent == newParent) {
+   bool SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
+      if (newParent == entity || parent == newParent) { // todo: may be the same
          return false;
       }
 
@@ -309,13 +309,22 @@ namespace pbe {
 
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
+
+         // int idx = (int)std::ranges::distance(std::ranges::find(pTrans.children, entity), pTrans.children.begin());
+
          std::erase(pTrans.children, entity);
       }
 
       parent = newParent;
+      // todo: remove this check. Only scene root without parent
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-         pTrans.children.push_back(entity); // todo: set by idx?
+
+         if (iChild == -1) {
+            pTrans.children.push_back(entity);
+         } else {
+            pTrans.children.insert(pTrans.children.begin() + iChild, entity);
+         }
       }
 
       if (!keepLocalTransform) {

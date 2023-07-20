@@ -135,7 +135,7 @@ namespace pbe {
       // todo:
       auto& trans = entity.GetTransform();
 
-      for (int iChild = trans.children.size() - 1; iChild >= 0; --iChild) {
+      for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
          auto& child = trans.children[iChild];
          if (withChilds) {
             DestroyImmediate(child, true);
@@ -204,7 +204,7 @@ namespace pbe {
          }
 
          Entity src{e, const_cast<Scene*>(this)};
-         Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, registry.get<TagComponent>(e).tag);
+         Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, src.GetName());
          pScene->Duplicate(dst, src);
       }
 
@@ -263,7 +263,7 @@ namespace pbe {
          return {};
       }
 
-      Own<Scene> scene{ new Scene() };
+      Own<Scene> scene = std::make_unique<Scene>();
 
       gCurrentDeserializedScene = scene.get();
 

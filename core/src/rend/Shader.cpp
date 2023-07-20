@@ -85,7 +85,7 @@ struct std::hash<pbe::ProgramDesc> {
 namespace pbe {
 
    CVarValue<bool> cShaderReloadOnAnyChange{ "shaders/reload on any change", true};
-   CVarValue<bool> cShaderUseCache{ "shaders/use cache", false};
+   CVarValue<bool> cShaderUseCache{ "shaders/use cache", true}; // todo:
 
    size_t StrHash(std::string_view str) {
       return std::hash<std::string_view>()(str);

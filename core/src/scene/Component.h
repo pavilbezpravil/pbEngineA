@@ -79,10 +79,10 @@ namespace pbe {
       bool HasParent() const { return (bool)parent; }
       bool HasChilds() const { return !children.empty(); }
 
-      void AddChild(Entity child, bool keepLocalTransform = false);
+      void AddChild(Entity child, int iChild = -1, bool keepLocalTransform = false);
       void RemoveChild(int idx);
       void RemoveAllChild(Entity theirNewParent = {});
-      bool SetParent(Entity newParent = {}, bool keepLocalTransform = false);
+      bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
    };
 
    struct SimpleMaterialComponent {
