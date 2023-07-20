@@ -606,7 +606,6 @@ namespace pbe {
                editorSelection.ToggleSelect(root);
 
                int size = 5;
-
                for (int y = 0; y < size; ++y) {
                   for (int x = 0; x < size; ++x) {
                      CreateCube(*scene, CubeDesc{
@@ -627,6 +626,22 @@ namespace pbe {
                      .parent = root,
                      .pos = vec3{0, i + 0.5f, 0},
                      .color = Random::Color() });
+               }
+            }
+
+            if (ImGui::MenuItem("Create stack tri", nullptr, false, !!GetActiveScene())) {
+               Entity root = scene->Create("Stack tri");
+               editorSelection.ToggleSelect(root);
+
+               int size = 10;
+               for (int y = 0; y < size; ++y) {
+                  int width = size - y;
+                  for (int x = 0; x < width; ++x) {
+                     CreateCube(*scene, CubeDesc{
+                        .parent = root,
+                        .pos = vec3{ -width / 2.f + x, y + 0.5f, 0 },
+                        .color = Random::Color() });
+                  }
                }
             }
 
