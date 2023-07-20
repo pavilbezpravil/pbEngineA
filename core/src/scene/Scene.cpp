@@ -39,8 +39,7 @@ namespace pbe {
    }
 
    Entity Scene::Create(const Entity& parent, std::string_view name) {
-      ASSERT(parent);
-      return CreateWithUUID(UUID{}, parent, name);
+      return CreateWithUUID(UUID{}, parent ? parent : GetRootEntity(), name);
    }
 
    Entity Scene::CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name) {
@@ -137,6 +136,7 @@ namespace pbe {
    void Scene::DestroyImmediate(Entity entity, bool withChilds) {
       auto& trans = entity.GetTransform();
 
+      // todo: mb use iterator on children?
       for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
          auto& child = trans.children[iChild];
          if (withChilds) {
@@ -148,7 +148,7 @@ namespace pbe {
          // todo: scene component may be shrink during child destroy
          trans = entity.GetTransform();
       }
-      entity.Get<SceneTransformComponent>().SetParent();
+      trans.SetParent();
 
       uuidToEntities.erase(entity.GetUUID());
       registry.destroy(entity.GetID());

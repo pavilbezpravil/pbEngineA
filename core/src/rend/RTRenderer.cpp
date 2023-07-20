@@ -114,7 +114,7 @@ namespace pbe {
       rtCB.rayDepth = cvRayDepth;
       rtCB.nObjects = nObj;
       rtCB.nRays = cvNRays;
-      rtCB.random01 = Random::Uniform(0.f, 1.f);
+      rtCB.random01 = Random::Float(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
       rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
 

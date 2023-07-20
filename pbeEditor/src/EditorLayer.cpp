@@ -27,6 +27,54 @@ namespace pbe {
       TYPER_FIELD(cameraPos)
    TYPER_END()
 
+   Entity CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {}) {
+      // todo: find appropriate name
+      auto entity = scene.Create(parent, namePrefix);
+      entity.Get<SceneTransformComponent>().position = pos;
+      return entity;
+   }
+
+   struct CubeDesc {
+      Entity parent = {};
+      string_view namePrefix = "Cube";
+      vec3 pos{};
+      vec3 scale = vec3_One;
+      quat rotation = quat_Identity;
+      bool dynamic = true;
+      vec3 color = vec3_One * 0.7f;
+   };
+
+   Entity CreateCube(Scene& scene, const CubeDesc& desc = {}) {
+      auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos);
+
+      auto& trans = entity.Get<SceneTransformComponent>();
+      trans.scale = desc.scale;
+      trans.rotation = desc.rotation;
+
+      entity.Add<GeometryComponent>();
+      entity.Add<SimpleMaterialComponent>().baseColor = desc.color;
+
+      // todo:
+      RigidBodyComponent _rb{};
+      _rb.dynamic = desc.dynamic;
+      entity.Add<RigidBodyComponent>(_rb);
+      
+      return entity;
+   }
+
+   Entity CreateDirectLight(Scene& scene, string_view namePrefix = "Direct Light", const vec3& pos = {}) {
+      auto entity = CreateEmpty(scene, namePrefix, {}, pos);
+      entity.Get<SceneTransformComponent>().rotation = quat{ vec3{PIHalf * 0.5, PIHalf * 0.5, 0 } };
+      entity.Add<DirectLightComponent>();
+      return entity;
+   }
+
+   Entity CreateSky(Scene& scene, string_view namePrefix = "Sky", const vec3& pos = {}) {
+      auto entity = CreateEmpty(scene, namePrefix, {}, pos);
+      entity.Add<SkyComponent>();
+      return entity;
+   }
+
    class SceneHierarchyWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
@@ -52,30 +100,24 @@ namespace pbe {
 
             // todo: undo
             if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
-               if (ImGui::MenuItem("Create Empty Entity")) {
-                  auto createdEntity = pScene->Create();
-                  ToggleSelectEntity(createdEntity);
+               if (ImGui::MenuItem("Create Empty")) {
+                  ToggleSelectEntity(CreateEmpty(*pScene));
+               }
+               if (ImGui::MenuItem("Create Dynamic Cube")) {
+                  ToggleSelectEntity(CreateCube(*pScene));
+               }
+               if (ImGui::MenuItem("Create Static Cube")) {
+                  ToggleSelectEntity(CreateCube(*pScene, CubeDesc{ .dynamic = false }));
+               }
+               if (ImGui::MenuItem("Create Direct Light")) {
+                  ToggleSelectEntity(CreateDirectLight(*pScene));
+               }
+               if (ImGui::MenuItem("Create Sky")) {
+                  ToggleSelectEntity(CreateSky(*pScene));
                }
                if (ImGui::MenuItem("Create Decal")) {
                   auto createdEntity = pScene->Create();
                   createdEntity.Add<DecalComponent>();
-                  ToggleSelectEntity(createdEntity);
-               }
-               if (ImGui::MenuItem("Create Cube")) {
-                  auto createdEntity = pScene->Create();
-                  createdEntity.Add<SimpleMaterialComponent>();
-                  createdEntity.Add<GeometryComponent>();
-                  ToggleSelectEntity(createdEntity);
-               }
-               if (ImGui::MenuItem("Direct Light")) {
-                  auto createdEntity = pScene->Create();
-                  createdEntity.Get<SceneTransformComponent>().rotation = quat{ vec3{PIHalf, 0, 0} };
-                  createdEntity.Add<DirectLightComponent>();
-                  ToggleSelectEntity(createdEntity);
-               }
-               if (ImGui::MenuItem("Sky")) {
-                  auto createdEntity = pScene->Create();
-                  createdEntity.Add<SkyComponent>();
                   ToggleSelectEntity(createdEntity);
                }
             }
@@ -478,7 +520,14 @@ namespace pbe {
          if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Scene", nullptr, false, canChangeScene)) {
                editorSettings.scenePath = {};
-               Own<Scene> scene = std::make_unique<Scene>(false);
+
+               Own<Scene> scene = std::make_unique<Scene>();
+               CreateDirectLight(*scene);
+               CreateSky(*scene);
+               CreateCube(*scene, CubeDesc{ .namePrefix = "Ground", .pos = vec3{0, -0.5, 0},
+                  .scale = vec3{50, 1, 50}, .dynamic = false, .color = vec3{0.2, 0.6, 0.2} });
+               CreateCube(*scene, CubeDesc{ .namePrefix = "Cube", .pos = vec3{0, 3, 0} });
+
                SetEditorScene(std::move(scene));
             }
 
@@ -509,69 +558,41 @@ namespace pbe {
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Scene Random", nullptr, false, !!GetActiveScene())) {
-               auto scene = GetActiveScene();
+            auto scene = GetActiveScene();
 
-               {
-                  auto e = scene->Create("Red");
-                  auto& t = e.Get<SceneTransformComponent>();
-                  t.position = { 0, 0, 50 };
-                  t.scale = { 100, 100, 1 };
-                  auto& m = e.Add<SimpleMaterialComponent>();
-                  m.baseColor = { 1, 0, 0 };
-               }
+            vec3 cubeSize{ 25, 10, 25 };
 
-               {
-                  auto e = scene->Create("Green");
-                  auto& t = e.Get<SceneTransformComponent>();
-                  t.position = { 0, -10, 0 };
-                  t.scale = { 100, 1, 100 };
-                  auto& m = e.Add<SimpleMaterialComponent>();
-                  m.baseColor = { 0, 1, 0 };
-               }
-
-               {
-                  auto e = scene->Create("Blue");
-                  auto& t = e.Get<SceneTransformComponent>();
-                  t.position = { 50, 0, 0 };
-                  t.scale = { 1, 100, 100 };
-                  auto& m = e.Add<SimpleMaterialComponent>();
-                  m.baseColor = { 0, 0, 1 };
-               }
-
-               vec3 cubeSize{ 25, 10, 25 };
+            if (ImGui::MenuItem("Random Cubes", nullptr, false, !!GetActiveScene())) {
+               Entity root = scene->Create("Random Cubes");
+               editorSelection.ToggleSelect(root);
 
                for (int i = 0; i < 500; ++i) {
-                  Entity e = scene->Create(std::format("Cube {}", i));
-
-                  auto& trans = e.GetOrAdd<SceneTransformComponent>();
-                  trans.position = Random::Uniform(-cubeSize, cubeSize);
-                  trans.scale = Random::Uniform(vec3{ 0 }, vec3{ 3.f });
-                  trans.rotation = Random::Uniform(vec3{ 0 }, vec3{ 30.f });
-
-                  auto& material = e.GetOrAdd<SimpleMaterialComponent>();
-                  material.baseColor = Random::Uniform(vec3_Zero, vec3_One);
-                  material.metallic = Random::Uniform(0, 1);
-                  material.roughness = Random::Uniform(0, 1);
-                  material.opaque = Random::Bool(0.75f);
+                  CreateCube(*scene, CubeDesc{
+                     .parent = root,
+                     .namePrefix = std::format("Cube {}", i),
+                     .pos = Random::Float3(-cubeSize, cubeSize),
+                     .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
+                     .rotation = Random::Float3(vec3{ 0 }, vec3{ 30.f }), // todo: PI?
+                     .color = Random::Color() });
                }
+            }
+
+            if (ImGui::MenuItem("Random Lights", nullptr, false, !!GetActiveScene())) {
+               Entity root = scene->Create("Random Lights");
+               editorSelection.ToggleSelect(root);
 
                for (int i = 0; i < 8; ++i) {
-                  Entity e = scene->Create(std::format("Light {}", i));
-
-                  auto& trans = e.GetOrAdd<SceneTransformComponent>();
-                  trans.position = Random::Uniform(-cubeSize, cubeSize);
+                  Entity e = CreateEmpty(*scene, std::format("Light {}", i),
+                     root, Random::Float3(-cubeSize, cubeSize));
 
                   auto& light = e.Add<LightComponent>();
-                  light.color = Random::Uniform(vec3{ 0 }, vec3{ 1.f });
-                  light.intensity = Random::Uniform(0.f, 20.f);
-                  light.radius = Random::Uniform(3, 10);
+                  light.color = Random::Float3(vec3{ 0 }, vec3{ 1.f });
+                  light.intensity = Random::Float(0.f, 20.f);
+                  light.radius = Random::Float(3, 10);
                }
             }
 
             if (ImGui::MenuItem("Add Geom if Material is presents", nullptr, false, !!GetActiveScene())) {
-               auto scene = GetActiveScene();
-
                auto view = scene->View<SimpleMaterialComponent>();
                for (auto _e : view) {
                   Entity e{ _e, scene };
@@ -581,40 +602,31 @@ namespace pbe {
             }
 
             if (ImGui::MenuItem("Create wall", nullptr, false, !!GetActiveScene())) {
-               auto scene = GetActiveScene();
-
-               Entity stackRoot = scene->Create("Wall");
+               Entity root = scene->Create("Wall");
+               editorSelection.ToggleSelect(root);
 
                int size = 5;
 
-               int iCube = 0;
                for (int y = 0; y < size; ++y) {
                   for (int x = 0; x < size; ++x) {
-                     Entity e = scene->Create(stackRoot, std::format("Cube {}", iCube++));
-                     e.GetTransform().position = { x, y, 0 };
-                     e.Add<GeometryComponent>();
-                     e.Add<RigidBodyComponent>().dynamic = true;
-                     auto& material = e.GetOrAdd<SimpleMaterialComponent>();
-                     material.baseColor = Random::Uniform(vec3_Zero, vec3_One);
+                     CreateCube(*scene, CubeDesc{
+                        .parent = root,
+                        .pos = vec3{ -size / 2.f + x, y + 0.5f, 0 },
+                        .color = Random::Color() });
                   }
                }
             }
 
             if (ImGui::MenuItem("Create stack", nullptr, false, !!GetActiveScene())) {
-               auto scene = GetActiveScene();
-
-               Entity stackRoot = scene->Create("Stack");
+               Entity root = scene->Create("Stack");
+               editorSelection.ToggleSelect(root);
 
                int size = 10;
-
-               int iCube = 0;
                for (int i = 0; i < size; ++i) {
-                  Entity e = scene->Create(stackRoot, std::format("Cube {}", iCube++));
-                  e.GetTransform().position = { 0, i, 0 };
-                  e.Add<GeometryComponent>();
-                  e.Add<RigidBodyComponent>().dynamic = true;
-                  auto& material = e.GetOrAdd<SimpleMaterialComponent>();
-                  material.baseColor = Random::Uniform(vec3_Zero, vec3_One);
+                  CreateCube(*scene, CubeDesc{
+                     .parent = root,
+                     .pos = vec3{0, i + 0.5f, 0},
+                     .color = Random::Color() });
                }
             }
 

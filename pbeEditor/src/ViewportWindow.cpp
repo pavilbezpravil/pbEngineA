@@ -305,7 +305,10 @@ namespace pbe {
       camera.NextFrame(); // todo:
 
       // todo:
-      if (Input::IsKeyPressed(' ')) {
+      static float acc = 0;
+      acc += dt;
+      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+         acc = 0;
          auto shoot = scene->Create("Shoot cube");
          shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
          shoot.Add<SimpleMaterialComponent>();

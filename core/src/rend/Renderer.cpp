@@ -181,7 +181,7 @@ namespace pbe {
          for (int i = 0; i < nRandomDirs; ++i) {
             vec3 test;
             do {
-               test = Random::Uniform(vec3{ -1 }, vec3{ 1 });
+               test = Random::Float3(vec3{ -1 }, vec3{ 1 });
             } while (glm::length(test) > 1);
 
             dirs.emplace_back(test);
