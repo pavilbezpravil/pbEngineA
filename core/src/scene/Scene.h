@@ -35,6 +35,11 @@ namespace pbe {
       void DestroyImmediate(Entity entity);
 
       template<typename Type, typename... Other, typename... Exclude>
+      const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {
+         return registry.view<Type, Other...>(excludes);
+      }
+
+      template<typename Type, typename... Other, typename... Exclude>
       auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
          return registry.view<Type, Other...>(excludes);
       }
@@ -60,7 +65,7 @@ namespace pbe {
 
       PhysicsScene* GetPhysics() { return pPhysics.get(); }
 
-      Own<Scene> Copy(); // todo: const
+      Own<Scene> Copy() const; // todo: const
 
       Own<DbgRend> dbgRend; // todo:
 

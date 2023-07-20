@@ -184,7 +184,7 @@ namespace pbe {
       return (uint)uuidToEntities.size();
    }
 
-   Own<Scene> Scene::Copy() {
+   Own<Scene> Scene::Copy() const {
       auto pScene = std::make_unique<Scene>();
 
       for (auto [e, uuid, trans] : View<UUIDComponent, SceneTransformComponent>().each()) {
@@ -193,7 +193,7 @@ namespace pbe {
             continue;
          }
 
-         Entity src{e, this};
+         Entity src{e, const_cast<Scene*>(this)};
          Entity dst = pScene->CreateWithUUID(uuid.uuid, Entity{}, registry.get<TagComponent>(e).tag);
          pScene->Duplicate(dst, src);
       }
