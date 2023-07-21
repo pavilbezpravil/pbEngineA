@@ -127,8 +127,11 @@ namespace pbe {
       int idx = iter + 1 != nameLen ? atoi(name + iter + 1) : 0;
       string_view namePrefix = string_view(name, iter + 1);
 
-      Entity duplicatedEntity = Create(entity.GetTransform().parent,
-         std::format("{} {}", namePrefix, ++idx));
+      Entity duplicatedEntity = Create(std::format("{} {}", namePrefix, ++idx));
+
+      auto& trans = entity.GetTransform();
+      duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
+
       Duplicate(duplicatedEntity, entity, false);
       return duplicatedEntity;
    }
@@ -148,7 +151,7 @@ namespace pbe {
          // todo: scene component may be shrink during child destroy
          trans = entity.GetTransform();
       }
-      trans.SetParent();
+      trans.SetParentInternal();
 
       uuidToEntities.erase(entity.GetUUID());
       registry.destroy(entity.GetID());

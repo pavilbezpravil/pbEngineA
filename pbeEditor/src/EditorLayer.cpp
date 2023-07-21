@@ -715,7 +715,7 @@ namespace pbe {
             editorSelection.ClearSelection();
 
             for (auto entity : prevSelected) {
-               auto duplicatedEntity = editorScene->Duplicate(entity);
+               auto duplicatedEntity = GetActiveScene()->Duplicate(entity);
                editorSelection.Select(duplicatedEntity, false);
             }
          }
