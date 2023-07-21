@@ -1,23 +1,30 @@
-sceneName: test_scene
 entities:
-  - uuid: 2170966516242636815
-    tag: sky
+  - uuid: 3904498581251611661
+    tag: Direct Light
     SceneTransformComponent:
       position: [0, 0, 0]
-      rotation: [0, -0, 0]
+      rotation: [45, 45.0000038, 0]
       scale: [1, 1, 1]
-    SkyComponent:
-      directLight: 18446744073709551615
+      parent: 11755531795729590094
+    DirectLightComponent:
       color: [1, 1, 1]
       intensity: 1
-  - uuid: 17036710735013480906
-    tag: cube
+  - uuid: 11755531795729590094
+    tag: Scene
     SceneTransformComponent:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
+      children: [3904498581251611661, 17958657347364189104, 15455379827263777491]
+  - uuid: 15455379827263777491
+    tag: Cube
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 11755531795729590094
     SimpleMaterialComponent:
-      baseColor: [0, 0.759494305, 1]
+      baseColor: [0.148213416, 0.780590713, 0.7565763]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -28,12 +35,14 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
-  - uuid: 17941021247240787344
-    tag: direct light
+  - uuid: 17958657347364189104
+    tag: Sky
     SceneTransformComponent:
-      position: [0, 2.88278151, 0]
-      rotation: [43.5524368, 12.5394974, -56.4971313]
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
       scale: [1, 1, 1]
-    DirectLightComponent:
+      parent: 11755531795729590094
+    SkyComponent:
+      directLight: 18446744073709551615
       color: [1, 1, 1]
-      intensity: 0.875999987
+      intensity: 1

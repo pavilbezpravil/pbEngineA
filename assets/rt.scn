@@ -1,4 +1,3 @@
-sceneName: test_scene
 entities:
   - uuid: 4494813099674761447
     tag: green
@@ -6,6 +5,7 @@ entities:
       position: [0, 0, 1]
       rotation: [0, -0, 0]
       scale: [39.3040085, 0.999999821, 25.0262299]
+      parent: 7709018462035949994
     SimpleMaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
@@ -22,6 +22,7 @@ entities:
       position: [0, 0, 0]
       rotation: [58.7625618, 6.83018925e-06, -41.6738739]
       scale: [0.999997139, 0.999997795, 0.999997914]
+      parent: 7709018462035949994
     DirectLightComponent:
       color: [1, 1, 1]
       intensity: 1
@@ -31,6 +32,7 @@ entities:
       position: [0, 4, -0.0493881106]
       rotation: [0, -0, 0]
       scale: [6, 1, 4]
+      parent: 7709018462035949994
     SimpleMaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
@@ -47,24 +49,22 @@ entities:
         intValue: 2
       speed: 1
       doMove: true
-  - uuid: 7193068985296031994
-    tag: water
+  - uuid: 7709018462035949994
+    tag: Scene
     SceneTransformComponent:
-      position: [0, 2.28470802, 0]
+      position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-    WaterComponent:
-      fogColor: [0.0186851211, 0.0929371044, 0.176470593]
-      fogUnderwaterLength: 5
-      softZ: 0.100000001
+      children: [16365464828659249094, 12468854452323807279, 8246439013926450448, 6806257574526974542, 5536664833689235849, 4494813099674761447]
   - uuid: 8246439013926450448
     tag: blue
     SceneTransformComponent:
       position: [0, 2.02723646, 2]
       rotation: [0, -0, 0]
       scale: [6, 4, 0.999999642]
+      parent: 7709018462035949994
     SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
+      baseColor: [0.19758229, 0.409363985, 0.755274296]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -85,8 +85,9 @@ entities:
       position: [3, 2, 0]
       rotation: [0, -0, 0]
       scale: [0.999999821, 4, 4]
+      parent: 7709018462035949994
     SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
+      baseColor: [0.169928446, 0.7763713, 0.137584805]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -101,8 +102,9 @@ entities:
       position: [-3, 2, 0]
       rotation: [0, -0, 0]
       scale: [0.999999464, 4, 4]
+      parent: 7709018462035949994
     SimpleMaterialComponent:
-      baseColor: [1, 1, 1]
+      baseColor: [0.797468364, 0.117769592, 0.117769592]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]

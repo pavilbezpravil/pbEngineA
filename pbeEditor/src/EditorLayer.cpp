@@ -605,7 +605,7 @@ namespace pbe {
                Entity root = scene->Create("Wall");
                editorSelection.ToggleSelect(root);
 
-               int size = 5;
+               int size = 10;
                for (int y = 0; y < size; ++y) {
                   for (int x = 0; x < size; ++x) {
                      CreateCube(*scene, CubeDesc{

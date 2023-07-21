@@ -1,4 +1,3 @@
-sceneName: test_scene
 entities:
   - uuid: 1814184596088491394
     tag: cube red
@@ -6,6 +5,7 @@ entities:
       position: [-2.5953176, -0.100500822, 1.05857885]
       rotation: [0, -0, 0]
       scale: [1, 2.99375606, 1]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [1, 0, 0]
       roughness: 0.100000001
@@ -22,6 +22,7 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
+      parent: 6791511463118186495
     SkyComponent:
       directLight: 18446744073709551615
       color: [1, 1, 1]
@@ -32,6 +33,7 @@ entities:
       position: [-0.807469428, -0.100500822, -0.243905485]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0, 0.759494305, 1]
       roughness: 0.100000001
@@ -48,6 +50,7 @@ entities:
       position: [1.54637289, -0.100500822, 0.492528319]
       rotation: [0, -0, 0]
       scale: [1, 4.11403656, 1]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.075949192, 0, 1]
       roughness: 0.100000001
@@ -64,6 +67,7 @@ entities:
       position: [-0.117909074, 2.55918622, 2.09448457]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
@@ -80,6 +84,7 @@ entities:
       position: [-0.176622987, 0.855010509, 3.8425734]
       rotation: [0, -0, 0]
       scale: [7.49906397, 6, 1]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.728764951, 0.818565369, 0.799241245]
       roughness: 0.100000001
@@ -96,6 +101,7 @@ entities:
       position: [-0.31456846, 3.66837788, 2.0742898]
       rotation: [0, -0, 0]
       scale: [8, 0.5, 8]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
@@ -112,6 +118,7 @@ entities:
       position: [0, -1.05676425, 0]
       rotation: [0, -0, 0]
       scale: [20, 1, 20]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
@@ -122,12 +129,20 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
+  - uuid: 6791511463118186495
+    tag: Scene
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      children: [17941021247240787344, 14905986889041417783, 8150080313549777686, 6706076201866816664, 6515603774512827482, 5149250398784041482, 5079568519492316975, 5020023358067959166, 4513277486991032202, 2170966516242636815, 1814184596088491394]
   - uuid: 8150080313549777686
     tag: wall right
     SceneTransformComponent:
       position: [3.58865452, 0.855010509, 0.984455884]
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.200395256, 0.848101258, 0.249587983]
       roughness: 0.100000001
@@ -144,6 +159,7 @@ entities:
       position: [-4.07046032, 0.855010509, 0.984455884]
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
+      parent: 6791511463118186495
     SimpleMaterialComponent:
       baseColor: [0.839662433, 0.0992006063, 0.0992006063]
       roughness: 0.100000001
@@ -160,6 +176,7 @@ entities:
       position: [0, 2.88278151, 0]
       rotation: [43.5524368, 12.5394974, -56.4971313]
       scale: [1, 1, 1]
+      parent: 6791511463118186495
     DirectLightComponent:
       color: [1, 1, 1]
       intensity: 0
