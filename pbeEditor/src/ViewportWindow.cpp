@@ -319,7 +319,7 @@ namespace pbe {
          _rb.dynamic = true;
 
          auto& rb = shoot.Add<RigidBodyComponent>(_rb);
-         rb.SetLinearVelocity(camera.Forward() * 30.f);
+         rb.SetLinearVelocity(camera.Forward() * 50.f);
       }
 
       if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {

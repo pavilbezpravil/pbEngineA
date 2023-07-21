@@ -525,7 +525,7 @@ namespace pbe {
                CreateDirectLight(*scene);
                CreateSky(*scene);
                CreateCube(*scene, CubeDesc{ .namePrefix = "Ground", .pos = vec3{0, -0.5, 0},
-                  .scale = vec3{50, 1, 50}, .dynamic = false, .color = vec3{0.2, 0.6, 0.2} });
+                  .scale = vec3{100, 1, 100}, .dynamic = false, .color = vec3{0.2, 0.6, 0.2} });
                CreateCube(*scene, CubeDesc{ .namePrefix = "Cube", .pos = vec3{0, 3, 0} });
 
                SetEditorScene(std::move(scene));
