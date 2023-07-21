@@ -308,8 +308,13 @@ namespace pbe {
       static float acc = 0;
       acc += dt;
       if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+         Entity shootRoot = scene->FindByName("Shoots");
+         if (!shootRoot) {
+            shootRoot = scene->Create("Shoots");
+         }
+
          acc = 0;
-         auto shoot = scene->Create("Shoot cube");
+         auto shoot = scene->Create(shootRoot, "Shoot cube");
          shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
          shoot.Add<MaterialComponent>();
          shoot.Add<GeometryComponent>();
