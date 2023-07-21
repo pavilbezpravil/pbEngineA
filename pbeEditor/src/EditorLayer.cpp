@@ -130,8 +130,7 @@ namespace pbe {
          window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove;
          window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-      }
-      else {
+      } else {
          dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
       }
 
@@ -147,7 +146,8 @@ namespace pbe {
       // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
       if (!opt_padding)
          ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-      ImGui::Begin("DockSpace Demo", &p_open, window_flags);
+
+      UI_WINDOW("DockSpace Demo", &p_open, window_flags);
       if (!opt_padding)
          ImGui::PopStyleVar();
 
@@ -161,10 +161,12 @@ namespace pbe {
          ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
       }
 
-      if (ImGui::BeginMenuBar()) {
+      static bool showImGuiWindow = false;
+
+      if (UI_MENU_BAR()) {
          bool canChangeScene = !runtimeScene;
 
-         if (ImGui::BeginMenu("File")) {
+         if (UI_MENU("File")) {
             if (ImGui::MenuItem("New Scene", nullptr, false, canChangeScene)) {
                editorSettings.scenePath = {};
 
@@ -179,7 +181,7 @@ namespace pbe {
             }
 
             if (ImGui::MenuItem("Open Scene", nullptr, false, canChangeScene)) {
-               auto path = OpenFileDialog({"Scene", "*.scn"});
+               auto path = OpenFileDialog({ "Scene", "*.scn" });
                if (!path.empty()) {
                   editorSettings.scenePath = path;
                   auto s = SceneDeserialize(editorSettings.scenePath);
@@ -202,9 +204,17 @@ namespace pbe {
                   SceneSerialize(editorSettings.scenePath, *editorScene);
                }
             }
+         }
 
-            ImGui::Separator();
+         if (UI_MENU("Windows")) {
+            for (auto& window : editorWindows) {
+               ImGui::MenuItem(window->name.c_str(), NULL, &window->show);
+            }
 
+            ImGui::MenuItem("ImGuiDemoWindow", NULL, &showImGuiWindow);
+         }
+
+         if (UI_MENU("Create")) {
             auto scene = GetActiveScene();
 
             vec3 cubeSize{ 25, 10, 25 };
@@ -313,30 +323,18 @@ namespace pbe {
                   prev = cur;
                }
             }
-
-            ImGui::EndMenu();
          }
-
-         ImGui::EndMenuBar();
       }
 
-      if (ImGui::BeginMenuBar()) {
-         if (ImGui::BeginMenu("Windows")) {
-            for (auto& window : editorWindows) {
-               ImGui::MenuItem(window->name.c_str(), NULL, &window->show);
-            }
-            ImGui::EndMenu();
-         }
-
-         ImGui::EndMenuBar();
+      if (showImGuiWindow) {
+         ImGui::ShowDemoWindow(&showImGuiWindow);
       }
-
-      ImGui::End();
-
 
       for (auto& window : editorWindows) {
          if (window->show) {
-            window->OnImGuiRender();
+            if (UI_WINDOW(window->name.c_str(), &window->show)) {
+               window->OnImGuiRender();
+            }
          }
       }
    }

@@ -7,8 +7,6 @@
 namespace pbe {
 
    void ProfilerWindow::OnImGuiRender() {
-      UI_WINDOW(name.c_str(), &show); // todo: all func use this except ImGuiLayer
-
       auto& profiler = Profiler::Get();
 
       ImGui::Text("Profiler Stats");
@@ -32,8 +30,6 @@ namespace pbe {
    }
 
    void ConfigVarsWindow::OnImGuiRender() {
-      UI_WINDOW(name.c_str(), &show);
-
       const ConfigVarsMng& configVars = sConfigVarsMng;
 
       ImGui::Text("Vars:");
@@ -44,8 +40,7 @@ namespace pbe {
    void ConfigVarsWindow::CVarChilds(const ConfigVarsMng::CVarChilds& childs) {
       if (childs.cvar) {
          childs.cvar->UI();
-      }
-      else {
+      } else {
          for (const auto& child : childs.childs) {
             if (child.IsLeaf()) {
                CVarChilds(child);
@@ -61,7 +56,6 @@ namespace pbe {
    }
 
    void ShaderWindow::OnImGuiRender() {
-      UI_WINDOW(name.c_str(), &show);
       ShadersWindow();
    }
 

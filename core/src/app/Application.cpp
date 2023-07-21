@@ -16,14 +16,6 @@
 #include "rend/Shader.h"
 
 
-/*
-#include <float.h>
-_clearfp();
-_controlfp(_controlfp(0, 0) & ~(_EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW),
-   _MCW_EM);
-*/
-
-
 namespace pbe {
 
    Application* sApplication = nullptr;
@@ -79,11 +71,9 @@ namespace pbe {
          running = false;
       }
       if (event.GetEvent<AppLoseFocusEvent>()) {
-         // INFO("Lose Focus");
          focused = false;
       }
       if (event.GetEvent<AppGetFocusEvent>()) {
-         // INFO("Get Focus");
          focused = true;
       }
 
@@ -138,13 +128,18 @@ namespace pbe {
          OPTICK_FRAME("MainThread");
 
          if (!focused) {
-            OPTICK_EVENT("Sleep On Focused");
-            ThreadSleepMs(250);
+            // OPTICK_EVENT("Sleep On Focused");
+            // ThreadSleepMs(250);
          }
 
          {
             OPTICK_EVENT("Window Update");
             sWindow->Update();
+
+            // todo:
+            if (!running) {
+               break;
+            }
          }
 
          float dt = frameTimer.ElapsedMs(true) / 1000.f;
@@ -188,19 +183,6 @@ namespace pbe {
 
             imguiLayer->EndFrame();
          }
-
-         // ID3D11DeviceContext* context{};
-         // sDevice->g_pd3dDevice->CreateDeferredContext(0, &context);
-         //
-         // context->OMSetRenderTargets(1, &sDevice->backBuffer->rtv, NULL);
-         // context->ClearRenderTargetView(sDevice->backBuffer->rtv, clear_color_with_alpha);
-         // ID3D11CommandList* commandList;
-         // context->FinishCommandList(true, &commandList);
-         //
-         // sDevice->g_pd3dDeviceContext->ExecuteCommandList(commandList, true);
-         //
-         // commandList->Release();
-         // context->Release();
 
          {
             OPTICK_EVENT("ImGui Render");
