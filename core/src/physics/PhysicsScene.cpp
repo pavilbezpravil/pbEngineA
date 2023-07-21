@@ -27,7 +27,7 @@ namespace pbe {
 
       gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
       gDispatcher = PxDefaultCpuDispatcherCreate(2);
-      gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+      gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.25f);
    }
 
    void TermPhysics() {
@@ -66,6 +66,10 @@ namespace pbe {
       // todo: only for changed entities
       for (auto [_, trans, rb] :
          scene.View<SceneTransformComponent, RigidBodyComponent>().each()) {
+         if (rb.dynamic) {
+            continue;
+         }
+
          PxTransform pxTrans{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
          rb.pxRigidActor->setGlobalPose(pxTrans);
       }
@@ -75,7 +79,7 @@ namespace pbe {
       PROFILE_CPU("Phys simulate");
 
       // todo: update only changed entities
-      // SyncPhysicsWithScene();
+      SyncPhysicsWithScene();
 
       timeAccumulator += dt;
 
@@ -169,6 +173,14 @@ namespace pbe {
       RemoveRigidActor(e);
    }
 
+   // todo:
+   static PxRigidActor* GetPxActor(Entity e) {
+      if (!e) return nullptr;
+
+      auto rb = e.TryGet<RigidBodyComponent>();
+      return rb ? rb->pxRigidActor : nullptr;
+   }
+
    void PhysicsScene::OnConstructDistanceJoint(entt::registry& registry, entt::entity entity) {
       Entity e{ entity, &scene };
 
@@ -176,15 +188,8 @@ namespace pbe {
 
       // todo: one of them must be dynamic
 
-      auto getPxActor = [] (Entity e) -> PxRigidActor* {
-         if (!e) return nullptr;
-
-         auto rb = e.TryGet<RigidBodyComponent>();
-         return rb ? rb->pxRigidActor : nullptr;
-      };
-
-      auto actor0 = getPxActor(dj.entity0);
-      auto actor1 = getPxActor(dj.entity0);
+      auto actor0 = GetPxActor(dj.entity0);
+      auto actor1 = GetPxActor(dj.entity0);
 
       if (!actor0 || !actor1) {
          return;
@@ -195,5 +200,17 @@ namespace pbe {
 
    void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity) {
       // todo: destroy joint
+   }
+
+   void CreateDistanceJoint(const Entity& entity0, const Entity& entity1) {
+      auto joint = PxDistanceJointCreate(*gPhysics, GetPxActor(entity0), PxTransform{ PxIDENTITY{} }, GetPxActor(entity1), PxTransform{ PxIDENTITY{} });
+
+      joint->setMaxDistance(1.5f);
+      joint->setMinDistance(1.f);
+
+      joint->setDamping(0.5f);
+      joint->setStiffness(2000.0f);
+
+      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
    }
 }

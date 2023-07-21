@@ -1,4 +1,5 @@
 #pragma once
+#include "core/Core.h"
 
 
 namespace pbe {
@@ -41,5 +42,8 @@ namespace pbe {
       void OnConstructDistanceJoint(entt::registry& registry, entt::entity entity);
       void OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity);
    };
+
+   // todo:
+   CORE_API void CreateDistanceJoint(const Entity& entity0, const Entity& entity1);
 
 }

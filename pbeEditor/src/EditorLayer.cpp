@@ -11,6 +11,7 @@
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
 #include "math/Random.h"
+#include "physics/PhysicsScene.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Component.h"
@@ -616,19 +617,6 @@ namespace pbe {
                }
             }
 
-            if (ImGui::MenuItem("Create stack", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Stack");
-               editorSelection.ToggleSelect(root);
-
-               int size = 10;
-               for (int i = 0; i < size; ++i) {
-                  CreateCube(*scene, CubeDesc{
-                     .parent = root,
-                     .pos = vec3{0, i + 0.5f, 0},
-                     .color = Random::Color() });
-               }
-            }
-
             if (ImGui::MenuItem("Create stack tri", nullptr, false, !!GetActiveScene())) {
                Entity root = scene->Create("Stack tri");
                editorSelection.ToggleSelect(root);
@@ -642,6 +630,42 @@ namespace pbe {
                         .pos = vec3{ -width / 2.f + x, y + 0.5f, 0 },
                         .color = Random::Color() });
                   }
+               }
+            }
+
+            if (ImGui::MenuItem("Create stack", nullptr, false, !!GetActiveScene())) {
+               Entity root = scene->Create("Stack");
+               editorSelection.ToggleSelect(root);
+
+               int size = 10;
+               for (int i = 0; i < size; ++i) {
+                  CreateCube(*scene, CubeDesc{
+                     .parent = root,
+                     .pos = vec3{0, i + 0.5f, 0},
+                     .color = Random::Color() });
+               }
+            }
+
+            if (ImGui::MenuItem("Create chain", nullptr, false, !!GetActiveScene())) {
+               // Entity root = scene->Create("Chain");
+               Entity root = CreateCube(*scene, CubeDesc{
+                  .namePrefix = "Chain",
+                  .pos = vec3{0, 10, 0},
+                  .dynamic = false,
+                  .color = Random::Color() });
+               editorSelection.ToggleSelect(root);
+
+               Entity prev = root;
+               int size = 10;
+               for (int i = 0; i < size - 1; ++i) {
+                  Entity cur = CreateCube(*scene, CubeDesc{
+                     .parent = root,
+                     .pos = vec3{0, i * 2 + 0.5f, 0},
+                     .color = Random::Color() });
+
+                  // todo:
+                  CreateDistanceJoint(prev, cur);
+                  prev = cur;
                }
             }
 
