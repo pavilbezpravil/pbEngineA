@@ -8,9 +8,17 @@ namespace pbe {
    Entity::Entity(entt::entity id, Scene* scene) :id(id), scene(scene) {
    }
 
-   void Entity::DestroyImmediate() {
-      scene->DestroyImmediate(*this);
+   void Entity::DestroyImmediate(bool withChilds) {
+      scene->DestroyImmediate(*this, withChilds);
       (*this) = {};
+   }
+
+   SceneTransformComponent& Entity::GetTransform() {
+      return Get<SceneTransformComponent>();
+   }
+
+   const SceneTransformComponent& Entity::GetTransform() const {
+      return Get<SceneTransformComponent>();
    }
 
    const char* Entity::GetName() const {

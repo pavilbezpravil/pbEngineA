@@ -144,7 +144,7 @@ namespace pbe {
 
       struct RenderObject {
          SceneTransformComponent trans;
-         SimpleMaterialComponent material;
+         MaterialComponent material;
       };
 
       std::vector<RenderObject> opaqueObjs;

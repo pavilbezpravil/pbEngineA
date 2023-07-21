@@ -55,7 +55,7 @@ namespace pbe {
       terrainCB.waterPatchCount = cTerrainPatchCount;
       terrainCB.waterPixelNormals = cTerrainPixelNormal;
 
-      for (auto [e, trans, terrain] : scene.GetEntitiesWith<SceneTransformComponent, TerrainComponent>().each()) {
+      for (auto [e, trans, terrain] : scene.View<SceneTransformComponent, TerrainComponent>().each()) {
          terrainCB.center = trans.position;
          terrainCB.color = terrain.color;
          terrainCB.entityID = (uint)e;

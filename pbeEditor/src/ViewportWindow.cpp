@@ -304,6 +304,24 @@ namespace pbe {
 
       camera.NextFrame(); // todo:
 
+      // todo:
+      static float acc = 0;
+      acc += dt;
+      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+         acc = 0;
+         auto shoot = scene->Create("Shoot cube");
+         shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
+         shoot.Add<MaterialComponent>();
+         shoot.Add<GeometryComponent>();
+
+         // todo:
+         RigidBodyComponent _rb;
+         _rb.dynamic = true;
+
+         auto& rb = shoot.Add<RigidBodyComponent>(_rb);
+         rb.SetLinearVelocity(camera.Forward() * 50.f);
+      }
+
       if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          selectEntityUnderCursor = true;
       }
@@ -339,10 +357,8 @@ namespace pbe {
          if (cameraInput != vec3{}) {
             cameraInput = glm::normalize(cameraInput);
 
-            mat4 viewTrans = glm::transpose(camera.view);
-
-            vec3 right = viewTrans[0];
-            vec3 up = viewTrans[1];
+            vec3 right = camera.Right();
+            vec3 up = camera.Up();
             vec3 forward = camera.Forward();
 
             vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;

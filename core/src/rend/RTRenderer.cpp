@@ -46,7 +46,7 @@ namespace pbe {
 
       std::vector<SRTObject> objs;
 
-      for (auto [e, trans, material, geom] : scene.GetEntitiesWith<SceneTransformComponent, SimpleMaterialComponent, GeometryComponent>().each()) {
+      for (auto [e, trans, material, geom] : scene.View<SceneTransformComponent, MaterialComponent, GeometryComponent>().each()) {
          SRTObject obj;
          obj.position = trans.Position();
          obj.id = (uint)e;
@@ -114,7 +114,7 @@ namespace pbe {
       rtCB.rayDepth = cvRayDepth;
       rtCB.nObjects = nObj;
       rtCB.nRays = cvNRays;
-      rtCB.random01 = Random::Uniform(0.f, 1.f);
+      rtCB.random01 = Random::Float(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
       rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
 

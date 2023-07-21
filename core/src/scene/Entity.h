@@ -16,6 +16,8 @@ namespace pbe {
       }
    }
 
+   struct SceneTransformComponent;
+
    class CORE_API Entity {
    public:
       Entity() = default;
@@ -73,7 +75,7 @@ namespace pbe {
          return Add<T>();
       }
 
-      void DestroyImmediate();
+      void DestroyImmediate(bool withChilds = true);
 
       bool Valid() const {
          return id != entt::null;
@@ -84,6 +86,9 @@ namespace pbe {
 
       entt::entity GetID() const { return id; }
       Scene* GetScene() const { return scene; }
+
+      SceneTransformComponent& GetTransform();
+      const SceneTransformComponent& GetTransform() const;
 
       const char* GetName() const;
       UUID GetUUID() const;

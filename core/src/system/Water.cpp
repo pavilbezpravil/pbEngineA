@@ -261,14 +261,14 @@ namespace pbe {
 
             WaveData wave;
 
-            float wavelength = Random::Uniform(waveDesc.lengthMin, waveDesc.lengthMax);
+            float wavelength = Random::Float(waveDesc.lengthMin, waveDesc.lengthMax);
             wave.direction = glm::normalize(Random::UniformInCircle()); // todo:
-            wave.amplitude = Random::Uniform(waveDesc.amplitudeMin, waveDesc.amplitudeMax) * waveDesc.weight;
+            wave.amplitude = Random::Float(waveDesc.amplitudeMin, waveDesc.amplitudeMax) * waveDesc.weight;
             wave.length = wavelength; // todo:
 
             wave.magnitude = PI2 / wavelength;
             wave.frequency = sqrt((g * PI2) / wavelength);
-            wave.phase = Random::Uniform(0.f, PI2);
+            wave.phase = Random::Float(0.f, PI2);
             wave.steepness = waveDesc.steepness;
 
             waves.emplace_back(wave);
@@ -335,7 +335,7 @@ namespace pbe {
 
       waterCB.waterWaveScale = waterWaveScale;
 
-      for (auto [e, trans, water] : scene.GetEntitiesWith<SceneTransformComponent, WaterComponent>().each()) {
+      for (auto [e, trans, water] : scene.View<SceneTransformComponent, WaterComponent>().each()) {
          waterCB.planeHeight = trans.position.y;
 
          waterCB.fogColor = water.fogColor;

@@ -8,6 +8,7 @@
 
 #include "gui/Gui.h"
 #include "typer/Serialize.h"
+#include "physics/PhysXTypeConvet.h"
 
 namespace pbe {
 
@@ -55,7 +56,7 @@ namespace pbe {
 
          for (auto child : children.node) {
             uint64 childUuid = child.as<uint64>();
-            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid));
+            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), -1, true);
          }
       }
    }
@@ -96,7 +97,7 @@ namespace pbe {
       TYPER_FIELD(scale)
    TYPER_END()
 
-   TYPER_BEGIN(SimpleMaterialComponent)
+   TYPER_BEGIN(MaterialComponent)
       TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(baseColor)
 
@@ -268,6 +269,11 @@ namespace pbe {
       return { translation, orientation, scale };
    }
 
+   SceneTransformComponent::SceneTransformComponent(Entity entity, Entity parent)
+         : entity(entity) {
+      SetParent(parent);
+   }
+
    void SceneTransformComponent::SetMatrix(const mat4& transform) {
       auto [position_, rotation_, scale_] = GetTransformDecomposition(transform);
 
@@ -277,8 +283,8 @@ namespace pbe {
       SetScale(scale_);
    }
 
-   void SceneTransformComponent::AddChild(Entity child) {
-      child.Get<SceneTransformComponent>().SetParent(entity);
+   void SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {
+      child.Get<SceneTransformComponent>().SetParent(entity, iChild, keepLocalTransform);
    }
 
    void SceneTransformComponent::RemoveChild(int idx) {
@@ -293,8 +299,14 @@ namespace pbe {
       ASSERT(!HasChilds());
    }
 
-   bool SceneTransformComponent::SetParent(Entity newParent) {
-      if (newParent == entity) {
+   bool SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
+      // todo:
+      // if (!newParent) {
+      //    newParent = entity.GetScene()->GetRootEntity();
+      // }
+      // ASSERT_MESSAGE(newParent, "New parent must be valid entity");
+
+      if (newParent == entity || parent == newParent) { // todo: may be the same
          return false;
       }
 
@@ -304,20 +316,37 @@ namespace pbe {
 
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
+
+         // int idx = (int)std::ranges::distance(std::ranges::find(pTrans.children, entity), pTrans.children.begin());
+
          std::erase(pTrans.children, entity);
       }
 
       parent = newParent;
+      // todo: remove this check. Only scene root without parent
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-         pTrans.children.push_back(entity); // todo: set by idx?
+
+         if (iChild == -1) {
+            pTrans.children.push_back(entity);
+         } else {
+            pTrans.children.insert(pTrans.children.begin() + iChild, entity);
+         }
       }
 
-      SetPosition(pos);
-      SetRotation(rot);
-      SetScale(scale);
+      if (!keepLocalTransform) {
+         SetPosition(pos);
+         SetRotation(rot);
+         SetScale(scale);
+      }
 
       return true;
+   }
+
+   void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
+      // todo:
+      auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
+      dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
    template<typename T>
@@ -341,8 +370,8 @@ namespace pbe {
    }
 
    void RegisterBasicComponents(Typer& typer) {
-      INTERNAL_ADD_COMPONENT(SceneTransformComponent);
-      INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
+      // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
+      INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(RigidBodyComponent);
       INTERNAL_ADD_COMPONENT(DistanceJointComponent);

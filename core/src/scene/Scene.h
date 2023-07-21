@@ -19,28 +19,34 @@ namespace pbe {
 
    class CORE_API Scene {
    public:
-      Scene();
+      Scene(bool withRoot = true);
       ~Scene();
 
       Entity Create(std::string_view name = {});
-      Entity CreateWithUUID(UUID uuid,  std::string_view name = {});
+      Entity Create(const Entity& parent, std::string_view name = {});
+
+      // todo: to private
+      Entity CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name = {});
 
       Entity GetEntity(UUID uuid);
-      Entity GetRootEntity();
 
-      void Duplicate(Entity& dst, const Entity& src);
+      Entity GetRootEntity();
+      void SetRootEntity(const Entity& entity);
+
+      // todo: to private
+      void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
-      void DestroyImmediate(Entity entity);
+      void DestroyImmediate(Entity entity, bool withChilds = true);
 
-      template<typename Component, typename... Other>
-      auto GetEntitiesWith() const {
-         return registry.view<Component, Other...>();
+      template<typename Type, typename... Other, typename... Exclude>
+      const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {
+         return registry.view<Type, Other...>(excludes);
       }
 
-      template<typename Component, typename... Other>
-      auto GetEntitiesWith() {
-         return registry.view<Component, Other...>();
+      template<typename Type, typename... Other, typename... Exclude>
+      auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
+         return registry.view<Type, Other...>(excludes);
       }
 
       // todo: return multiple
@@ -64,7 +70,7 @@ namespace pbe {
 
       PhysicsScene* GetPhysics() { return pPhysics.get(); }
 
-      Own<Scene> Copy(); // todo: const
+      Own<Scene> Copy() const;
 
       Own<DbgRend> dbgRend; // todo:
 
@@ -72,7 +78,7 @@ namespace pbe {
 
    private:
       entt::registry registry;
-      entt::entity rootEntityId;
+      entt::entity rootEntityId { entt::null };
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 

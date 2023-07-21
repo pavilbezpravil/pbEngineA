@@ -4,15 +4,17 @@
 #include "core/Core.h"
 
 namespace pbe {
-   namespace Random {
+   struct CORE_API Random {
 
-      CORE_API bool Bool(float trueChance = 0.5);
-      CORE_API float Uniform(float min = 0, float max = 1);
-      CORE_API vec3 Uniform(vec3 min = vec3_Zero, vec3 max = vec3_One);
-      CORE_API vec2 Uniform(vec2 min = vec2_Zero, vec2 max = vec2_One);
+      static bool Bool(float trueChance = 0.5);
+      static float Float(float min = 0, float max = 1);
+      static vec2 Float2(vec2 min = vec2_Zero, vec2 max = vec2_One);
+      static vec3 Float3(vec3 min = vec3_Zero, vec3 max = vec3_One);
 
-      CORE_API vec3 UniformInSphere();
-      CORE_API vec2 UniformInCircle();
+      static vec3 Color();
 
-   }
+      static vec3 UniformInSphere();
+      static vec2 UniformInCircle();
+
+   };
 }
