@@ -117,7 +117,7 @@ namespace pbe {
       Frustum frustum{ cullCamera.GetViewProjection() };
 
       for (auto [e, sceneTrans, material] :
-         scene.View<SceneTransformComponent, SimpleMaterialComponent>().each()) {
+         scene.View<SceneTransformComponent, MaterialComponent>().each()) {
 
          // DrawDesc desc;
          // desc.entityID = (uint)e;
@@ -218,7 +218,7 @@ namespace pbe {
       if (cfg.decals) {
          std::vector<SDecal> decals;
 
-         SimpleMaterialComponent decalDefault{}; // todo:
+         MaterialComponent decalDefault{}; // todo:
          for (auto [e, trans, decal] : scene.View<SceneTransformComponent, DecalComponent>().each()) {
             decalObjs.emplace_back(trans, decalDefault);
 

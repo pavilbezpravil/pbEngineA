@@ -85,7 +85,7 @@ namespace pbe {
       bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
    };
 
-   struct SimpleMaterialComponent {
+   struct MaterialComponent {
       vec3 baseColor = vec3_One;
       float roughness = 0.1f;
       float metallic = 0;

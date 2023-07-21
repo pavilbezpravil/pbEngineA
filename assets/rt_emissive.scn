@@ -6,7 +6,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 2.99375606, 1]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [1, 0, 0]
       roughness: 0.100000001
       metallic: 0
@@ -34,7 +34,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0, 0.759494305, 1]
       roughness: 0.100000001
       metallic: 0
@@ -51,7 +51,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 4.11403656, 1]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.075949192, 0, 1]
       roughness: 0.100000001
       metallic: 0
@@ -68,7 +68,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
@@ -85,7 +85,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [7.49906397, 6, 1]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.728764951, 0.818565369, 0.799241245]
       roughness: 0.100000001
       metallic: 0
@@ -102,7 +102,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [8, 0.5, 8]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
       metallic: 0
@@ -119,7 +119,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [20, 1, 20]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
       metallic: 0
@@ -143,7 +143,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.200395256, 0.848101258, 0.249587983]
       roughness: 0.100000001
       metallic: 0
@@ -160,7 +160,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [0.682625473, 6, 5.76288176]
       parent: 6791511463118186495
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.839662433, 0.0992006063, 0.0992006063]
       roughness: 0.100000001
       metallic: 0

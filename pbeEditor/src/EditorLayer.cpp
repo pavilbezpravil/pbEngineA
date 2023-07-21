@@ -52,7 +52,7 @@ namespace pbe {
       trans.rotation = desc.rotation;
 
       entity.Add<GeometryComponent>();
-      entity.Add<SimpleMaterialComponent>().baseColor = desc.color;
+      entity.Add<MaterialComponent>().baseColor = desc.color;
 
       // todo:
       RigidBodyComponent _rb{};
@@ -593,7 +593,7 @@ namespace pbe {
             }
 
             if (ImGui::MenuItem("Add Geom if Material is presents", nullptr, false, !!GetActiveScene())) {
-               auto view = scene->View<SimpleMaterialComponent>();
+               auto view = scene->View<MaterialComponent>();
                for (auto _e : view) {
                   Entity e{ _e, scene };
                   auto& geom = e.GetOrAdd<GeometryComponent>();

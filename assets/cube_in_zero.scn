@@ -23,7 +23,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 11755531795729590094
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.148213416, 0.780590713, 0.7565763]
       roughness: 0.100000001
       metallic: 0

@@ -311,7 +311,7 @@ namespace pbe {
          acc = 0;
          auto shoot = scene->Create("Shoot cube");
          shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
-         shoot.Add<SimpleMaterialComponent>();
+         shoot.Add<MaterialComponent>();
          shoot.Add<GeometryComponent>();
 
          // todo:

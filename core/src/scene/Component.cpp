@@ -97,7 +97,7 @@ namespace pbe {
       TYPER_FIELD(scale)
    TYPER_END()
 
-   TYPER_BEGIN(SimpleMaterialComponent)
+   TYPER_BEGIN(MaterialComponent)
       TYPER_FIELD_UI(UIColorEdit3)
       TYPER_FIELD(baseColor)
 
@@ -371,7 +371,7 @@ namespace pbe {
 
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
-      INTERNAL_ADD_COMPONENT(SimpleMaterialComponent);
+      INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(RigidBodyComponent);
       INTERNAL_ADD_COMPONENT(DistanceJointComponent);

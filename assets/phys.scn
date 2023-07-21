@@ -6,7 +6,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.082436271, 0.120235637, 0.371283084]
       roughness: 0.100000001
       metallic: 0
@@ -25,7 +25,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0759866163, 0.0285404027, 0.855219007]
       roughness: 0.100000001
       metallic: 0
@@ -44,7 +44,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.75681442, 0.282472163, 0.44539535]
       roughness: 0.100000001
       metallic: 0
@@ -63,7 +63,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.912191868, 0.922577381, 0.900116622]
       roughness: 0.100000001
       metallic: 0
@@ -82,7 +82,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.9285326, 0.61839658, 0.175424591]
       roughness: 0.100000001
       metallic: 0
@@ -101,7 +101,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [123.703011, 1, 162.817719]
       parent: 16296614365138388011
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.118677557, 0.852320671, 0.137250826]
       roughness: 0.100000001
       metallic: 0
@@ -120,7 +120,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.871971965, 0.00804074947, 0.579165637]
       roughness: 0.100000001
       metallic: 0
@@ -139,7 +139,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.465162694, 0.545947433, 0.470359057]
       roughness: 0.100000001
       metallic: 0
@@ -158,7 +158,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.47700581, 0.760869622, 0.631395757]
       roughness: 0.100000001
       metallic: 0
@@ -177,7 +177,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.143241346, 0.60976243, 0.41438219]
       roughness: 0.100000001
       metallic: 0
@@ -196,7 +196,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0289144646, 0.425866753, 0.212464556]
       roughness: 0.100000001
       metallic: 0
@@ -215,7 +215,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.583624363, 0.138086513, 0.938515484]
       roughness: 0.100000001
       metallic: 0
@@ -234,7 +234,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.680320501, 0.656546652, 0.294302046]
       roughness: 0.100000001
       metallic: 0
@@ -253,7 +253,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.892614245, 0.940407515, 0.595848918]
       roughness: 0.100000001
       metallic: 0
@@ -283,7 +283,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.388519853, 0.290009469, 0.157845512]
       roughness: 0.100000001
       metallic: 0
@@ -302,7 +302,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.900629342, 0.735875309, 0.447393507]
       roughness: 0.100000001
       metallic: 0
@@ -321,7 +321,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0684478655, 0.32625097, 0.895051301]
       roughness: 0.100000001
       metallic: 0
@@ -340,7 +340,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.539086282, 0.412596673, 0.888005733]
       roughness: 0.100000001
       metallic: 0
@@ -359,7 +359,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.687935531, 0.627338767, 0.302261114]
       roughness: 0.100000001
       metallic: 0
@@ -378,7 +378,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.802594841, 0.61491549, 0.696644843]
       roughness: 0.100000001
       metallic: 0
@@ -397,7 +397,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.475357056, 0.632038414, 0.301431447]
       roughness: 0.100000001
       metallic: 0
@@ -416,7 +416,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.63727957, 0.180002138, 0.802847683]
       roughness: 0.100000001
       metallic: 0
@@ -435,7 +435,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.470468044, 0.0334833637, 0.466589928]
       roughness: 0.100000001
       metallic: 0
@@ -454,7 +454,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.906111419, 0.771748602, 0.221568793]
       roughness: 0.100000001
       metallic: 0
@@ -473,7 +473,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.595279396, 0.737162173, 0.840745151]
       roughness: 0.100000001
       metallic: 0
@@ -492,7 +492,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.962389171, 0.298248738, 0.586635888]
       roughness: 0.100000001
       metallic: 0
@@ -511,7 +511,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.570530236, 0.441550881, 0.190526903]
       roughness: 0.100000001
       metallic: 0
@@ -530,7 +530,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0171390157, 0.0975136384, 0.920511186]
       roughness: 0.100000001
       metallic: 0
@@ -549,7 +549,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.747614801, 0.815266907, 0.131100446]
       roughness: 0.100000001
       metallic: 0
@@ -568,7 +568,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0565093011, 0.960841835, 0.770845652]
       roughness: 0.100000001
       metallic: 0
@@ -587,7 +587,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0880871266, 0.207822114, 0.565986097]
       roughness: 0.100000001
       metallic: 0
@@ -606,7 +606,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.545136809, 0.756275833, 0.857711673]
       roughness: 0.100000001
       metallic: 0
@@ -625,7 +625,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.37635988, 0.255219132, 0.729699314]
       roughness: 0.100000001
       metallic: 0
@@ -644,7 +644,7 @@ entities:
       rotation: [-22.5272121, 0, 0]
       scale: [20, 1, 20]
       parent: 16296614365138388011
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.47156924, 0.852320671, 0.118677557]
       roughness: 0.100000001
       metallic: 0
@@ -663,7 +663,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.59723556, 0.388183385, 0.752664924]
       roughness: 0.100000001
       metallic: 0
@@ -682,7 +682,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.261292964, 0.607690394, 0.309499413]
       roughness: 0.100000001
       metallic: 0
@@ -701,7 +701,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.676576555, 0.431892484, 0.630156815]
       roughness: 0.100000001
       metallic: 0
@@ -720,7 +720,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.297833234, 0.517265379, 0.23459895]
       roughness: 0.100000001
       metallic: 0
@@ -739,7 +739,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.986542046, 0.915025771, 0.2198589]
       roughness: 0.100000001
       metallic: 0
@@ -758,7 +758,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.458978534, 0.882876217, 0.272938728]
       roughness: 0.100000001
       metallic: 0
@@ -777,7 +777,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.257882237, 0.479798675, 0.762226164]
       roughness: 0.100000001
       metallic: 0
@@ -796,7 +796,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.883402109, 0.691457093, 0.495168746]
       roughness: 0.100000001
       metallic: 0
@@ -815,7 +815,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.461512953, 0.253696561, 0.877290964]
       roughness: 0.100000001
       metallic: 0
@@ -834,7 +834,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.248050451, 0.673403502, 0.193520606]
       roughness: 0.100000001
       metallic: 0
@@ -853,7 +853,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.655568838, 0.0746092945, 0.718076587]
       roughness: 0.100000001
       metallic: 0
@@ -872,7 +872,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.388956726, 0.229739219, 0.287867695]
       roughness: 0.100000001
       metallic: 0
@@ -891,7 +891,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.919353426, 0.437189668, 0.45674184]
       roughness: 0.100000001
       metallic: 0
@@ -910,7 +910,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.851440787, 0.813251555, 0.601164937]
       roughness: 0.100000001
       metallic: 0
@@ -929,7 +929,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.865962744, 0.168558672, 0.277727485]
       roughness: 0.100000001
       metallic: 0
@@ -948,7 +948,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0501552634, 0.667303383, 0.715833187]
       roughness: 0.100000001
       metallic: 0
@@ -967,7 +967,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.709579945, 0.713649929, 0.917519391]
       roughness: 0.100000001
       metallic: 0
@@ -986,7 +986,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.658147156, 0.0996482074, 0.257228643]
       roughness: 0.100000001
       metallic: 0
@@ -1005,7 +1005,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.384569436, 0.7151528, 0.712239742]
       roughness: 0.100000001
       metallic: 0
@@ -1024,7 +1024,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.647087336, 0.162450388, 0.776658416]
       roughness: 0.100000001
       metallic: 0
@@ -1043,7 +1043,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.850198984, 0.904987693, 0.457699835]
       roughness: 0.100000001
       metallic: 0
@@ -1062,7 +1062,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.782537282, 0.62733829, 0.485306561]
       roughness: 0.100000001
       metallic: 0
@@ -1081,7 +1081,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.994672179, 0.373594433, 0.387237698]
       roughness: 0.100000001
       metallic: 0
@@ -1100,7 +1100,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.435413897, 0.680829406, 0.420356303]
       roughness: 0.100000001
       metallic: 0
@@ -1119,7 +1119,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0510498099, 0.395200789, 0.273839504]
       roughness: 0.100000001
       metallic: 0
@@ -1138,7 +1138,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.366371125, 0.113087513, 0.658071876]
       roughness: 0.100000001
       metallic: 0
@@ -1165,7 +1165,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.548963904, 0.522330999, 0.532632113]
       roughness: 0.100000001
       metallic: 0
@@ -1184,7 +1184,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.799932003, 0.130041078, 0.726223886]
       roughness: 0.100000001
       metallic: 0
@@ -1203,7 +1203,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.656612635, 0.506312251, 0.306049824]
       roughness: 0.100000001
       metallic: 0
@@ -1222,7 +1222,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.834986091, 0.920750141, 0.821762085]
       roughness: 0.100000001
       metallic: 0
@@ -1241,7 +1241,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.748041213, 0.429668009, 0.848602474]
       roughness: 0.100000001
       metallic: 0
@@ -1260,7 +1260,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.839770615, 0.514833152, 0.209151879]
       roughness: 0.100000001
       metallic: 0
@@ -1279,7 +1279,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.58790648, 0.897349894, 0.609110236]
       roughness: 0.100000001
       metallic: 0
@@ -1298,7 +1298,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.220763803, 0.125039026, 0.716113567]
       roughness: 0.100000001
       metallic: 0
@@ -1317,7 +1317,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.763476849, 0.819913507, 0.137620568]
       roughness: 0.100000001
       metallic: 0
@@ -1336,7 +1336,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.45474115, 0.239074349, 0.152109668]
       roughness: 0.100000001
       metallic: 0
@@ -1363,7 +1363,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.130243838, 0.648977518, 0.255366236]
       roughness: 0.100000001
       metallic: 0
@@ -1390,7 +1390,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.487934023, 0.102339812, 0.279255569]
       roughness: 0.100000001
       metallic: 0
@@ -1409,7 +1409,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.143333957, 0.330871284, 0.257216394]
       roughness: 0.100000001
       metallic: 0
@@ -1428,7 +1428,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.635883629, 0.665860116, 0.228709891]
       roughness: 0.100000001
       metallic: 0
@@ -1447,7 +1447,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0104487352, 0.0926147252, 0.668444991]
       roughness: 0.100000001
       metallic: 0
@@ -1466,7 +1466,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0891694948, 0.416362166, 0.61087966]
       roughness: 0.100000001
       metallic: 0
@@ -1485,7 +1485,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.834293544, 0.701634347, 0.220686093]
       roughness: 0.100000001
       metallic: 0
@@ -1504,7 +1504,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.0523344204, 0.116388313, 0.701640189]
       roughness: 0.100000001
       metallic: 0
@@ -1523,7 +1523,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.751373649, 0.431593418, 0.573831737]
       roughness: 0.100000001
       metallic: 0
@@ -1542,7 +1542,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.446196109, 0.679030895, 0.741297245]
       roughness: 0.100000001
       metallic: 0
@@ -1561,7 +1561,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.345941067, 0.312635809, 0.753728449]
       roughness: 0.100000001
       metallic: 0
@@ -1580,7 +1580,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.16309762, 0.225375473, 0.680717289]
       roughness: 0.100000001
       metallic: 0
@@ -1599,7 +1599,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.648904681, 0.293424785, 0.317603201]
       roughness: 0.100000001
       metallic: 0
@@ -1618,7 +1618,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.996509731, 0.56121397, 0.296162516]
       roughness: 0.100000001
       metallic: 0
@@ -1637,7 +1637,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.700666964, 0.920728087, 0.213109255]
       roughness: 0.100000001
       metallic: 0
@@ -1663,7 +1663,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.49675402, 0.103847116, 0.308007002]
       roughness: 0.100000001
       metallic: 0
@@ -1682,7 +1682,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.726835072, 0.595341027, 0.895392358]
       roughness: 0.100000001
       metallic: 0
@@ -1701,7 +1701,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.161563113, 0.288993895, 0.713665426]
       roughness: 0.100000001
       metallic: 0
@@ -1720,7 +1720,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13482914116042921232
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.671406507, 0.478466749, 0.884919882]
       roughness: 0.100000001
       metallic: 0
@@ -1739,7 +1739,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 13396882120089125784
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.977704704, 0.757419825, 0.695170283]
       roughness: 0.100000001
       metallic: 0
@@ -1768,7 +1768,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.863466978, 0.22029312, 0.405827492]
       roughness: 0.100000001
       metallic: 0
@@ -1787,7 +1787,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 10919072432576154392
-    SimpleMaterialComponent:
+    MaterialComponent:
       baseColor: [0.814890802, 0.824550092, 0.952307642]
       roughness: 0.100000001
       metallic: 0

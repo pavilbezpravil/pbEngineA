@@ -46,7 +46,7 @@ namespace pbe {
 
       std::vector<SRTObject> objs;
 
-      for (auto [e, trans, material, geom] : scene.View<SceneTransformComponent, SimpleMaterialComponent, GeometryComponent>().each()) {
+      for (auto [e, trans, material, geom] : scene.View<SceneTransformComponent, MaterialComponent, GeometryComponent>().each()) {
          SRTObject obj;
          obj.position = trans.Position();
          obj.id = (uint)e;
