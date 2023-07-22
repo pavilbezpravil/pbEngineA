@@ -17,18 +17,17 @@
 struct SCameraCB;
 
 namespace pbe {
-   // class RTRenderer;
 
-   struct RenderCamera {
+   struct CORE_API RenderCamera {
       vec3 position{};
 
-      mat4 view;
-      mat4 projection;
+      mat4 view{};
+      mat4 projection{};
 
-      mat4 prevViewProjection;
+      mat4 prevViewProjection{};
 
-      float zNear;
-      float zFar;
+      float zNear = 0.1f;
+      float zFar = 1000.f;
 
       vec3 Right() const {
          return vec3{ view[0][0], view[1][0] , view[2][0] };
@@ -47,6 +46,14 @@ namespace pbe {
       }
 
       void NextFrame();
+
+      void UpdateProj(int2 size, float fov = 90.f / 180 * PI) {
+         projection = glm::perspectiveFov(fov, (float)size.x, (float)size.y, zNear, zFar);
+      }
+
+      void UpdateView(const vec3& direction, const vec3& up = vec3_Y) {
+         view = glm::lookAt(position, position + direction, up);
+      }
 
       void FillSCameraCB(SCameraCB& cameraCB) const;
    };
@@ -83,6 +90,8 @@ namespace pbe {
       Ref<Buffer> underCursorBuffer;
       int2 cursorPixelIdx{-1};
    };
+
+   CORE_API RenderContext CreateRenderContext(int2 size);
 
    class CORE_API Renderer {
    public:

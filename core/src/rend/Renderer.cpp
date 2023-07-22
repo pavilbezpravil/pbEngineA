@@ -65,6 +65,115 @@ namespace pbe {
       memcpy(cameraCB.frustumPlanes, frustum.planes, sizeof(frustum.planes));
    }
 
+   RenderContext CreateRenderContext(int2 size) {
+      RenderContext context;
+
+      Texture2D::Desc texDesc;
+      texDesc.size = size;
+
+      texDesc.name = "scene colorHDR";
+      texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+      // texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT; // my laptop doesnot support this format as UAV
+      texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+      texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
+      context.colorHDR = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene colorLDR";
+      // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+      // texDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM; // todo: test srgb
+      context.colorLDR = Texture2D::Create(texDesc);
+
+      texDesc.name = "water refraction";
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+      context.waterRefraction = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene depth";
+      // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
+      texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+      context.depth = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene depth without water";
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+      context.depthWithoutWater = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene linear depth";
+      texDesc.format = DXGI_FORMAT_R16_FLOAT;
+      texDesc.mips = 0;
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+      context.linearDepth = Texture2D::Create(texDesc);
+
+      texDesc.mips = 1;
+
+      texDesc.name = "scene ssao";
+      texDesc.format = DXGI_FORMAT_R16_UNORM;
+      texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+      context.ssao = Texture2D::Create(texDesc);
+
+      if (!context.shadowMap) {
+         Texture2D::Desc texDesc;
+         texDesc.name = "shadow map";
+         // texDesc.format = DXGI_FORMAT_D16_UNORM;
+         texDesc.format = DXGI_FORMAT_R16_TYPELESS;
+         texDesc.size = { 1024, 1024 };
+         texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+         context.shadowMap = Texture2D::Create(texDesc);
+      }
+
+      // rt
+      {
+         auto& outTexture = *context.colorHDR;
+         auto outTexSize = outTexture.GetDesc().size;
+
+         Texture2D::Desc texDesc{
+            .size = outTexSize,
+            .format = outTexture.GetDesc().format,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt history",
+         };
+         context.historyTex = Texture2D::Create(texDesc);
+         context.historyTex2 = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt depth",
+         };
+         context.depthTex = Texture2D::Create(texDesc);
+         context.depthTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "rt normal",
+         };
+         context.normalTex = Texture2D::Create(texDesc);
+         context.normalTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8_UINT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt reproject count",
+         };
+         context.reprojectCountTex = Texture2D::Create(texDesc);
+         context.reprojectCountTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_UINT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt obj id",
+         };
+         context.objIDTex = Texture2D::Create(texDesc);
+         context.objIDTexPrev = Texture2D::Create(texDesc);
+      }
+
+      return context;
+   }
+
    void Renderer::Init() {
       rtRenderer.reset(new RTRenderer());
       rtRenderer->Init();
