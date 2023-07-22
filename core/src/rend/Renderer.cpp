@@ -404,7 +404,7 @@ namespace pbe {
 
                cmd.SetRenderTargets();
 
-               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.cs", "main"));
+               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.hlsl", "main"));
 
                ssaoPass->Activate(cmd);
 
@@ -478,7 +478,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "main"));
+            auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "main"));
             linearizeDepthPass->Activate(cmd);
 
             linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
@@ -495,7 +495,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "downsampleDepth"));
+            auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "downsampleDepth"));
             downsampleDepthPass->Activate(cmd);
 
             auto& texture = cameraContext.linearDepth;
@@ -521,7 +521,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto fogPass = GetGpuProgram(ProgramDesc::Cs("fog.cs", "main"));
+            auto fogPass = GetGpuProgram(ProgramDesc::Cs("fog.hlsl", "main"));
 
             fogPass->Activate(cmd);
 
@@ -541,7 +541,7 @@ namespace pbe {
 
          cmd.SetRenderTargets();
 
-         auto tonemapPass = GetGpuProgram(ProgramDesc::Cs("tonemap.cs", "main"));
+         auto tonemapPass = GetGpuProgram(ProgramDesc::Cs("tonemap.hlsl", "main"));
 
          tonemapPass->Activate(cmd);
 
@@ -634,7 +634,7 @@ namespace pbe {
                auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
 
                if (1) {
-                  auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.cs", "indirectArgsTest"));
+                  auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.hlsl", "indirectArgsTest"));
                
                   indirectArgsTest->Activate(cmd);
                

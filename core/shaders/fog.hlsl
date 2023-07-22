@@ -1,7 +1,7 @@
 #include "commonResources.hlsli"
 #include "common.hlsli"
 #include "tonemaping.hlsli"
-#include "noise.inl"
+#include "noise.hlsli"
 #include "math.hlsli"
 #include "sky.hlsli"
 #include "lighting.hlsli"

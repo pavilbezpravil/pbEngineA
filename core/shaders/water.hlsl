@@ -2,7 +2,7 @@
 #include "common.hlsli"
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
-#include "noise.inl"
+#include "noise.hlsli"
 #include "sky.hlsli"
 #include "lighting.hlsli"
 

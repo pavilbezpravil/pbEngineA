@@ -58,4 +58,4 @@ namespace glm
 	/// @}
 }//namespace glm
 
-#include "noise.inl"
+#include "noise.hlsli"
