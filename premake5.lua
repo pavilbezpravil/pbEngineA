@@ -4,6 +4,8 @@ workspace "pbEngine"
    platforms { "x64" }
    systemversion "latest"
 
+   characterset "ASCII"
+
    filter "configurations:Debug"
       defines { "DEBUG" }
       symbols "On"
