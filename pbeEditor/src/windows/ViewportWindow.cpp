@@ -57,35 +57,14 @@ namespace pbe {
          customHeadFunc();
       }
 
-      static RenderConfing cfg;
-
-      ImGui::Checkbox("Transparency", &cfg.transparency);
-      ImGui::SameLine();
-      ImGui::Checkbox("Transparency Sorting", &cfg.transparencySorting);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Opaque Sorting", &cfg.opaqueSorting);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Decals", &cfg.decals);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Shadow", &cfg.useShadowPass);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Use ZPass", &cfg.useZPass);
-      ImGui::SameLine();
-      ImGui::Checkbox("SSAO", &cfg.ssao);
-      ImGui::SameLine();
-      ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
-
       static bool textureViewWindow = false;
       ImGui::Checkbox("Texture View Window", &textureViewWindow);
       ImGui::SameLine();
 
-      ImGui::Checkbox("Super Sampling", &cfg.superSampling);
-
-      renderer->cfg = cfg;
+      static float renderScale = 1;
+      ImGui::SetNextItemWidth(120);
+      ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
+      ImGui::SameLine();
 
       static int item_current = 0;
       const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "LinearDepth", "Normal", "Position", "SSAO", "ShadowMap", "RT Depth", "RT Normal"};
@@ -116,8 +95,8 @@ namespace pbe {
 
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
-      if (cfg.superSampling) {
-         size *= 2;
+      if (renderScale != 1.f) {
+         size = vec2(size) * renderScale;
       }
 
       if (size.x > 1 && size.y > 1) {

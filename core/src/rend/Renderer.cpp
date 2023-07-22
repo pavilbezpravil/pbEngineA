@@ -18,6 +18,14 @@ namespace pbe {
    CVarValue<bool> cFreezeCullCamera{ "render/freeze cull camera", false };
    CVarValue<bool> cUseFrustumCulling{ "render/use frustum culling", false };
 
+   CVarValue<bool> cvRenderDecals{ "render/decals", true };
+   CVarValue<bool> cvRenderOpaqueSort{ "render/opaque sort", true };
+   CVarValue<bool> cvRenderShadowMap{ "render/shadow map", true };
+   CVarValue<bool> cvRenderZPass{ "render/z pass", true };
+   CVarValue<bool> cvRenderSsao{ "render/ssao", false };
+   CVarValue<bool> cvRenderTransparency{ "render/transparency", true };
+   CVarValue<bool> cvRenderTransparencySort{ "render/transparency sort", true };
+
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", true };
@@ -206,7 +214,7 @@ namespace pbe {
       cmd.SetRasterizerState(rendres::rasterizerState);
 
       uint nDecals = 0;
-      if (cfg.decals) {
+      if (cvRenderDecals) {
          std::vector<SDecal> decals;
 
          MaterialComponent decalDefault{}; // todo:
@@ -301,7 +309,7 @@ namespace pbe {
 
       cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
 
-      if (cfg.opaqueSorting) {
+      if (cvRenderOpaqueSort) {
          // todo: slow. I assumed
          std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
             float az = glm::dot(camera.Forward(), a.trans.position);
@@ -349,7 +357,7 @@ namespace pbe {
          rtRenderer->RenderScene(cmd, scene, camera, cameraContext);
          ResetCS_SRV_UAV();
       } else {
-         if (cfg.useShadowPass && hasDirectLight) {
+         if (cvRenderShadowMap && hasDirectLight) {
             GPU_MARKER("Shadow Map");
             PROFILE_GPU("Shadow Map");
 
@@ -381,7 +389,7 @@ namespace pbe {
 
          cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
 
-         if (cfg.useZPass) {
+         if (cvRenderZPass) {
             {
                GPU_MARKER("ZPass");
                PROFILE_GPU("ZPass");
@@ -398,7 +406,7 @@ namespace pbe {
                RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
             }
 
-            if (cfg.ssao) {
+            if (cvRenderSsao) {
                GPU_MARKER("SSAO");
                PROFILE_GPU("SSAO");
 
@@ -451,7 +459,7 @@ namespace pbe {
 
          waterSystem.Render(cmd, scene, cameraContext);
 
-         if (cfg.transparency && !transparentObjs.empty()) {
+         if (cvRenderTransparency && !transparentObjs.empty()) {
             GPU_MARKER("Transparency");
             PROFILE_GPU("Transparency");
 
@@ -459,7 +467,7 @@ namespace pbe {
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
             cmd.SetBlendState(rendres::blendStateTransparency);
 
-            if (cfg.transparencySorting) {
+            if (cvRenderTransparencySort) {
                // todo: slow. I assumed
                std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
                   float az = glm::dot(camera.Forward(), a.trans.position);

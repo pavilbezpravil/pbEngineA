@@ -85,23 +85,8 @@ namespace pbe {
       int2 cursorPixelIdx{-1}; // todo:
    };
 
-   struct RenderConfing {
-      bool transparency = true;
-      bool decals = true;
-      bool transparencySorting = true;
-      bool opaqueSorting = true;
-      bool useZPass = true;
-      bool useShadowPass = true;
-      bool ssao = false;
-      bool fog = false;
-      bool useInstancedDraw = true;
-      bool superSampling = false;
-   };
-
    class CORE_API Renderer {
    public:
-      RenderConfing cfg;
-
       Own<RTRenderer> rtRenderer;
 
       // todo: remove
