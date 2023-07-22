@@ -5,6 +5,8 @@
 #include "Undo.h"
 #include "app/Input.h"
 #include "gui/Gui.h"
+#include "math/Random.h"
+#include "physics/PhysicsScene.h"
 #include "scene/Component.h"
 #include "scene/Utils.h"
 #include "typer/Serialize.h"
@@ -26,27 +28,149 @@ namespace pbe {
       if (!pScene) {
          ImGui::Text("No scene");
       } else {
+         auto& scene = *pScene;
          // todo: undo on delete entity
 
          // todo: undo
          if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
             if (ImGui::MenuItem("Create Empty")) {
-               ToggleSelectEntity(CreateEmpty(*pScene));
+               ToggleSelectEntity(CreateEmpty(scene));
             }
-            if (ImGui::MenuItem("Create Dynamic Cube")) {
-               ToggleSelectEntity(CreateCube(*pScene));
+
+            if (UI_MENU("Geometry")) {
+               if (ImGui::MenuItem("Dynamic Cube")) {
+                  ToggleSelectEntity(CreateCube(scene));
+               }
+               if (ImGui::MenuItem("Static Cube")) {
+                  ToggleSelectEntity(CreateCube(scene, CubeDesc{ .dynamic = false }));
+               }
             }
-            if (ImGui::MenuItem("Create Static Cube")) {
-               ToggleSelectEntity(CreateCube(*pScene, CubeDesc{ .dynamic = false }));
+
+            if (UI_MENU("Lighting")) {
+               if (ImGui::MenuItem("Create Direct Light")) {
+                  ToggleSelectEntity(CreateDirectLight(scene));
+               }
+               if (ImGui::MenuItem("Create Sky")) {
+                  ToggleSelectEntity(CreateSky(scene));
+               }
             }
-            if (ImGui::MenuItem("Create Direct Light")) {
-               ToggleSelectEntity(CreateDirectLight(*pScene));
+
+            if (UI_MENU("Presets")) {
+               vec3 cubeSize{ 25, 10, 25 };
+
+               if (ImGui::MenuItem("Random Cubes")) {
+                  Entity root = scene.Create("Random Cubes");
+
+                  for (int i = 0; i < 500; ++i) {
+                     CreateCube(scene, CubeDesc{
+                        .parent = root,
+                        .pos = Random::Float3(-cubeSize, cubeSize),
+                        .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
+                        .rotation = Random::Float3(vec3{ 0 }, vec3{ 30.f }), // todo: PI?
+                        .color = Random::Color() });
+                  }
+
+                  ToggleSelectEntity(root);
+               }
+
+               if (ImGui::MenuItem("Random Lights")) {
+                  Entity root = scene.Create("Random Lights");
+
+                  for (int i = 0; i < 8; ++i) {
+                     Entity e = CreateEmpty(scene, std::format("Light {}", i),
+                        root, Random::Float3(-cubeSize, cubeSize));
+
+                     auto& light = e.Add<LightComponent>();
+                     light.color = Random::Float3(vec3{ 0 }, vec3{ 1.f });
+                     light.intensity = Random::Float(0.f, 20.f);
+                     light.radius = Random::Float(3, 10);
+                  }
+
+                  ToggleSelectEntity(root);
+               }
+
+               if (ImGui::MenuItem("Add Geom if Material is presents")) {
+                  auto view = scene.View<MaterialComponent>();
+                  for (auto _e : view) {
+                     Entity e{ _e, &scene };
+                     auto& geom = e.GetOrAdd<GeometryComponent>();
+                     geom.type = GeomType::Box;
+                  }
+               }
+
+               if (ImGui::MenuItem("Create wall")) {
+                  Entity root = scene.Create("Wall");
+
+                  int size = 10;
+                  for (int y = 0; y < size; ++y) {
+                     for (int x = 0; x < size; ++x) {
+                        CreateCube(scene, CubeDesc{
+                           .parent = root,
+                           .pos = vec3{ -size / 2.f + x, y + 0.5f, 0 },
+                           .color = Random::Color() });
+                     }
+                  }
+
+                  ToggleSelectEntity(root);
+               }
+
+               if (ImGui::MenuItem("Create stack tri")) {
+                  Entity root = scene.Create("Stack tri");
+
+                  int size = 10;
+                  for (int y = 0; y < size; ++y) {
+                     int width = size - y;
+                     for (int x = 0; x < width; ++x) {
+                        CreateCube(scene, CubeDesc{
+                           .parent = root,
+                           .pos = vec3{ -width / 2.f + x, y + 0.5f, 0 },
+                           .color = Random::Color() });
+                     }
+                  }
+
+                  ToggleSelectEntity(root);
+               }
+
+               if (ImGui::MenuItem("Create stack")) {
+                  Entity root = scene.Create("Stack");
+
+                  int size = 10;
+                  for (int i = 0; i < size; ++i) {
+                     CreateCube(scene, CubeDesc{
+                        .parent = root,
+                        .pos = vec3{0, i + 0.5f, 0},
+                        .color = Random::Color() });
+                  }
+
+                  ToggleSelectEntity(root);
+               }
+
+               if (ImGui::MenuItem("Create chain")) {
+                  Entity root = CreateCube(scene, CubeDesc{
+                     .namePrefix = "Chain",
+                     .pos = vec3{0, 10, 0},
+                     .dynamic = false,
+                     .color = Random::Color() });
+
+                  Entity prev = root;
+                  int size = 10;
+                  for (int i = 0; i < size - 1; ++i) {
+                     Entity cur = CreateCube(scene, CubeDesc{
+                        .parent = root,
+                        .pos = vec3{0, i * 2 + 0.5f, 0},
+                        .color = Random::Color() });
+
+                     // todo:
+                     CreateDistanceJoint(prev, cur);
+                     prev = cur;
+                  }
+
+                  ToggleSelectEntity(root);
+               }
             }
-            if (ImGui::MenuItem("Create Sky")) {
-               ToggleSelectEntity(CreateSky(*pScene));
-            }
+
             if (ImGui::MenuItem("Create Decal")) {
-               auto createdEntity = pScene->Create();
+               auto createdEntity = scene.Create();
                createdEntity.Add<DecalComponent>();
                ToggleSelectEntity(createdEntity);
             }

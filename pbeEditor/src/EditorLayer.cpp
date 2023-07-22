@@ -9,11 +9,8 @@
 #include "core/Type.h"
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
-#include "math/Random.h"
-#include "physics/PhysicsScene.h"
 #include "scene/Scene.h"
 #include "scene/Entity.h"
-#include "scene/Component.h"
 #include "scene/Utils.h"
 #include "typer/Serialize.h"
 #include "typer/Typer.h"
@@ -53,22 +50,21 @@ namespace pbe {
          switch (editorState) {
             case State::Edit:
                if (ImGui::Button("Play") && editorScene) {
-                  runtimeScene = editorScene->Copy();
-                  SetActiveScene(runtimeScene.get());
-                  runtimeScene->OnStart();
-                  editorState = State::Play;
+                  OnPlay();
                }
                break;
             case State::Play:
                if (ImGui::Button("Stop")) {
-                  runtimeScene->OnStop();
-                  runtimeScene = {};
-                  SetActiveScene(editorScene.get());
-                  editorState = State::Edit;
+                  OnStop();
                }
                break;
             default: UNIMPLEMENTED();
          }
+
+         // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
+         // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
+         //    
+         // }
 
          if (editorState == State::Edit) {
             ImGui::SameLine();
@@ -213,117 +209,6 @@ namespace pbe {
 
             ImGui::MenuItem("ImGuiDemoWindow", NULL, &showImGuiWindow);
          }
-
-         if (UI_MENU("Create")) {
-            auto scene = GetActiveScene();
-
-            vec3 cubeSize{ 25, 10, 25 };
-
-            if (ImGui::MenuItem("Random Cubes", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Random Cubes");
-               editorSelection.ToggleSelect(root);
-
-               for (int i = 0; i < 500; ++i) {
-                  CreateCube(*scene, CubeDesc{
-                     .parent = root,
-                     .pos = Random::Float3(-cubeSize, cubeSize),
-                     .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
-                     .rotation = Random::Float3(vec3{ 0 }, vec3{ 30.f }), // todo: PI?
-                     .color = Random::Color() });
-               }
-            }
-
-            if (ImGui::MenuItem("Random Lights", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Random Lights");
-               editorSelection.ToggleSelect(root);
-
-               for (int i = 0; i < 8; ++i) {
-                  Entity e = CreateEmpty(*scene, std::format("Light {}", i),
-                     root, Random::Float3(-cubeSize, cubeSize));
-
-                  auto& light = e.Add<LightComponent>();
-                  light.color = Random::Float3(vec3{ 0 }, vec3{ 1.f });
-                  light.intensity = Random::Float(0.f, 20.f);
-                  light.radius = Random::Float(3, 10);
-               }
-            }
-
-            if (ImGui::MenuItem("Add Geom if Material is presents", nullptr, false, !!GetActiveScene())) {
-               auto view = scene->View<MaterialComponent>();
-               for (auto _e : view) {
-                  Entity e{ _e, scene };
-                  auto& geom = e.GetOrAdd<GeometryComponent>();
-                  geom.type = GeomType::Box;
-               }
-            }
-
-            if (ImGui::MenuItem("Create wall", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Wall");
-               editorSelection.ToggleSelect(root);
-
-               int size = 10;
-               for (int y = 0; y < size; ++y) {
-                  for (int x = 0; x < size; ++x) {
-                     CreateCube(*scene, CubeDesc{
-                        .parent = root,
-                        .pos = vec3{ -size / 2.f + x, y + 0.5f, 0 },
-                        .color = Random::Color() });
-                  }
-               }
-            }
-
-            if (ImGui::MenuItem("Create stack tri", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Stack tri");
-               editorSelection.ToggleSelect(root);
-
-               int size = 10;
-               for (int y = 0; y < size; ++y) {
-                  int width = size - y;
-                  for (int x = 0; x < width; ++x) {
-                     CreateCube(*scene, CubeDesc{
-                        .parent = root,
-                        .pos = vec3{ -width / 2.f + x, y + 0.5f, 0 },
-                        .color = Random::Color() });
-                  }
-               }
-            }
-
-            if (ImGui::MenuItem("Create stack", nullptr, false, !!GetActiveScene())) {
-               Entity root = scene->Create("Stack");
-               editorSelection.ToggleSelect(root);
-
-               int size = 10;
-               for (int i = 0; i < size; ++i) {
-                  CreateCube(*scene, CubeDesc{
-                     .parent = root,
-                     .pos = vec3{0, i + 0.5f, 0},
-                     .color = Random::Color() });
-               }
-            }
-
-            if (ImGui::MenuItem("Create chain", nullptr, false, !!GetActiveScene())) {
-               // Entity root = scene->Create("Chain");
-               Entity root = CreateCube(*scene, CubeDesc{
-                  .namePrefix = "Chain",
-                  .pos = vec3{0, 10, 0},
-                  .dynamic = false,
-                  .color = Random::Color() });
-               editorSelection.ToggleSelect(root);
-
-               Entity prev = root;
-               int size = 10;
-               for (int i = 0; i < size - 1; ++i) {
-                  Entity cur = CreateCube(*scene, CubeDesc{
-                     .parent = root,
-                     .pos = vec3{0, i * 2 + 0.5f, 0},
-                     .color = Random::Color() });
-
-                  // todo:
-                  CreateDistanceJoint(prev, cur);
-                  prev = cur;
-               }
-            }
-         }
       }
 
       if (showImGuiWindow) {
@@ -341,11 +226,10 @@ namespace pbe {
 
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyPressedEvent>()) {
-         // INFO("KeyCode {}", e->keyCode);
-
          if (e->keyCode == VK_ESCAPE) {
             editorSelection.ClearSelection();
          }
+
          if (e->keyCode == VK_DELETE) {
             for (auto entity : editorSelection.selected) {
                Undo::Get().Delete(entity); // todo: undo not each but all at once
@@ -353,19 +237,26 @@ namespace pbe {
             }
             editorSelection.ClearSelection();
          }
-         if (e->keyCode == 'D' && Input::IsKeyPressed(VK_CONTROL)) {
-            auto prevSelected = editorSelection.selected;
-            editorSelection.ClearSelection();
 
-            for (auto entity : prevSelected) {
-               auto duplicatedEntity = GetActiveScene()->Duplicate(entity);
-               editorSelection.Select(duplicatedEntity, false);
+         if (Input::IsKeyPressed(VK_CONTROL)) {
+            if (e->keyCode == 'P') {
+               TogglePlayStop();
             }
-         }
 
-         if (e->keyCode == 'Z' && Input::IsKeyPressed(VK_CONTROL)) {
-            // todo: dont work
-            // Undo::Get().PopAction();
+            if (e->keyCode == 'D') {
+               auto prevSelected = editorSelection.selected;
+               editorSelection.ClearSelection();
+
+               for (auto entity : prevSelected) {
+                  auto duplicatedEntity = GetActiveScene()->Duplicate(entity);
+                  editorSelection.Select(duplicatedEntity, false);
+               }
+            }
+
+            if (e->keyCode == 'Z') {
+               // todo: dont work
+               // Undo::Get().PopAction();
+            }
          }
       }
    }
@@ -396,6 +287,30 @@ namespace pbe {
       default: UNIMPLEMENTED();
       }
       return nullptr;
+   }
+
+   void EditorLayer::OnPlay() {
+      runtimeScene = editorScene->Copy();
+      SetActiveScene(runtimeScene.get());
+      runtimeScene->OnStart();
+      editorState = State::Play;
+   }
+
+   void EditorLayer::OnStop() {
+      runtimeScene->OnStop();
+      runtimeScene = {};
+      SetActiveScene(editorScene.get());
+      editorState = State::Edit;
+   }
+
+   void EditorLayer::TogglePlayStop() {
+      if (editorState == State::Edit) {
+         OnPlay();
+      } else if (editorState == State::Play) {
+         OnStop();
+      } else {
+         UNIMPLEMENTED();
+      }
    }
 
    void EditorLayer::ReloadDll() {
