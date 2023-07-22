@@ -2,7 +2,6 @@
 #include "EditorLayer.h"
 #include "EditorWindow.h"
 #include "Undo.h"
-#include "ViewportWindow.h"
 #include "app/Event.h"
 #include "app/Input.h"
 #include "core/Profiler.h"
@@ -15,6 +14,7 @@
 #include "typer/Serialize.h"
 #include "typer/Typer.h"
 #include "windows/EditorWindows.h"
+#include "windows/ViewportWindow.h"
 #include "windows/SceneHierarchyWindow.h"
 #include "windows/InspectorWindow.h"
 

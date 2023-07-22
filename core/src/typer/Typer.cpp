@@ -223,19 +223,18 @@ namespace pbe {
 
       const Deserializer& nodeFields = hasName ? deser[name.data()] : deser;
 
-      bool success = true;
-
       if (ti.deserialize) {
-         ti.deserialize(nodeFields, value);
-         // todo: deserialize must return bool
+         return ti.deserialize(nodeFields, value);
       } else {
+         bool success = true;
+
          for (const auto& f : ti.fields) {
             byte* data = value + f.offset;
             success &= DeserializeImpl(nodeFields, f.name, f.typeID, data);
          }
-      }
 
-      return success;
+         return success;
+      }
    }
 
 }
