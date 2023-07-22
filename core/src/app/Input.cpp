@@ -35,6 +35,24 @@ namespace pbe {
       return sInput.mouseDelta;
    }
 
+   void Input::LockMousePos(bool lock) {
+      sInput.mouseLocked = lock;
+   }
+
+   void Input::HideMouse(bool lock) {
+      ShowCursor(FALSE);
+      if (lock) {
+         LockMousePos(true);
+      }
+   }
+
+   void Input::ShowMouse(bool unlock) {
+      if (unlock) {
+         LockMousePos(false);
+      }
+      ShowCursor(TRUE);
+   }
+
    bool Input::IsKeyDown(int keyCode) {
       return sInput.keyDown[keyCode];
    }
@@ -65,7 +83,7 @@ namespace pbe {
 
    void Input::NextFrame() {
       sInput.mouseDelta = GetGlobalMousePosition() - sInput.mousePos;
-      if (sWindow->lockMouse) {
+      if (sInput.mouseLocked) {
          SetCursorPos(sInput.mousePos.x, sInput.mousePos.y);
       } else {
          sInput.mousePos += sInput.mouseDelta;

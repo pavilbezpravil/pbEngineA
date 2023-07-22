@@ -163,7 +163,7 @@ void AddGerstnerWaves(float3 posW, float waveScale, float polySize, inout float3
 }
 
 // todo:
-#define FLOWMAP
+// #define FLOWMAP
 
 #define WATER_PATCH_BC(patch, param, bc) (lerp(lerp(patch[0].param, patch[1].param, bc.x), lerp(patch[2].param, patch[3].param, bc.x), bc.y))
 // #define WATER_PATCH_BC(patch, param, bc) (bc.x * patch[0].param + bc.y * patch[1].param + bc.z * patch[2].param)

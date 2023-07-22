@@ -160,10 +160,6 @@ namespace pbe {
    }
 
    void Window::HideAndLockMouse() {
-      lockMouse = true;
-
-      ShowCursor(FALSE);
-
       RECT rect;
       GetClientRect(hwnd, &rect);
       MapWindowPoints(hwnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
@@ -171,10 +167,7 @@ namespace pbe {
    }
 
    void Window::ReleaseMouse() {
-      ShowCursor(TRUE);
       ClipCursor(nullptr);
-
-      lockMouse = false;
    }
 
 }

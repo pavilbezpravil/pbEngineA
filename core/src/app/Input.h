@@ -17,6 +17,10 @@ namespace pbe {
       static int2 GetMousePosition();
       static int2 GetMouseDelta();
 
+      static void LockMousePos(bool lock);
+      static void HideMouse(bool lock = false);
+      static void ShowMouse(bool unlock = false);
+
       static bool IsKeyDown(int keyCode);
       static bool IsKeyPressing(int keyCode);
       static bool IsKeyUp(int keyCode);
@@ -32,6 +36,7 @@ namespace pbe {
 
       int2 mousePos{};
       int2 mouseDelta{};
+      bool mouseLocked = false;
    };
 
 }

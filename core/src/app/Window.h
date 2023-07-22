@@ -22,7 +22,6 @@ namespace pbe {
 
       WNDCLASSEX wc{};
       HWND hwnd{};
-      bool lockMouse = false;
 
       using EventCallbackFn = std::function<void(Event&)>;
       EventCallbackFn eventCallback;

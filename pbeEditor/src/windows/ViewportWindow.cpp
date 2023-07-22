@@ -344,10 +344,10 @@ namespace pbe {
       camera.Update(dt);
 
       if (Input::IsKeyDown(VK_RBUTTON)) {
-         sWindow->HideAndLockMouse();
+         Input::HideMouse(true);
       }
       if (Input::IsKeyUp(VK_RBUTTON)) {
-         sWindow->ReleaseMouse();
+         Input::ShowMouse(true);
       }
 
       if (!Input::IsKeyPressing(VK_RBUTTON)) {
