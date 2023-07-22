@@ -62,15 +62,6 @@ namespace pbe {
       rtRenderer->Init();
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-      programDesc.vs.defines.AddDefine("ZPASS");
-      programDesc.ps.defines.AddDefine("ZPASS");
-      baseZPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
-      programDesc.vs.defines.AddDefine("ZPASS");
-      shadowMapPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
 
       const uint underCursorSize = 1;
@@ -193,7 +184,7 @@ namespace pbe {
 
    void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
       CameraContext& cameraContext) {
-      if (!baseColorPass->Valid() || !baseZPass->Valid()) {
+      if (!baseColorPass->Valid()) {
          return;
       }
 
@@ -376,6 +367,10 @@ namespace pbe {
             // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
 
             cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
+
+            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
+            programDesc.vs.defines.AddDefine("ZPASS");
+            auto shadowMapPass = GetGpuProgram(programDesc);
             RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
 
             cmd.SetRenderTargets();
@@ -394,6 +389,11 @@ namespace pbe {
                cmd.SetRenderTargets(cameraContext.normal, cameraContext.depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
                cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+               auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+               programDesc.vs.defines.AddDefine("ZPASS");
+               programDesc.ps.defines.AddDefine("ZPASS");
+               auto baseZPass = GetGpuProgram(programDesc);
 
                RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
             }

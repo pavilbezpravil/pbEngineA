@@ -106,8 +106,6 @@ namespace pbe {
 
       // todo: remove
       Ref<GpuProgram> baseColorPass;
-      Ref<GpuProgram> baseZPass;
-      Ref<GpuProgram> shadowMapPass;
 
       Mesh mesh;
 
