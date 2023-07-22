@@ -15,6 +15,8 @@ namespace pbe {
 
       void Update();
 
+      void SetTitle(const string_view title);
+
       int2 GetMousePosition() const;
 
       void HideAndLockMouse();

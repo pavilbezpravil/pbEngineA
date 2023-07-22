@@ -208,4 +208,14 @@ namespace pbe {
       imguiLayer = nullptr;
    }
 
+   const char* Application::GetBuildType() {
+      #if defined(DEBUG)
+         return "Debug";
+      #elif defined(RELEASE)
+         return "Release";
+      #else
+         #error Undefined configuration?
+      #endif
+   }
+
 }

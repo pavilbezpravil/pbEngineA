@@ -149,6 +149,10 @@ namespace pbe {
       }
    }
 
+   void Window::SetTitle(const string_view title) {
+      SetWindowText(hwnd, title.data());
+   }
+
    int2 Window::GetMousePosition() const {
       POINT p;
       if (GetCursorPos(&p)) {

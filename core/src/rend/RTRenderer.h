@@ -10,17 +10,15 @@ namespace pbe {
    struct RenderCamera;
    class CommandList;
    class GpuProgram;
-   struct CameraContext;
-
+   struct RenderContext;
 
    class CORE_API RTRenderer {
    public:
       void Init();
 
-      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
+      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context);
 
       Ref<Buffer> rtObjectsBuffer;
-
    };
 
 }

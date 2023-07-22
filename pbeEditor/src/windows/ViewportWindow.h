@@ -33,8 +33,8 @@ namespace pbe {
       std::function<void(void)> customHeadFunc; // todo: better name
 
       EditorCamera camera;
-      Own<Renderer> renderer;
-      CameraContext cameraContext;
+      Renderer* renderer = {}; // todo:
+      RenderContext renderContext;
 
       bool enableInput = false;
 

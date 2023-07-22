@@ -280,7 +280,7 @@ namespace pbe {
       return waves;
    }
 
-   void Water::Render(CommandList& cmd, Scene& scene, CameraContext& cameraContext) {
+   void Water::Render(CommandList& cmd, Scene& scene, RenderContext& cameraContext) {
       if (!waterDraw) {
          return;
       }

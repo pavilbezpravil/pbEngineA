@@ -51,16 +51,13 @@ namespace pbe {
       void FillSCameraCB(SCameraCB& cameraCB) const;
    };
 
-   struct CameraContext {
+   struct RenderContext {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> colorLDR;
       Ref<Texture2D> depth;
       Ref<Texture2D> depthWithoutWater;
       Ref<Texture2D> linearDepth;
-      Ref<Texture2D> depthCopy;
       Ref<Texture2D> waterRefraction;
-      Ref<Texture2D> normal;
-      Ref<Texture2D> position;
       Ref<Texture2D> ssao;
 
       Ref<Texture2D> shadowMap;
@@ -69,20 +66,22 @@ namespace pbe {
       // rt
       Ref<Texture2D> historyTex;
       Ref<Texture2D> historyTex2;
+
       Ref<Texture2D> depthTex;
       Ref<Texture2D> depthTexPrev;
+
       Ref<Texture2D> normalTex;
       Ref<Texture2D> normalTexPrev;
+
       Ref<Texture2D> reprojectCountTex;
       Ref<Texture2D> reprojectCountTexPrev;
 
       Ref<Texture2D> objIDTex;
       Ref<Texture2D> objIDTexPrev;
 
-
-      Ref<Buffer> underCursorBuffer; // todo:
-
-      int2 cursorPixelIdx{-1}; // todo:
+      // todo:
+      Ref<Buffer> underCursorBuffer;
+      int2 cursorPixelIdx{-1};
    };
 
    class CORE_API Renderer {
@@ -118,8 +117,8 @@ namespace pbe {
       void UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs);
       void RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera);
 
-      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, CameraContext& cameraContext);
-      void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program, const CameraContext& cameraContext);
+      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context);
+      void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program);
 
       uint GetEntityIDUnderCursor(CommandList& cmd);
 

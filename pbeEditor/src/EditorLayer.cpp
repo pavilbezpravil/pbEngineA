@@ -2,6 +2,7 @@
 #include "EditorLayer.h"
 #include "EditorWindow.h"
 #include "Undo.h"
+#include "app/Application.h"
 #include "app/Event.h"
 #include "app/Input.h"
 #include "app/Window.h"
@@ -75,10 +76,17 @@ namespace pbe {
          }
       };
 
+      // todo:
+      renderer.reset(new Renderer());
+      renderer->Init();
+      viewportWindow->renderer = renderer.get();
+
       if (!editorSettings.scenePath.empty()) {
          auto s = SceneDeserialize(editorSettings.scenePath);
          SetEditorScene(std::move(s));
       }
+
+      sWindow->SetTitle(std::format("pbe Editor {}", sApplication->GetBuildType()));
 
       Layer::OnAttach();
    }
