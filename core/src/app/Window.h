@@ -17,8 +17,12 @@ namespace pbe {
 
       int2 GetMousePosition() const;
 
+      void HideAndLockMouse();
+      void ReleaseMouse();
+
       WNDCLASSEX wc{};
       HWND hwnd{};
+      bool lockMouse = false;
 
       using EventCallbackFn = std::function<void(Event&)>;
       EventCallbackFn eventCallback;

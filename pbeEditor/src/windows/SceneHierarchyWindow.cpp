@@ -182,7 +182,7 @@ namespace pbe {
          // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
          ImGui::Dummy(ImGui::GetContentRegionAvail());
          DragDropChangeParent(pScene->GetRootEntity());
-         if (ImGui::IsItemClicked() && !Input::IsKeyPressed(VK_CONTROL)) {
+         if (ImGui::IsItemClicked() && !Input::IsKeyPressing(VK_CONTROL)) {
             selection->ClearSelection();
          }
       }
@@ -272,7 +272,7 @@ namespace pbe {
 
    void SceneHierarchyWindow::ToggleSelectEntity(Entity entity) {
       if (selection) {
-         bool clearPrevSelection = !Input::IsKeyPressed(VK_CONTROL);
+         bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
          selection->ToggleSelect(entity, clearPrevSelection);
       }
    }

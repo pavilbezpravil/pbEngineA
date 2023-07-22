@@ -38,29 +38,29 @@ namespace pbe {
       }
 
       void Update(float dt) {
-         if (Input::IsKeyPressed(VK_RBUTTON)) {
+         if (Input::IsKeyPressing(VK_RBUTTON)) {
             float cameraMouseSpeed = 0.2f;
             cameraAngle += vec2(Input::GetMouseDelta()) * cameraMouseSpeed * vec2(-1, -1);
             cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
 
             // todo: update use prev view matrix
             vec3 cameraInput{};
-            if (Input::IsKeyPressed('A')) {
+            if (Input::IsKeyPressing('A')) {
                cameraInput.x = -1;
             }
-            if (Input::IsKeyPressed('D')) {
+            if (Input::IsKeyPressing('D')) {
                cameraInput.x = 1;
             }
-            if (Input::IsKeyPressed('Q')) {
+            if (Input::IsKeyPressing('Q')) {
                cameraInput.y = -1;
             }
-            if (Input::IsKeyPressed('E')) {
+            if (Input::IsKeyPressing('E')) {
                cameraInput.y = 1;
             }
-            if (Input::IsKeyPressed('W')) {
+            if (Input::IsKeyPressing('W')) {
                cameraInput.z = 1;
             }
-            if (Input::IsKeyPressed('S')) {
+            if (Input::IsKeyPressing('S')) {
                cameraInput.z = -1;
             }
 
@@ -74,7 +74,7 @@ namespace pbe {
                vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
 
                float cameraSpeed = 5;
-               if (Input::IsKeyPressed(VK_SHIFT)) {
+               if (Input::IsKeyPressing(VK_SHIFT)) {
                   cameraSpeed *= 5;
                }
 

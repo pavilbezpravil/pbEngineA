@@ -226,7 +226,7 @@ namespace pbe {
    }
 
    void EditorLayer::OnEvent(Event& event) {
-      if (auto* e = event.GetEvent<KeyPressedEvent>()) {
+      if (auto* e = event.GetEvent<KeyDownEvent>()) {
          if (e->keyCode == VK_ESCAPE) {
             editorSelection.ClearSelection();
          }
@@ -239,7 +239,7 @@ namespace pbe {
             editorSelection.ClearSelection();
          }
 
-         if (Input::IsKeyPressed(VK_CONTROL)) {
+         if (Input::IsKeyPressing(VK_CONTROL)) {
             if (e->keyCode == 'P') {
                TogglePlayStop();
             }

@@ -11,6 +11,7 @@
 #include "rend/RendRes.h"
 #include "math/Types.h"
 #include "typer/Serialize.h"
+#include "app/Window.h"
 
 
 namespace pbe {
@@ -97,7 +98,7 @@ namespace pbe {
       if (selectEntityUnderCursor) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
-         bool clearPrevSelection = !Input::IsKeyPressed(VK_CONTROL);
+         bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
          if (entityID != (uint) -1) {
             Entity e{ entt::entity(entityID), scene};
             selection->ToggleSelect(e, clearPrevSelection);
@@ -334,7 +335,7 @@ namespace pbe {
 
       camera.NextFrame(); // todo:
 
-      if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
+      if (Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          selectEntityUnderCursor = true;
       }
 
@@ -342,29 +343,29 @@ namespace pbe {
       // ImGui::SetWindowFocus(name.data());
       camera.Update(dt);
 
-      if (!Input::IsKeyPressed(VK_RBUTTON)) {
-         if (Input::IsKeyPressed('W')) {
+      if (Input::IsKeyDown(VK_RBUTTON)) {
+         sWindow->HideAndLockMouse();
+      }
+      if (Input::IsKeyUp(VK_RBUTTON)) {
+         sWindow->ReleaseMouse();
+      }
+
+      if (!Input::IsKeyPressing(VK_RBUTTON)) {
+         if (Input::IsKeyDown('W')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
          }
-         if (Input::IsKeyPressed('R')) {
+         if (Input::IsKeyDown('R')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
          }
-         if (Input::IsKeyPressed('S')) {
+         if (Input::IsKeyDown('S')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
          }
 
-         // todo: IsKeyDown
-         // if (Input::IsKeyPressed('Q')) {
-         //    gizmoCfg.space = 1 - gizmoCfg.space;
-         // }
-         if (Input::IsKeyPressed('Q')) {
-            gizmoCfg.space = 0;
-         }
-         if (Input::IsKeyPressed('A')) {
-            gizmoCfg.space = 1;
+         if (Input::IsKeyDown('Q')) {
+            gizmoCfg.space = 1 - gizmoCfg.space;
          }
 
-         if (Input::IsKeyPressed('F') && selection->FirstSelected()) {
+         if (Input::IsKeyDown('F') && selection->FirstSelected()) {
             auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.Get<SceneTransformComponent>().position - camera.Forward() * 3.f;
          }
@@ -373,7 +374,7 @@ namespace pbe {
       // todo:
       static float acc = 0;
       acc += dt;
-      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+      if (acc > 0.2 && Input::IsKeyPressing(' ')) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
             shootRoot = scene->Create("Shoots");
@@ -392,8 +393,6 @@ namespace pbe {
          auto& rb = shoot.Add<RigidBodyComponent>(_rb);
          rb.SetLinearVelocity(camera.Forward() * 50.f);
       }
-
-      // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
    }
 
    void ViewportWindow::Gizmo(const vec2& contentRegion, const vec2& cursorPos) {
@@ -406,7 +405,7 @@ namespace pbe {
       ImGuizmo::SetDrawlist();
       ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
 
-      bool snap = Input::IsKeyPressed(VK_CONTROL);
+      bool snap = Input::IsKeyPressing(VK_CONTROL);
 
       auto& trans = selectedEntity.Get<SceneTransformComponent>();
       mat4 entityTransform = trans.GetMatrix();
