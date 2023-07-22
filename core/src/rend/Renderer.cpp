@@ -62,15 +62,6 @@ namespace pbe {
       rtRenderer->Init();
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-      programDesc.vs.defines.AddDefine("ZPASS");
-      programDesc.ps.defines.AddDefine("ZPASS");
-      baseZPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
-      programDesc.vs.defines.AddDefine("ZPASS");
-      shadowMapPass = GpuProgram::Create(programDesc);
-
-      programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
 
       const uint underCursorSize = 1;
@@ -193,7 +184,7 @@ namespace pbe {
 
    void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
       CameraContext& cameraContext) {
-      if (!baseColorPass->Valid() || !baseZPass->Valid()) {
+      if (!baseColorPass->Valid()) {
          return;
       }
 
@@ -376,6 +367,10 @@ namespace pbe {
             // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
 
             cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
+
+            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
+            programDesc.vs.defines.AddDefine("ZPASS");
+            auto shadowMapPass = GetGpuProgram(programDesc);
             RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
 
             cmd.SetRenderTargets();
@@ -395,6 +390,11 @@ namespace pbe {
                cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
                cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
+               auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+               programDesc.vs.defines.AddDefine("ZPASS");
+               programDesc.ps.defines.AddDefine("ZPASS");
+               auto baseZPass = GetGpuProgram(programDesc);
+
                RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
             }
 
@@ -404,7 +404,7 @@ namespace pbe {
 
                cmd.SetRenderTargets();
 
-               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.cs", "main"));
+               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.hlsl", "main"));
 
                ssaoPass->Activate(cmd);
 
@@ -478,7 +478,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "main"));
+            auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "main"));
             linearizeDepthPass->Activate(cmd);
 
             linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
@@ -495,7 +495,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.cs", "downsampleDepth"));
+            auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "downsampleDepth"));
             downsampleDepthPass->Activate(cmd);
 
             auto& texture = cameraContext.linearDepth;
@@ -521,7 +521,7 @@ namespace pbe {
 
             cmd.SetRenderTargets();
 
-            auto fogPass = GetGpuProgram(ProgramDesc::Cs("fog.cs", "main"));
+            auto fogPass = GetGpuProgram(ProgramDesc::Cs("fog.hlsl", "main"));
 
             fogPass->Activate(cmd);
 
@@ -541,7 +541,7 @@ namespace pbe {
 
          cmd.SetRenderTargets();
 
-         auto tonemapPass = GetGpuProgram(ProgramDesc::Cs("tonemap.cs", "main"));
+         auto tonemapPass = GetGpuProgram(ProgramDesc::Cs("tonemap.hlsl", "main"));
 
          tonemapPass->Activate(cmd);
 
@@ -634,7 +634,7 @@ namespace pbe {
                auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
 
                if (1) {
-                  auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.cs", "indirectArgsTest"));
+                  auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.hlsl", "indirectArgsTest"));
                
                   indirectArgsTest->Activate(cmd);
                

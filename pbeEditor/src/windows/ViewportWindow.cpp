@@ -10,23 +10,41 @@
 #include "rend/Renderer.h"
 #include "rend/RendRes.h"
 #include "math/Types.h"
+#include "typer/Serialize.h"
 
 
 namespace pbe {
 
+   // todo: add hotkey remove cfg
    CVarValue<bool> zoomEnable{ "zoom/enable", false };
    CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
 
+   struct ViewportSettings {
+      vec3 cameraPos{};
+      vec2 cameraAngles{};
+   };
+
+   constexpr char viewportSettingPath[] = "scene_viewport.yaml";
+
+   TYPER_BEGIN(ViewportSettings)
+      TYPER_FIELD(cameraPos)
+      TYPER_FIELD(cameraAngles)
+   TYPER_END()
+
    ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
+      ViewportSettings viewportSettings;
+      Deserialize(viewportSettingPath, viewportSettings);
+
+      camera.position = viewportSettings.cameraPos;
+      camera.cameraAngle = viewportSettings.cameraAngles;
+      camera.UpdateView();
+
       renderer.reset(new Renderer());
       renderer->Init();
+   }
 
-      mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
-      rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
-
-      float3 direction = vec4(0, 0, 1, 1) * rotation;
-
-      camera.view = glm::lookAt(camera.position, camera.position + direction, vec3_Y);
+   ViewportWindow::~ViewportWindow() {
+      Serialize(viewportSettingPath, ViewportSettings{.cameraPos = camera.position, .cameraAngles = camera.cameraAngle});
    }
 
    void ViewportWindow::OnImGuiRender() {
@@ -220,9 +238,8 @@ namespace pbe {
                cameraContext.objIDTexPrev = Texture2D::Create(texDesc);
             }
 
-            camera.zNear = 0.1f;
-            camera.zFar = 1000.f;
-            camera.projection = glm::perspectiveFov(90.f / (180) * PI, (float)texDesc.size.x, (float)texDesc.size.y, camera.zNear, camera.zFar);
+            camera.UpdateProj(texDesc.size);
+            camera.NextFrame(); // todo:
          }
 
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
@@ -234,9 +251,21 @@ namespace pbe {
 
          cmd.SetCommonSamplers();
          if (scene) {
+            // todo:
+            RenderCamera rendCamera;
+
+            rendCamera.position = camera.position;
+            rendCamera.view = camera.view;
+            rendCamera.projection = camera.projection;
+            rendCamera.prevViewProjection = camera.prevViewProjection;
+
+            rendCamera.zNear = camera.zNear;
+            rendCamera.zFar = camera.zFar;
+
+
             int2 cursorPixelIdx{ pixelIdxFloat + EPSILON };
             cameraContext.cursorPixelIdx = cursorPixelIdx;
-            renderer->RenderScene(cmd, *scene, camera, cameraContext);
+            renderer->RenderScene(cmd, *scene, rendCamera, cameraContext);
          }
          cmd.pContext->ClearState(); // todo:
 
@@ -298,79 +327,22 @@ namespace pbe {
    }
 
    void ViewportWindow::OnUpdate(float dt) {
+      // todo:
       if (!enableInput) {
          return;
       }
 
       camera.NextFrame(); // todo:
 
-      // todo:
-      static float acc = 0;
-      acc += dt;
-      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
-         acc = 0;
-         auto shoot = scene->Create("Shoot cube");
-         shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
-         shoot.Add<MaterialComponent>();
-         shoot.Add<GeometryComponent>();
-
-         // todo:
-         RigidBodyComponent _rb;
-         _rb.dynamic = true;
-
-         auto& rb = shoot.Add<RigidBodyComponent>(_rb);
-         rb.SetLinearVelocity(camera.Forward() * 50.f);
-      }
-
       if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          selectEntityUnderCursor = true;
       }
 
-      if (Input::IsKeyPressed(VK_RBUTTON)) {
-         ImGui::SetWindowFocus(name.data());
+      // todo:
+      // ImGui::SetWindowFocus(name.data());
+      camera.Update(dt);
 
-         float cameraMouseSpeed = 0.2f;
-         cameraAngle += vec2(Input::GetMouseDelta()) * cameraMouseSpeed * vec2(-1, -1);
-         cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
-
-         // todo: update use prev view matrix
-         vec3 cameraInput{};
-         if (Input::IsKeyPressed('A')) {
-            cameraInput.x = -1;
-         }
-         if (Input::IsKeyPressed('D')) {
-            cameraInput.x = 1;
-         }
-         if (Input::IsKeyPressed('Q')) {
-            cameraInput.y = -1;
-         }
-         if (Input::IsKeyPressed('E')) {
-            cameraInput.y = 1;
-         }
-         if (Input::IsKeyPressed('W')) {
-            cameraInput.z = 1;
-         }
-         if (Input::IsKeyPressed('S')) {
-            cameraInput.z = -1;
-         }
-
-         if (cameraInput != vec3{}) {
-            cameraInput = glm::normalize(cameraInput);
-
-            vec3 right = camera.Right();
-            vec3 up = camera.Up();
-            vec3 forward = camera.Forward();
-
-            vec3 cameraOffset = up * cameraInput.y + forward * cameraInput.z + right * cameraInput.x;
-
-            float cameraSpeed = 5;
-            if (Input::IsKeyPressed(VK_SHIFT)) {
-               cameraSpeed *= 5;
-            }
-
-            camera.position += cameraOffset * cameraSpeed * dt;
-         }
-      } else {
+      if (!Input::IsKeyPressed(VK_RBUTTON)) {
          if (Input::IsKeyPressed('W')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
          }
@@ -399,12 +371,27 @@ namespace pbe {
       }
 
       // todo:
-      mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
-      rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
+      static float acc = 0;
+      acc += dt;
+      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+         Entity shootRoot = scene->FindByName("Shoots");
+         if (!shootRoot) {
+            shootRoot = scene->Create("Shoots");
+         }
 
-      float3 direction = vec4(0, 0, 1, 1) * rotation;
+         acc = 0;
+         auto shoot = scene->Create(shootRoot, "Shoot cube");
+         shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
+         shoot.Add<MaterialComponent>();
+         shoot.Add<GeometryComponent>();
 
-      camera.view = glm::lookAt(camera.position, camera.position + direction, vec3_Y);
+         // todo:
+         RigidBodyComponent _rb;
+         _rb.dynamic = true;
+
+         auto& rb = shoot.Add<RigidBodyComponent>(_rb);
+         rb.SetLinearVelocity(camera.Forward() * 50.f);
+      }
 
       // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
    }
@@ -448,8 +435,6 @@ namespace pbe {
          if (gizmoCfg.operation & ImGuizmo::OPERATION::SCALE) {
             trans.SetScale(scale);
          }
-
-         // trans.SetMatrix(entityTransform);
       }
    }
 }

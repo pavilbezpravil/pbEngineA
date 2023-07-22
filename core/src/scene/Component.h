@@ -82,7 +82,10 @@ namespace pbe {
       void AddChild(Entity child, int iChild = -1, bool keepLocalTransform = false);
       void RemoveChild(int idx);
       void RemoveAllChild(Entity theirNewParent = {});
+
       bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
+      bool SetParentInternal(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
+      int GetChildIdx() const;
    };
 
    struct MaterialComponent {

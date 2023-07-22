@@ -33,20 +33,22 @@ namespace pbe {
          SERIALIZER_SEQ(ser);
 
          for (auto children : trans.children) {
-            out << (uint64)children.Get<UUIDComponent>().uuid;
+            out << (uint64)children.GetUUID();
          }
       }
    };
 
-   void TransDeserialize(const Deserializer& deser, byte* value) {
+   bool TransDeserialize(const Deserializer& deser, byte* value) {
       auto& trans = *(SceneTransformComponent*)value;
 
       // todo:
       trans.RemoveAllChild();
 
-      deser.Deser("position", trans.position);
-      deser.Deser("rotation", trans.rotation);
-      deser.Deser("scale", trans.scale);
+      bool success = true;
+
+      success &= deser.Deser("position", trans.position);
+      success &= deser.Deser("rotation", trans.rotation);
+      success &= deser.Deser("scale", trans.scale);
 
       // note: we will be added by our parent
       // auto parent = deser.Deser<uint64>("parent");
@@ -55,10 +57,12 @@ namespace pbe {
          trans.children.reserve(children.node.size());
 
          for (auto child : children.node) {
-            uint64 childUuid = child.as<uint64>();
+            uint64 childUuid = child.as<uint64>(); // todo: check
             trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), -1, true);
          }
       }
+
+      return success;
    }
 
    bool GeomUI(const char* name, byte* value) {
@@ -117,7 +121,7 @@ namespace pbe {
 
    TYPER_BEGIN(GeomType)
       TYPER_SERIALIZE([](Serializer& ser, const byte* value) { ser.out << *(int*)value; })
-      TYPER_DESERIALIZE([](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); })
+      TYPER_DESERIALIZE([](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }) // todo:
       TYPER_UI([](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0"); })
    TYPER_END()
 
@@ -271,7 +275,9 @@ namespace pbe {
 
    SceneTransformComponent::SceneTransformComponent(Entity entity, Entity parent)
          : entity(entity) {
-      SetParent(parent);
+      if (parent) {
+         SetParent(parent);
+      }
    }
 
    void SceneTransformComponent::SetMatrix(const mat4& transform) {
@@ -300,13 +306,15 @@ namespace pbe {
    }
 
    bool SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
-      // todo:
-      // if (!newParent) {
-      //    newParent = entity.GetScene()->GetRootEntity();
-      // }
-      // ASSERT_MESSAGE(newParent, "New parent must be valid entity");
+      if (!newParent) {
+         newParent = entity.GetScene()->GetRootEntity();
+      }
+      ASSERT_MESSAGE(newParent, "New parent must be valid entity");
+      return SetParentInternal(newParent, iChild, keepLocalTransform);
+   }
 
-      if (newParent == entity || parent == newParent) { // todo: may be the same
+   bool SceneTransformComponent::SetParentInternal(Entity newParent, int iChild, bool keepLocalTransform) {
+      if (newParent == entity) {
          return false;
       }
 
@@ -316,14 +324,18 @@ namespace pbe {
 
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-
-         // int idx = (int)std::ranges::distance(std::ranges::find(pTrans.children, entity), pTrans.children.begin());
-
+         if (parent == newParent) {
+            int idx = GetChildIdx();
+            if (idx < iChild) {
+               --iChild;
+            } else if (idx == iChild) {
+               return false;
+            }
+         }
          std::erase(pTrans.children, entity);
       }
 
       parent = newParent;
-      // todo: remove this check. Only scene root without parent
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
 
@@ -341,6 +353,11 @@ namespace pbe {
       }
 
       return true;
+   }
+
+   int SceneTransformComponent::GetChildIdx() const {
+      auto& pTrans = parent.Get<SceneTransformComponent>();
+      return (int)std::ranges::distance(pTrans.children.begin(), std::ranges::find(pTrans.children, entity));
    }
 
    void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {

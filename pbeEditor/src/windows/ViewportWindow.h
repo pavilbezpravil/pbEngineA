@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EditorCamera.h"
 #include "EditorSelection.h"
 #include "EditorWindow.h"
 #include "core/Ref.h"
@@ -20,6 +21,7 @@ namespace pbe {
    public:
       // using EditorWindow::EditorWindow;
       ViewportWindow(std::string_view name);
+      ~ViewportWindow();
 
       void OnImGuiRender() override;
       void OnUpdate(float dt) override;
@@ -30,8 +32,7 @@ namespace pbe {
       EditorSelection* selection{};
       std::function<void(void)> customHeadFunc; // todo: better name
 
-      RenderCamera camera;
-      vec2 cameraAngle{};
+      EditorCamera camera;
       Own<Renderer> renderer;
       CameraContext cameraContext;
 

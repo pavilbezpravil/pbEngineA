@@ -11,15 +11,6 @@
 
 namespace pbe {
 
-   class ImGuiDemoWindow : public EditorWindow {
-   public:
-      using EditorWindow::EditorWindow;
-
-      void OnImGuiRender() override {
-         ImGui::ShowDemoWindow(&show);
-      }
-   };
-
    class TestWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
@@ -27,8 +18,6 @@ namespace pbe {
       void OnImGuiRender() override {
          static float f = 0.0f;
          static int counter = 0;
-
-         UI_WINDOW("Hello, world!", &show); // Create a window called "Hello, world!" and append into it.
 
          ImGui::Text("This is some useful text."); // Display some text (you can use a format strings too)
          // ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
@@ -53,8 +42,6 @@ namespace pbe {
       using EditorWindow::EditorWindow;
 
       void OnImGuiRender() override {
-         UI_WINDOW(name.c_str(), &show);
-
          // ImGui::Text("cwd %ls", fs::current_path().c_str());
          // ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
 
@@ -105,13 +92,6 @@ namespace pbe {
          file << str;
          file.close();
       }
-
-      // write code to open folder in explorer
-
-
-
-
-
    private:
       // fs::path currentPath = fs::current_path();
       fs::path currentPath = "../../assets";
@@ -122,7 +102,6 @@ namespace pbe {
       using EditorWindow::EditorWindow;
 
       void OnImGuiRender() override {
-         UI_WINDOW(name.c_str(), &show);
          Typer::Get().ImGui();
       }
    };
@@ -133,7 +112,6 @@ namespace pbe {
          Application::OnInit();
 
          EditorLayer* editor = new EditorLayer();
-         editor->AddEditorWindow(new ImGuiDemoWindow("ImGuiDemoWindow"));
          editor->AddEditorWindow(new TestWindow("TestWindow"));
          editor->AddEditorWindow(new ContentBrowserWindow("ContentBrowser"), false);
          editor->AddEditorWindow(new TyperWindow("TyperWindow"), true);

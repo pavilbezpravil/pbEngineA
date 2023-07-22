@@ -71,7 +71,7 @@ namespace pbe {
 
       std::function<bool(const char*, byte*)> imguiFunc;
       std::function<void(Serializer&, const byte*)> serialize;
-      std::function<void(const Deserializer&, byte*)> deserialize;
+      std::function<bool(const Deserializer&, byte*)> deserialize;
    };
 
    struct ComponentInfo {

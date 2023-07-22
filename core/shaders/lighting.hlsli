@@ -3,7 +3,7 @@
 
 #include "commonResources.hlsli"
 #include "pbr.hlsli"
-#include "noise.inl"
+#include "noise.hlsli"
 
 StructuredBuffer<SLight> gLights : DECLARE_REGISTER(t, SRV_SLOT_LIGHTS);
 Texture2D<float> gShadowMap : DECLARE_REGISTER(t, SRV_SLOT_SHADOWMAP);

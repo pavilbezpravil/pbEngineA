@@ -11,8 +11,6 @@
 #include "scene/Component.h"
 #include "math/Shape.h"
 
-// #include <shared/hlslCppShared.hlsli> // todo:
-
 #include "system/Terrain.h"
 #include "system/Water.h"
 
@@ -21,7 +19,7 @@ struct SCameraCB;
 namespace pbe {
    // class RTRenderer;
 
-   struct CORE_API RenderCamera {
+   struct RenderCamera {
       vec3 position{};
 
       mat4 view;
@@ -100,35 +98,14 @@ namespace pbe {
       bool superSampling = false;
    };
 
-   // enum class MaterialType {
-   //    Opaque,
-   //    Transparent,
-   // };
-
-   // struct Material {
-   //    SMaterial material; // todo:
-   //    bool opaque = true; // todo:
-   //    // MaterialType type = MaterialType::Opaque;
-   // };
-   //
-   // struct DrawDesc {
-   //    uint entityID = (uint)-1;
-   //    mat4 transform;
-   //    Material material;
-   //
-   //    Mesh* mesh = nullptr;
-   //    AABB aabb;
-   // };
-
    class CORE_API Renderer {
    public:
       RenderConfing cfg;
 
       Own<RTRenderer> rtRenderer;
 
+      // todo: remove
       Ref<GpuProgram> baseColorPass;
-      Ref<GpuProgram> baseZPass;
-      Ref<GpuProgram> shadowMapPass;
 
       Mesh mesh;
 
@@ -150,8 +127,6 @@ namespace pbe {
       std::vector<RenderObject> opaqueObjs;
       std::vector<RenderObject> transparentObjs;
       std::vector<RenderObject> decalObjs;
-
-      // std::vector<DrawDesc> drawDescs;
 
       void Init();
 

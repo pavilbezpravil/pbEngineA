@@ -40,6 +40,10 @@ namespace pbe {
       void SetActiveScene(Scene* scene);
       Scene* GetActiveScene();
 
+      void OnPlay();
+      void OnStop();
+      void TogglePlayStop();
+
       void ReloadDll();
       void UnloadDll();
       HINSTANCE dllHandler = 0;

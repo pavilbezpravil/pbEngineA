@@ -12,6 +12,7 @@ namespace pbe {
    constexpr char DRAG_DROP_ENTITY[] = "DD_ENTITY";
 
    namespace ui {
+
       struct Window {
          Window(const char* name, bool* p_open = NULL, ImGuiWindowFlags flags = 0) {
             opened = ImGui::Begin(name, p_open, flags);
@@ -26,7 +27,42 @@ namespace pbe {
          bool opened = false;
       };
 
-#define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}; if (!uiWindow) return;
+#define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}
+
+      struct MenuBar {
+         MenuBar() {
+            opened = ImGui::BeginMenuBar();
+         }
+
+         ~MenuBar() {
+            ImGui::EndMenuBar();
+         }
+
+         operator bool() const { return opened; }
+
+         bool opened = false;
+      };
+
+#define UI_MENU_BAR() ui::MenuBar uiMenuBar{}
+
+      struct Menu {
+         Menu(const char* name, bool enabled = true) {
+            opened = ImGui::BeginMenu(name, enabled);
+         }
+
+         ~Menu() {
+            if (opened) {
+               ImGui::End();
+            }
+         }
+
+         operator bool() const { return opened; }
+
+         bool opened = false;
+      };
+
+      // name, enabled
+#define UI_MENU(name, ...) ui::Menu uiMenu{name, __VA_ARGS__}
 
       struct PushID {
          PushID(const void* ptrID) {
