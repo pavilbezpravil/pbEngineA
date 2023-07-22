@@ -4,6 +4,7 @@
 #include "Undo.h"
 #include "app/Event.h"
 #include "app/Input.h"
+#include "app/Window.h"
 #include "core/Profiler.h"
 #include "core/Type.h"
 #include "fs/FileSystem.h"
@@ -256,6 +257,11 @@ namespace pbe {
             if (e->keyCode == 'Z') {
                // todo: dont work
                // Undo::Get().PopAction();
+            }
+
+            // test message box
+            if (e->keyCode == 'M') {
+               MessageBox(sWindow->hwnd, L"Test", L"MsgBox Window", MB_OK);
             }
          }
       }

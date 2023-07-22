@@ -1,14 +1,14 @@
 #pragma once
 
-#include "../math/Types.h"
-#include <d3d11.h>
+#include "math/Types.h"
+#include "core/Core.h"
 #include <functional>
 
 namespace pbe {
 
    struct Event;
 
-   class Window {
+   class CORE_API Window {
    public:
       Window(int2 size = { 1280, 800 });
       ~Window();
@@ -24,6 +24,6 @@ namespace pbe {
       EventCallbackFn eventCallback;
    };
 
-   extern Window* sWindow;
+   extern CORE_API Window* sWindow;
 
 }
