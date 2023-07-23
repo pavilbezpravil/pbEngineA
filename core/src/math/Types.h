@@ -7,6 +7,20 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// for HLSL
+using uint = uint32_t;
+using int2 = glm::ivec2;
+using uint2 = glm::uvec2;
+using int3 = glm::ivec3;
+using uint3 = glm::uvec3;
+using int4 = glm::ivec4;
+using uint4 = glm::uvec4;
+
+using float2 = glm::vec2;
+using float3 = glm::vec3;
+using float4 = glm::vec4;
+using float4x4 = glm::mat4;
+
 namespace pbe {
 
    constexpr float EPSILON = FLT_EPSILON;
@@ -77,6 +91,14 @@ namespace pbe {
       return glm::greaterThan(lhs, rhs);
    }
 
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator<(const glm::ivec2& lhs, int rhs) {
+      return glm::lessThan(lhs, glm::ivec2{ rhs });
+   }
+
+   GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator>(const glm::ivec2& lhs, int rhs) {
+      return glm::greaterThan(lhs, glm::ivec2{ rhs });
+   }
+
    GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator<(const glm::vec2& lhs, const glm::vec2& rhs) {
       return glm::lessThan(lhs, rhs);
    }
@@ -95,58 +117,37 @@ namespace pbe {
 
 }
 
-// for HLSL
-using uint = uint32_t;
-using int2 = glm::ivec2;
-using uint2 = glm::uvec2;
-using int3 = glm::ivec3;
-using uint3 = glm::uvec3;
-using int4 = glm::ivec4;
-using uint4 = glm::uvec4;
-
-using float2 = glm::vec2;
-using float3 = glm::vec3;
-using float4 = glm::vec4;
-using float4x4 = glm::mat4;
-
 template<typename OStream>
-OStream& operator<<(OStream& os, const int2& v)
-{
+OStream& operator<<(OStream& os, const int2& v) {
    return os << "(" << v.x << ", " << v.y << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const uint2& v)
-{
+OStream& operator<<(OStream& os, const uint2& v) {
    return os << "(" << v.x << ", " << v.y << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const int3& v)
-{
+OStream& operator<<(OStream& os, const int3& v) {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const uint3& v)
-{
+OStream& operator<<(OStream& os, const uint3& v) {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const glm::vec2& v)
-{
+OStream& operator<<(OStream& os, const glm::vec2& v) {
    return os << "(" << v.x << ", " << v.y << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const glm::vec3& v)
-{
+OStream& operator<<(OStream& os, const glm::vec3& v) {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const glm::vec4& v)
-{
+OStream& operator<<(OStream& os, const glm::vec4& v) {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 }

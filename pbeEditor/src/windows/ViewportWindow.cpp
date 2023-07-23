@@ -12,12 +12,49 @@
 #include "math/Types.h"
 #include "typer/Serialize.h"
 #include "app/Window.h"
+#include "gui/Gui.h"
 
 
 namespace pbe {
 
+   // todo:
+   void ImGui_SetPointSampler(const ImDrawList* list, const ImDrawCmd* cmd) {
+      sDevice->g_pd3dDeviceContext->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
+   }
+
+   class TextureViewWindow : public EditorWindow {
+   public:
+      TextureViewWindow() : EditorWindow("Texture View") {}
+
+      void OnImGuiRender() override {
+         UI_WINDOW("Texture View"); // todo:
+         if (!texture) {
+            ImGui::Text("No texture selected");
+            return;
+         }
+
+         const auto& desc = texture->GetDesc();
+         ImGui::Text("%s (%dx%d, %d)", desc.name.c_str(), desc.size.x, desc.size.y, desc.mips);
+
+         static int iMip = 0;
+         ImGui::SliderInt("mip", &iMip, 0, desc.mips - 1);
+         ImGui::SameLine();
+
+         int d = 1 << iMip;
+         ImGui::Text("mip size (%dx%d)", desc.size.x / d, desc.size.y / d);
+
+         auto imSize = ImGui::GetContentRegionAvail();
+         auto srv = texture->GetMipSrv(iMip);
+
+         ImGui::GetWindowDrawList()->AddCallback(ImGui_SetPointSampler, nullptr);
+         ImGui::Image(srv, imSize);
+         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+      }
+
+      Texture2D* texture{};
+   } gTextureViewWindow;
+
    // todo: add hotkey remove cfg
-   CVarValue<bool> zoomEnable{ "zoom/enable", false };
    CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
 
    struct ViewportSettings {
@@ -47,8 +84,6 @@ namespace pbe {
    }
 
    void ViewportWindow::OnImGuiRender() {
-      ImGui::Begin(name.c_str(), &show);
-
       enableInput = ImGui::IsWindowHovered();
 
       if (customHeadFunc) {
@@ -60,7 +95,7 @@ namespace pbe {
       ImGui::SameLine();
 
       static float renderScale = 1;
-      ImGui::SetNextItemWidth(120);
+      ImGui::SetNextItemWidth(100);
       ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
       ImGui::SameLine();
 
@@ -85,19 +120,13 @@ namespace pbe {
          selectEntityUnderCursor = false;
       }
 
-      // todo: hack. lambda with capture cant be passed as function pointer
-      static auto sCtx = cmd.pContext;
-      auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
-         sCtx->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
-      };
-
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
       if (renderScale != 1.f) {
          size = vec2(size) * renderScale;
       }
 
-      if (size.x > 1 && size.y > 1) {
+      if (all(size > 1)) {
          if (!renderContext.colorHDR || renderContext.colorHDR->GetDesc().size != size) {
             renderContext = CreateRenderContext(size);
             camera.UpdateProj(size);
@@ -107,83 +136,31 @@ namespace pbe {
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         vec2 pixelIdxFloat = (mousePos - cursorPos);
-
-         // camera.NextFrame(); // todo:
+         int2 cursorPixelIdx{ mousePos - cursorPos};
 
          cmd.SetCommonSamplers();
          if (scene) {
-            // todo:
-            RenderCamera rendCamera;
-
-            rendCamera.position = camera.position;
-            rendCamera.view = camera.view;
-            rendCamera.projection = camera.projection;
-            rendCamera.prevViewProjection = camera.prevViewProjection;
-
-            rendCamera.zNear = camera.zNear;
-            rendCamera.zFar = camera.zFar;
-
-            int2 cursorPixelIdx{ pixelIdxFloat + EPSILON };
             renderContext.cursorPixelIdx = cursorPixelIdx;
-            renderer->RenderScene(cmd, *scene, rendCamera, renderContext);
+            renderer->RenderScene(cmd, *scene, camera, renderContext);
          }
          cmd.pContext->ClearState(); // todo:
 
          Texture2D* sceneRTs[] = { renderContext.colorLDR, renderContext.colorHDR,renderContext.normalTex, renderContext.ssao};
-         auto srv = sceneRTs[item_current]->srv.Get();
 
+         Texture2D* image = sceneRTs[item_current];
+         auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
          if (zoomEnable) {
-            vec2 zoomImageSize{300, 300};
-
-            vec2 uvCenter = pixelIdxFloat / vec2{ imSize.x, imSize.y };
-
-            if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
-               vec2 uvScale{ zoomScale / 2.f };
-
-               vec2 uv0 = uvCenter - uvScale;
-               vec2 uv1 = uvCenter + uvScale;
-
-               ImGui::BeginTooltip();
-
-               ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
-               ImGui::Image(srv, { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
-               ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-               ImGui::EndTooltip();
-            }
+            Zoom(*image, cursorPixelIdx);
          }
 
          Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
-      }
 
-      ImGui::End();
-
-      if (textureViewWindow && renderContext.linearDepth) {
-         ImGui::Begin("Texture View");
-
-         auto texture = renderContext.linearDepth;
-
-         const auto& desc = texture->GetDesc();
-         ImGui::Text("%s (%dx%d, %d)", desc.name.c_str(), desc.size.x, desc.size.y, desc.mips);
-
-         static int iMip = 0;
-         ImGui::SliderInt("mip", &iMip, 0, texture->GetDesc().mips - 1);
-         ImGui::SameLine();
-
-         int d = 1 << iMip;
-         ImGui::Text("mip size (%dx%d)", desc.size.x / d, desc.size.y / d);
-
-         auto imSize = ImGui::GetContentRegionAvail();
-         auto srv = texture->GetMipSrv(iMip);
-
-         ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
-         ImGui::Image(srv, imSize);
-         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-         ImGui::End();
+         if (textureViewWindow) {
+            gTextureViewWindow.texture = renderContext.linearDepth;
+            gTextureViewWindow.OnImGuiRender();
+         }
       }
    }
 
@@ -231,6 +208,11 @@ namespace pbe {
          }
       }
 
+      // zoom
+      if (Input::IsKeyDown('V')) {
+         zoomEnable = !zoomEnable;
+      }
+
       // todo:
       static float acc = 0;
       acc += dt;
@@ -252,6 +234,27 @@ namespace pbe {
 
          auto& rb = shoot.Add<RigidBodyComponent>(_rb);
          rb.SetLinearVelocity(camera.Forward() * 50.f);
+      }
+   }
+
+   void ViewportWindow::Zoom(Texture2D& image, vec2 center) {
+      vec2 zoomImageSize{ 300, 300 };
+
+      vec2 uvCenter = center / vec2{ image.GetDesc().size };
+
+      if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
+         vec2 uvScale{ zoomScale / 2.f };
+
+         vec2 uv0 = uvCenter - uvScale;
+         vec2 uv1 = uvCenter + uvScale;
+
+         ImGui::BeginTooltip();
+
+         ImGui::GetWindowDrawList()->AddCallback(ImGui_SetPointSampler, nullptr);
+         ImGui::Image(image.srv.Get(), { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
+         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+         ImGui::EndTooltip();
       }
    }
 
