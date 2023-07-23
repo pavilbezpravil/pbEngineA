@@ -1,10 +1,27 @@
 #include "pch.h"
 #include "CommandList.h"
+#include "Shader.h"
 
 #include "RendRes.h"
 #include "shared/hlslCppShared.hlsli"
 
 namespace pbe {
+
+   CmdBindsGuard::CmdBindsGuard(CommandList& cmd): cmd(cmd) {
+      cmd.PushBindsGuard();
+   }
+
+   CmdBindsGuard::~CmdBindsGuard() {
+      cmd.PopBindsGuard();
+   }
+
+   bool CommandList::SetCompute(GpuProgram& compute) {
+      if (compute.Valid()) {
+         pContext->CSSetShader(compute.cs->cs.Get(), nullptr, 0);
+         return true;
+      }
+      return false;
+   }
 
    void CommandList::UpdateSubresource(Buffer& buffer, const void* data, uint offset, size_t size) {
       if (buffer.Valid() && size > 0 && data) {
@@ -20,13 +37,13 @@ namespace pbe {
    }
 
    void CommandList::ClearSRV_CS() {
-      ID3D11ShaderResourceView* srvs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-      pContext->CSSetShaderResources(0, 8, srvs);
+      ID3D11ShaderResourceView* srvs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      pContext->CSSetShaderResources(0, _countof(srvs), srvs);
    }
 
    void CommandList::ClearUAV_CS() {
-      ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
-      pContext->CSSetUnorderedAccessViews(0, 8, uavs, nullptr);
+      ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      pContext->CSSetUnorderedAccessViews(0, _countof(uavs), uavs, nullptr);
    }
 
    void CommandList::SetCommonSamplers() {

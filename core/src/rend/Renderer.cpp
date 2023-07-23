@@ -132,7 +132,7 @@ namespace pbe {
             .name = "rt history",
          };
          context.historyTex = Texture2D::Create(texDesc);
-         context.historyTex2 = Texture2D::Create(texDesc);
+         context.historyTexPrev = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,

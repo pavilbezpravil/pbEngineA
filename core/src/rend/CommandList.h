@@ -8,12 +8,28 @@
 #include <shared/IndirectArgs.hlsli>
 
 #include "BindPoint.h"
+#include "core/Assert.h"
 
 namespace pbe {
+   class GpuProgram;
 
    struct OffsetedBuffer {
       Buffer* buffer{};
       uint offset = 0;
+   };
+
+   struct CmdBind {
+      enum Type {
+         SRV,
+         UAV,
+         CB,
+      } type;
+
+      BindPoint bindPoint;
+   };
+
+   struct CmdBinds {
+      std::vector<CmdBind> binds;
    };
 
    class CORE_API CommandList {
@@ -26,12 +42,23 @@ namespace pbe {
       //    sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
       // }
 
+      bool SetCompute(GpuProgram& compute);
+
       template<typename T>
-      void SetCB(const BindPoint& bind, Buffer* buffer, uint offsetInBytes = 0) {
+      void SetCB(const BindPoint& bind, Buffer* buffer = nullptr, uint offsetInBytes = 0) {
          SetCB(bind, buffer, offsetInBytes, sizeof(T));
       }
 
+      // todo: i suppose for dx12 size unnecessary
       void SetCB(const BindPoint& bind, Buffer* buffer, uint offsetInBytes, uint size) {
+         if (!bind) {
+            return;
+         }
+
+         if (buffer) {
+            AddBindToGuard(CmdBind::CB, bind);
+         }
+
          ID3D11Buffer* dxBuffer[] = { buffer ? buffer->GetBuffer() : nullptr };
 
          offsetInBytes /= 16;
@@ -53,6 +80,14 @@ namespace pbe {
       }
 
       void SetSRV_Dx11(const BindPoint& bind, ID3D11ShaderResourceView* srv) {
+         if (!bind) {
+            return;
+         }
+
+         if (srv) {
+            AddBindToGuard(CmdBind::SRV, bind);
+         }
+
          ID3D11ShaderResourceView* viewsSRV[] = { srv };
 
          pContext->VSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
@@ -63,15 +98,23 @@ namespace pbe {
          pContext->CSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
       }
 
-      void SetSRV(const BindPoint& bind, GPUResource* resource) {
+      void SetSRV(const BindPoint& bind, GPUResource* resource = nullptr) {
          SetSRV_Dx11(bind, resource ? resource->srv.Get() : nullptr);
       }
 
       void SetUAV_Dx11(const BindPoint& bind, ID3D11UnorderedAccessView* uav) {
+         if (!bind) {
+            return;
+         }
+
+         if (uav) {
+            AddBindToGuard(CmdBind::UAV, bind);
+         }
+
          ID3D11UnorderedAccessView* viewsUAV[] = { uav };
          pContext->CSSetUnorderedAccessViews(bind.slot, _countof(viewsUAV), viewsUAV, nullptr);
       }
-      void SetUAV(const BindPoint& bind, GPUResource* resource) {
+      void SetUAV(const BindPoint& bind, GPUResource* resource = nullptr) {
          SetUAV_Dx11(bind, resource ? resource->uav.Get() : nullptr);
       }
 
@@ -222,8 +265,9 @@ namespace pbe {
          pContext->RSSetViewports(1, &viewport);
       }
 
-      void ClearSRV_CS(); // todo: first 8
-      void ClearUAV_CS(); // todo: first 8
+      // todo: first 10
+      void ClearSRV_CS();
+      void ClearUAV_CS();
 
       void BeginEvent(std::string_view name) {
          pContext->BeginEventInt(std::wstring(name.begin(), name.end()).data(), 0);
@@ -234,6 +278,36 @@ namespace pbe {
       }
 
       void SetCommonSamplers();
+
+      void PushBindsGuard() {
+         bindsGuardStack.push_back({});
+         currentBindsGuard = &bindsGuardStack.back();
+      }
+
+      void PopBindsGuard() {
+         ASSERT(currentBindsGuard);
+         for (auto& bind : currentBindsGuard->binds) {
+            switch (bind.type) {
+            case CmdBind::SRV:
+               SetSRV(bind.bindPoint);
+               break;
+            case CmdBind::UAV:
+               SetUAV(bind.bindPoint);
+               break;
+            case CmdBind::CB:
+               // todo: mb does not work or leads to crash)
+               SetCB(bind.bindPoint, nullptr, 0, 0);
+               break;
+            }
+         }
+
+         bindsGuardStack.pop_back();
+         if (bindsGuardStack.empty()) {
+            currentBindsGuard = {};
+         } else {
+            currentBindsGuard = &bindsGuardStack.back();
+         }
+      }
 
       ID3D11DeviceContext3* pContext{};
 
@@ -274,7 +348,24 @@ namespace pbe {
          return { &curDynConstBuffer, oldOffset };
       }
 
+      void AddBindToGuard(CmdBind::Type type, BindPoint bindPoint) {
+         if (currentBindsGuard) {
+            currentBindsGuard->binds.push_back({ type, bindPoint });
+         }
+      }
+
+      std::vector<CmdBinds> bindsGuardStack;
+      CmdBinds* currentBindsGuard = nullptr;
    };
+
+   struct CmdBindsGuard {
+      CmdBindsGuard(CommandList& cmd);
+      ~CmdBindsGuard();
+
+      CommandList& cmd;
+   };
+
+#define CMD_BINDS_GUARD() CmdBindsGuard cmdBindsGuard { cmd };
 
    struct GpuMarker {
       GpuMarker(CommandList& cmd, std::string_view name) : cmd(cmd) {

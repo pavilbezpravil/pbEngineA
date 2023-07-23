@@ -103,7 +103,7 @@ namespace pbe {
 
       if (resetHistory || !cvAccumulate) {
          cmd.ClearUAVUint(*context.reprojectCountTexPrev);
-         cmd.ClearUAVFloat(*context.historyTex2);
+         cmd.ClearUAVFloat(*context.historyTexPrev);
 
          accumulatedFrames = 0;
       }
@@ -123,31 +123,34 @@ namespace pbe {
       rtCB.debugFlags |= cvReprojectionNormal ? DBG_FLAG_REPR_NORMAL : 0;
       rtCB.debugFlags |= cvReprojectionDepth ? DBG_FLAG_REPR_DEPTH : 0;
 
-      auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
+      CMD_BINDS_GUARD();
+
+      {
+         // todo: do it for set shared resources
+         auto pass = GetGpuProgram(ProgramDesc::Cs("rt.hlsl", "GBufferCS"));
+
+         auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
+         cmd.SetCB<SRTConstants>(pass->GetBindPoint("gRTConstantsCB"), rtConstantsCB.buffer, rtConstantsCB.offset);
+         cmd.SetSRV(pass->GetBindPoint("gRtObjects"), rtObjectsBuffer);
+      }
 
       if (cvHistoryReprojection) {
          GPU_MARKER("GBuffer");
          PROFILE_GPU("GBuffer");
 
-         auto gbufferPass = GetGpuProgram(ProgramDesc::Cs("rt.hlsl", "GBufferCS"));
-         gbufferPass->Activate(cmd);
+         auto pass = GetGpuProgram(ProgramDesc::Cs("rt.hlsl", "GBufferCS"));
+         cmd.SetCompute(*pass);
 
-         gbufferPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
-         gbufferPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
+         CMD_BINDS_GUARD();
 
-         gbufferPass->SetUAV(cmd, "gDepthOut", *context.depthTex);
-         gbufferPass->SetUAV(cmd, "gNormalOut", *context.normalTex);
-         gbufferPass->SetUAV(cmd, "gObjIDOut", *context.objIDTex);
+         cmd.SetUAV(pass->GetBindPoint("gDepthOut"), context.depthTex);
+         cmd.SetUAV(pass->GetBindPoint("gNormalOut"), context.normalTex);
+         cmd.SetUAV(pass->GetBindPoint("gObjIDOut"), context.objIDTex);
 
-         gbufferPass->SetUAV(cmd, "gUnderCursorBuffer", *context.underCursorBuffer); // todo: only for editor
+         cmd.SetUAV(pass->GetBindPoint("gUnderCursorBuffer"), context.underCursorBuffer); // todo: only for editor
 
-         gbufferPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
-
-         cmd.ClearUAV_CS();
+         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
       }
-
-      // cmd.CopyResource(*context.colorHDR, *normalTex);
-      // return;
 
       {
          GPU_MARKER("Ray Trace");
@@ -158,18 +161,14 @@ namespace pbe {
             desc.cs.defines.AddDefine("IMPORTANCE_SAMPLING");
          }
 
-         auto rayTracePass = GetGpuProgram(desc);
-         rayTracePass->Activate(cmd);
+         auto pass = GetGpuProgram(desc);
+         cmd.SetCompute(*pass);
 
-         rayTracePass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
-         rayTracePass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
+         CMD_BINDS_GUARD();
 
-         rayTracePass->SetUAV(cmd, "gColor", *context.colorHDR);
+         cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
 
-         rayTracePass->Dispatch2D(cmd, outTexSize, int2{8, 8});
-
-         cmd.ClearSRV_CS();
-         cmd.ClearUAV_CS();
+         cmd.Dispatch2D(cmd, outTexSize, int2{8, 8});
       }
 
       if (cvAccumulate) {
@@ -181,35 +180,28 @@ namespace pbe {
             desc.cs.defines.AddDefine("ENABLE_REPROJECTION");
          }
 
-         auto historyPass = GetGpuProgram(desc);
+         auto pass = GetGpuProgram(desc);
+         cmd.SetCompute(*pass);
 
-         historyPass->Activate(cmd); // todo: remove activate
+         CMD_BINDS_GUARD();
 
-         historyPass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
+         cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gDepthPrev"), context.depthTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
+         cmd.SetSRV(pass->GetBindPoint("gNormalPrev"), context.normalTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTex);
+         cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gObjIDPrev"), context.objIDTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gObjID"), context.objIDTex);
 
-         // todo: remove
-         historyPass->SetSRV(cmd, "gRtObjects", *rtObjectsBuffer);
+         cmd.SetUAV(pass->GetBindPoint("gReprojectCountOut"), context.reprojectCountTex);
+         cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
+         cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTex);
 
-         historyPass->SetSRV(cmd, "gReprojectCount", *context.reprojectCountTexPrev);
-         historyPass->SetSRV(cmd, "gDepthPrev", *context.depthTexPrev);
-         historyPass->SetSRV(cmd, "gDepth", *context.depthTex);
-         historyPass->SetSRV(cmd, "gNormalPrev", *context.normalTexPrev);
-         historyPass->SetSRV(cmd, "gNormal", *context.normalTex);
-         historyPass->SetSRV(cmd, "gHistory", *context.historyTex2);
-         historyPass->SetSRV(cmd, "gObjIDPrev", *context.objIDTexPrev);
-         historyPass->SetSRV(cmd, "gObjID", *context.objIDTex);
-
-         historyPass->SetUAV(cmd, "gReprojectCountOut", *context.reprojectCountTex);
-         historyPass->SetUAV(cmd, "gColor", *context.colorHDR);
-         historyPass->SetUAV(cmd, "gHistoryOut", *context.historyTex);
-
-         historyPass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
-
-         cmd.ClearSRV_CS();
-         cmd.ClearUAV_CS();
+         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
 
          if (cvHistoryReprojection) {
-            std::swap(context.historyTex, context.historyTex2);
+            std::swap(context.historyTex, context.historyTexPrev);
             std::swap(context.reprojectCountTex, context.reprojectCountTexPrev);
             std::swap(context.objIDTex, context.objIDTexPrev);
             std::swap(context.normalTex, context.normalTexPrev);
@@ -222,28 +214,25 @@ namespace pbe {
          PROFILE_GPU("Denoise");
 
          auto desc = ProgramDesc::Cs("rt.hlsl", "DenoiseCS");
-         auto denoisePass = GetGpuProgram(desc);
+         auto pass = GetGpuProgram(desc);
 
-         denoisePass->Activate(cmd);
+         cmd.SetCompute(*pass);
 
-         denoisePass->SetCB<SRTConstants>(cmd, "gRTConstantsCB", *rtConstantsCB.buffer, rtConstantsCB.offset);
+         CMD_BINDS_GUARD();
 
          // here *prev means current frame
-         denoisePass->SetSRV(cmd, "gReprojectCount", *context.reprojectCountTexPrev);
-         denoisePass->SetSRV(cmd, "gDepth", *context.depthTexPrev);
-         denoisePass->SetSRV(cmd, "gNormal", *context.normalTexPrev);
-         denoisePass->SetSRV(cmd, "gHistory", *context.historyTex2); // read data from this
-         denoisePass->SetSRV(cmd, "gObjID", *context.objIDTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTexPrev);
+         cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTexPrev); // read data from this
+         cmd.SetSRV(pass->GetBindPoint("gObjID"), context.objIDTexPrev);
 
-         denoisePass->SetUAV(cmd, "gHistoryOut", *context.historyTex); // read data from this
-         denoisePass->SetUAV(cmd, "gColor", *context.colorHDR);
+         cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTex); // read data from this
+         cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
 
-         denoisePass->Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
 
-         cmd.ClearSRV_CS();
-         cmd.ClearUAV_CS();
-
-         std::swap(context.historyTex, context.historyTex2);
+         std::swap(context.historyTex, context.historyTexPrev);
       }
    }
 
