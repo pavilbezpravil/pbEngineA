@@ -68,7 +68,7 @@ float3 RandomInUnitSphere(inout uint seed) {
             return p;
         }
     }
-    return 0;
+    return float3(0, 1, 0);
 }
 
 float3 RandomInHemisphere(float3 normal, inout uint seed) {
@@ -86,7 +86,8 @@ float3 RandomInHemisphere(float3 normal, inout uint seed) {
 
 struct RayHit {
     float3 position;
-    float distance;
+    float tMin;
+    float tMax;
     float3 normal;
     int materialID;
 };
@@ -94,7 +95,8 @@ struct RayHit {
 RayHit CreateRayHit() {
     RayHit hit;
     hit.position = 0;
-    hit.distance = INF;
+    hit.tMin = 0.001; // todo:
+    hit.tMax = INF;
     hit.normal = 0;
     hit.materialID = 0;
     return hit;
@@ -103,8 +105,8 @@ RayHit CreateRayHit() {
 bool IntersectGroundPlane(Ray ray, inout RayHit bestHit) {
     // Calculate distance along the ray where the ground plane is intersected
     float t = -ray.origin.y / ray.direction.y;
-    if (t > 0 && t < bestHit.distance) {
-        bestHit.distance = t;
+    if (t > bestHit.tMin && t < bestHit.tMax) {
+        bestHit.tMax = t;
         bestHit.position = ray.origin + t * ray.direction;
         bestHit.normal = float3(0.0f, 1.0f, 0.0f);
         return true;
@@ -123,8 +125,8 @@ bool IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere) {
 
     float p2 = sqrt(p2sqr);
     float t = p1 - p2 > 0 ? p1 - p2 : p1 + p2;
-    if (t > 0 && t < bestHit.distance) {
-        bestHit.distance = t;
+    if (t > bestHit.tMin && t < bestHit.tMax) {
+        bestHit.tMax = t;
         bestHit.position = ray.origin + t * ray.direction;
         bestHit.normal = normalize(bestHit.position - sphere.xyz);
         return true;
@@ -143,14 +145,19 @@ bool IntersectAABB(Ray ray, inout RayHit bestHit, float3 center, float3 halfSize
     float tNear = max(max(t1.x, t1.y), t1.z);
     float tFar = min(min(t2.x, t2.y), t2.z);
 
-    if (tFar > tNear && tNear > 0 && tNear < bestHit.distance) {
-        bestHit.distance = tNear;
+    if (tFar > tNear && tNear > bestHit.tMin && tNear < bestHit.tMax) {
+        bestHit.tMax = tNear;
         bestHit.position = ray.origin + tNear * ray.direction; // todo: move from hear
 
+        // tood: find better way
         float3 localPoint = bestHit.position - center;
-        float3 normal = abs(localPoint / halfSize) > 0.99999;
-        normal *= localPoint;
-        bestHit.normal = normalize(normal);
+        float3 normal = localPoint / halfSize;
+        float3 s = sign(normal);
+        normal *= s;
+
+        float3 normalXY = normal.x > normal.y ? float3(s.x, 0, 0) : float3(0, s.y, 0);
+        bestHit.normal = normal.z > max(normal.x, normal.y) ? float3(0, 0, s.z) : normalXY;
+
         return true;
     }
     return false;
@@ -201,49 +208,7 @@ float Luminance(float3 color) {
 }
 
 #ifdef IMPORTANCE_SAMPLING
-float3 RayColor(Ray ray, inout uint seed) {
-    float3 color = 0;
-    float3 energy = 1;
-
-    for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
-        RayHit hit = Trace(ray);
-        if (hit.distance < INF) {
-            SRTObject obj = gRtObjects[hit.materialID];
-
-            ray.origin = hit.position + hit.normal * 0.0001;
-
-            color += obj.emissiveColor * energy; // todo: device by PI_2?
-
-            float3 albedo = obj.baseColor * (1 - obj.metallic);
-
-            #if 0
-                // Shadow test ray
-                float3 L = -gScene.directLight.direction;
-                const float spread = 0.1; // todo:
-                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
-                RayHit shadowHit = Trace(shadowRay);
-                if (shadowHit.distance == INF) {
-                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color / PI_2;
-                    color += directLightShade * energy;
-                }
-            #endif
-
-            ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
-
-            energy *= albedo;
-        } else {
-            float3 skyColor = GetSkyColor(ray.direction);
-
-            // remove sky bounce
-            // if (depth != 0) { break; }
-
-            color += skyColor * energy;
-            break;
-        }
-    }
-
-    return color;
-}
+// todo:
 #else
 float3 RayColor(Ray ray, inout uint seed) {
     float3 color = 0;
@@ -251,7 +216,7 @@ float3 RayColor(Ray ray, inout uint seed) {
 
     for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
         RayHit hit = Trace(ray);
-        if (hit.distance < INF) {
+        if (hit.tMax < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
             // return hit.normal * 0.5f + 0.5f;
             SRTObject obj = gRtObjects[hit.materialID];
@@ -273,12 +238,16 @@ float3 RayColor(Ray ray, inout uint seed) {
 
                 // Shadow test ray
                 float3 L = -gScene.directLight.direction;
-                const float spread = 0.1; // todo:
-                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
-                RayHit shadowHit = Trace(shadowRay);
-                if (shadowHit.distance == INF) {
-                    float3 directLightShade = dot(hit.normal, L) * albedo * gScene.directLight.color / PI_2;
-                    color += directLightShade * energy;
+                float NDotL = dot(N, L);
+
+                if (NDotL > 0) {
+                    const float spread = 0.02; // todo:
+                    Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                    RayHit shadowHit = Trace(shadowRay);
+                    if (shadowHit.tMax == INF) {
+                        float3 directLightShade = NDotL * albedo * gScene.directLight.color / PI_2;
+                        color += directLightShade * energy;
+                    }
                 }
 
                 ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
@@ -332,7 +301,7 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
-    if (hit.distance < INF) {
+    if (hit.tMax < INF) {
         SRTObject obj = gRtObjects[hit.materialID];
 
         gObjIDOut[id] = obj.id;
@@ -398,15 +367,6 @@ RWTexture2D<float4> gHistoryOut : register(u4);
 RWTexture2D<uint> gReprojectCountOut : register(u5);
 
 // #define ENABLE_REPROJECTION
-
-float3 SafeNormalize(float3 v) {
-    float len = length(v);
-    if (len > 0) {
-        return v / len;
-    } else {
-        return 0;
-    }
-}
 
 float3 NormalFromTex(float4 normal) {
     // todo: dont know why, but it produce artifacts

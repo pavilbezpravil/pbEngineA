@@ -95,8 +95,12 @@ float SumComponents(float4 v) {
   return v.x + v.y + v.z + v.w;
 }
 
-float Sdot(float3 x, float3 y, float f = 1.0f) {
+float SDot(float3 x, float3 y, float f = 1.0f) {
     return saturate(dot(x, y) * f);
+}
+
+float MaxDot(float3 x, float3 y, float m = 0) {
+    return max(dot(x, y), 0);
 }
 
 float3 CentralPoint(float3 p0, float3 p1) {
@@ -104,6 +108,15 @@ float3 CentralPoint(float3 p0, float3 p1) {
 }
 float3 Distance(float3 p0, float3 p1) {
    return length(p0 - p1);
+}
+
+float3 SafeNormalize(float3 v) {
+    float len = length(v);
+    if (len > 0) {
+        return v / len;
+    } else {
+        return 0;
+    }
 }
 
 float PlaneDistance(float4 planeEq, float3 pos) {

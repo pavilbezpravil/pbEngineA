@@ -209,7 +209,7 @@ namespace pbe {
          }
       }
 
-      if (cvDenoise && cvAccumulate) { // todo: cvAccumulate
+      if (cvDenoise && cvHistoryReprojection && cvAccumulate) { // todo: cvAccumulate
          GPU_MARKER("Denoise");
          PROFILE_GPU("Denoise");
 
