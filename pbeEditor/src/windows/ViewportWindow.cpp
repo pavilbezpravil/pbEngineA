@@ -88,10 +88,15 @@ namespace pbe {
 
       if (customHeadFunc) {
          customHeadFunc();
+         // todo:
+         ImGui::SameLine();
       }
 
-      static bool textureViewWindow = false;
-      ImGui::Checkbox("Texture View Window", &textureViewWindow);
+      static int item_current = 0;
+      const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO"};
+
+      ImGui::SetNextItemWidth(80);
+      ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
       ImGui::SameLine();
 
       static float renderScale = 1;
@@ -99,11 +104,9 @@ namespace pbe {
       ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
       ImGui::SameLine();
 
-      static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO"};
-
-      ImGui::SetNextItemWidth(80);
-      ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+      // todo:
+      static bool textureViewWindow = false;
+      ImGui::Checkbox("Texture View", &textureViewWindow);
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 

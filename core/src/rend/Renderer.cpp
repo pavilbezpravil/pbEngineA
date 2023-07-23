@@ -28,7 +28,7 @@ namespace pbe {
 
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
-   CVarValue<bool> indirectDraw{ "render/indirect draw", true };
+   CVarValue<bool> indirectDraw{ "render/indirect draw", false };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
@@ -529,7 +529,7 @@ namespace pbe {
                ssaoPass->SetSRV(cmd, "gNormal", *context.normalTex);
                ssaoPass->SetUAV(cmd, "gSsao", *context.ssao);
 
-               ssaoPass->Dispatch2D(cmd, glm::ceil(vec2{ context.colorHDR->GetDesc().size } / vec2{ 8 }));
+               cmd.Dispatch2D(glm::ceil(vec2{ context.colorHDR->GetDesc().size } / vec2{ 8 }));
 
                ResetCS_SRV_UAV();
             }
@@ -600,7 +600,7 @@ namespace pbe {
             linearizeDepthPass->SetSRV(cmd, "gDepth", *context.depth);
             linearizeDepthPass->SetUAV_Dx11(cmd, "gDepthOut", context.linearDepth->GetMipUav(0));
 
-            linearizeDepthPass->Dispatch2D(cmd, context.depth->GetDesc().size, int2{ 8 });
+            cmd.Dispatch2D(context.depth->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -625,7 +625,7 @@ namespace pbe {
                downsampleDepthPass->SetSRV_Dx11(cmd, "gDepth", texture->GetMipSrv(iMip));
                downsampleDepthPass->SetUAV_Dx11(cmd, "gDepthOut", texture->GetMipUav(iMip + 1));
 
-               downsampleDepthPass->Dispatch2D(cmd, size, int2{ 8 });
+               cmd.Dispatch2D(size, int2{ 8 });
 
                ResetCS_SRV_UAV();
             }
@@ -644,7 +644,7 @@ namespace pbe {
             fogPass->SetSRV(cmd, "gDepth", *context.depth);
             fogPass->SetUAV(cmd, "gColor", *context.colorHDR);
 
-            fogPass->Dispatch2D(cmd, context.colorHDR->GetDesc().size, int2{ 8 });
+            cmd.Dispatch2D(context.colorHDR->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -664,7 +664,7 @@ namespace pbe {
          tonemapPass->SetSRV(cmd, "gColorHDR", *context.colorHDR);
          tonemapPass->SetUAV(cmd, "gColorLDR", *context.colorLDR);
 
-         tonemapPass->Dispatch2D(cmd, context.colorHDR->GetDesc().size, int2{ 8 });
+         cmd.Dispatch2D(context.colorHDR->GetDesc().size, int2{ 8 });
 
          ResetCS_SRV_UAV();
       }
@@ -757,9 +757,10 @@ namespace pbe {
 
                   uint4 offset{ dynArgs.offset / sizeof(uint), (uint)renderObjs.size(), 0, 0};
                   auto testCB = cmd.AllocDynConstantBuffer(offset);
+                  // todo: it removes base.hlsl cb
                   indirectArgsTest->SetCB<uint4>(cmd, "gTestCB", *testCB.buffer, testCB.offset);
-               
-                  indirectArgsTest->Dispatch1D(cmd, 1);
+
+                  cmd.Dispatch1D(1);
                }
 
                program.DrawIndexedInstancedIndirect(cmd, *dynArgs.buffer, dynArgs.offset);

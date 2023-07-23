@@ -295,127 +295,40 @@ namespace pbe {
    }
 
    BindPoint GpuProgram::GetBindPoint(std::string_view name) const {
-      ASSERT(cs); // todo: while work only with cs. Remove after adding dx12
-
       size_t id = StrHash(name);
 
-      const auto reflection = cs->reflection;
+      auto getSlot = [&](const Ref<Shader>& shader) -> int {
+         if (shader) {
+            const auto reflection = shader->reflection;
 
-      auto iter = reflection.find(id);
-      if (iter != reflection.end()) {
-         return { .slot = iter->second.BindPoint };
+            auto iter = reflection.find(id);
+            if (iter != reflection.end()) {
+               return iter->second.BindPoint;
+            }
+         }
+
+         return -1;
+      };
+
+      int slots[5] = { getSlot(vs), getSlot(hs), getSlot(ds), getSlot(ps), getSlot(cs) };
+      int slot = -1;
+      for (int i = 0; i < 5; i++) {
+         int s = slots[i];
+         if (s != -1) {
+            ASSERT(slot == -1 || slot == s);
+            slot = s;
+         }
       }
 
-      return {};
+      return BindPoint{ (uint)slot };
    }
 
    void GpuProgram::SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes, uint size) {
-      size_t id = StrHash(name);
-
-      ID3D11Buffer* dxBuffer = buffer.GetBuffer();
-
-      offsetInBytes /= 16;
-
-      if (vs) {
-         const auto reflection = vs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->VSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
-         }
-      }
-
-      if (hs) {
-         const auto reflection = hs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->HSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
-         }
-      }
-
-      if (ds) {
-         const auto reflection = ds->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->DSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
-         }
-      }
-
-      if (ps) {
-         const auto reflection = ps->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->PSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
-         }
-      }
-
-      if (cs) {
-         const auto reflection = cs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->CSSetConstantBuffers1(bi.BindPoint, 1, &dxBuffer, &offsetInBytes, &size);
-         }
-      }
+      cmd.SetCB(GetBindPoint(name), &buffer, offsetInBytes, size);
    }
 
    void GpuProgram::SetSRV_Dx11(CommandList& cmd, std::string_view name, ID3D11ShaderResourceView* srv) {
-      size_t id = StrHash(name);
-
-      if (vs) {
-         const auto reflection = vs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->VSSetShaderResources(bi.BindPoint, 1, &srv);
-         }
-      }
-      if (hs) {
-         const auto reflection = hs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->HSSetShaderResources(bi.BindPoint, 1, &srv);
-         }
-      }
-      if (ds) {
-         const auto reflection = ds->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->DSSetShaderResources(bi.BindPoint, 1, &srv);
-         }
-      }
-      if (ps) {
-         const auto reflection = ps->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->PSSetShaderResources(bi.BindPoint, 1, &srv);
-         }
-      }
-
-      if (cs) {
-         const auto reflection = cs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            cmd.pContext->CSSetShaderResources(bi.BindPoint, 1, &srv);
-         }
-      }
+      cmd.SetSRV_Dx11(GetBindPoint(name), srv);
    }
 
    void GpuProgram::SetSRV(CommandList& cmd, std::string_view name, GPUResource* resource) {
@@ -427,22 +340,7 @@ namespace pbe {
    }
 
    void GpuProgram::SetUAV_Dx11(CommandList& cmd, std::string_view name, ID3D11UnorderedAccessView* uav) {
-      size_t id = StrHash(name);
-
-      if (cs) {
-         const auto reflection = cs->reflection;
-
-         auto iter = reflection.find(id);
-         if (iter != reflection.end()) {
-            const auto& bi = iter->second;
-            if (uav) {
-               cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, 1, &uav, nullptr);
-            } else {
-               ID3D11UnorderedAccessView* viewsUAV[] = { nullptr };
-               cmd.pContext->CSSetUnorderedAccessViews(bi.BindPoint, _countof(viewsUAV), viewsUAV, nullptr);
-            }
-         }
-      }
+      cmd.SetUAV_Dx11(GetBindPoint(name), uav);
    }
 
    void GpuProgram::SetUAV(CommandList& cmd, std::string_view name, GPUResource* resource) {
@@ -463,10 +361,6 @@ namespace pbe {
 
    void GpuProgram::DrawIndexedInstancedIndirect(CommandList& cmd, Buffer& args, uint offset) {
       cmd.pContext->DrawIndexedInstancedIndirect(args.GetBuffer(), offset);
-   }
-
-   void GpuProgram::Dispatch3D(CommandList& cmd, int3 groups) {
-      cmd.pContext->Dispatch(groups.x, groups.y, groups.z);
    }
 
    bool GpuProgram::Valid() const {

@@ -149,7 +149,7 @@ namespace pbe {
 
          cmd.SetUAV(pass->GetBindPoint("gUnderCursorBuffer"), context.underCursorBuffer); // todo: only for editor
 
-         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
 
       {
@@ -168,7 +168,7 @@ namespace pbe {
 
          cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
 
-         cmd.Dispatch2D(cmd, outTexSize, int2{8, 8});
+         cmd.Dispatch2D(outTexSize, int2{8, 8});
       }
 
       if (cvAccumulate) {
@@ -198,7 +198,7 @@ namespace pbe {
          cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
          cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTex);
 
-         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
 
          if (cvHistoryReprojection) {
             std::swap(context.historyTex, context.historyTexPrev);
@@ -230,7 +230,7 @@ namespace pbe {
          cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTex); // read data from this
          cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
 
-         cmd.Dispatch2D(cmd, outTexSize, int2{ 8, 8 });
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
 
          std::swap(context.historyTex, context.historyTexPrev);
       }

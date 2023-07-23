@@ -31,8 +31,8 @@ cbuffer gDrawCallCB {
    SDrawCallCB gDrawCall;
 }
 
-StructuredBuffer<SInstance> gInstances;
-StructuredBuffer<SDecal> gDecals;
+StructuredBuffer<SInstance> gInstances : register(t0);
+StructuredBuffer<SDecal> gDecals : register(t1);
 
 Texture2D<float> gSsao;
 
