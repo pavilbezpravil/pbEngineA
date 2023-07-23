@@ -6,12 +6,12 @@ namespace pbe {
    class Scene;
 
    class Buffer;
-   struct CameraContext;
+   struct RenderContext;
    class CommandList;
 
    class Water {
    public:
-      void Render(CommandList& cmd, Scene& scene, CameraContext& cameraContext);
+      void Render(CommandList& cmd, Scene& scene, RenderContext& cameraContext);
 
    private:
       Ref<Buffer> waterWaves;

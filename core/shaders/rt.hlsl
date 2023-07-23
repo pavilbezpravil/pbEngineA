@@ -5,13 +5,13 @@
 #include "pbr.hlsli"
 #include "sky.hlsli"
 
-RWTexture2D<float4> gColor;
+RWTexture2D<float4> gColor : register(u0);
 
 cbuffer gRTConstantsCB : register(b0) {
   SRTConstants gRTConstants;
 }
 
-StructuredBuffer<SRTObject> gRtObjects;
+StructuredBuffer<SRTObject> gRtObjects : register(t0);
 // StructuredBuffer<SMaterial> gMaterials;
 
 struct Sphere {
@@ -311,9 +311,9 @@ float3 RayColor(Ray ray, inout uint seed) {
 }
 #endif
 
-RWTexture2D<float> gDepthOut;
-RWTexture2D<float4> gNormalOut;
-RWTexture2D<uint> gObjIDOut;
+RWTexture2D<float> gDepthOut : register(u1);
+RWTexture2D<float4> gNormalOut : register(u2);
+RWTexture2D<uint> gObjIDOut : register(u3);
 
 // todo:
 #define EDITOR
@@ -382,20 +382,20 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 }
 
 
-Texture2D<float> gDepthPrev;
-Texture2D<float> gDepth;
+Texture2D<float> gDepthPrev : register(s1);
+Texture2D<float> gDepth : register(s2);
 
-Texture2D<float4> gNormalPrev;
-Texture2D<float4> gNormal;
+Texture2D<float4> gNormalPrev : register(s3);
+Texture2D<float4> gNormal : register(s4);
 
-Texture2D<float4> gHistory; // prev
-Texture2D<uint> gReprojectCount; // prev
+Texture2D<float4> gHistory : register(s5); // prev
+Texture2D<uint> gReprojectCount : register(s6); // prev
 
-Texture2D<uint> gObjIDPrev;
-Texture2D<uint> gObjID;
+Texture2D<uint> gObjIDPrev : register(s7);
+Texture2D<uint> gObjID : register(s8);
 
-RWTexture2D<float4> gHistoryOut;
-RWTexture2D<uint> gReprojectCountOut;
+RWTexture2D<float4> gHistoryOut : register(u4);
+RWTexture2D<uint> gReprojectCountOut : register(u5);
 
 // #define ENABLE_REPROJECTION
 

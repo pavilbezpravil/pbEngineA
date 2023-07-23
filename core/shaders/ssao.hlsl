@@ -20,7 +20,7 @@ float LinearizeDepth(float depth) {
 
 [numthreads(8, 8, 1)]
 void main( uint3 dispatchThreadID : SV_DispatchThreadID ) { 
-   float3 normalW = gNormal[dispatchThreadID.xy];
+   float3 normalW = normalize(gNormal[dispatchThreadID.xy] * 2 - 1);
 
    float depthRaw = gDepth[dispatchThreadID.xy];
    float depth = LinearizeDepth(depthRaw);

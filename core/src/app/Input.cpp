@@ -3,14 +3,28 @@
 
 #include "Event.h"
 #include "Window.h"
+#include "core/Log.h"
 
 
 namespace pbe {
 
    static Input sInput;
 
+   static int2 GetGlobalMousePosition() {
+      POINT p;
+      if (GetCursorPos(&p)) {
+         return { p.x, p.y };
+      }
+      return {};
+   }
+
    Input::Input() {
-      keyPressed.resize(256); //todo:
+      int size = 256; // todo:
+      keyDown.resize(size);
+      keyPressing.resize(size);
+      keyUp.resize(size);
+
+      mousePos = GetGlobalMousePosition();
    }
 
    int2 Input::GetMousePosition() {
@@ -18,40 +32,62 @@ namespace pbe {
    }
 
    int2 Input::GetMouseDelta() {
-      if (sInput.mousePosValid) {
-         return sInput.mousePos - sInput.mousePosPrev;
-      } else {
-         return {};
+      return sInput.mouseDelta;
+   }
+
+   void Input::LockMousePos(bool lock) {
+      sInput.mouseLocked = lock;
+   }
+
+   void Input::HideMouse(bool lock) {
+      ShowCursor(FALSE);
+      if (lock) {
+         LockMousePos(true);
       }
    }
 
-   bool Input::IsKeyPressed(int keyCode) {
-      return sInput.keyPressed[keyCode];
+   void Input::ShowMouse(bool unlock) {
+      if (unlock) {
+         LockMousePos(false);
+      }
+      ShowCursor(TRUE);
+   }
+
+   bool Input::IsKeyDown(int keyCode) {
+      return sInput.keyDown[keyCode];
+   }
+
+   bool Input::IsKeyPressing(int keyCode) {
+      return sInput.keyPressing[keyCode];
+   }
+
+   bool Input::IsKeyUp(int keyCode) {
+      return sInput.keyUp[keyCode];
    }
 
    void Input::OnEvent(Event& event) {
-      if (auto e = event.GetEvent<KeyPressedEvent>()) {
-         sInput.keyPressed[e->keyCode] = true;
+      if (auto e = event.GetEvent<KeyDownEvent>()) {
+         sInput.keyDown[e->keyCode] = true;
+         sInput.keyPressing[e->keyCode] = true;
       }
-      if (auto e = event.GetEvent<KeyReleasedEvent>()) {
-         sInput.keyPressed[e->keyCode] = false;
+      if (auto e = event.GetEvent<KeyUpEvent>()) {
+         sInput.keyPressing[e->keyCode] = false;
+         sInput.keyUp[e->keyCode] = true;
       }
-
-      // if (auto e = event.GetEvent<MouseEvent>()) {
-      //    sInput.keyPressed[e->keyCode] = e->pressed;
-      // }
    }
 
-   void Input::OnUpdate(float dt) {
-      sInput.mousePosPrev = sInput.mousePos;
-      sInput.mousePos = sWindow->GetMousePosition();
-      if (!sInput.mousePosValid) {
-         sInput.mousePosPrev = sInput.mousePos;
-      }
-      sInput.mousePosValid = true;
+   void Input::ClearKeys() {
+      std::ranges::fill(sInput.keyDown, false);
+      std::ranges::fill(sInput.keyUp, false);
+   }
 
-      sInput.keyPressed[VK_LBUTTON] = GetAsyncKeyState(VK_LBUTTON);
-      sInput.keyPressed[VK_RBUTTON] = GetAsyncKeyState(VK_RBUTTON);
+   void Input::NextFrame() {
+      sInput.mouseDelta = GetGlobalMousePosition() - sInput.mousePos;
+      if (sInput.mouseLocked) {
+         SetCursorPos(sInput.mousePos.x, sInput.mousePos.y);
+      } else {
+         sInput.mousePos += sInput.mouseDelta;
+      }
    }
 
 }

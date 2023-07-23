@@ -81,9 +81,8 @@ namespace pbe {
          sDevice->Resize(windowResize->size);
       }
 
-      if (auto* key = event.GetEvent<KeyPressedEvent>()) {
-         // INFO("KeyCode: {}", key->keyCode);
-         if (Input::IsKeyPressed(VK_CONTROL) && key->keyCode == 'R') {
+      if (auto* key = event.GetEvent<KeyDownEvent>()) {
+         if (Input::IsKeyPressing(VK_CONTROL) && key->keyCode == 'R') {
             ReloadShaders();
             event.handled = true;
          }
@@ -134,7 +133,9 @@ namespace pbe {
 
          {
             OPTICK_EVENT("Window Update");
+            Input::ClearKeys();
             sWindow->Update();
+            Input::NextFrame();
 
             // todo:
             if (!running) {
@@ -164,7 +165,6 @@ namespace pbe {
          // todo: different interface
          sConfigVarsMng.NextFrame(); // todo: use before triggered in that frame
          Profiler::Get().NextFrame();
-         Input::OnUpdate(dt);
          ShadersSrcWatcherUpdate();
 
          for (auto* layer : layerStack) {
@@ -206,6 +206,16 @@ namespace pbe {
       }
 
       imguiLayer = nullptr;
+   }
+
+   const char* Application::GetBuildType() {
+      #if defined(DEBUG)
+         return "Debug";
+      #elif defined(RELEASE)
+         return "Release";
+      #else
+         #error Undefined configuration?
+      #endif
    }
 
 }

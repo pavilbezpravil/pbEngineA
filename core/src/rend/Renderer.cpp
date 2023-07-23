@@ -18,6 +18,14 @@ namespace pbe {
    CVarValue<bool> cFreezeCullCamera{ "render/freeze cull camera", false };
    CVarValue<bool> cUseFrustumCulling{ "render/use frustum culling", false };
 
+   CVarValue<bool> cvRenderDecals{ "render/decals", true };
+   CVarValue<bool> cvRenderOpaqueSort{ "render/opaque sort", true };
+   CVarValue<bool> cvRenderShadowMap{ "render/shadow map", true };
+   CVarValue<bool> cvRenderZPass{ "render/z pass", true };
+   CVarValue<bool> cvRenderSsao{ "render/ssao", false };
+   CVarValue<bool> cvRenderTransparency{ "render/transparency", true };
+   CVarValue<bool> cvRenderTransparencySort{ "render/transparency sort", true };
+
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", true };
@@ -55,6 +63,115 @@ namespace pbe {
 
       Frustum frustum{GetViewProjection() };
       memcpy(cameraCB.frustumPlanes, frustum.planes, sizeof(frustum.planes));
+   }
+
+   RenderContext CreateRenderContext(int2 size) {
+      RenderContext context;
+
+      Texture2D::Desc texDesc;
+      texDesc.size = size;
+
+      texDesc.name = "scene colorHDR";
+      texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+      // texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT; // my laptop doesnot support this format as UAV
+      texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+      texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
+      context.colorHDR = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene colorLDR";
+      // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+      // texDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM; // todo: test srgb
+      context.colorLDR = Texture2D::Create(texDesc);
+
+      texDesc.name = "water refraction";
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+      context.waterRefraction = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene depth";
+      // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
+      texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+      context.depth = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene depth without water";
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
+      context.depthWithoutWater = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene linear depth";
+      texDesc.format = DXGI_FORMAT_R16_FLOAT;
+      texDesc.mips = 0;
+      texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+      context.linearDepth = Texture2D::Create(texDesc);
+
+      texDesc.mips = 1;
+
+      texDesc.name = "scene ssao";
+      texDesc.format = DXGI_FORMAT_R16_UNORM;
+      texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+      context.ssao = Texture2D::Create(texDesc);
+
+      if (!context.shadowMap) {
+         Texture2D::Desc texDesc;
+         texDesc.name = "shadow map";
+         // texDesc.format = DXGI_FORMAT_D16_UNORM;
+         texDesc.format = DXGI_FORMAT_R16_TYPELESS;
+         texDesc.size = { 1024, 1024 };
+         texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+         context.shadowMap = Texture2D::Create(texDesc);
+      }
+
+      // rt
+      {
+         auto& outTexture = *context.colorHDR;
+         auto outTexSize = outTexture.GetDesc().size;
+
+         Texture2D::Desc texDesc{
+            .size = outTexSize,
+            .format = outTexture.GetDesc().format,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt history",
+         };
+         context.historyTex = Texture2D::Create(texDesc);
+         context.historyTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt depth",
+         };
+         context.depthTex = Texture2D::Create(texDesc);
+         context.depthTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "rt normal",
+         };
+         context.normalTex = Texture2D::Create(texDesc);
+         context.normalTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8_UINT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt reproject count",
+         };
+         context.reprojectCountTex = Texture2D::Create(texDesc);
+         context.reprojectCountTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_UINT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt obj id",
+         };
+         context.objIDTex = Texture2D::Create(texDesc);
+         context.objIDTexPrev = Texture2D::Create(texDesc);
+      }
+
+      return context;
    }
 
    void Renderer::Init() {
@@ -182,8 +299,7 @@ namespace pbe {
       }
    }
 
-   void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera,
-      CameraContext& cameraContext) {
+   void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context) {
       if (!baseColorPass->Valid()) {
          return;
       }
@@ -198,15 +314,15 @@ namespace pbe {
 
       RenderDataPrepare(cmd, scene, cullCamera);
 
-      cmd.ClearRenderTarget(*cameraContext.colorLDR, vec4{0, 0, 0, 1});
-      cmd.ClearRenderTarget(*cameraContext.colorHDR, vec4{0, 0, 0, 1});
-      cmd.ClearRenderTarget(*cameraContext.normal, vec4{0, 0, 0, 0});
-      cmd.ClearDepthTarget(*cameraContext.depth, 1);
+      cmd.ClearRenderTarget(*context.colorLDR, vec4{0, 0, 0, 1});
+      cmd.ClearRenderTarget(*context.colorHDR, vec4{0, 0, 0, 1});
+      cmd.ClearRenderTarget(*context.normalTex, vec4{0, 0, 0, 0});
+      cmd.ClearDepthTarget(*context.depth, 1);
 
       cmd.SetRasterizerState(rendres::rasterizerState);
 
       uint nDecals = 0;
-      if (cfg.decals) {
+      if (cvRenderDecals) {
          std::vector<SDecal> decals;
 
          MaterialComponent decalDefault{}; // todo:
@@ -275,7 +391,7 @@ namespace pbe {
          auto shadowSpace = glm::lookAt({}, sceneCB.directLight.direction, trans.Up());
          vec3 posShadowSpace = shadowSpace * vec4(camera.position, 1);
 
-         vec2 shadowMapTexels = cameraContext.shadowMap->GetDesc().size;
+         vec2 shadowMapTexels = context.shadowMap->GetDesc().size;
          vec3 shadowTexelSize = vec3{ 2.f * halfSize / shadowMapTexels, 2.f * halfDepth / (1 << 16) };
          vec3 snappedPosShadowSpace = glm::ceil(posShadowSpace / shadowTexelSize) * shadowTexelSize;
 
@@ -299,9 +415,9 @@ namespace pbe {
          sceneCB.skyIntensity = 0;
       }
 
-      cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
+      cmd.AllocAndSetCB({ CB_SLOT_SCENE }, sceneCB);
 
-      if (cfg.opaqueSorting) {
+      if (cvRenderOpaqueSort) {
          // todo: slow. I assumed
          std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
             float az = glm::dot(camera.Forward(), a.trans.position);
@@ -311,28 +427,28 @@ namespace pbe {
       }
       UpdateInstanceBuffer(cmd, opaqueObjs);
 
-      cmd.pContext->ClearUnorderedAccessViewFloat(cameraContext.ssao->uav.Get(), &vec4_One.x);
+      cmd.pContext->ClearUnorderedAccessViewFloat(context.ssao->uav.Get(), &vec4_One.x);
 
       uint4 clearValue = uint4{ (uint)-1 };
       cmd.pContext->ClearUnorderedAccessViewUint(underCursorBuffer->uav.Get(), &clearValue.x);
 
-      cameraContext.underCursorBuffer = underCursorBuffer;
+      context.underCursorBuffer = underCursorBuffer;
 
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
-      cameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-      cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
+      cameraCB.rtSize = context.colorHDR->GetDesc().size;
+      cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, cameraCB);
 
       {
          SCameraCB cullCameraCB;
          cullCamera.FillSCameraCB(cullCameraCB);
-         cullCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
-         cmd.AllocAndSetCommonCB(CB_SLOT_CULL_CAMERA, cullCameraCB);
+         cullCameraCB.rtSize = context.colorHDR->GetDesc().size;
+         cmd.AllocAndSetCB({ CB_SLOT_CULL_CAMERA }, cullCameraCB);
       }
 
       SEditorCB editorCB;
-      editorCB.cursorPixelIdx = cameraContext.cursorPixelIdx;
-      cmd.AllocAndSetCommonCB(CB_SLOT_EDITOR, editorCB);
+      editorCB.cursorPixelIdx = context.cursorPixelIdx;
+      cmd.AllocAndSetCB({ CB_SLOT_EDITOR }, editorCB);
 
       // todo:
       auto ResetCS_SRV_UAV = [&] {
@@ -343,20 +459,20 @@ namespace pbe {
          cmd.pContext->CSSetUnorderedAccessViews(0, _countof(viewsUAV), viewsUAV, nullptr);
       };
 
-      cmd.SetCommonSRV(SRV_SLOT_LIGHTS, *lightBuffer);
+      cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
       if (rayTracingSceneRender) {
-         rtRenderer->RenderScene(cmd, scene, camera, cameraContext);
+         rtRenderer->RenderScene(cmd, scene, camera, context);
          ResetCS_SRV_UAV();
       } else {
-         if (cfg.useShadowPass && hasDirectLight) {
+         if (cvRenderShadowMap && hasDirectLight) {
             GPU_MARKER("Shadow Map");
             PROFILE_GPU("Shadow Map");
 
-            cmd.ClearDepthTarget(*cameraContext.shadowMap, 1);
+            cmd.ClearDepthTarget(*context.shadowMap, 1);
 
-            cmd.SetRenderTargets(nullptr, cameraContext.shadowMap);
-            cmd.SetViewport({}, cameraContext.shadowMap->GetDesc().size);
+            cmd.SetRenderTargets(nullptr, context.shadowMap);
+            cmd.SetViewport({}, context.shadowMap->GetDesc().size);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
             cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
@@ -364,29 +480,29 @@ namespace pbe {
 
             SCameraCB shadowCameraCB;
             shadowCamera.FillSCameraCB(shadowCameraCB);
-            // shadowCameraCB.rtSize = cameraContext.colorHDR->GetDesc().size;
+            // shadowCameraCB.rtSize = context.colorHDR->GetDesc().size;
 
-            cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
+            cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, shadowCameraCB);
 
             auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
             programDesc.vs.defines.AddDefine("ZPASS");
             auto shadowMapPass = GetGpuProgram(programDesc);
-            RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass, cameraContext);
+            RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass);
 
             cmd.SetRenderTargets();
-            cmd.SetCommonSRV(SRV_SLOT_SHADOWMAP, *cameraContext.shadowMap);
+            cmd.SetSRV({ SRV_SLOT_SHADOWMAP }, context.shadowMap);
          }
 
-         cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB); // todo: set twice
+         cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, cameraCB); // todo: set twice
 
-         cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
+         cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
-         if (cfg.useZPass) {
+         if (cvRenderZPass) {
             {
                GPU_MARKER("ZPass");
                PROFILE_GPU("ZPass");
 
-               cmd.SetRenderTargets(cameraContext.normal, cameraContext.depth);
+               cmd.SetRenderTargets(context.normalTex, context.depth);
                cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
                cmd.SetBlendState(rendres::blendStateDefaultRGBA);
 
@@ -395,10 +511,10 @@ namespace pbe {
                programDesc.ps.defines.AddDefine("ZPASS");
                auto baseZPass = GetGpuProgram(programDesc);
 
-               RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass, cameraContext);
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
             }
 
-            if (cfg.ssao) {
+            if (cvRenderSsao) {
                GPU_MARKER("SSAO");
                PROFILE_GPU("SSAO");
 
@@ -408,12 +524,12 @@ namespace pbe {
 
                ssaoPass->Activate(cmd);
 
-               ssaoPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
+               ssaoPass->SetSRV(cmd, "gDepth", *context.depth);
                ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
-               ssaoPass->SetSRV(cmd, "gNormal", *cameraContext.normal);
-               ssaoPass->SetUAV(cmd, "gSsao", *cameraContext.ssao);
+               ssaoPass->SetSRV(cmd, "gNormal", *context.normalTex);
+               ssaoPass->SetUAV(cmd, "gSsao", *context.ssao);
 
-               ssaoPass->Dispatch2D(cmd, glm::ceil(vec2{ cameraContext.colorHDR->GetDesc().size } / vec2{ 8 }));
+               ssaoPass->Dispatch2D(cmd, glm::ceil(vec2{ context.colorHDR->GetDesc().size } / vec2{ 8 }));
 
                ResetCS_SRV_UAV();
             }
@@ -423,43 +539,43 @@ namespace pbe {
                PROFILE_GPU("Color");
 
                // baseColorPass->SetUAV(cmd, "gUnderCursorBuffer", *underCursorBuffer);
-               // cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+               // cmd.SetRenderTargets(context.colorHDR, context.depth);
 
-               cmd.SetRenderTargetsUAV(cameraContext.colorHDR, cameraContext.depth, underCursorBuffer);
+               cmd.SetRenderTargetsUAV(context.colorHDR, context.depth, underCursorBuffer);
 
                cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
                cmd.SetBlendState(rendres::blendStateDefaultRGB);
 
-               baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+               baseColorPass->SetSRV(cmd, "gSsao", *context.ssao);
                baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-               RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
+               RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass);
             }
          } else {
             GPU_MARKER("Color (Without ZPass)");
             PROFILE_GPU("Color (Without ZPass)");
 
-            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+            cmd.SetRenderTargets(context.colorHDR, context.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
             cmd.SetBlendState(rendres::blendStateDefaultRGB);
-            baseColorPass->SetSRV(cmd, "gSsao", *cameraContext.ssao);
+            baseColorPass->SetSRV(cmd, "gSsao", *context.ssao);
             baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
 
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass, cameraContext);
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass);
          }
 
-         terrainSystem.Render(cmd, scene, cameraContext);
+         terrainSystem.Render(cmd, scene, context);
 
-         waterSystem.Render(cmd, scene, cameraContext);
+         waterSystem.Render(cmd, scene, context);
 
-         if (cfg.transparency && !transparentObjs.empty()) {
+         if (cvRenderTransparency && !transparentObjs.empty()) {
             GPU_MARKER("Transparency");
             PROFILE_GPU("Transparency");
 
-            cmd.SetRenderTargets(cameraContext.colorHDR, cameraContext.depth);
+            cmd.SetRenderTargets(context.colorHDR, context.depth);
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
             cmd.SetBlendState(rendres::blendStateTransparency);
 
-            if (cfg.transparencySorting) {
+            if (cvRenderTransparencySort) {
                // todo: slow. I assumed
                std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
                   float az = glm::dot(camera.Forward(), a.trans.position);
@@ -469,7 +585,7 @@ namespace pbe {
             }
 
             UpdateInstanceBuffer(cmd, transparentObjs);
-            RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass, cameraContext);
+            RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass);
          }
 
          if (1) { // todo
@@ -481,10 +597,10 @@ namespace pbe {
             auto linearizeDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "main"));
             linearizeDepthPass->Activate(cmd);
 
-            linearizeDepthPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
-            linearizeDepthPass->SetUAV_Dx11(cmd, "gDepthOut", cameraContext.linearDepth->GetMipUav(0));
+            linearizeDepthPass->SetSRV(cmd, "gDepth", *context.depth);
+            linearizeDepthPass->SetUAV_Dx11(cmd, "gDepthOut", context.linearDepth->GetMipUav(0));
 
-            linearizeDepthPass->Dispatch2D(cmd, cameraContext.depth->GetDesc().size, int2{ 8 });
+            linearizeDepthPass->Dispatch2D(cmd, context.depth->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -498,7 +614,7 @@ namespace pbe {
             auto downsampleDepthPass = GetGpuProgram(ProgramDesc::Cs("linearizeDepth.hlsl", "downsampleDepth"));
             downsampleDepthPass->Activate(cmd);
 
-            auto& texture = cameraContext.linearDepth;
+            auto& texture = context.linearDepth;
 
             int nMips = texture->GetDesc().mips;
             int2 size = texture->GetDesc().size;
@@ -525,10 +641,10 @@ namespace pbe {
 
             fogPass->Activate(cmd);
 
-            fogPass->SetSRV(cmd, "gDepth", *cameraContext.depth);
-            fogPass->SetUAV(cmd, "gColor", *cameraContext.colorHDR);
+            fogPass->SetSRV(cmd, "gDepth", *context.depth);
+            fogPass->SetUAV(cmd, "gColor", *context.colorHDR);
 
-            fogPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+            fogPass->Dispatch2D(cmd, context.colorHDR->GetDesc().size, int2{ 8 });
 
             ResetCS_SRV_UAV();
          }
@@ -545,10 +661,10 @@ namespace pbe {
 
          tonemapPass->Activate(cmd);
 
-         tonemapPass->SetSRV(cmd, "gColorHDR", *cameraContext.colorHDR);
-         tonemapPass->SetUAV(cmd, "gColorLDR", *cameraContext.colorLDR);
+         tonemapPass->SetSRV(cmd, "gColorHDR", *context.colorHDR);
+         tonemapPass->SetUAV(cmd, "gColorLDR", *context.colorLDR);
 
-         tonemapPass->Dispatch2D(cmd, cameraContext.colorHDR->GetDesc().size, int2{ 8 });
+         tonemapPass->Dispatch2D(cmd, context.colorHDR->GetDesc().size, int2{ 8 });
 
          ResetCS_SRV_UAV();
       }
@@ -557,8 +673,8 @@ namespace pbe {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
 
-         cmd.SetRenderTargets(cameraContext.colorLDR, cameraContext.depth);
-         cmd.SetViewport({}, cameraContext.colorHDR->GetDesc().size); /// todo:
+         cmd.SetRenderTargets(context.colorLDR, context.depth);
+         cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
          DbgRend& dbgRend = *scene.dbgRend;
          dbgRend.Clear();
@@ -594,8 +710,7 @@ namespace pbe {
       }
    }
 
-   void Renderer::RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs,
-      GpuProgram& program, const CameraContext& cameraContext) {
+   void Renderer::RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program) {
       program.Activate(cmd);
       program.SetSRV(cmd, "gInstances", *instanceBuffer);
 
@@ -631,7 +746,7 @@ namespace pbe {
             if (indirectDraw) {
                // DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), (uint)renderObjs.size(), 0, 0, 0 };
                DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), 0, 0, 0, 0 };
-               auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
+               auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(args, 1);
 
                if (1) {
                   auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.hlsl", "indirectArgsTest"));

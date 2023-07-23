@@ -11,12 +11,50 @@
 #include "rend/RendRes.h"
 #include "math/Types.h"
 #include "typer/Serialize.h"
+#include "app/Window.h"
+#include "gui/Gui.h"
 
 
 namespace pbe {
 
+   // todo:
+   void ImGui_SetPointSampler(const ImDrawList* list, const ImDrawCmd* cmd) {
+      sDevice->g_pd3dDeviceContext->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
+   }
+
+   class TextureViewWindow : public EditorWindow {
+   public:
+      TextureViewWindow() : EditorWindow("Texture View") {}
+
+      void OnImGuiRender() override {
+         UI_WINDOW("Texture View"); // todo:
+         if (!texture) {
+            ImGui::Text("No texture selected");
+            return;
+         }
+
+         const auto& desc = texture->GetDesc();
+         ImGui::Text("%s (%dx%d, %d)", desc.name.c_str(), desc.size.x, desc.size.y, desc.mips);
+
+         static int iMip = 0;
+         ImGui::SliderInt("mip", &iMip, 0, desc.mips - 1);
+         ImGui::SameLine();
+
+         int d = 1 << iMip;
+         ImGui::Text("mip size (%dx%d)", desc.size.x / d, desc.size.y / d);
+
+         auto imSize = ImGui::GetContentRegionAvail();
+         auto srv = texture->GetMipSrv(iMip);
+
+         ImGui::GetWindowDrawList()->AddCallback(ImGui_SetPointSampler, nullptr);
+         ImGui::Image(srv, imSize);
+         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+      }
+
+      Texture2D* texture{};
+   } gTextureViewWindow;
+
    // todo: add hotkey remove cfg
-   CVarValue<bool> zoomEnable{ "zoom/enable", false };
    CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
 
    struct ViewportSettings {
@@ -38,56 +76,31 @@ namespace pbe {
       camera.position = viewportSettings.cameraPos;
       camera.cameraAngle = viewportSettings.cameraAngles;
       camera.UpdateView();
-
-      renderer.reset(new Renderer());
-      renderer->Init();
    }
 
    ViewportWindow::~ViewportWindow() {
-      Serialize(viewportSettingPath, ViewportSettings{.cameraPos = camera.position, .cameraAngles = camera.cameraAngle});
+      Serialize(viewportSettingPath,
+         ViewportSettings{.cameraPos = camera.position, .cameraAngles = camera.cameraAngle});
    }
 
    void ViewportWindow::OnImGuiRender() {
-      ImGui::Begin(name.c_str(), &show);
-
       enableInput = ImGui::IsWindowHovered();
 
       if (customHeadFunc) {
          customHeadFunc();
       }
 
-      static RenderConfing cfg;
-
-      ImGui::Checkbox("Transparency", &cfg.transparency);
-      ImGui::SameLine();
-      ImGui::Checkbox("Transparency Sorting", &cfg.transparencySorting);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Opaque Sorting", &cfg.opaqueSorting);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Decals", &cfg.decals);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Shadow", &cfg.useShadowPass);
-      ImGui::SameLine();
-
-      ImGui::Checkbox("Use ZPass", &cfg.useZPass);
-      ImGui::SameLine();
-      ImGui::Checkbox("SSAO", &cfg.ssao);
-      ImGui::SameLine();
-      ImGui::Checkbox("Use InstancedDraw", &cfg.useInstancedDraw);
-
       static bool textureViewWindow = false;
       ImGui::Checkbox("Texture View Window", &textureViewWindow);
       ImGui::SameLine();
 
-      ImGui::Checkbox("Super Sampling", &cfg.superSampling);
-
-      renderer->cfg = cfg;
+      static float renderScale = 1;
+      ImGui::SetNextItemWidth(100);
+      ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
+      ImGui::SameLine();
 
       static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Depth", "LinearDepth", "Normal", "Position", "SSAO", "ShadowMap", "RT Depth", "RT Normal"};
+      const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO"};
 
       ImGui::SetNextItemWidth(80);
       ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -97,7 +110,7 @@ namespace pbe {
       if (selectEntityUnderCursor) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
-         bool clearPrevSelection = !Input::IsKeyPressed(VK_CONTROL);
+         bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
          if (entityID != (uint) -1) {
             Entity e{ entt::entity(entityID), scene};
             selection->ToggleSelect(e, clearPrevSelection);
@@ -107,222 +120,47 @@ namespace pbe {
          selectEntityUnderCursor = false;
       }
 
-      // todo: hack. lambda with capture cant be passed as function pointer
-      static auto sCtx = cmd.pContext;
-      auto setPointSampler = [](const ImDrawList* cmd_list, const ImDrawCmd* pcmd) {
-         sCtx->PSSetSamplers(0, 1, &rendres::samplerStateWrapPoint);
-      };
-
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
-      if (cfg.superSampling) {
-         size *= 2;
+      if (renderScale != 1.f) {
+         size = vec2(size) * renderScale;
       }
 
-      if (size.x > 1 && size.y > 1) {
-         if (!cameraContext.colorHDR || cameraContext.colorHDR->GetDesc().size != size) {
-            Texture2D::Desc texDesc;
-            texDesc.size = size;
-
-            texDesc.name = "scene colorHDR";
-            texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-            // texDesc.format = DXGI_FORMAT_R11G11B10_FLOAT; // my laptop doesnot support this format as UAV
-            texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            texDesc.bindFlags |= D3D11_BIND_UNORDERED_ACCESS; // todo:
-            cameraContext.colorHDR = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene colorLDR";
-            // texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-            // texDesc.format = DXGI_FORMAT_R8G8B8A8_UNORM; // todo: test srgb
-            cameraContext.colorLDR = Texture2D::Create(texDesc);
-
-            texDesc.name = "water refraction";
-            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.waterRefraction = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene depth";
-            // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-            texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
-            texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.depth = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene depth without water";
-            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.depthWithoutWater = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene linear depth";
-            texDesc.format = DXGI_FORMAT_R16_FLOAT;
-            texDesc.mips = 0;
-            texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-            cameraContext.linearDepth = Texture2D::Create(texDesc);
-
-            texDesc.mips = 1;
-
-            // texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
-            // texDesc.name = "scene depth copy";
-            // cameraContext.depthCopy = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene normal";
-            texDesc.format = DXGI_FORMAT_R16G16B16A16_SNORM;
-            texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.normal = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene position";
-            texDesc.format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-            texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.position = Texture2D::Create(texDesc);
-
-            texDesc.name = "scene ssao";
-            texDesc.format = DXGI_FORMAT_R16_UNORM;
-            texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-            cameraContext.ssao = Texture2D::Create(texDesc);
-
-            if (!cameraContext.shadowMap) {
-               Texture2D::Desc texDesc;
-               texDesc.name = "shadow map";
-               // texDesc.format = DXGI_FORMAT_D16_UNORM;
-               texDesc.format = DXGI_FORMAT_R16_TYPELESS;
-               texDesc.size = { 1024, 1024 };
-               texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-               cameraContext.shadowMap = Texture2D::Create(texDesc);
-            }
-
-            // rt
-            {
-               auto& outTexture = *cameraContext.colorHDR;
-               auto outTexSize = outTexture.GetDesc().size;
-
-               Texture2D::Desc texDesc{
-                  .size = outTexSize,
-                  .format = outTexture.GetDesc().format,
-                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-                  .name = "rt history",
-               };
-               cameraContext.historyTex = Texture2D::Create(texDesc);
-               cameraContext.historyTex2 = Texture2D::Create(texDesc);
-
-               texDesc = {
-                  .size = outTexSize,
-                  .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
-                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-                  .name = "rt depth",
-               };
-               cameraContext.depthTex = Texture2D::Create(texDesc);
-               cameraContext.depthTexPrev = Texture2D::Create(texDesc);
-
-               texDesc = {
-                  .size = outTexSize,
-                  .format = DXGI_FORMAT_R8G8B8A8_UNORM,
-                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-                  .name = "rt normal",
-               };
-               cameraContext.normalTex = Texture2D::Create(texDesc);
-               cameraContext.normalTexPrev = Texture2D::Create(texDesc);
-
-               texDesc = {
-                  .size = outTexSize,
-                  .format = DXGI_FORMAT_R8_UINT,
-                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-                  .name = "rt reproject count",
-               };
-               cameraContext.reprojectCountTex = Texture2D::Create(texDesc);
-               cameraContext.reprojectCountTexPrev = Texture2D::Create(texDesc);
-
-               texDesc = {
-                  .size = outTexSize,
-                  .format = DXGI_FORMAT_R32_UINT,
-                  .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-                  .name = "rt obj id",
-               };
-               cameraContext.objIDTex = Texture2D::Create(texDesc);
-               cameraContext.objIDTexPrev = Texture2D::Create(texDesc);
-            }
-
-            camera.UpdateProj(texDesc.size);
-            camera.NextFrame(); // todo:
+      if (all(size > 1)) {
+         if (!renderContext.colorHDR || renderContext.colorHDR->GetDesc().size != size) {
+            renderContext = CreateRenderContext(size);
+            camera.UpdateProj(size);
+            camera.NextFrame();
          }
 
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         vec2 pixelIdxFloat = (mousePos - cursorPos);
-
-         // camera.NextFrame(); // todo:
+         int2 cursorPixelIdx{ mousePos - cursorPos};
 
          cmd.SetCommonSamplers();
          if (scene) {
-            // todo:
-            RenderCamera rendCamera;
-
-            rendCamera.position = camera.position;
-            rendCamera.view = camera.view;
-            rendCamera.projection = camera.projection;
-            rendCamera.prevViewProjection = camera.prevViewProjection;
-
-            rendCamera.zNear = camera.zNear;
-            rendCamera.zFar = camera.zFar;
-
-
-            int2 cursorPixelIdx{ pixelIdxFloat + EPSILON };
-            cameraContext.cursorPixelIdx = cursorPixelIdx;
-            renderer->RenderScene(cmd, *scene, rendCamera, cameraContext);
+            renderContext.cursorPixelIdx = cursorPixelIdx;
+            renderer->RenderScene(cmd, *scene, camera, renderContext);
          }
          cmd.pContext->ClearState(); // todo:
 
-         Texture2D* sceneRTs[] = { cameraContext.colorLDR, cameraContext.colorHDR, cameraContext.depth, cameraContext.linearDepth, cameraContext.normal, cameraContext.position, cameraContext.ssao, cameraContext.shadowMap, cameraContext.depthTex, cameraContext.normalTex };
-         auto srv = sceneRTs[item_current]->srv.Get();
+         Texture2D* sceneRTs[] = { renderContext.colorLDR, renderContext.colorHDR,renderContext.normalTex, renderContext.ssao};
 
+         Texture2D* image = sceneRTs[item_current];
+         auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
          if (zoomEnable) {
-            vec2 zoomImageSize{300, 300};
-
-            vec2 uvCenter = pixelIdxFloat / vec2{ imSize.x, imSize.y };
-
-            if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
-               vec2 uvScale{ zoomScale / 2.f };
-
-               vec2 uv0 = uvCenter - uvScale;
-               vec2 uv1 = uvCenter + uvScale;
-
-               ImGui::BeginTooltip();
-
-               ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
-               ImGui::Image(srv, { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
-               ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-               ImGui::EndTooltip();
-            }
+            Zoom(*image, cursorPixelIdx);
          }
 
          Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
-      }
 
-      ImGui::End();
-
-      if (textureViewWindow && cameraContext.linearDepth) {
-         ImGui::Begin("Texture View");
-
-         auto texture = cameraContext.linearDepth;
-
-         const auto& desc = texture->GetDesc();
-         ImGui::Text("%s (%dx%d, %d)", desc.name.c_str(), desc.size.x, desc.size.y, desc.mips);
-
-         static int iMip = 0;
-         ImGui::SliderInt("mip", &iMip, 0, texture->GetDesc().mips - 1);
-         ImGui::SameLine();
-
-         int d = 1 << iMip;
-         ImGui::Text("mip size (%dx%d)", desc.size.x / d, desc.size.y / d);
-
-         auto imSize = ImGui::GetContentRegionAvail();
-         auto srv = texture->GetMipSrv(iMip);
-
-         ImGui::GetWindowDrawList()->AddCallback(setPointSampler, nullptr);
-         ImGui::Image(srv, imSize);
-         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-
-         ImGui::End();
+         if (textureViewWindow) {
+            gTextureViewWindow.texture = renderContext.linearDepth;
+            gTextureViewWindow.OnImGuiRender();
+         }
       }
    }
 
@@ -332,9 +170,9 @@ namespace pbe {
          return;
       }
 
-      camera.NextFrame(); // todo:
+      camera.NextFrame();
 
-      if (Input::IsKeyPressed(VK_LBUTTON) && !ImGuizmo::IsOver()) {
+      if (Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          selectEntityUnderCursor = true;
       }
 
@@ -342,38 +180,43 @@ namespace pbe {
       // ImGui::SetWindowFocus(name.data());
       camera.Update(dt);
 
-      if (!Input::IsKeyPressed(VK_RBUTTON)) {
-         if (Input::IsKeyPressed('W')) {
+      if (Input::IsKeyDown(VK_RBUTTON)) {
+         Input::HideMouse(true);
+      }
+      if (Input::IsKeyUp(VK_RBUTTON)) {
+         Input::ShowMouse(true);
+      }
+
+      if (!Input::IsKeyPressing(VK_RBUTTON)) {
+         if (Input::IsKeyDown('W')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
          }
-         if (Input::IsKeyPressed('R')) {
+         if (Input::IsKeyDown('R')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
          }
-         if (Input::IsKeyPressed('S')) {
+         if (Input::IsKeyDown('S')) {
             gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
          }
 
-         // todo: IsKeyDown
-         // if (Input::IsKeyPressed('Q')) {
-         //    gizmoCfg.space = 1 - gizmoCfg.space;
-         // }
-         if (Input::IsKeyPressed('Q')) {
-            gizmoCfg.space = 0;
-         }
-         if (Input::IsKeyPressed('A')) {
-            gizmoCfg.space = 1;
+         if (Input::IsKeyDown('Q')) {
+            gizmoCfg.space = 1 - gizmoCfg.space;
          }
 
-         if (Input::IsKeyPressed('F') && selection->FirstSelected()) {
+         if (Input::IsKeyDown('F') && selection->FirstSelected()) {
             auto selectedEntity = selection->FirstSelected();
-            camera.position = selectedEntity.Get<SceneTransformComponent>().position - camera.Forward() * 3.f;
+            camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
          }
+      }
+
+      // zoom
+      if (Input::IsKeyDown('V')) {
+         zoomEnable = !zoomEnable;
       }
 
       // todo:
       static float acc = 0;
       acc += dt;
-      if (acc > 0.2 && Input::IsKeyPressed(' ')) {
+      if (acc > 0.2 && Input::IsKeyPressing(' ')) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
             shootRoot = scene->Create("Shoots");
@@ -392,8 +235,27 @@ namespace pbe {
          auto& rb = shoot.Add<RigidBodyComponent>(_rb);
          rb.SetLinearVelocity(camera.Forward() * 50.f);
       }
+   }
 
-      // INFO("Left {} Right {}", Input::IsKeyPressed(VK_LBUTTON), Input::IsKeyPressed(VK_RBUTTON));
+   void ViewportWindow::Zoom(Texture2D& image, vec2 center) {
+      vec2 zoomImageSize{ 300, 300 };
+
+      vec2 uvCenter = center / vec2{ image.GetDesc().size };
+
+      if (all(uvCenter > vec2{ 0 } && uvCenter < vec2{ 1 })) {
+         vec2 uvScale{ zoomScale / 2.f };
+
+         vec2 uv0 = uvCenter - uvScale;
+         vec2 uv1 = uvCenter + uvScale;
+
+         ImGui::BeginTooltip();
+
+         ImGui::GetWindowDrawList()->AddCallback(ImGui_SetPointSampler, nullptr);
+         ImGui::Image(image.srv.Get(), { zoomImageSize.x, zoomImageSize.y }, { uv0.x, uv0.y }, { uv1.x, uv1.y });
+         ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+
+         ImGui::EndTooltip();
+      }
    }
 
    void ViewportWindow::Gizmo(const vec2& contentRegion, const vec2& cursorPos) {
@@ -406,7 +268,7 @@ namespace pbe {
       ImGuizmo::SetDrawlist();
       ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
 
-      bool snap = Input::IsKeyPressed(VK_CONTROL);
+      bool snap = Input::IsKeyPressing(VK_CONTROL);
 
       auto& trans = selectedEntity.Get<SceneTransformComponent>();
       mat4 entityTransform = trans.GetMatrix();

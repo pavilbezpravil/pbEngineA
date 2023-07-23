@@ -26,6 +26,7 @@ namespace pbe {
       void OnImGuiRender() override;
       void OnUpdate(float dt) override;
 
+      void Zoom(Texture2D& image, vec2 center);
       void Gizmo(const vec2& contentRegion, const vec2& cursorPos);
 
       Scene* scene{};
@@ -33,8 +34,8 @@ namespace pbe {
       std::function<void(void)> customHeadFunc; // todo: better name
 
       EditorCamera camera;
-      Own<Renderer> renderer;
-      CameraContext cameraContext;
+      Renderer* renderer = {}; // todo:
+      RenderContext renderContext;
 
       bool enableInput = false;
 
@@ -42,6 +43,7 @@ namespace pbe {
 
    private:
       bool selectEntityUnderCursor = false;
+      bool zoomEnable = false;
    };
 
 }

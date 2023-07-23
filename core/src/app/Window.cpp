@@ -50,7 +50,7 @@ namespace pbe {
             break;
          }
 
-         KeyPressedEvent e{ (int)wParam };
+         KeyDownEvent e{ (int)wParam };
          sWindow->eventCallback(e);
          return 0;
       }
@@ -59,30 +59,35 @@ namespace pbe {
             break;
          }
 
-         KeyReleasedEvent e{ (int)wParam };
+         KeyUpEvent e{ (int)wParam };
          sWindow->eventCallback(e);
          return 0;
       }
-      // case WM_LBUTTONDOWN: {
-      //    MouseEvent e{ VK_LBUTTON, true };
-      //    sWindow->eventCallback(e);
-      //    return 0;
-      // }
-      // case WM_LBUTTONUP: {
-      //    MouseEvent e{ VK_LBUTTON, false };
-      //    sWindow->eventCallback(e);
-      //    return 0;
-      // }
-      // case WM_RBUTTONDOWN: {
-      //    MouseEvent e{ VK_RBUTTON, true };
-      //    sWindow->eventCallback(e);
-      //    return 0;
-      // }
-      // case WM_RBUTTONUP: {
-      //    MouseEvent e{ VK_RBUTTON, false };
-      //    sWindow->eventCallback(e);
-      //    return 0;
-      // }
+      case WM_LBUTTONDOWN: {
+         // todo: imgui always wants mouse input))
+         // if (io.WantCaptureMouse) {
+         //    break;
+         // }
+
+         KeyDownEvent e{ (int)VK_LBUTTON };
+         sWindow->eventCallback(e);
+         return 0;
+      }
+      case WM_LBUTTONUP: {
+         KeyUpEvent e{ (int)VK_LBUTTON };
+         sWindow->eventCallback(e);
+         return 0;
+      }
+      case WM_RBUTTONDOWN: {
+         KeyDownEvent e{ (int)VK_RBUTTON };
+         sWindow->eventCallback(e);
+         return 0;
+      }
+      case WM_RBUTTONUP: {
+         KeyUpEvent e{ (int)VK_RBUTTON };
+         sWindow->eventCallback(e);
+         return 0;
+      }
       case WM_SETFOCUS: {
          AppGetFocusEvent e{};
          sWindow->eventCallback(e);
@@ -144,6 +149,10 @@ namespace pbe {
       }
    }
 
+   void Window::SetTitle(const string_view title) {
+      SetWindowText(hwnd, title.data());
+   }
+
    int2 Window::GetMousePosition() const {
       POINT p;
       if (GetCursorPos(&p)) {
@@ -152,6 +161,17 @@ namespace pbe {
          }
       }
       return {};
+   }
+
+   void Window::HideAndLockMouse() {
+      RECT rect;
+      GetClientRect(hwnd, &rect);
+      MapWindowPoints(hwnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+      ClipCursor(&rect);
+   }
+
+   void Window::ReleaseMouse() {
+      ClipCursor(nullptr);
    }
 
 }

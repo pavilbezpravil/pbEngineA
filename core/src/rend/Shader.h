@@ -1,10 +1,10 @@
 #pragma once
 #include <d3d11shader.h>
-#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "BindPoint.h"
 #include "Common.h"
 #include "core/Core.h"
 #include "core/Ref.h"
@@ -152,6 +152,10 @@ namespace pbe {
 
       void Activate(CommandList& cmd);
 
+      // BindPoint GetBindPoint(uint64 strID) const;
+      BindPoint GetBindPoint(std::string_view name) const;
+
+      // todo: remove
       template<typename T>
       void SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes = 0) {
          SetCB(cmd, name, buffer, offsetInBytes, sizeof(T));

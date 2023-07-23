@@ -22,6 +22,8 @@ namespace pbe {
 
       void Run();
 
+      const char* GetBuildType();
+
    private:
       bool running = false;
       LayerStack layerStack;
@@ -30,6 +32,6 @@ namespace pbe {
       bool focused = true;
    };
 
-   extern Application* sApplication;
+   extern CORE_API Application* sApplication;
 
 }

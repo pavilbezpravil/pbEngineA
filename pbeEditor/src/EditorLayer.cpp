@@ -2,6 +2,7 @@
 #include "EditorLayer.h"
 #include "EditorWindow.h"
 #include "Undo.h"
+#include "app/Application.h"
 #include "app/Event.h"
 #include "app/Input.h"
 #include "app/Window.h"
@@ -75,10 +76,17 @@ namespace pbe {
          }
       };
 
+      // todo:
+      renderer.reset(new Renderer());
+      renderer->Init();
+      viewportWindow->renderer = renderer.get();
+
       if (!editorSettings.scenePath.empty()) {
          auto s = SceneDeserialize(editorSettings.scenePath);
          SetEditorScene(std::move(s));
       }
+
+      sWindow->SetTitle(std::format("pbe Editor {}", sApplication->GetBuildType()));
 
       Layer::OnAttach();
    }
@@ -226,7 +234,7 @@ namespace pbe {
    }
 
    void EditorLayer::OnEvent(Event& event) {
-      if (auto* e = event.GetEvent<KeyPressedEvent>()) {
+      if (auto* e = event.GetEvent<KeyDownEvent>()) {
          if (e->keyCode == VK_ESCAPE) {
             editorSelection.ClearSelection();
          }
@@ -239,7 +247,7 @@ namespace pbe {
             editorSelection.ClearSelection();
          }
 
-         if (Input::IsKeyPressed(VK_CONTROL)) {
+         if (Input::IsKeyPressing(VK_CONTROL)) {
             if (e->keyCode == 'P') {
                TogglePlayStop();
             }

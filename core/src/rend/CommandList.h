@@ -7,11 +7,29 @@
 
 #include <shared/IndirectArgs.hlsli>
 
+#include "BindPoint.h"
+#include "core/Assert.h"
+
 namespace pbe {
+   class GpuProgram;
 
    struct OffsetedBuffer {
       Buffer* buffer{};
       uint offset = 0;
+   };
+
+   struct CmdBind {
+      enum Type {
+         SRV,
+         UAV,
+         CB,
+      } type;
+
+      BindPoint bindPoint;
+   };
+
+   struct CmdBinds {
+      std::vector<CmdBind> binds;
    };
 
    class CORE_API CommandList {
@@ -23,6 +41,112 @@ namespace pbe {
       // CommandList() {
       //    sDevice->g_pd3dDevice->CreateDeferredContext(0, &pContext);
       // }
+
+      bool SetCompute(GpuProgram& compute);
+
+      template<typename T>
+      void SetCB(const BindPoint& bind, Buffer* buffer = nullptr, uint offsetInBytes = 0) {
+         SetCB(bind, buffer, offsetInBytes, sizeof(T));
+      }
+
+      // todo: i suppose for dx12 size unnecessary
+      void SetCB(const BindPoint& bind, Buffer* buffer, uint offsetInBytes, uint size) {
+         if (!bind) {
+            return;
+         }
+
+         if (buffer) {
+            AddBindToGuard(CmdBind::CB, bind);
+         }
+
+         ID3D11Buffer* dxBuffer[] = { buffer ? buffer->GetBuffer() : nullptr };
+
+         offsetInBytes /= 16;
+
+         pContext->VSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+         pContext->HSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+         pContext->DSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+         pContext->PSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+
+         pContext->CSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+      }
+
+      template<typename T>
+      OffsetedBuffer AllocAndSetCB(const BindPoint& bind, const T& data) {
+         constexpr uint dataSize = sizeof(T);
+         auto dynCB = AllocDynConstantBuffer((const void*)&data, dataSize);
+         SetCB(bind, dynCB.buffer, dynCB.offset, dataSize);
+         return dynCB;
+      }
+
+      void SetSRV_Dx11(const BindPoint& bind, ID3D11ShaderResourceView* srv) {
+         if (!bind) {
+            return;
+         }
+
+         if (srv) {
+            AddBindToGuard(CmdBind::SRV, bind);
+         }
+
+         ID3D11ShaderResourceView* viewsSRV[] = { srv };
+
+         pContext->VSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+         pContext->HSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+         pContext->DSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+         pContext->PSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+
+         pContext->CSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+      }
+
+      void SetSRV(const BindPoint& bind, GPUResource* resource = nullptr) {
+         SetSRV_Dx11(bind, resource ? resource->srv.Get() : nullptr);
+      }
+
+      void SetUAV_Dx11(const BindPoint& bind, ID3D11UnorderedAccessView* uav) {
+         if (!bind) {
+            return;
+         }
+
+         if (uav) {
+            AddBindToGuard(CmdBind::UAV, bind);
+         }
+
+         ID3D11UnorderedAccessView* viewsUAV[] = { uav };
+         pContext->CSSetUnorderedAccessViews(bind.slot, _countof(viewsUAV), viewsUAV, nullptr);
+      }
+      void SetUAV(const BindPoint& bind, GPUResource* resource = nullptr) {
+         SetUAV_Dx11(bind, resource ? resource->uav.Get() : nullptr);
+      }
+
+      void DrawInstanced(uint vertCount, uint instCount, uint startVert) {
+         pContext->DrawInstanced(vertCount, instCount, startVert, 0);
+      }
+      void DrawIndexedInstanced(uint indexCount, uint instCount, uint indexStart, uint startVert) {
+         pContext->DrawIndexedInstanced(indexCount, instCount, indexStart, startVert, 0);
+      }
+      void DrawIndexedInstancedIndirect(Buffer& args, uint offset) {
+         pContext->DrawIndexedInstancedIndirect(args.GetBuffer(), offset);
+      }
+
+      void Dispatch3D(CommandList& cmd, int3 groups) {
+         pContext->Dispatch(groups.x, groups.y, groups.z);
+      }
+      void Dispatch3D(CommandList& cmd, int3 size, int3 groupSize) {
+         auto groups = glm::ceil(vec3{ size } / vec3{ groupSize });
+         Dispatch3D(cmd, int3{ groups });
+      }
+
+      void Dispatch2D(CommandList& cmd, int2 groups) {
+         Dispatch3D(cmd, int3{ groups, 1 });
+      }
+      void Dispatch2D(CommandList& cmd, int2 size, int2 groupSize) {
+         auto groups = glm::ceil(vec2{ size } / vec2{ groupSize });
+         Dispatch2D(cmd, groups);
+      }
+
+      void Dispatch1D(CommandList& cmd, uint size) {
+         Dispatch3D(cmd, int3{ size, 1, 1 });
+      }
 
       template<typename T>
       OffsetedBuffer AllocDynConstantBuffer(const T& data) {
@@ -39,10 +163,9 @@ namespace pbe {
          return AllocDynBuffer(data, size, dynVertBufffers);
       }
 
-      // todo: remove data
-      OffsetedBuffer AllocDynDrawIndexedInstancedBuffer(const void* data, uint count) {
+      OffsetedBuffer AllocDynDrawIndexedInstancedBuffer(const DrawIndexedInstancedArgs& args, uint count) {
          uint size = count * sizeof(DrawIndexedInstancedArgs);
-         return AllocDynBuffer(data, size, dynDrawIndexedInstancedBuffer);
+         return AllocDynBuffer(&args, size, dynDrawIndexedInstancedBuffer);
       }
 
       template<typename T>
@@ -142,8 +265,9 @@ namespace pbe {
          pContext->RSSetViewports(1, &viewport);
       }
 
-      void ClearSRV_CS(); // todo: first 8
-      void ClearUAV_CS(); // todo: first 8
+      // todo: first 10
+      void ClearSRV_CS();
+      void ClearUAV_CS();
 
       void BeginEvent(std::string_view name) {
          pContext->BeginEventInt(std::wstring(name.begin(), name.end()).data(), 0);
@@ -153,21 +277,36 @@ namespace pbe {
          pContext->EndEvent();
       }
 
-      template<typename T>
-      OffsetedBuffer AllocAndSetCommonCB(int slot, const T& data) {
-         constexpr uint dataSize = sizeof(T);
-         auto dynCB = AllocDynConstantBuffer((const void*)&data, dataSize);
-         SetCommonCB(slot, dynCB.buffer, dynCB.offset, dataSize);
-         return dynCB;
-      }
-
-      void SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size);
-      void SetCommonSRV(int slot, GPUResource& resource);
-
       void SetCommonSamplers();
 
-      ID3D11CommandList* GetD3DCommandList() {
-         return nullptr;
+      void PushBindsGuard() {
+         bindsGuardStack.push_back({});
+         currentBindsGuard = &bindsGuardStack.back();
+      }
+
+      void PopBindsGuard() {
+         ASSERT(currentBindsGuard);
+         for (auto& bind : currentBindsGuard->binds) {
+            switch (bind.type) {
+            case CmdBind::SRV:
+               SetSRV(bind.bindPoint);
+               break;
+            case CmdBind::UAV:
+               SetUAV(bind.bindPoint);
+               break;
+            case CmdBind::CB:
+               // todo: mb does not work or leads to crash)
+               SetCB(bind.bindPoint, nullptr, 0, 0);
+               break;
+            }
+         }
+
+         bindsGuardStack.pop_back();
+         if (bindsGuardStack.empty()) {
+            currentBindsGuard = {};
+         } else {
+            currentBindsGuard = &bindsGuardStack.back();
+         }
       }
 
       ID3D11DeviceContext3* pContext{};
@@ -209,7 +348,24 @@ namespace pbe {
          return { &curDynConstBuffer, oldOffset };
       }
 
+      void AddBindToGuard(CmdBind::Type type, BindPoint bindPoint) {
+         if (currentBindsGuard) {
+            currentBindsGuard->binds.push_back({ type, bindPoint });
+         }
+      }
+
+      std::vector<CmdBinds> bindsGuardStack;
+      CmdBinds* currentBindsGuard = nullptr;
    };
+
+   struct CmdBindsGuard {
+      CmdBindsGuard(CommandList& cmd);
+      ~CmdBindsGuard();
+
+      CommandList& cmd;
+   };
+
+#define CMD_BINDS_GUARD() CmdBindsGuard cmdBindsGuard { cmd };
 
    struct GpuMarker {
       GpuMarker(CommandList& cmd, std::string_view name) : cmd(cmd) {

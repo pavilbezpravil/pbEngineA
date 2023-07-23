@@ -9,6 +9,7 @@
 #include "core/Ref.h"
 
 namespace pbe {
+   class Renderer;
 
    class InspectorWindow;
    class SceneHierarchyWindow;
@@ -65,6 +66,9 @@ namespace pbe {
       };
 
       State editorState = State::Edit;
+
+      // todo:
+      Own<Renderer> renderer;
    };
 
 }
