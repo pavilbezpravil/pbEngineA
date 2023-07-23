@@ -166,6 +166,7 @@ namespace pbe {
 
    PhysicsScene::~PhysicsScene() {
       ASSERT(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
+      delete pxScene->getSimulationEventCallback();
       PX_RELEASE(pxScene);
    }
 
