@@ -294,6 +294,21 @@ namespace pbe {
       }
    }
 
+   BindPoint GpuProgram::GetBindPoint(std::string_view name) const {
+      ASSERT(cs); // todo: while work only with cs. Remove after adding dx12
+
+      size_t id = StrHash(name);
+
+      const auto reflection = cs->reflection;
+
+      auto iter = reflection.find(id);
+      if (iter != reflection.end()) {
+         return { .slot = iter->second.BindPoint };
+      }
+
+      return {};
+   }
+
    void GpuProgram::SetCB(CommandList& cmd, std::string_view name, Buffer& buffer, uint offsetInBytes, uint size) {
       size_t id = StrHash(name);
 

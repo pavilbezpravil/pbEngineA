@@ -29,29 +29,6 @@ namespace pbe {
       pContext->CSSetUnorderedAccessViews(0, 8, uavs, nullptr);
    }
 
-   void CommandList::SetCommonCB(int slot, Buffer* buffer, uint offsetInBytes, uint size) {
-      auto dxBuffer = buffer->GetBuffer();
-
-      offsetInBytes /= 16;
-
-      pContext->VSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
-      pContext->HSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
-      pContext->DSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
-      pContext->PSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
-
-      pContext->CSSetConstantBuffers1(slot, 1, &dxBuffer, &offsetInBytes, &size);
-   }
-
-   void CommandList::SetCommonSRV(int slot, GPUResource& resource)
-   {
-      pContext->VSSetShaderResources(slot, 1, resource.srv.GetAddressOf());
-      pContext->HSSetShaderResources(slot, 1, resource.srv.GetAddressOf());
-      pContext->DSSetShaderResources(slot, 1, resource.srv.GetAddressOf());
-      pContext->PSSetShaderResources(slot, 1, resource.srv.GetAddressOf());
-
-      pContext->CSSetShaderResources(slot, 1, resource.srv.GetAddressOf());
-   }
-
    void CommandList::SetCommonSamplers() {
       std::pair<int, ID3D11SamplerState**> samplers[] = {
          {SAMPLER_SLOT_WRAP_POINT, &rendres::samplerStateWrapPoint},

@@ -415,7 +415,7 @@ namespace pbe {
          sceneCB.skyIntensity = 0;
       }
 
-      cmd.AllocAndSetCommonCB(CB_SLOT_SCENE, sceneCB);
+      cmd.AllocAndSetCB({ CB_SLOT_SCENE }, sceneCB);
 
       if (cvRenderOpaqueSort) {
          // todo: slow. I assumed
@@ -437,18 +437,18 @@ namespace pbe {
       SCameraCB cameraCB;
       camera.FillSCameraCB(cameraCB);
       cameraCB.rtSize = context.colorHDR->GetDesc().size;
-      cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB);
+      cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, cameraCB);
 
       {
          SCameraCB cullCameraCB;
          cullCamera.FillSCameraCB(cullCameraCB);
          cullCameraCB.rtSize = context.colorHDR->GetDesc().size;
-         cmd.AllocAndSetCommonCB(CB_SLOT_CULL_CAMERA, cullCameraCB);
+         cmd.AllocAndSetCB({ CB_SLOT_CULL_CAMERA }, cullCameraCB);
       }
 
       SEditorCB editorCB;
       editorCB.cursorPixelIdx = context.cursorPixelIdx;
-      cmd.AllocAndSetCommonCB(CB_SLOT_EDITOR, editorCB);
+      cmd.AllocAndSetCB({ CB_SLOT_EDITOR }, editorCB);
 
       // todo:
       auto ResetCS_SRV_UAV = [&] {
@@ -459,7 +459,7 @@ namespace pbe {
          cmd.pContext->CSSetUnorderedAccessViews(0, _countof(viewsUAV), viewsUAV, nullptr);
       };
 
-      cmd.SetCommonSRV(SRV_SLOT_LIGHTS, *lightBuffer);
+      cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
       if (rayTracingSceneRender) {
          rtRenderer->RenderScene(cmd, scene, camera, context);
@@ -482,7 +482,7 @@ namespace pbe {
             shadowCamera.FillSCameraCB(shadowCameraCB);
             // shadowCameraCB.rtSize = context.colorHDR->GetDesc().size;
 
-            cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, shadowCameraCB);
+            cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, shadowCameraCB);
 
             auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main");
             programDesc.vs.defines.AddDefine("ZPASS");
@@ -490,10 +490,10 @@ namespace pbe {
             RenderSceneAllObjects(cmd, opaqueObjs, *shadowMapPass);
 
             cmd.SetRenderTargets();
-            cmd.SetCommonSRV(SRV_SLOT_SHADOWMAP, *context.shadowMap);
+            cmd.SetSRV({ SRV_SLOT_SHADOWMAP }, context.shadowMap);
          }
 
-         cmd.AllocAndSetCommonCB(CB_SLOT_CAMERA, cameraCB); // todo: set twice
+         cmd.AllocAndSetCB({ CB_SLOT_CAMERA }, cameraCB); // todo: set twice
 
          cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
@@ -746,7 +746,7 @@ namespace pbe {
             if (indirectDraw) {
                // DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), (uint)renderObjs.size(), 0, 0, 0 };
                DrawIndexedInstancedArgs args{ (uint)mesh.geom.IndexCount(), 0, 0, 0, 0 };
-               auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(&args, 1);
+               auto dynArgs = cmd.AllocDynDrawIndexedInstancedBuffer(args, 1);
 
                if (1) {
                   auto indirectArgsTest = GetGpuProgram(ProgramDesc::Cs("cull.hlsl", "indirectArgsTest"));
