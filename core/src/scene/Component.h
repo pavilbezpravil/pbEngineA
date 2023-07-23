@@ -138,6 +138,10 @@ namespace pbe {
       void SetLinearVelocity(const vec3& v, bool autowake = true);
    };
 
+   struct TriggerComponent {
+      physx::PxRigidActor* pxRigidActor = nullptr;
+   };
+
    struct DistanceJointComponent {
       Entity entity0;
       Entity entity1;

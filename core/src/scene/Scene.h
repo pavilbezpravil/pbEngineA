@@ -37,7 +37,10 @@ namespace pbe {
       void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
+      void DestroyDelayed(Entity entity, bool withChilds = true);
       void DestroyImmediate(Entity entity, bool withChilds = true);
+
+      void DestroyDelayedEntities();
 
       template<typename Type, typename... Other, typename... Exclude>
       const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {

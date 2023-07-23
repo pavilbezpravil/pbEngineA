@@ -25,6 +25,9 @@ namespace pbe {
       registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(pPhysics);
       registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(pPhysics);
 
+      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(pPhysics);
+      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(pPhysics);
+
       registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(pPhysics);
       registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(pPhysics);
    }
@@ -136,6 +139,14 @@ namespace pbe {
       return duplicatedEntity;
    }
 
+   struct DelayedDestroyMarker {
+      bool withChilds = false;
+   };
+
+   void Scene::DestroyDelayed(Entity entity, bool withChilds) {
+      entity.GetOrAdd<DelayedDestroyMarker>(withChilds);
+   }
+
    void Scene::DestroyImmediate(Entity entity, bool withChilds) {
       auto& trans = entity.GetTransform();
 
@@ -155,6 +166,13 @@ namespace pbe {
 
       uuidToEntities.erase(entity.GetUUID());
       registry.destroy(entity.GetID());
+   }
+
+   void Scene::DestroyDelayedEntities() {
+      for (auto [e, marker] : registry.view<DelayedDestroyMarker>().each()) {
+         DestroyImmediate(Entity{e, this}, marker.withChilds);
+      }
+      registry.clear<DelayedDestroyMarker>();
    }
 
    void Scene::OnStart() {

@@ -43,4 +43,11 @@ namespace pbe {
       return entity;
    }
 
+   Entity CreateTrigger(Scene& scene, const vec3& pos) {
+      auto entity = CreateEmpty(scene, "Trigger", {}, pos);
+      entity.Add<GeometryComponent>();
+      entity.Add<TriggerComponent>();
+      return entity;
+   }
+
 }

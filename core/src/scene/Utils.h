@@ -21,6 +21,8 @@ namespace pbe {
    Entity CORE_API CreateDirectLight(Scene& scene, string_view namePrefix = "Direct Light", const vec3& pos = {});
    Entity CORE_API CreateSky(Scene& scene, string_view namePrefix = "Sky", const vec3& pos = {});
 
+   Entity CORE_API CreateTrigger(Scene& scene, const vec3& pos = {});
+
    // todo: 
    template<typename T>
    struct Component {

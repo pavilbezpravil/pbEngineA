@@ -706,6 +706,12 @@ namespace pbe {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
          }
 
+         for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
+            // todo: OBB
+            // todo: box, sphere, capsule
+            dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f }, vec4_One);
+         }
+
          dbgRend.Render(cmd, camera);
       }
    }

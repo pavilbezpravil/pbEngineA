@@ -38,11 +38,18 @@ namespace pbe {
             }
 
             if (UI_MENU("Geometry")) {
+               // todo: add just geom without physics
+            }
+
+            if (UI_MENU("Physics")) {
                if (ImGui::MenuItem("Dynamic Cube")) {
                   ToggleSelectEntity(CreateCube(scene));
                }
                if (ImGui::MenuItem("Static Cube")) {
                   ToggleSelectEntity(CreateCube(scene, CubeDesc{ .dynamic = false }));
+               }
+               if (ImGui::MenuItem("Trigger")) {
+                  ToggleSelectEntity(CreateTrigger(scene));
                }
             }
 

@@ -39,6 +39,9 @@ namespace pbe {
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
       void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
 
+      void OnConstructTrigger(entt::registry& registry, entt::entity entity);
+      void OnDestroyTrigger(entt::registry& registry, entt::entity entity);
+
       void OnConstructDistanceJoint(entt::registry& registry, entt::entity entity);
       void OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity);
    };

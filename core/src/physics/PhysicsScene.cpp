@@ -65,8 +65,23 @@ namespace pbe {
       return PxFilterFlag::eDEFAULT;
    }
 
-   Entity GetEntity(PxActor* actor) {
-      return *(Entity*)actor->userData;
+   Entity* GetEntity(PxActor* actor) {
+      return (Entity*)actor->userData;
+   }
+
+   PxTransform GetTransform(const SceneTransformComponent& trans) {
+      return PxTransform{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
+   }
+
+   PxGeometryHolder GetPhysGeom(const SceneTransformComponent& trans, const GeometryComponent& geom) {
+      // todo: think about tran.scale
+      PxGeometryHolder physGeom;
+      if (geom.type == GeomType::Sphere) {
+         physGeom = PxSphereGeometry(geom.sizeData.x * trans.Scale().x); // todo: scale, default radius == 1 -> diameter == 2 (it is bad)
+      } else if (geom.type == GeomType::Box) {
+         physGeom = PxBoxGeometry(Vec3ToPx(geom.sizeData * trans.Scale() / 2.f));
+      }
+      return physGeom;
    }
 
    struct SimulationEventCallback : PxSimulationEventCallback {
@@ -77,14 +92,14 @@ namespace pbe {
 
       void onWake(PxActor** actors, PxU32 count) override {
          for (PxU32 i = 0; i < count; i++) {
-            Entity e = GetEntity(actors[i]);
+            Entity& e = *GetEntity(actors[i]);
             INFO("Wake event {}", e.GetName());
          }
       }
 
       void onSleep(PxActor** actors, PxU32 count) override {
          for (PxU32 i = 0; i < count; i++) {
-            Entity e = GetEntity(actors[i]);
+            Entity& e = *GetEntity(actors[i]);
             INFO("Sleep event {}", e.GetName());
          }
       }
@@ -92,19 +107,15 @@ namespace pbe {
       void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override {
          for (PxU32 i = 0; i < nbPairs; i++) {
             const PxContactPair& cp = pairs[i];
+
+            Entity& e0 = *GetEntity(pairHeader.actors[0]);
+            Entity& e1 = *GetEntity(pairHeader.actors[1]);
+
             if (cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-               Entity e0 = GetEntity(pairHeader.actors[0]);
-               Entity e1 = GetEntity(pairHeader.actors[1]);
-
-               INFO("Contact event beetween {} {}", e0.GetName(), e1.GetName());
-
+               INFO("onContact eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
                // physScene->scene.DispatchEvent<ContactEnterEvent>(e0, e1);
             } else if (cp.events & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-               Entity e0 = GetEntity(pairHeader.actors[0]);
-               Entity e1 = GetEntity(pairHeader.actors[1]);
-
-               INFO("Contact event beetween {} {}", e0.GetName(), e1.GetName());
-
+               INFO("onContact eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
                // physScene->scene.DispatchEvent<ContactExitEvent>(e0, e1);
             }
          }
@@ -117,16 +128,17 @@ namespace pbe {
                continue;
             }
 
-            Entity e0 = GetEntity(pair.triggerActor);
-            Entity e1 = GetEntity(pair.otherActor);
+            Entity& e0 = *GetEntity(pair.triggerActor);
+            Entity& e1 = *GetEntity(pair.otherActor);
 
-            INFO("Trigger event beetween {} {}", e0.GetName(), e1.GetName());
-
-            // if (pair.status & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-            //    physScene->scene.DispatchEvent<TriggerEnterEvent>(e0, e1);
-            // } else if (pair.status & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-            //    physScene->scene.DispatchEvent<TriggerExitEvent>(e0, e1);
-            // }
+            if (pair.status & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
+               INFO("onTrigger eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
+               e1.DestroyDelayed();
+               // physScene->scene.DispatchEvent<TriggerEnterEvent>(e0, e1);
+            } else if (pair.status & PxPairFlag::eNOTIFY_TOUCH_LOST) {
+               INFO("onTrigger eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
+               // physScene->scene.DispatchEvent<TriggerExitEvent>(e0, e1);
+            }
          }
       }
 
@@ -159,21 +171,25 @@ namespace pbe {
 
    void PhysicsScene::SyncPhysicsWithScene() {
       // todo: only for changed entities
-      for (auto [_, trans, rb] :
-         scene.View<SceneTransformComponent, RigidBodyComponent>().each()) {
-         if (rb.dynamic) {
-            continue;
-         }
 
-         PxTransform pxTrans{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
-         rb.pxRigidActor->setGlobalPose(pxTrans);
+      for (auto [_, trans, rb] :
+         scene.View<SceneTransformComponent, TriggerComponent>().each()) {
+         rb.pxRigidActor->setGlobalPose(GetTransform(trans));
       }
+
+      // for (auto [_, trans, rb] :
+      //    scene.View<SceneTransformComponent, RigidBodyComponent>().each()) {
+      //    if (rb.dynamic) {
+      //       continue;
+      //    }
+      //
+      //    rb.pxRigidActor->setGlobalPose(GetTransform(trans));
+      // }
    }
 
    void PhysicsScene::Simulation(float dt) {
       PROFILE_CPU("Phys simulate");
 
-      // todo: update only changed entities
       SyncPhysicsWithScene();
 
       timeAccumulator += dt;
@@ -193,6 +209,8 @@ namespace pbe {
          pxScene->fetchResults(true);
 
          UpdateSceneAfterPhysics();
+
+         scene.DestroyDelayedEntities();
       }
    }
 
@@ -216,34 +234,24 @@ namespace pbe {
 
    void PhysicsScene::AddRigidActor(Entity entity) {
       auto& trans = entity.Get<SceneTransformComponent>();
-
-      PxTransform t{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
-
       auto& rb = entity.Get<RigidBodyComponent>();
-
       auto& geom = entity.Get<GeometryComponent>();
 
-      // todo: think about tran.scale
+      PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
 
-      PxGeometryHolder physGeom;
-      if (geom.type == GeomType::Sphere) {
-         physGeom = PxSphereGeometry(geom.sizeData.x * trans.Scale().x); // todo: scale, default radius == 1 -> diameter == 2 (it is bad)
-      } else if (geom.type == GeomType::Box) {
-         physGeom = PxBoxGeometry(Vec3ToPx(geom.sizeData * trans.Scale() / 2.f));
-      }
+      PxTransform physTrans = GetTransform(trans);
 
       PxRigidActor* actor = nullptr;
       if (rb.dynamic) {
          // todo: density
-         actor = PxCreateDynamic(*gPhysics, t, physGeom.any(), *gMaterial, 10.0f);
+         actor = PxCreateDynamic(*gPhysics, physTrans, physGeom.any(), *gMaterial, 10.0f);
          // dynamic->setAngularDamping(0.5f);
          // dynamic->setLinearVelocity(velocity);
       } else {
-         actor = PxCreateStatic(*gPhysics, t, physGeom.any(), *gMaterial);
+         actor = PxCreateStatic(*gPhysics, physTrans, physGeom.any(), *gMaterial);
       }
 
       actor->userData = new Entity{entity}; // todo: use fixed allocator
-
       pxScene->addActor(*actor);
 
       rb.pxRigidActor = actor;
@@ -253,7 +261,8 @@ namespace pbe {
       auto& rb = entity.Get<RigidBodyComponent>();
 
       pxScene->removeActor(*rb.pxRigidActor);
-      delete (Entity*)rb.pxRigidActor->userData;
+      delete GetEntity(rb.pxRigidActor);
+      rb.pxRigidActor->userData = nullptr;
 
       rb.pxRigidActor = nullptr;
    }
@@ -266,6 +275,39 @@ namespace pbe {
    void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
       Entity e{ entity, &scene };
       RemoveRigidActor(e);
+   }
+
+   void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+
+      auto& trans = entity.Get<SceneTransformComponent>();
+      auto& geom = entity.Get<GeometryComponent>();
+      auto& trigger = entity.Get<TriggerComponent>();
+
+      PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
+
+      const PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eTRIGGER_SHAPE;
+      PxShape* shape = gPhysics->createShape(physGeom.any(), *gMaterial, true, shapeFlags);
+
+      PxRigidStatic* actor = gPhysics->createRigidStatic(GetTransform(trans));
+      actor->attachShape(*shape);
+      actor->userData = new Entity{ entity }; // todo: use fixed allocator
+      pxScene->addActor(*actor);
+      shape->release();
+
+      trigger.pxRigidActor = actor;
+   }
+
+   void PhysicsScene::OnDestroyTrigger(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+
+      auto& trigger = entity.Get<TriggerComponent>();
+
+      pxScene->removeActor(*trigger.pxRigidActor);
+      delete GetEntity(trigger.pxRigidActor);
+      trigger.pxRigidActor->userData = nullptr;
+
+      trigger.pxRigidActor = nullptr;
    }
 
    // todo:

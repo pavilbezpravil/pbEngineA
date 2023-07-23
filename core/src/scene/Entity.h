@@ -67,14 +67,15 @@ namespace pbe {
          return scene->registry.try_get<T>(id);
       }
 
-      template<typename T>
-      T& GetOrAdd() {
+      template<typename T, typename...Cs>
+      T& GetOrAdd(Cs&&... cs) {
          if (auto c = TryGet<T>()) {
             return *c;
          }
-         return Add<T>();
+         return Add<T>(std::forward<Cs>(cs)...);
       }
 
+      void DestroyDelayed(bool withChilds = true);
       void DestroyImmediate(bool withChilds = true);
 
       bool Valid() const {

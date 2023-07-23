@@ -141,6 +141,9 @@ namespace pbe {
       TYPER_FIELD(dynamic)
    TYPER_END()
 
+   TYPER_BEGIN(TriggerComponent)
+   TYPER_END()
+
    TYPER_BEGIN(DistanceJointComponent)
       TYPER_FIELD(entity0)
       TYPER_FIELD(entity1)
@@ -391,6 +394,7 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(RigidBodyComponent);
+      INTERNAL_ADD_COMPONENT(TriggerComponent);
       INTERNAL_ADD_COMPONENT(DistanceJointComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);

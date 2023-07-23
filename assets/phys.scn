@@ -1287,7 +1287,7 @@ entities:
     tag: ground
     SceneTransformComponent:
       position: [0, 2.75831366, -3.0028758]
-      rotation: [-34.6143112, 0, 0]
+      rotation: [-34.6143036, 0, 0]
       scale: [20, 1, 20]
       parent: 16296614365138388011
     MaterialComponent:
@@ -2762,6 +2762,18 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+  - uuid: 15047598061340389158
+    tag: Trigger Kill
+    SceneTransformComponent:
+      position: [-16.3557358, -11.9045591, -11.3978863]
+      rotation: [0, -0, 0]
+      scale: [280.569763, 4.90759706, 321.322601]
+      parent: 16296614365138388011
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    TriggerComponent:
+      {}
   - uuid: 15193548965700216067
     tag: Cube
     SceneTransformComponent:
@@ -2901,7 +2913,7 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17941021247240787344, 6706076201866816664, 2170966516242636815, 938473475286867933, 10919072432576154392, 13482914116042921232, 17934859203848319991]
+      children: [17941021247240787344, 6706076201866816664, 2170966516242636815, 938473475286867933, 10919072432576154392, 13482914116042921232, 17934859203848319991, 15047598061340389158]
   - uuid: 16360981654089563280
     tag: Cube
     SceneTransformComponent:
