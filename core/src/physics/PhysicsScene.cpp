@@ -41,11 +41,106 @@ namespace pbe {
       PX_RELEASE(gFoundation);
    }
 
+   // todo: delete?
+   PxFilterFlags contactReportFilterShader(
+         PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+         PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+         PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
+      PX_UNUSED(attributes0);
+      PX_UNUSED(attributes1);
+      PX_UNUSED(filterData0);
+      PX_UNUSED(filterData1);
+      PX_UNUSED(constantBlockSize);
+      PX_UNUSED(constantBlock);
+
+      if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1)) {
+         pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+         return PxFilterFlag::eDEFAULT;
+      }
+
+      // todo:
+      pairFlags = PxPairFlag::eCONTACT_DEFAULT
+                | PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_LOST
+                | PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eNOTIFY_CONTACT_POINTS;
+      return PxFilterFlag::eDEFAULT;
+   }
+
+   Entity GetEntity(PxActor* actor) {
+      return *(Entity*)actor->userData;
+   }
+
+   struct SimulationEventCallback : PxSimulationEventCallback {
+      PhysicsScene* physScene{};
+      SimulationEventCallback(PhysicsScene* physScene) : physScene(physScene) {}
+
+      void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override {}
+
+      void onWake(PxActor** actors, PxU32 count) override {
+         for (PxU32 i = 0; i < count; i++) {
+            Entity e = GetEntity(actors[i]);
+            INFO("Wake event {}", e.GetName());
+         }
+      }
+
+      void onSleep(PxActor** actors, PxU32 count) override {
+         for (PxU32 i = 0; i < count; i++) {
+            Entity e = GetEntity(actors[i]);
+            INFO("Sleep event {}", e.GetName());
+         }
+      }
+
+      void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override {
+         for (PxU32 i = 0; i < nbPairs; i++) {
+            const PxContactPair& cp = pairs[i];
+            if (cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
+               Entity e0 = GetEntity(pairHeader.actors[0]);
+               Entity e1 = GetEntity(pairHeader.actors[1]);
+
+               INFO("Contact event beetween {} {}", e0.GetName(), e1.GetName());
+
+               // physScene->scene.DispatchEvent<ContactEnterEvent>(e0, e1);
+            } else if (cp.events & PxPairFlag::eNOTIFY_TOUCH_LOST) {
+               Entity e0 = GetEntity(pairHeader.actors[0]);
+               Entity e1 = GetEntity(pairHeader.actors[1]);
+
+               INFO("Contact event beetween {} {}", e0.GetName(), e1.GetName());
+
+               // physScene->scene.DispatchEvent<ContactExitEvent>(e0, e1);
+            }
+         }
+      }
+
+      void onTrigger(PxTriggerPair* pairs, PxU32 count) override {
+         for (PxU32 i = 0; i < count; i++) {
+            const PxTriggerPair& pair = pairs[i];
+            if (pair.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER)) {
+               continue;
+            }
+
+            Entity e0 = GetEntity(pair.triggerActor);
+            Entity e1 = GetEntity(pair.otherActor);
+
+            INFO("Trigger event beetween {} {}", e0.GetName(), e1.GetName());
+
+            // if (pair.status & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
+            //    physScene->scene.DispatchEvent<TriggerEnterEvent>(e0, e1);
+            // } else if (pair.status & PxPairFlag::eNOTIFY_TOUCH_LOST) {
+            //    physScene->scene.DispatchEvent<TriggerExitEvent>(e0, e1);
+            // }
+         }
+      }
+
+      // todo: advance?
+      void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override {}
+   };
+
    PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
       PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
       sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
       sceneDesc.cpuDispatcher = gDispatcher;
       sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+      // sceneDesc.filterShader = contactReportFilterShader;
+      sceneDesc.simulationEventCallback = new SimulationEventCallback(this);
       sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
       pxScene = gPhysics->createScene(sceneDesc);
 
