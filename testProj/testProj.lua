@@ -9,6 +9,7 @@ project "testProj"
    includedirs { libsinfo.core.includepath,
                  libsinfo.imgui.includepath,
                  libsinfo.glm.includepath,
+                 libsinfo.d3dx12.includepath,
                  libsinfo.spdlog.includepath,
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,

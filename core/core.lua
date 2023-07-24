@@ -14,6 +14,7 @@ project "core"
    includedirs { libsinfo.core.includepath,
                  libsinfo.imgui.includepath,
                  libsinfo.glm.includepath,
+                 libsinfo.d3dx12.includepath,
                  libsinfo.spdlog.includepath,
                  libsinfo.yaml.includepath,
                  libsinfo.optick.includepath,
@@ -27,7 +28,7 @@ project "core"
    }
 
    links {
-       "imgui", "d3d11.lib", "yaml", "optick", "dxguid.lib",
+       "imgui", "d3d11.lib", "d3d12.lib", "yaml", "optick", "dxguid.lib",
        "PhysX_64",
        "PhysXCommon_64",
        "PhysXExtensions_static_64",

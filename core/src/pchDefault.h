@@ -15,6 +15,7 @@
 
 #include <d3d11_3.h>
 #include <dxgi.h>
+#include <d3dx12.h>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
