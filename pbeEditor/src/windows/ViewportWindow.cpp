@@ -189,10 +189,6 @@ namespace pbe {
          selectEntityUnderCursor = true;
       }
 
-      if (Input::IsKeyDown('X')) { // todo: other key
-         freeCamera = !freeCamera;
-      }
-
       // todo:
       // ImGui::SetWindowFocus(name.data());
       camera.Update(dt);
@@ -229,6 +225,17 @@ namespace pbe {
       // zoom
       if (Input::IsKeyDown('V')) {
          zoomEnable = !zoomEnable;
+      }
+
+      if (Input::IsKeyDown('X')) { // todo: other key
+         freeCamera = !freeCamera;
+      }
+
+      if (Input::IsKeyDown('C')) { // todo: other key
+         if (Entity e = selection->FirstSelected()) {
+            e.Get<SceneTransformComponent>().SetPosition(camera.position);
+            // todo: set rotation
+         }
       }
 
       // todo:

@@ -306,6 +306,7 @@ namespace pbe {
    void EditorLayer::OnPlay() {
       runtimeScene = editorScene->Copy();
       SetActiveScene(runtimeScene.get());
+      // viewportWindow->freeCamera = false;
       runtimeScene->OnStart();
       editorState = State::Play;
    }
