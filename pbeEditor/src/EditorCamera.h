@@ -5,11 +5,12 @@
 
 namespace pbe {
 
-   struct EditorCamera : RenderCamera {
+   struct EditorCamera : public RenderCamera {
       vec2 cameraAngle{};
 
       void Update(float dt);
       void UpdateView();
+      void SetViewDirection(const vec3& direction);
    };
 
 }

@@ -13,6 +13,8 @@
 #include "typer/Serialize.h"
 #include "app/Window.h"
 #include "gui/Gui.h"
+#include "scene/Utils.h"
+#include "utils/TimedAction.h"
 
 
 namespace pbe {
@@ -144,6 +146,14 @@ namespace pbe {
          cmd.SetCommonSamplers();
          if (scene) {
             renderContext.cursorPixelIdx = cursorPixelIdx;
+
+            Entity e = scene->GetAnyWithComponent<CameraComponent>();
+            if (!freeCamera && e) {
+               auto& trans = e.Get<SceneTransformComponent>();
+               camera.position = trans.Position();
+               camera.SetViewDirection(trans.Forward());
+            }
+
             renderer->RenderScene(cmd, *scene, camera, renderContext);
          }
          cmd.pContext->ClearState(); // todo:
@@ -179,6 +189,10 @@ namespace pbe {
          selectEntityUnderCursor = true;
       }
 
+      if (Input::IsKeyDown('X')) { // todo: other key
+         freeCamera = !freeCamera;
+      }
+
       // todo:
       // ImGui::SetWindowFocus(name.data());
       camera.Update(dt);
@@ -187,6 +201,7 @@ namespace pbe {
          Input::HideMouse(true);
       }
       if (Input::IsKeyUp(VK_RBUTTON)) {
+         // todo: handle window lost focus
          Input::ShowMouse(true);
       }
 
@@ -217,25 +232,20 @@ namespace pbe {
       }
 
       // todo:
-      static float acc = 0;
-      acc += dt;
-      if (acc > 0.2 && Input::IsKeyPressing(' ')) {
+      static TimedAction timer{5};
+      if (timer.Update(dt) > 0 && Input::IsKeyPressing(' ')) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
             shootRoot = scene->Create("Shoots");
          }
 
-         acc = 0;
-         auto shoot = scene->Create(shootRoot, "Shoot cube");
-         shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
-         shoot.Add<MaterialComponent>();
-         shoot.Add<GeometryComponent>();
+         auto shoot = CreateCube(*scene, CubeDesc{
+               .parent = shootRoot,
+               .namePrefix = "Shoot cube",
+               .pos = camera.position,
+            });
 
-         // todo:
-         RigidBodyComponent _rb;
-         _rb.dynamic = true;
-
-         auto& rb = shoot.Add<RigidBodyComponent>(_rb);
+         auto& rb = shoot.Get<RigidBodyComponent>();
          rb.SetLinearVelocity(camera.Forward() * 50.f);
       }
    }

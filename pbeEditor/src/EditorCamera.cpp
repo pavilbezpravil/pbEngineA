@@ -7,9 +7,9 @@ namespace pbe {
 
    void EditorCamera::Update(float dt) {
       if (Input::IsKeyPressing(VK_RBUTTON)) {
-         float cameraMouseSpeed = 0.2f;
+         float cameraMouseSpeed = 0.2f / 50;
          cameraAngle += vec2(Input::GetMouseDelta()) * cameraMouseSpeed * vec2(-1, -1);
-         cameraAngle.y = glm::clamp(cameraAngle.y, -85.f, 85.f);
+         cameraAngle.y = glm::clamp(cameraAngle.y, -PIHalf * 0.95f, PIHalf * 0.95f);
 
          // todo: update use prev view matrix
          vec3 cameraInput{};
@@ -54,11 +54,20 @@ namespace pbe {
    }
 
    void EditorCamera::UpdateView() {
-      mat4 rotation = glm::rotate(mat4(1), glm::radians(cameraAngle.y), vec3_Right);
-      rotation *= glm::rotate(mat4(1), glm::radians(cameraAngle.x), vec3_Up);
+      mat4 rotation = glm::rotate(mat4(1), cameraAngle.y, vec3_Right);
+      rotation *= glm::rotate(mat4(1), cameraAngle.x, vec3_Up);
 
       float3 direction = vec4(0, 0, 1, 1) * rotation;
 
-      RenderCamera::UpdateView(direction);
+      UpdateViewByDirection(direction);
    }
+
+   void EditorCamera::SetViewDirection(const vec3& direction) {
+      cameraAngle.x = atan2(direction.x, direction.z);
+      cameraAngle.y = asin(direction.y);
+
+      UpdateView();
+   }
+
+
 }

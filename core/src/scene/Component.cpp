@@ -92,6 +92,10 @@ namespace pbe {
       TYPER_FIELD(tag)
    TYPER_END()
 
+   TYPER_BEGIN(CameraComponent)
+      TYPER_FIELD(main)
+   TYPER_END()
+
    TYPER_BEGIN(SceneTransformComponent)
       TYPER_SERIALIZE(TransSerialize)
       TYPER_DESERIALIZE(TransDeserialize)
@@ -391,6 +395,7 @@ namespace pbe {
 
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
+      INTERNAL_ADD_COMPONENT(CameraComponent);
       INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(RigidBodyComponent);

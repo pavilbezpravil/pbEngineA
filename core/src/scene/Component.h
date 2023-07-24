@@ -43,6 +43,10 @@ namespace pbe {
       std::string tag;
    };
 
+   struct CameraComponent {
+      bool main = false;
+   };
+
    // todo: move to math
    CORE_API std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform);
 

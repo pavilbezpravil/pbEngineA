@@ -52,14 +52,25 @@ namespace pbe {
          return registry.view<Type, Other...>(excludes);
       }
 
-      // todo: return multiple
       template<typename Component>
-      Component* GetAnyWithComponent() {
+      Entity GetAnyWithComponent() {
          auto view = registry.view<Component>();
          if (view.empty()) {
-            return nullptr;
+            return Entity{};
          } else {
-            return registry.try_get<Component>(view.front());
+            return Entity{ view.front(), this };
+         }
+      }
+
+      // todo: return multiple
+      // todo: mb delete
+      template<typename Component>
+      std::tuple<Entity, Component*> GetAnyWithComponent2() {
+         auto view = registry.view<Component>();
+         if (view.empty()) {
+            return std::make_tuple(Entity{}, nullptr);
+         } else {
+            return std::make_tuple(Entity{ view.front() }, registry.try_get<Component>(view.front()));
          }
       }
 

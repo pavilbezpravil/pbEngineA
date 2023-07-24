@@ -51,7 +51,7 @@ namespace pbe {
          projection = glm::perspectiveFov(fov, (float)size.x, (float)size.y, zNear, zFar);
       }
 
-      void UpdateView(const vec3& direction, const vec3& up = vec3_Y) {
+      void UpdateViewByDirection(const vec3& direction, const vec3& up = vec3_Y) {
          view = glm::lookAt(position, position + direction, up);
       }
 

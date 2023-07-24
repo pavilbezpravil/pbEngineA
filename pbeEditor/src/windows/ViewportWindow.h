@@ -3,7 +3,6 @@
 #include "EditorCamera.h"
 #include "EditorSelection.h"
 #include "EditorWindow.h"
-#include "core/Ref.h"
 #include "rend/Renderer.h"
 
 namespace pbe {
@@ -38,6 +37,7 @@ namespace pbe {
       RenderContext renderContext;
 
       bool enableInput = false;
+      bool freeCamera = true;
 
       GizmoCfg gizmoCfg;
 
