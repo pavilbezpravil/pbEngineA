@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Core.h"
+#include "utils/TimedAction.h"
 
 
 namespace pbe {
@@ -33,7 +34,7 @@ namespace pbe {
       PxScene* pxScene = nullptr;
       Scene& scene;
 
-      float timeAccumulator = 0;
+      TimedAction stepTimer{60.f};
 
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);

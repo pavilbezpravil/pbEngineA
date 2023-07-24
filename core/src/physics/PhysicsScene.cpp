@@ -193,20 +193,14 @@ namespace pbe {
 
       SyncPhysicsWithScene();
 
-      timeAccumulator += dt;
-
-      // todo: config
-      const float fixedDt = 1.0f / 60.0f;
-      int steps = (int)(timeAccumulator / fixedDt);
-      timeAccumulator -= steps * fixedDt;
-
+      int steps = stepTimer.Update(dt);
       if (steps > 2) {
-         timeAccumulator = 0;
+         stepTimer.Reset();
          steps = 2;
       }
 
       for (int i = 0; i < steps; ++i) {
-         pxScene->simulate(fixedDt);
+         pxScene->simulate(stepTimer.GetActTime());
          pxScene->fetchResults(true);
 
          UpdateSceneAfterPhysics();

@@ -1,8 +1,11 @@
 #include "pch.h"
 
+#include "math/Random.h"
 #include "scene/Component.h"
+#include "scene/Utils.h"
 #include "script/Script.h"
 #include "typer/Typer.h"
+#include "utils/TimedAction.h"
 
 
 namespace pbe {
@@ -46,5 +49,48 @@ namespace pbe {
    TYPER_END()
    TYPER_REGISTER_COMPONENT(TestScript);
    TYPER_REGISTER_SCRIPT(TestScript);
+
+
+   class CubeSpawnerScript : public Script {
+   public:
+      void OnEnable() override {
+         timer = {freq};
+      }
+
+      void OnDisable() override {
+         
+      }
+
+      void OnUpdate(float dt) override {
+         if (spawn) {
+            auto& tran = owner.GetTransform();
+
+            int steps = timer.Update(dt);
+            while (steps-- > 0) {
+               Entity e = CreateCube(GetScene(), CubeDesc{
+               .parent = owner,
+               .color = Random::Color()
+                  });
+
+               e.Get<RigidBodyComponent>().SetLinearVelocity(tran.Forward() * initialSpeed);
+            }
+         }
+      }
+
+      float initialSpeed = 0;
+      float freq = 1;
+      bool spawn = false;
+
+   private:
+      TimedAction timer;
+   };
+
+   TYPER_BEGIN(CubeSpawnerScript)
+      TYPER_FIELD(spawn)
+      TYPER_FIELD(freq)
+      TYPER_FIELD(initialSpeed)
+   TYPER_END()
+   TYPER_REGISTER_COMPONENT(CubeSpawnerScript);
+   TYPER_REGISTER_SCRIPT(CubeSpawnerScript);
 
 }

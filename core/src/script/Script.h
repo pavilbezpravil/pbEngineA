@@ -44,6 +44,8 @@ namespace pbe {
 
       const char* GetName() const;
 
+      Scene& GetScene() const { return *owner.GetScene(); }
+
       Entity owner;
    };
 
