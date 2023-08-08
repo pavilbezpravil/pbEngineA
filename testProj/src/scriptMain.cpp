@@ -68,18 +68,20 @@ namespace pbe {
             int steps = timer.Update(dt);
             while (steps-- > 0) {
                Entity e = CreateCube(GetScene(), CubeDesc{
-               .parent = owner,
-               .color = Random::Color()
+                     .parent = owner,
+                     .color = Random::Color()
                   });
 
                e.Get<RigidBodyComponent>().SetLinearVelocity(tran.Forward() * initialSpeed);
             }
+         } else {
+            timer.Reset();
          }
       }
 
-      float initialSpeed = 0;
-      float freq = 1;
       bool spawn = false;
+      float freq = 1;
+      float initialSpeed = 0;
 
    private:
       TimedAction timer;

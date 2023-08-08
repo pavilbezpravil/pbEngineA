@@ -19,6 +19,7 @@
 #include "windows/ViewportWindow.h"
 #include "windows/SceneHierarchyWindow.h"
 #include "windows/InspectorWindow.h"
+#include "windows/ShaderToyWindow.h"
 
 
 namespace pbe {
@@ -38,6 +39,7 @@ namespace pbe {
       ReloadDll();
 
       AddEditorWindow(new ConfigVarsWindow("ConfigVars"), true);
+      AddEditorWindow(new ShaderToyWindow());
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);

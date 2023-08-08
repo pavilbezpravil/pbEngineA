@@ -1,12 +1,11 @@
 #pragma once
 #include "Common.h"
-#include "Device.h"
 #include "core/Core.h"
 
 
 namespace pbe {
 
-   class GpuTimer {
+   class CORE_API GpuTimer {
    public:
       GpuTimer();
 
