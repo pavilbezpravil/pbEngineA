@@ -15,7 +15,7 @@ namespace pbe {
    public:
       using EditorWindow::EditorWindow;
 
-      void OnImGuiRender() override {
+      void OnWindowUI() override {
          static float f = 0.0f;
          static int counter = 0;
 
@@ -41,7 +41,7 @@ namespace pbe {
    public:
       using EditorWindow::EditorWindow;
 
-      void OnImGuiRender() override {
+      void OnWindowUI() override {
          // ImGui::Text("cwd %ls", fs::current_path().c_str());
          // ImGui::Text("tmp dir %ls", fs::temp_directory_path().c_str());
 
@@ -101,7 +101,7 @@ namespace pbe {
    public:
       using EditorWindow::EditorWindow;
 
-      void OnImGuiRender() override {
+      void OnWindowUI() override {
          Typer::Get().ImGui();
       }
    };

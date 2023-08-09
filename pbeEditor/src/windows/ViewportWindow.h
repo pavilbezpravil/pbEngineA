@@ -22,7 +22,10 @@ namespace pbe {
       ViewportWindow(std::string_view name);
       ~ViewportWindow();
 
-      void OnImGuiRender() override;
+      void OnBefore() override;
+      void OnAfter() override;
+      void OnWindowUI() override;
+
       void OnUpdate(float dt) override;
 
       void Zoom(Texture2D& image, vec2 center);
@@ -30,7 +33,6 @@ namespace pbe {
 
       Scene* scene{};
       EditorSelection* selection{};
-      std::function<void(void)> customHeadFunc; // todo: better name
 
       EditorCamera camera;
       Renderer* renderer = {}; // todo:

@@ -6,7 +6,7 @@
 
 namespace pbe {
 
-   void ProfilerWindow::OnImGuiRender() {
+   void ProfilerWindow::OnWindowUI() {
       auto& profiler = Profiler::Get();
 
       ImGui::Text("Profiler Stats");
@@ -29,7 +29,7 @@ namespace pbe {
       }
    }
 
-   void ConfigVarsWindow::OnImGuiRender() {
+   void ConfigVarsWindow::OnWindowUI() {
       const ConfigVarsMng& configVars = sConfigVarsMng;
 
       ImGui::Text("Vars:");
@@ -55,7 +55,7 @@ namespace pbe {
       }
    }
 
-   void ShaderWindow::OnImGuiRender() {
+   void ShaderWindow::OnWindowUI() {
       ShadersWindow();
    }
 

@@ -16,7 +16,7 @@ namespace pbe {
       ShaderToyWindow();
       ~ShaderToyWindow();
 
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
       void OnUpdate(float dt) override;
 
    private:

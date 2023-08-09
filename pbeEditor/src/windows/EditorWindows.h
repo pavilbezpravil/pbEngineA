@@ -8,20 +8,20 @@ namespace pbe {
    class ProfilerWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
    };
 
    class ConfigVarsWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
       void CVarChilds(const ConfigVarsMng::CVarChilds& childs);
    };
 
    class ShaderWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
    };
 
 }

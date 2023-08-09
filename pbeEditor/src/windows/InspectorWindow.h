@@ -9,7 +9,7 @@ namespace pbe {
    class InspectorWindow : public EditorWindow {
    public:
       using EditorWindow::EditorWindow;
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
 
       EditorSelection* selection{};
    };

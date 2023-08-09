@@ -28,7 +28,7 @@ namespace pbe {
    public:
       TextureViewWindow() : EditorWindow("Texture View") {}
 
-      void OnImGuiRender() override {
+      void OnWindowUI() override {
          UI_WINDOW("Texture View"); // todo:
          if (!texture) {
             ImGui::Text("No texture selected");
@@ -71,7 +71,7 @@ namespace pbe {
       TYPER_FIELD(cameraAngles)
    TYPER_END()
 
-   ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
+   ViewportWindow::ViewportWindow(std::string_view name) : EditorWindow(name) {
       ViewportSettings viewportSettings;
       Deserialize(viewportSettingPath, viewportSettings);
 
@@ -85,30 +85,60 @@ namespace pbe {
          ViewportSettings{.cameraPos = camera.position, .cameraAngles = camera.cameraAngle});
    }
 
-   void ViewportWindow::OnImGuiRender() {
-      enableInput = ImGui::IsWindowHovered();
+   void ViewportWindow::OnBefore() {
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+   }
 
-      if (customHeadFunc) {
-         customHeadFunc();
-         // todo:
-         ImGui::SameLine();
-      }
+   void ViewportWindow::OnAfter() {
+      ImGui::PopStyleVar();
+   }
 
+   void ViewportWindow::OnWindowUI() {
       static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO"};
-
-      ImGui::SetNextItemWidth(80);
-      ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
-      ImGui::SameLine();
-
       static float renderScale = 1;
-      ImGui::SetNextItemWidth(100);
-      ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
-      ImGui::SameLine();
-
       // todo:
       static bool textureViewWindow = false;
-      ImGui::Checkbox("Texture View", &textureViewWindow);
+
+      auto viewportCursorPos = ImGui::GetCursorScreenPos();
+
+      static bool viewportToolsWindow = true;
+      if (viewportToolsWindow) {
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 0);
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 5);
+
+         if (UI_WINDOW("Viewport tools", &viewportToolsWindow,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+            ImGui::SetWindowPos(viewportCursorPos + ImVec2{ 25, 5 });
+
+            const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO" };
+
+            ImGui::SetNextItemWidth(80);
+            ImGui::Combo("##Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+            ImGui::SameLine();
+
+            ImGui::SetNextItemWidth(100);
+            ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
+            ImGui::SameLine();
+
+            // todo:
+            ImGui::Checkbox("Texture View", &textureViewWindow);
+            ImGui::SameLine();
+
+            ImGui::SetWindowSize(ImVec2{ ImGui::GetCursorPos().x, 35 }); // todo: calc height
+         }
+      }
+
+      enableInput = ImGui::IsWindowHovered();
+
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FramePadding, ImVec2{ 0, 0 });
+      
+
+      UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowBorderSize, 5);
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowRounding, 100);
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 5);
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
@@ -172,8 +202,14 @@ namespace pbe {
 
          if (textureViewWindow) {
             gTextureViewWindow.texture = renderContext.linearDepth;
-            gTextureViewWindow.OnImGuiRender();
+            gTextureViewWindow.OnWindowUI();
          }
+      }
+
+      ImGui::SetCursorPos({ 5, 5 });
+
+      if (ImGui::Button("=")) {
+         viewportToolsWindow = !viewportToolsWindow;
       }
    }
 

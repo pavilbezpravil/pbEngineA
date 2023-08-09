@@ -24,7 +24,7 @@ namespace pbe {
       }
    }
 
-   void SceneHierarchyWindow::OnImGuiRender() {
+   void SceneHierarchyWindow::OnWindowUI() {
       if (!pScene) {
          ImGui::Text("No scene");
       } else {

@@ -50,34 +50,6 @@ namespace pbe {
       viewportWindow->selection = &editorSelection;
       inspectorWindow->selection = &editorSelection;
 
-      viewportWindow->customHeadFunc = [&]() {
-         switch (editorState) {
-            case State::Edit:
-               if (ImGui::Button("Play") && editorScene) {
-                  OnPlay();
-               }
-               break;
-            case State::Play:
-               if (ImGui::Button("Stop")) {
-                  OnStop();
-               }
-               break;
-            default: UNIMPLEMENTED();
-         }
-
-         // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
-         // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
-         //    
-         // }
-
-         if (editorState == State::Edit) {
-            ImGui::SameLine();
-            if (ImGui::Button("Reload dll")) {
-               ReloadDll();
-            }
-         }
-      };
-
       // todo:
       renderer.reset(new Renderer());
       renderer->Init();
@@ -220,6 +192,36 @@ namespace pbe {
 
             ImGui::MenuItem("ImGuiDemoWindow", NULL, &showImGuiWindow);
          }
+
+         {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f);
+
+            switch (editorState) {
+               case State::Edit:
+                  if (ImGui::Button("Play") && editorScene) {
+                     OnPlay();
+                  }
+                  break;
+               case State::Play:
+                  if (ImGui::Button("Stop")) {
+                     OnStop();
+                  }
+                  break;
+               default: UNIMPLEMENTED();
+            }
+
+            // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
+            // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
+            //    
+            // }
+
+            if (editorState == State::Edit) {
+               ImGui::SameLine();
+               if (ImGui::Button("Reload dll")) {
+                  ReloadDll();
+               }
+            }
+         }
       }
 
       if (showImGuiWindow) {
@@ -227,11 +229,15 @@ namespace pbe {
       }
 
       for (auto& window : editorWindows) {
-         if (window->show) {
-            if (UI_WINDOW(window->name.c_str(), &window->show)) {
-               window->OnImGuiRender();
-            }
+         if (!window->show) {
+            continue;
          }
+
+         window->OnBefore();
+         if (UI_WINDOW(window->name.c_str(), &window->show)) {
+            window->OnWindowUI();
+         }
+         window->OnAfter();
       }
    }
 

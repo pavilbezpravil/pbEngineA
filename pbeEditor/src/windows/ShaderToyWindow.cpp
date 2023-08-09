@@ -26,7 +26,7 @@ namespace pbe {
       Serialize(savePath, settings);
    }
 
-   void ShaderToyWindow::OnImGuiRender() {
+   void ShaderToyWindow::OnWindowUI() {
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
       auto imSize = ImGui::GetContentRegionAvail();

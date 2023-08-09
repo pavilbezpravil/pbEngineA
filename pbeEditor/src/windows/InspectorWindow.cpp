@@ -8,7 +8,7 @@
 
 namespace pbe {
 
-   void InspectorWindow::OnImGuiRender() {
+   void InspectorWindow::OnWindowUI() {
       Entity entity = selection ? selection->FirstSelected() : Entity{};
 
       if (!entity.Valid()) {

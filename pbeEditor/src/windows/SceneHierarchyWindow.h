@@ -14,7 +14,7 @@ namespace pbe {
 
       void DragDropChangeParent(const Entity& entity);
 
-      void OnImGuiRender() override;
+      void OnWindowUI() override;
 
       void UIEntity(Entity entity, bool sceneRoot = false);
 

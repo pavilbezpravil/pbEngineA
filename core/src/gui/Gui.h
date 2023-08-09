@@ -88,6 +88,23 @@ namespace pbe {
 
 #define UI_PUSH_ID(id) ui::PushID uiPushID{id}
 
+      struct PushStyleVar {
+         PushStyleVar(ImGuiStyleVar idx, float val) {
+            ImGui::PushStyleVar(idx, val);
+         }
+
+         PushStyleVar(ImGuiStyleVar idx, const ImVec2& val) {
+            ImGui::PushStyleVar(idx, val);
+         }
+
+         ~PushStyleVar() {
+            ImGui::PopStyleVar();
+         }
+      };
+
+#define __UI_PUSH_STYLE_VAR(unique, idx, val) ui::PushStyleVar CONCAT(uiPushStyleVar_, unique){idx, val}
+#define UI_PUSH_STYLE_VAR(idx, ...) __UI_PUSH_STYLE_VAR(__LINE__, idx, __VA_ARGS__)
+
       struct TreeNode {
          TreeNode(const char* name, ImGuiTreeNodeFlags flags = 0) {
             opened = ImGui::TreeNodeEx(name, flags);
