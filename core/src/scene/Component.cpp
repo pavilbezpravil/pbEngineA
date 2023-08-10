@@ -6,6 +6,7 @@
 
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "imgui_internal.h"
 #include "gui/Gui.h"
 #include "typer/Serialize.h"
 #include "physics/PhysXTypeConvet.h"
@@ -65,6 +66,65 @@ namespace pbe {
       return success;
    }
 
+   bool Vec3UI(const char* name, vec3& v, float resetVal, float columnWidth) {
+      ImGui::Columns(2);
+
+      ImGui::SetColumnWidth(0, columnWidth);
+      ImGui::Text(name);
+      ImGui::NextColumn();
+
+      ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+
+      bool edited = false;
+
+      auto a = [&] (const char* button, float& val) {
+         if (ImGui::Button(button)) {
+            val = resetVal;
+            edited = true;
+         }
+         ImGui::SameLine();
+
+         {
+            UI_PUSH_ID(button);
+            edited |= ImGui::DragFloat("", &val, 0.1f);
+         }
+         ImGui::PopItemWidth();
+      };
+
+      a("X", v.x);
+      ImGui::SameLine();
+      a("Y", v.y);
+      ImGui::SameLine();
+      a("Z", v.z);
+
+      ImGui::Columns(1);
+
+      return edited;
+   }
+
+   bool TransUI(const char* name, byte* value) {
+      auto& trans = *(SceneTransformComponent*)value;
+
+      bool editted = false;
+
+      // todo: tree node not here
+      if (UI_TREE_NODE(name, ImGuiTreeNodeFlags_SpanFullWidth)) {
+         editted |= Vec3UI("Position", trans.position, 0, 70);
+
+         {
+            auto degrees = glm::degrees(glm::eulerAngles(trans.rotation));
+            if (Vec3UI("Rotation", degrees, 0, 70)) {
+               trans.rotation = glm::radians(degrees);
+               editted = true;
+            }
+         }
+
+         editted |= Vec3UI("Scale", trans.scale, 1, 70);
+      }
+
+      return editted;
+   }
+
    bool GeomUI(const char* name, byte* value) {
       auto& geom = *(GeometryComponent*)value;
 
@@ -99,6 +159,7 @@ namespace pbe {
    TYPER_BEGIN(SceneTransformComponent)
       TYPER_SERIALIZE(TransSerialize)
       TYPER_DESERIALIZE(TransDeserialize)
+      TYPER_UI(TransUI)
 
       TYPER_FIELD(position)
       TYPER_FIELD(rotation)
