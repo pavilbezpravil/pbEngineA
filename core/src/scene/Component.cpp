@@ -101,14 +101,12 @@ namespace pbe {
          ImGui::PopItemWidth();
       };
 
-      // {
-         UI_PUSH_STYLE_VAR(ImGuiStyleVar_ItemSpacing, ImVec2{});
-         drawFloat(v.x, { 0.8f, 0.1f, 0.15f, 1 }, "X");
-         ImGui::SameLine();
-         drawFloat(v.y, { 0.2f, 0.7f, 0.2f, 1 }, "Y");
-         ImGui::SameLine();
-         drawFloat(v.z, { 0.1f, 0.25f, 0.8f, 1 }, "Z");
-      // }
+      UI_PUSH_STYLE_VAR(ImGuiStyleVar_ItemSpacing, ImVec2{});
+      drawFloat(v.x, { 0.8f, 0.1f, 0.15f, 1 }, "X");
+      ImGui::SameLine();
+      drawFloat(v.y, { 0.2f, 0.7f, 0.2f, 1 }, "Y");
+      ImGui::SameLine();
+      drawFloat(v.z, { 0.1f, 0.25f, 0.8f, 1 }, "Z");
 
       if (v != vec3{resetVal}) {
          ImGui::SameLine(0, 10);
@@ -124,24 +122,20 @@ namespace pbe {
    }
 
    bool TransUI(const char* name, byte* value) {
+      // todo: remove 'name' arg
       auto& trans = *(SceneTransformComponent*)value;
 
       bool editted = false;
 
-      // todo: tree node not here
-      if (UI_TREE_NODE(name, ImGuiTreeNodeFlags_SpanFullWidth)) {
-         editted |= Vec3UI("Position", trans.position, 0, 70);
+      editted |= Vec3UI("Position", trans.position, 0, 70);
 
-         {
-            auto degrees = glm::degrees(glm::eulerAngles(trans.rotation));
-            if (Vec3UI("Rotation", degrees, 0, 70)) {
-               trans.rotation = glm::radians(degrees);
-               editted = true;
-            }
-         }
-
-         editted |= Vec3UI("Scale", trans.scale, 1, 70);
+      auto degrees = glm::degrees(glm::eulerAngles(trans.rotation));
+      if (Vec3UI("Rotation", degrees, 0, 70)) {
+         trans.rotation = glm::radians(degrees);
+         editted = true;
       }
+
+      editted |= Vec3UI("Scale", trans.scale, 1, 70);
 
       return editted;
    }
@@ -151,19 +145,17 @@ namespace pbe {
 
       bool editted = false;
 
-      if (UI_TREE_NODE(name, ImGuiTreeNodeFlags_SpanFullWidth)) {
-         // editted |= ImGui::Combo("Type", (int*)&geom.type, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0");
-         editted |= EditorUI("type", geom.type);
+      // editted |= ImGui::Combo("Type", (int*)&geom.type, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0");
+      editted |= EditorUI("type", geom.type);
 
-         if (geom.type == GeomType::Sphere) {
-            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
-         } else if (geom.type == GeomType::Box) {
-            editted |= ImGui::InputFloat3("Size", &geom.sizeData.x);
-         } else {
-            // Cylinder, Cone, Capsule
-            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
-            editted |= ImGui::InputFloat("Height", &geom.sizeData.y);
-         }
+      if (geom.type == GeomType::Sphere) {
+         editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+      } else if (geom.type == GeomType::Box) {
+         editted |= ImGui::InputFloat3("Size", &geom.sizeData.x);
+      } else {
+         // Cylinder, Cone, Capsule
+         editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+         editted |= ImGui::InputFloat("Height", &geom.sizeData.y);
       }
 
       return editted;

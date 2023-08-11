@@ -12,6 +12,10 @@ namespace pbe {
       return Typer::Get().ImGuiValueImpl(name, typeID, value);
    }
 
+   ImGuiTreeNodeFlags DefaultTreeNodeFlags() {
+      return ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap;
+   }
+
    bool UIColorEdit3(const char* name, byte* value) {
       return ImGui::ColorEdit3(name, (float*)value);
    }

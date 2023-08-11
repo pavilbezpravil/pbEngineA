@@ -154,6 +154,9 @@ namespace pbe {
       struct PopupContextX {
          PopupContextX(int type, const char* name = nullptr, ImGuiPopupFlags flags = 1) {
             switch (type) {
+               case 0:
+                  opened = ImGui::BeginPopup(name, flags);
+                  break;
                case 1:
                   opened = ImGui::BeginPopupContextItem(name, flags);
                   break;
@@ -180,6 +183,7 @@ namespace pbe {
          bool opened = false;
       };
 
+#define UI_POPUP(...) ui::PopupContextX uiPopupContextItem{0, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_ITEM(...) ui::PopupContextX uiPopupContextItem{1, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_WINDOW(...) ui::PopupContextX uiPopupContextWindow{2, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_VOID(...) ui::PopupContextX uiPopupContextVoid{3, __VA_ARGS__}
@@ -238,6 +242,9 @@ namespace pbe {
    CORE_API ImGuiContext* GetImGuiContext();
 
    CORE_API bool EditorUI(std::string_view name, TypeID typeID, byte* value);
+
+   // todo: mb delete?
+   CORE_API ImGuiTreeNodeFlags DefaultTreeNodeFlags();
 
    template<typename T>
    bool EditorUI(std::string_view name, T& value) {

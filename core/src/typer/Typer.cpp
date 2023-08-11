@@ -176,7 +176,14 @@ namespace pbe {
       if (ti.imguiFunc) {
          edited = ti.imguiFunc(name.data(), value);
       } else {
-         if (UI_TREE_NODE(name.data(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+         bool hasName = !name.empty();
+
+         bool opened = true;
+         if (hasName) {
+            opened = ImGui::TreeNodeEx(name.data(), DefaultTreeNodeFlags());
+         }
+
+         if (opened) {
             for (const auto& f : ti.fields) {
                byte* data = value + f.offset;
                if (f.uiFunc) {
@@ -185,6 +192,10 @@ namespace pbe {
                   edited |= ImGuiValueImpl(f.name, f.typeID, data);
                }
             }
+         }
+
+         if (hasName && opened) {
+            ImGui::TreePop();
          }
       }
 
