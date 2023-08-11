@@ -100,21 +100,29 @@ namespace pbe {
       static bool textureViewWindow = false;
 
       auto viewportCursorPos = ImGui::GetCursorScreenPos();
+      auto startCursorPos = ImGui::GetCursorPos();
 
       static bool viewportToolsWindow = true;
       if (viewportToolsWindow) {
-         UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 0);
-         UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 5);
+         auto c = ImVec4{ 0, 0, 0, 0.5 };
+         UI_PUSH_STYLE_COLOR(ImGuiCol_WindowBg, c);
+
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowRounding, 10);
+         auto s = ImVec2{ 5, 5 };
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, s);
 
          if (UI_WINDOW("Viewport tools", &viewportToolsWindow,
             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
-            ImGui::SetWindowPos(viewportCursorPos + ImVec2{ 25, 5 });
+            ImGui::SetWindowPos(viewportCursorPos + ImVec2{ 20, 5 });
+
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
             const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO" };
 
-            ImGui::SetNextItemWidth(80);
+            ImGui::SetNextItemWidth(90);
             ImGui::Combo("##Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
-            ImGui::SameLine();
+            ImGui::SameLine(0, 0);
 
             ImGui::SetNextItemWidth(100);
             ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
@@ -124,21 +132,11 @@ namespace pbe {
             ImGui::Checkbox("Texture View", &textureViewWindow);
             ImGui::SameLine();
 
-            ImGui::SetWindowSize(ImVec2{ ImGui::GetCursorPos().x, 35 }); // todo: calc height
+            ImGui::SetWindowSize(ImVec2{ -1, -1 });
          }
       }
 
       enableInput = ImGui::IsWindowHovered();
-
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FramePadding, ImVec2{ 0, 0 });
-      
-
-      UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowBorderSize, 5);
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowRounding, 100);
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 5);
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
@@ -206,7 +204,7 @@ namespace pbe {
          }
       }
 
-      ImGui::SetCursorPos({ 5, 5 });
+      ImGui::SetCursorPos(startCursorPos + ImVec2{ 3, 5 });
 
       if (ImGui::Button("=")) {
          viewportToolsWindow = !viewportToolsWindow;

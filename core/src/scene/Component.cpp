@@ -66,36 +66,57 @@ namespace pbe {
       return success;
    }
 
-   bool Vec3UI(const char* name, vec3& v, float resetVal, float columnWidth) {
+   bool Vec3UI(const char* label, vec3& v, float resetVal, float columnWidth) {
+      UI_PUSH_ID(label);
+
       ImGui::Columns(2);
 
-      ImGui::SetColumnWidth(0, columnWidth);
-      ImGui::Text(name);
+      ImGui::SetColumnWidth(-1, columnWidth);
+      ImGui::Text(label);
       ImGui::NextColumn();
 
       ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 
       bool edited = false;
 
-      auto a = [&] (const char* button, float& val) {
-         if (ImGui::Button(button)) {
-            val = resetVal;
-            edited = true;
+      auto drawFloat = [&] (float& val, const ImVec4& color, const char* button) {
+         {
+            ImVec4 add = {0.1f, 0.1f, 0.1f, 1};
+            UI_PUSH_STYLE_COLOR(ImGuiCol_Button, color);
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, color + add);
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, color);
+            if (ImGui::Button(button)) {
+               val = resetVal;
+               edited = true;
+            }
          }
+
          ImGui::SameLine();
 
          {
             UI_PUSH_ID(button);
-            edited |= ImGui::DragFloat("", &val, 0.1f);
+            edited |= ImGui::DragFloat("##DragFloat", &val, 0.1f, 0, 0, "%.2f");
          }
+
          ImGui::PopItemWidth();
       };
 
-      a("X", v.x);
-      ImGui::SameLine();
-      a("Y", v.y);
-      ImGui::SameLine();
-      a("Z", v.z);
+      // {
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_ItemSpacing, ImVec2{});
+         drawFloat(v.x, { 0.8f, 0.1f, 0.15f, 1 }, "X");
+         ImGui::SameLine();
+         drawFloat(v.y, { 0.2f, 0.7f, 0.2f, 1 }, "Y");
+         ImGui::SameLine();
+         drawFloat(v.z, { 0.1f, 0.25f, 0.8f, 1 }, "Z");
+      // }
+
+      if (v != vec3{resetVal}) {
+         ImGui::SameLine(0, 10);
+         if (ImGui::Button("-")) {
+            v = { resetVal };
+            edited = true;
+         }
+      }
 
       ImGui::Columns(1);
 

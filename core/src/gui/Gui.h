@@ -105,6 +105,24 @@ namespace pbe {
 #define __UI_PUSH_STYLE_VAR(unique, idx, val) ui::PushStyleVar CONCAT(uiPushStyleVar_, unique){idx, val}
 #define UI_PUSH_STYLE_VAR(idx, ...) __UI_PUSH_STYLE_VAR(__LINE__, idx, __VA_ARGS__)
 
+
+      struct PushStyleColor {
+         PushStyleColor(ImGuiCol idx, const ImVec4& col) {
+            ImGui::PushStyleColor(idx, col);
+         }
+
+         PushStyleColor(ImGuiStyleVar idx, ImU32 col) {
+            ImGui::PushStyleColor(idx, col);
+         }
+
+         ~PushStyleColor() {
+            ImGui::PopStyleColor();
+         }
+      };
+
+#define __UI_PUSH_STYLE_COLOR(unique, idx, val) ui::PushStyleColor CONCAT(uiPushStyleColor_, unique){idx, val}
+#define UI_PUSH_STYLE_COLOR(idx, ...) __UI_PUSH_STYLE_COLOR(__LINE__, idx, __VA_ARGS__)
+
       struct TreeNode {
          TreeNode(const char* name, ImGuiTreeNodeFlags flags = 0) {
             opened = ImGui::TreeNodeEx(name, flags);
