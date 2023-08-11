@@ -79,6 +79,8 @@ namespace pbe {
       std::function<void*(Entity&)> tryGet;
       std::function<const void*(const Entity&)> tryGetConst;
       std::function<void*(Entity&)> getOrAdd;
+      std::function<void*(Entity&)> add;
+      std::function<void(Entity&)> remove;
       std::function<void(void*, const void*)> duplicate;
       std::function<void(Entity&, const void*)> copyCtor;
       std::function<void(Entity&, const void*)> moveCtor;

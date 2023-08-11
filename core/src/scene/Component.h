@@ -21,6 +21,8 @@ namespace pbe {
       ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
       ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
+      ci.add = [](Entity& e) { return (void*)&e.Add<Component>(); }; \
+      ci.remove = [](Entity& e) { e.Remove<Component>(); }; \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
       ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \

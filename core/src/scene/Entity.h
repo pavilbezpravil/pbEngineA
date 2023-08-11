@@ -31,7 +31,7 @@ namespace pbe {
 
       template<typename T, typename...Cs>
       void Remove() {
-         ASSERT(!Has<T>());
+         ASSERT(Has<T>());
          scene->registry.erase<T>(id);
       }
 
