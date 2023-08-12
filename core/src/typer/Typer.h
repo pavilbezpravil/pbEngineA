@@ -27,6 +27,11 @@ namespace pbe {
    };
 
    template<typename T>
+   concept HasUI = requires(T a) {
+      { a.UI() } -> std::same_as<bool>;
+   };
+
+   template<typename T>
    auto GetSerialize() {
       if constexpr (HasSerialize<T>) {
          return [](Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
@@ -44,6 +49,15 @@ namespace pbe {
       }
    }
 
+   template<typename T>
+   auto GetUI() {
+      if constexpr (HasUI<T>) {
+         return [](const char* lable, byte* data) -> bool { return ((T*)data)->UI(); };
+      } else {
+         return nullptr;
+      }
+   }
+
 #define TYPER_BEGIN(type) \
    static TypeRegisterGuard TypeRegisterGuard_##type = {GetTypeID<type>(), \
          [] () { \
@@ -54,6 +68,7 @@ namespace pbe {
       ti.typeSizeOf = sizeof(type); \
       ti.serialize = GetSerialize<type>(); \
       ti.deserialize = GetDeserialize<type>(); \
+      ti.ui = GetUI<type>(); \
       \
       TypeField f{};
 
@@ -64,7 +79,7 @@ namespace pbe {
       ti.deserialize = __VA_ARGS__;
 
 #define TYPER_UI(...) \
-      ti.imguiFunc = __VA_ARGS__;
+      ti.ui = __VA_ARGS__;
 
    // for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'. problem with ','
 #define TYPER_FIELD_UI(...) \
@@ -95,7 +110,7 @@ namespace pbe {
 
       std::vector<TypeField> fields;
 
-      std::function<bool(const char*, byte*)> imguiFunc;
+      std::function<bool(const char*, byte*)> ui;
       std::function<void(Serializer&, const byte*)> serialize;
       std::function<bool(const Deserializer&, byte*)> deserialize;
    };

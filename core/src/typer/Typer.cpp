@@ -9,41 +9,6 @@
 
 namespace pbe {
 
-   struct Test {
-      float f;
-      int i;
-   };
-
-   TYPER_BEGIN(Test);
-      TYPER_FIELD(f);
-      TYPER_FIELD(i);
-   TYPER_END();
-
-   struct TestHard {
-      Test test;
-      int i2;
-      bool b;
-   };
-
-   TYPER_BEGIN(TestHard);
-      TYPER_FIELD(test);
-      TYPER_FIELD(i2);
-      TYPER_FIELD(b);
-   TYPER_END();
-
-   // int TyperRegister_bool() {
-   //    TypeInfo ti;
-   //
-   //    ti.name = "bool";
-   //    ti.typeID = GetTypeID<bool>();
-   //    ti.imguiFunc = [](const char* name, byte* value) { ImGui::Checkbox(name, (bool*)value); };
-   //    ti.serialize = [](YAML::Node& node, const char* name, byte* value) { node[name] = *(bool*)value; };
-   //
-   //    sTyper.types[ti.typeID] = ti;
-   //    return 0;
-   // }
-   // static int TypeInfo_bool = TyperRegister_bool();
-
    Typer::Typer() {
       RegisterBasicTypes(*this);
       RegisterBasicComponents(*this);
@@ -58,55 +23,6 @@ namespace pbe {
       for (const auto& entry : types) {
          const TypeInfo& ti = entry.second;
          ImGuiTypeInfo(ti);
-      }
-
-      ImGui::Separator();
-
-      static int i = 14;
-      EditorUI("i", i);
-
-      static float f = 245;
-      EditorUI("f", f);
-
-      static Test test;
-      EditorUI("test", test);
-
-      static TestHard testHard;
-      EditorUI("testHard", testHard);
-
-      constexpr const char* testFilename = "test.yaml";
-
-      if (ImGui::Button("test hard save yaml")) {
-         Serializer ser;
-         {
-            SERIALIZER_MAP(ser);
-            ser.Ser("i", i);
-            ser.Ser("f", f);
-            ser.Ser("test", test);
-            ser.Ser("testHard", testHard);
-         }
-         ser.SaveToFile(testFilename);
-      }
-
-      if (ImGui::Button("test hard load yaml")) {
-         // std::string data = ReadFileAsString(testFilename);
-         // YAML::Node node = YAML::Load(data);
-
-         auto deser = Deserializer::FromFile(testFilename);
-         deser.Deser("i", i);
-         deser.Deser("f", f);
-         deser.Deser("test", test);
-         deser.Deser("testHard", testHard);
-      }
-
-      ImGui::Separator();
-      if (UI_TREE_NODE("Read file", ImGuiTreeNodeFlags_SpanFullWidth)) {
-         static std::string filename = testFilename;
-         filename.reserve(256);
-         ImGui::InputText("filename", filename.data(), filename.capacity());
-
-         std::string data = ReadFileAsString(filename.c_str());
-         ImGui::Text("%s", data.c_str());
       }
    }
 
@@ -173,8 +89,8 @@ namespace pbe {
 
       bool edited = false;
 
-      if (ti.imguiFunc) {
-         edited = ti.imguiFunc(name.data(), value);
+      if (ti.ui) {
+         edited = ti.ui(name.data(), value);
       } else {
          bool hasName = !name.empty();
 

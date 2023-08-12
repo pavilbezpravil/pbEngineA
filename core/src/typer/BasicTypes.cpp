@@ -42,22 +42,22 @@ namespace pbe {
       TypeInfo ti;
 
       START_DECL_TYPE(bool);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::Checkbox(name, (bool*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::Checkbox(name, (bool*)value); };
       DEFAULT_SER_DESER(bool);
       END_DECL_TYPE();
 
       START_DECL_TYPE(float);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputFloat(name, (float*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::InputFloat(name, (float*)value); };
       DEFAULT_SER_DESER(float);
       END_DECL_TYPE();
 
       START_DECL_TYPE(int);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputInt(name, (int*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::InputInt(name, (int*)value); };
       DEFAULT_SER_DESER(int);
       END_DECL_TYPE();
 
       START_DECL_TYPE(int64);
-      ti.imguiFunc = [](const char* name, byte* value) {
+      ti.ui = [](const char* name, byte* value) {
          // todo:
          const char* format = "%d";
          return ImGui::InputScalar(name, ImGuiDataType_S64, value, NULL, NULL, format, 0);
@@ -67,7 +67,7 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(uint64);
-      ti.imguiFunc = [](const char* name, byte* value) {
+      ti.ui = [](const char* name, byte* value) {
          const char* format = "%d";
          return ImGui::InputScalar(name, ImGuiDataType_U64, value, NULL, NULL, format, 0);
       };
@@ -76,12 +76,12 @@ namespace pbe {
 
       START_DECL_TYPE(string);
       // todo:
-      ti.imguiFunc = [](const char* name, byte* value) { ImGui::Text(((string*)value)->data()); return false; };
+      ti.ui = [](const char* name, byte* value) { ImGui::Text(((string*)value)->data()); return false; };
       DEFAULT_SER_DESER(string);
       END_DECL_TYPE();
 
       START_DECL_TYPE(vec2);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputFloat2(name, (float*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::InputFloat2(name, (float*)value); };
       ti.serialize = [](Serializer& ser, const byte* value){
          const auto& v = *(vec2*)value;
          ser.out << YAML::Flow << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
@@ -99,7 +99,7 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(vec3);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::InputFloat3(name, (float*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::InputFloat3(name, (float*)value); };
       ti.serialize = [](Serializer& ser, const byte* value) {
          SerVec3(ser, *(vec3*)value);
       };
@@ -109,7 +109,7 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(vec4);
-      ti.imguiFunc = [](const char* name, byte* value) { return ImGui::ColorEdit4(name, (float*)value); };
+      ti.ui = [](const char* name, byte* value) { return ImGui::ColorEdit4(name, (float*)value); };
       ti.serialize = [](Serializer& ser, const byte* value) {
          const auto& v = *(vec4*)value;
          ser.out << YAML::Flow << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
@@ -129,7 +129,7 @@ namespace pbe {
       END_DECL_TYPE();
 
       START_DECL_TYPE(quat);
-      ti.imguiFunc = [](const char* name, byte* value) {
+      ti.ui = [](const char* name, byte* value) {
          auto angles = glm::degrees(glm::eulerAngles(*(quat*)value));
          if (ImGui::InputFloat3(name, &angles.x)) {
             *(quat*)value = glm::radians(angles);
@@ -153,7 +153,7 @@ namespace pbe {
 
       // todo: it is not basic type
       START_DECL_TYPE(Entity);
-      ti.imguiFunc = [](const char* name, byte* value) {
+      ti.ui = [](const char* name, byte* value) {
          Entity* e = (Entity*)value;
 
          ImGui::Text(name);

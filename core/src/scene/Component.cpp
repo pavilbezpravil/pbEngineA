@@ -68,25 +68,6 @@ namespace pbe {
       return edited;
    }
 
-   bool TransUI(const char* name, byte* value) {
-      // todo: remove 'name' arg
-      auto& trans = *(SceneTransformComponent*)value;
-
-      bool editted = false;
-
-      editted |= Vec3UI("Position", trans.position, 0, 70);
-
-      auto degrees = glm::degrees(glm::eulerAngles(trans.rotation));
-      if (Vec3UI("Rotation", degrees, 0, 70)) {
-         trans.rotation = glm::radians(degrees);
-         editted = true;
-      }
-
-      editted |= Vec3UI("Scale", trans.scale, 1, 70);
-
-      return editted;
-   }
-
    bool GeomUI(const char* name, byte* value) {
       auto& geom = *(GeometryComponent*)value;
 
@@ -117,8 +98,6 @@ namespace pbe {
    TYPER_END()
 
    TYPER_BEGIN(SceneTransformComponent)
-      TYPER_UI(TransUI)
-
       TYPER_FIELD(position)
       TYPER_FIELD(rotation)
       TYPER_FIELD(scale)
@@ -386,8 +365,7 @@ namespace pbe {
       return (int)std::ranges::distance(pTrans.children.begin(), std::ranges::find(pTrans.children, entity));
    }
 
-   // todo: const
-   void SceneTransformComponent::Serialize(Serializer& ser) {
+   void SceneTransformComponent::Serialize(Serializer& ser) const {
       SERIALIZER_MAP(ser);
 
       ser.Ser("position", position);
@@ -436,22 +414,27 @@ namespace pbe {
       return success;
    }
 
+   bool SceneTransformComponent::UI() {
+      bool editted = false;
+
+      editted |= Vec3UI("Position", position, 0, 70);
+
+      auto degrees = glm::degrees(glm::eulerAngles(rotation));
+      if (Vec3UI("Rotation", degrees, 0, 70)) {
+         rotation = glm::radians(degrees);
+         editted = true;
+      }
+
+      editted |= Vec3UI("Scale", scale, 1, 70);
+
+      return editted;
+   }
+
    void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
       // todo:
       auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
-
-   struct Test {
-      void Serialize(Serializer& ser) {
-         // INFO("Serialize");
-      }
-
-      bool Deserialize(const Deserializer& deser) {
-         // INFO("Serialize");
-         return true;
-      }
-   };
 
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
