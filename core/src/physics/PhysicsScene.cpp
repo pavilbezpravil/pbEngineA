@@ -321,7 +321,7 @@ namespace pbe {
       // todo: one of them must be dynamic
 
       auto actor0 = GetPxActor(dj.entity0);
-      auto actor1 = GetPxActor(dj.entity0);
+      auto actor1 = GetPxActor(dj.entity1);
 
       if (!actor0 || !actor1) {
          return;
