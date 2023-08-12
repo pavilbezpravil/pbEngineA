@@ -193,10 +193,6 @@ namespace pbe {
       TYPER_FIELD(color)
    TYPER_END()
 
-   void __ComponentUnreg(TypeID typeID) {
-      Typer::Get().UnregisterComponent(typeID);
-   }
-
    vec3 SceneTransformComponent::Position() const {
       vec3 pos = position;
       if (parent) {

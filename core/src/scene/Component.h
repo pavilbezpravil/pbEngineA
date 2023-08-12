@@ -1,41 +1,10 @@
 #pragma once
 
 #include "Entity.h"
-#include "core/Type.h"
 #include "core/UUID.h"
 #include "math/Types.h"
 
 namespace pbe {
-
-   void __ComponentUnreg(TypeID typeID);
-
-   struct CORE_API ComponentRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ComponentUnreg(typeID); }) > {
-      using RegisterGuardT::RegisterGuardT;
-   };
-
-#define INTERNAL_ADD_COMPONENT(Component) \
-   { \
-      static_assert(std::is_move_assignable_v<Component>); \
-      ComponentInfo ci{}; \
-      ci.typeID = GetTypeID<Component>(); \
-      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
-      ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
-      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
-      ci.add = [](Entity& e) { return (void*)&e.Add<Component>(); }; \
-      ci.remove = [](Entity& e) { e.Remove<Component>(); }; \
-      ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
-      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
-      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
-      typer.RegisterComponent(std::move(ci)); \
-   }
-
-#define TYPER_REGISTER_COMPONENT(Component) \
-   static void TyperComponentRegister_##Component() { \
-      auto& typer = Typer::Get(); \
-      ComponentInfo ci{}; \
-      INTERNAL_ADD_COMPONENT(Component); \
-   } \
-   static ComponentRegisterGuard ComponentInfo_##Component = {GetTypeID<Component>(), TyperComponentRegister_##Component};
 
    struct UUIDComponent {
       UUID uuid;
