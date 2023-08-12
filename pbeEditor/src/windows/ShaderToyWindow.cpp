@@ -6,8 +6,7 @@
 #include "rend/RendRes.h"
 #include "math/Types.h"
 #include "typer/Serialize.h"
-#include "gui/Gui.h"
-#include "typer/Typer.h"
+#include "typer/Registration.h"
 
 
 namespace pbe {

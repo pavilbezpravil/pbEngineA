@@ -10,11 +10,14 @@
 #include "core/Type.h"
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
+
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Utils.h"
+
 #include "typer/Serialize.h"
-#include "typer/Typer.h"
+#include "typer/Registration.h"
+
 #include "windows/EditorWindows.h"
 #include "windows/ViewportWindow.h"
 #include "windows/SceneHierarchyWindow.h"

@@ -4,7 +4,7 @@
 #include "scene/Component.h"
 #include "scene/Utils.h"
 #include "script/Script.h"
-#include "typer/Typer.h"
+#include "typer/Registration.h"
 #include "utils/TimedAction.h"
 
 

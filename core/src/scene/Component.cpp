@@ -8,6 +8,7 @@
 
 #include "imgui_internal.h"
 #include "gui/Gui.h"
+#include "typer/Registration.h"
 #include "typer/Serialize.h"
 #include "physics/PhysXTypeConvet.h"
 

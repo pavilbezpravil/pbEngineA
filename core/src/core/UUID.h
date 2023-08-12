@@ -1,6 +1,5 @@
 #pragma once
 
-#include <xhash>
 #include <limits>
 
 #include "Core.h"
@@ -23,7 +22,6 @@ namespace pbe {
    private:
       uint64 uuid;
    };
-
 
    SASSERT(std::is_move_constructible_v<UUID>);
    SASSERT(std::is_move_assignable_v<UUID>);

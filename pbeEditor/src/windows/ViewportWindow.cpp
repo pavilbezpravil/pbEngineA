@@ -11,6 +11,7 @@
 #include "rend/RendRes.h"
 #include "math/Types.h"
 #include "typer/Serialize.h"
+#include "typer/Registration.h"
 #include "app/Window.h"
 #include "gui/Gui.h"
 #include "scene/Utils.h"
