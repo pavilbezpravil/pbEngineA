@@ -128,29 +128,9 @@ namespace pbe {
       }
       TypeInfo& GetTypeInfo(TypeID typeID);
 
-      template<typename T>
-      bool ImGuiValue(std::string_view name, T& value) const {
-         auto typeID = GetTypeID<T>();
-         return ImGuiValueImpl(name, typeID, (byte*)&value);
-      }
-
-      bool ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const;
-
-      template<typename T>
-      void Serialize(Serializer& ser, std::string_view name, const T& value) const {
-         auto typeID = GetTypeID<T>();
-         SerializeImpl(ser, name, typeID, (byte*)&value);
-      }
-
-      void SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const;
-
-      template<typename T>
-      bool Deserialize(const Deserializer& deser, std::string_view name, T& value) const {
-         auto typeID = GetTypeID<T>();
-         return DeserializeImpl(deser, name, typeID, (byte*)&value);
-      }
-
-      bool DeserializeImpl(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const;
+      bool UI(std::string_view name, TypeID typeID, byte* value) const;
+      void Serialize(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const;
+      bool Deserialize(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const;
 
       std::unordered_map<TypeID, TypeInfo> types;
 

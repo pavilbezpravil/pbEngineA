@@ -247,9 +247,15 @@ namespace pbe {
    CORE_API ImGuiTreeNodeFlags DefaultTreeNodeFlags();
 
    template<typename T>
-   bool EditorUI(std::string_view name, T& value) {
+   bool EditorUI(std::string_view lable, T& value) {
       const auto typeID = GetTypeID<T>();
-      return EditorUI(name, typeID, (byte*)&value);
+      return EditorUI(lable, typeID, (byte*)&value);
+   }
+
+   template<typename T>
+   bool EditorUI(T& value) {
+      const auto typeID = GetTypeID<T>();
+      return EditorUI("", typeID, (byte*)&value);
    }
 
    bool UIColorEdit3(const char* name, byte* value);

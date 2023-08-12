@@ -9,7 +9,7 @@ namespace pbe {
    }
 
    bool EditorUI(std::string_view name, TypeID typeID, byte* value) {
-      return Typer::Get().ImGuiValueImpl(name, typeID, value);
+      return Typer::Get().UI(name, typeID, value);
    }
 
    ImGuiTreeNodeFlags DefaultTreeNodeFlags() {

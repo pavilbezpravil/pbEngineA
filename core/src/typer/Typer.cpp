@@ -63,16 +63,16 @@ namespace pbe {
       ImGui::Separator();
 
       static int i = 14;
-      ImGuiValue("i", i);
+      EditorUI("i", i);
 
       static float f = 245;
-      ImGuiValue("f", f);
+      EditorUI("f", f);
 
       static Test test;
-      ImGuiValue("test", test);
+      EditorUI("test", test);
 
       static TestHard testHard;
-      ImGuiValue("testHard", testHard);
+      EditorUI("testHard", testHard);
 
       constexpr const char* testFilename = "test.yaml";
 
@@ -168,7 +168,7 @@ namespace pbe {
       return types.at(typeID);
    }
 
-   bool Typer::ImGuiValueImpl(std::string_view name, TypeID typeID, byte* value) const {
+   bool Typer::UI(std::string_view name, TypeID typeID, byte* value) const {
       const auto& ti = types.at(typeID);
 
       bool edited = false;
@@ -189,7 +189,7 @@ namespace pbe {
                if (f.uiFunc) {
                   edited |= f.uiFunc(f.name.c_str(), data);
                } else {
-                  edited |= ImGuiValueImpl(f.name, f.typeID, data);
+                  edited |= UI(f.name, f.typeID, data);
                }
             }
          }
@@ -202,7 +202,7 @@ namespace pbe {
       return edited;
    }
 
-   void Typer::SerializeImpl(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const {
+   void Typer::Serialize(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const {
       ASSERT(types.find(typeID) != types.end());
       const auto& ti = types.at(typeID);
 
@@ -217,12 +217,12 @@ namespace pbe {
 
          for (const auto& f : ti.fields) {
             const byte* data = value + f.offset;
-            SerializeImpl(ser, f.name, f.typeID, data);
+            Serialize(ser, f.name, f.typeID, data);
          }
       }
    }
 
-   bool Typer::DeserializeImpl(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const {
+   bool Typer::Deserialize(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const {
       bool hasName = !name.empty();
 
       if (hasName && !deser[name.data()]) {
@@ -241,7 +241,7 @@ namespace pbe {
 
          for (const auto& f : ti.fields) {
             byte* data = value + f.offset;
-            success &= DeserializeImpl(nodeFields, f.name, f.typeID, data);
+            success &= Deserialize(nodeFields, f.name, f.typeID, data);
          }
 
          return success;

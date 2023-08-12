@@ -452,10 +452,9 @@ namespace pbe {
       { a.Serialize(ser) };
    };
 
-   struct Test {
-      void Serialize(Serializer& ser) {
-         // INFO("Serialize");
-      }
+   template<typename T>
+   concept HasDeserialize = requires(T a, const Deserializer& deser) {
+      { a.Deserialize(deser) };
    };
 
    template<typename T>
@@ -466,6 +465,21 @@ namespace pbe {
          return nullptr;
       }
    }
+
+   template<typename T>
+   auto GetDeserialize() {
+      if constexpr (HasSerialize<T>) {
+         return [](const Deserializer& deser, byte* data) { ((T*)data)->Deserialize(deser); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   struct Test {
+      void Serialize(Serializer& ser) {
+         // INFO("Serialize");
+      }
+   };
 
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
