@@ -8,8 +8,12 @@ namespace pbe {
       return ImGui::GetCurrentContext();
    }
 
-   bool EditorUI(std::string_view name, TypeID typeID, byte* value) {
-      return Typer::Get().UI(name, typeID, value);
+   bool EditorUI(std::string_view lable, TypeID typeID, byte* value) {
+      return Typer::Get().UI(lable, typeID, value);
+   }
+
+   bool EditorUI(TypeID typeID, byte* value) {
+      return EditorUI("", typeID, value);
    }
 
    ImGuiTreeNodeFlags DefaultTreeNodeFlags() {

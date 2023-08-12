@@ -241,7 +241,8 @@ namespace pbe {
 
    CORE_API ImGuiContext* GetImGuiContext();
 
-   CORE_API bool EditorUI(std::string_view name, TypeID typeID, byte* value);
+   CORE_API bool EditorUI(std::string_view lable, TypeID typeID, byte* value);
+   CORE_API bool EditorUI(TypeID typeID, byte* value);
 
    // todo: mb delete?
    CORE_API ImGuiTreeNodeFlags DefaultTreeNodeFlags();
