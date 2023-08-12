@@ -13,59 +13,6 @@
 
 namespace pbe {
 
-   void TransSerialize(Serializer& ser, const byte* value) {
-      auto& trans = *(const SceneTransformComponent*)value;
-
-      SERIALIZER_MAP(ser);
-
-      ser.Ser("position", trans.position);
-      ser.Ser("rotation", trans.rotation);
-      ser.Ser("scale", trans.scale);
-
-      if (trans.HasParent()) {
-         ser.KeyValue("parent", trans.parent.Get<UUIDComponent>().uuid);
-      }
-
-      if (trans.HasChilds()) {
-         ser.Key("children");
-
-         auto& out = ser.out;
-         out << YAML::Flow;
-         SERIALIZER_SEQ(ser);
-
-         for (auto children : trans.children) {
-            out << (uint64)children.GetUUID();
-         }
-      }
-   };
-
-   bool TransDeserialize(const Deserializer& deser, byte* value) {
-      auto& trans = *(SceneTransformComponent*)value;
-
-      // todo:
-      trans.RemoveAllChild();
-
-      bool success = true;
-
-      success &= deser.Deser("position", trans.position);
-      success &= deser.Deser("rotation", trans.rotation);
-      success &= deser.Deser("scale", trans.scale);
-
-      // note: we will be added by our parent
-      // auto parent = deser.Deser<uint64>("parent");
-
-      if (auto children = deser["children"]) {
-         trans.children.reserve(children.node.size());
-
-         for (auto child : children.node) {
-            uint64 childUuid = child.as<uint64>(); // todo: check
-            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), -1, true);
-         }
-      }
-
-      return success;
-   }
-
    bool Vec3UI(const char* label, vec3& v, float resetVal, float columnWidth) {
       UI_PUSH_ID(label);
 
@@ -170,8 +117,6 @@ namespace pbe {
    TYPER_END()
 
    TYPER_BEGIN(SceneTransformComponent)
-      TYPER_SERIALIZE(TransSerialize)
-      TYPER_DESERIALIZE(TransDeserialize)
       TYPER_UI(TransUI)
 
       TYPER_FIELD(position)
@@ -441,43 +386,70 @@ namespace pbe {
       return (int)std::ranges::distance(pTrans.children.begin(), std::ranges::find(pTrans.children, entity));
    }
 
+   // todo: const
+   void SceneTransformComponent::Serialize(Serializer& ser) {
+      SERIALIZER_MAP(ser);
+
+      ser.Ser("position", position);
+      ser.Ser("rotation", rotation);
+      ser.Ser("scale", scale);
+
+      if (HasParent()) {
+         ser.KeyValue("parent", parent.Get<UUIDComponent>().uuid);
+      }
+
+      if (HasChilds()) {
+         ser.Key("children");
+
+         auto& out = ser.out;
+         out << YAML::Flow;
+         SERIALIZER_SEQ(ser);
+
+         for (auto children : children) {
+            out << (uint64)children.GetUUID();
+         }
+      }
+   };
+
+   bool SceneTransformComponent::Deserialize(const Deserializer& deser) {
+      // todo:
+      RemoveAllChild();
+
+      bool success = true;
+
+      success &= deser.Deser("position", position);
+      success &= deser.Deser("rotation", rotation);
+      success &= deser.Deser("scale", scale);
+
+      // note: we will be added by our parent
+      // auto parent = deser.Deser<uint64>("parent");
+
+      if (auto childrenDeser = deser["children"]) {
+         children.reserve(childrenDeser.node.size());
+
+         for (auto child : childrenDeser.node) {
+            uint64 childUuid = child.as<uint64>(); // todo: check
+            AddChild(entity.GetScene()->GetEntity(childUuid), -1, true);
+         }
+      }
+
+      return success;
+   }
+
    void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
       // todo:
       auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
-   template<typename T>
-   concept HasSerialize = requires(T a, Serializer& ser) {
-      { a.Serialize(ser) };
-   };
-
-   template<typename T>
-   concept HasDeserialize = requires(T a, const Deserializer& deser) {
-      { a.Deserialize(deser) };
-   };
-
-   template<typename T>
-   auto GetSerialize() {
-      if constexpr (HasSerialize<T>) {
-         return [] (Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
-      } else {
-         return nullptr;
-      }
-   }
-
-   template<typename T>
-   auto GetDeserialize() {
-      if constexpr (HasSerialize<T>) {
-         return [](const Deserializer& deser, byte* data) { ((T*)data)->Deserialize(deser); };
-      } else {
-         return nullptr;
-      }
-   }
-
    struct Test {
       void Serialize(Serializer& ser) {
          // INFO("Serialize");
+      }
+
+      bool Deserialize(const Deserializer& deser) {
+         // INFO("Serialize");
+         return true;
       }
    };
 
@@ -495,16 +467,6 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(SkyComponent);
       INTERNAL_ADD_COMPONENT(WaterComponent);
       INTERNAL_ADD_COMPONENT(TerrainComponent);
-
-      // todo:
-      Test t;
-      Serializer ser;
-
-      auto s = GetSerialize<Test>();
-      std::function<void(Serializer&, const byte*)> f = s;
-      if (f) {
-         f(ser, (byte*)&t);
-      }
    }
 
 }

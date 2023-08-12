@@ -16,6 +16,34 @@ namespace pbe {
    class Entity;
    class Scene;
 
+   template<typename T>
+   concept HasSerialize = requires(T a, Serializer & ser) {
+      { a.Serialize(ser) };
+   };
+
+   template<typename T>
+   concept HasDeserialize = requires(T a, const Deserializer & deser) {
+      { a.Deserialize(deser) } -> std::same_as<bool>;
+   };
+
+   template<typename T>
+   auto GetSerialize() {
+      if constexpr (HasSerialize<T>) {
+         return [](Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   template<typename T>
+   auto GetDeserialize() {
+      if constexpr (HasDeserialize<T>) {
+         return [](const Deserializer& deser, byte* data) -> bool { return ((T*)data)->Deserialize(deser); };
+      } else {
+         return nullptr;
+      }
+   }
+
 #define TYPER_BEGIN(type) \
    static TypeRegisterGuard TypeRegisterGuard_##type = {GetTypeID<type>(), \
          [] () { \
@@ -24,6 +52,8 @@ namespace pbe {
       ti.name = #type; \
       ti.typeID = GetTypeID<type>(); \
       ti.typeSizeOf = sizeof(type); \
+      ti.serialize = GetSerialize<type>(); \
+      ti.deserialize = GetDeserialize<type>(); \
       \
       TypeField f{};
 
@@ -36,13 +66,9 @@ namespace pbe {
 #define TYPER_UI(...) \
       ti.imguiFunc = __VA_ARGS__;
 
-   //  for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'
-   // problem with ','
+   // for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'. problem with ','
 #define TYPER_FIELD_UI(...) \
       f.uiFunc = __VA_ARGS__;
-   // similar to this define
-   // #define TYPER_FIELD_UI(func) \
-   //       f.uiFunc = func;
 
 #define TYPER_FIELD(_name) \
       f.name = #_name; \

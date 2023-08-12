@@ -92,6 +92,9 @@ namespace pbe {
       bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
       bool SetParentInternal(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
       int GetChildIdx() const;
+
+      void Serialize(Serializer& ser);
+      bool Deserialize(const Deserializer& deser);
    };
 
    struct MaterialComponent {
