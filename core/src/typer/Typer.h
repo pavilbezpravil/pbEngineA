@@ -42,6 +42,8 @@ namespace pbe {
       std::function<void(Entity&, const void*)> copyCtor;
       std::function<void(Entity&, const void*)> moveCtor;
 
+      std::function<void(void*)> onChanged;
+
       // todo:
       // ComponentInfo() = default;
       // ComponentInfo(ComponentInfo&&) = default;

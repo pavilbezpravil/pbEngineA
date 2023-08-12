@@ -67,8 +67,7 @@ namespace pbe {
       }
 
       if (UI_TREE_NODE("Scene Transform", DefaultTreeNodeFlags() | ImGuiTreeNodeFlags_DefaultOpen)) {
-         // todo: without name
-         edited |= EditorUI("", entity.GetTransform());
+         edited |= EditorUI(entity.GetTransform());
       }
 
       for (const auto& ci : typer.components) {
@@ -91,8 +90,12 @@ namespace pbe {
             }
 
             if (treeNode) {
-               // todo: without name
-               edited |= EditorUI("", ci.typeID, (byte*)pComponent);
+               if (EditorUI(ci.typeID, (byte*)pComponent)) {
+                  if (ci.onChanged) {
+                     ci.onChanged(pComponent);
+                  }
+                  edited = true;
+               }
             }
          }
       }

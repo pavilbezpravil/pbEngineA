@@ -21,6 +21,11 @@ namespace pbe {
    };
 
    template<typename T>
+   concept HasOnChanged = requires(T a) {
+      { a.OnChanged() };
+   };
+
+   template<typename T>
    auto GetSerialize() {
       if constexpr (HasSerialize<T>) {
          return [](Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
@@ -42,6 +47,15 @@ namespace pbe {
    auto GetUI() {
       if constexpr (HasUI<T>) {
          return [](const char* lable, byte* data) -> bool { return ((T*)data)->UI(); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   template<typename T>
+   auto GetOnChanged() {
+      if constexpr (HasOnChanged<T>) {
+         return [](void* data) { ((T*)data)->OnChanged(); };
       } else {
          return nullptr;
       }
@@ -108,6 +122,7 @@ namespace pbe {
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
       ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
+      ci.onChanged = GetOnChanged<Component>(); \
       typer.RegisterComponent(std::move(ci)); \
    }
 

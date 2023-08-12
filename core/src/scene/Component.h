@@ -115,6 +115,8 @@ namespace pbe {
       physx::PxRigidActor* pxRigidActor = nullptr;
 
       void SetLinearVelocity(const vec3& v, bool autowake = true);
+
+      void OnChanged();
    };
 
    struct TriggerComponent {

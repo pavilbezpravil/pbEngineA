@@ -433,6 +433,10 @@ namespace pbe {
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
+   void RigidBodyComponent::OnChanged() {
+      INFO(__FUNCDNAME__);
+   }
+
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(CameraComponent);
