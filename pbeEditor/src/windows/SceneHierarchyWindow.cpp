@@ -219,9 +219,20 @@ namespace pbe {
 
          DragDropChangeParent(entity);
 
-         // IsItemToggledOpen: when node opened dont select entity
-         if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+         static bool allowToggleEntity = true;
+
+         if (ImGui::IsItemClicked() && ImGui::IsItemToggledOpen()) {
+            // if click was on arrow - do not toggle entity while release mouse and click again
+            allowToggleEntity = false;
+         }
+         if (allowToggleEntity && ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            // toggle entity on mouse release in case click was not on arrow
             ToggleSelectEntity(entity);
+         }
+         if (ImGui::IsItemDeactivated()) {
+            // on release allow toggle entity again
+            // todo: mb it leads to some bugs when this code dont execute buy some reason
+            allowToggleEntity = true;
          }
 
          if (UI_POPUP_CONTEXT_ITEM()) {
@@ -263,7 +274,7 @@ namespace pbe {
          (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
          | (sceneRoot ? ImGuiTreeNodeFlags_DefaultOpen : 0)
          | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
-         | ImGuiTreeNodeFlags_SpanFullWidth
+         | ImGuiTreeNodeFlags_SpanAvailWidth
          | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
       if (UI_TREE_NODE((void*)(uint64)entity.GetUUID(), nodeFlags, name)) {
