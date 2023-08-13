@@ -353,10 +353,24 @@ namespace pbe {
       trigger.pxRigidActor = nullptr;
    }
 
+   static PxRigidDynamic* GetPxRigidDynamic(PxRigidActor* actor) {
+      return actor->is<PxRigidDynamic>();
+   }
+
+   static bool IsPxRigidDynamic(PxRigidActor* actor) {
+      return actor->is<PxRigidDynamic>() != nullptr;
+   }
+
+   static void PxWakeUp(PxRigidActor* actor) {
+      PxRigidDynamic* dynActor = GetPxRigidDynamic(actor);
+      if (dynActor && dynActor->isSleeping()) {
+         dynActor->wakeUp();
+      }
+   }
+
    void PhysicsScene::AddDistanceJoint(Entity entity) {
       auto& dj = entity.Get<DistanceJointComponent>();
 
-      // todo: one of them must be dynamic
       auto actor0 = GetPxActor(dj.entity0);
       auto actor1 = GetPxActor(dj.entity1);
 
@@ -364,7 +378,16 @@ namespace pbe {
          return;
       }
 
+      // todo: log
+      ASSERT(IsPxRigidDynamic(actor0) || IsPxRigidDynamic(actor1));
+
       auto joint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+      if (!joint) {
+         return;
+      }
+
+      PxWakeUp(actor0);
+      PxWakeUp(actor1);
 
       joint->setMaxDistance(1.5f);
       joint->setMinDistance(1.f);
@@ -373,6 +396,8 @@ namespace pbe {
       joint->setStiffness(2000.0f);
 
       joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
+
+      INFO("Joint Created");
 
       dj.pxDistanceJoint = joint;
    }
@@ -384,7 +409,8 @@ namespace pbe {
       }
 
       // todo: is it enough?
-      delete dj.pxDistanceJoint;
+      dj.pxDistanceJoint->release();
+      // delete dj.pxDistanceJoint;
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
