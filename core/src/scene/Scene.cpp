@@ -80,7 +80,6 @@ namespace pbe {
       rootEntityId = entity.GetID();
    }
 
-   // todo: duplicate disabled state
    void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID) {
       ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
 
@@ -94,6 +93,9 @@ namespace pbe {
 
       for (auto child : srcTrans.children) {
          Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
+         if (!src.Enabled()) {
+            duplicatedChild.Disable();
+         }
          Duplicate(duplicatedChild, child, copyUUID);
       }
 
@@ -103,6 +105,7 @@ namespace pbe {
          auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
+            // todo:
             ci.copyCtor(dst, pSrc);
 
             // todo:
@@ -130,6 +133,7 @@ namespace pbe {
 
       int idx = iter + 1 != nameLen ? atoi(name + iter + 1) : 0;
       string_view namePrefix = string_view(name, iter + 1);
+      //
 
       Entity duplicatedEntity = Create(std::format("{} {}", namePrefix, ++idx));
 
@@ -137,6 +141,9 @@ namespace pbe {
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
       Duplicate(duplicatedEntity, entity, false);
+      if (!entity.Enabled()) {
+         duplicatedEntity.Disable();
+      }
       return duplicatedEntity;
    }
 
