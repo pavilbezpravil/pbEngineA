@@ -11,7 +11,7 @@ namespace pbe {
 
    class Water {
    public:
-      void Render(CommandList& cmd, Scene& scene, RenderContext& cameraContext);
+      void Render(CommandList& cmd, const Scene& scene, RenderContext& cameraContext);
 
    private:
       Ref<Buffer> waterWaves;

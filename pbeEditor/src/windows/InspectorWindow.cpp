@@ -34,6 +34,17 @@ namespace pbe {
 
       float heightLine = ImGui::GetFrameHeight();
 
+      ImGui::SameLine(contentRegionAvail.x - heightLine * 1.5f);
+      // todo: Undo
+      bool enabled = entity.Enabled();
+      if (ImGui::Checkbox("##EnableInspector", &enabled)) {
+         entity.EnableToggle();
+         edited = true;
+      }
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(enabled ? "Disable" : "Enable");
+      }
+
       ImGui::SameLine(contentRegionAvail.x - heightLine * 0.5f);
       if (ImGui::Button("+", { heightLine , heightLine })) {
          ImGui::OpenPopup("Add Component Popup");

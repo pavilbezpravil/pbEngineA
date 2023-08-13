@@ -17,6 +17,8 @@ namespace pbe {
 
    class Entity;
 
+   struct DisableMarker {};
+
    class CORE_API Scene {
    public:
       Scene(bool withRoot = true);
@@ -37,40 +39,52 @@ namespace pbe {
       void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
+      bool EntityEnabled(const Entity& entity) const;
+      void EntityEnable(Entity& entity);
+      void EntityDisable(Entity& entity);
+
       void DestroyDelayed(Entity entity, bool withChilds = true);
       void DestroyImmediate(Entity entity, bool withChilds = true);
 
       void DestroyDelayedEntities();
 
       template<typename Type, typename... Other, typename... Exclude>
-      const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {
+      const auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) const {
          return registry.view<Type, Other...>(excludes);
       }
 
       template<typename Type, typename... Other, typename... Exclude>
-      auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
+      auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) {
          return registry.view<Type, Other...>(excludes);
+      }
+
+      template<typename Type, typename... Other>
+      int CountEntitiesWithComponents() const {
+         int count = 0;
+         View<Type, Other...>().each([&](auto& c) {
+            ++count;
+         });
+         return count;
+      }
+
+      template<typename Component>
+      Entity GetAnyWithComponent() const {
+         auto entity = View<Component>().front();
+         if (entity == entt::null) {
+            return Entity{};
+         } else {
+            // todo: const_cast((
+            return Entity{ entity, const_cast<Scene*>(this) };
+         }
       }
 
       template<typename Component>
       Entity GetAnyWithComponent() {
-         auto view = registry.view<Component>();
-         if (view.empty()) {
+         auto entity = View<Component>().front();
+         if (entity == entt::null) {
             return Entity{};
          } else {
-            return Entity{ view.front(), this };
-         }
-      }
-
-      // todo: return multiple
-      // todo: mb delete
-      template<typename Component>
-      std::tuple<Entity, Component*> GetAnyWithComponent2() {
-         auto view = registry.view<Component>();
-         if (view.empty()) {
-            return std::make_tuple(Entity{}, nullptr);
-         } else {
-            return std::make_tuple(Entity{ view.front() }, registry.try_get<Component>(view.front()));
+            return Entity{ entity, this };
          }
       }
 

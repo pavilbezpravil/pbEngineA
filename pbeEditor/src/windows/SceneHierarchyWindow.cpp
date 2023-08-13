@@ -204,20 +204,36 @@ namespace pbe {
          return c ? c->tag.data() : "Unnamed Entity";
          });
 
-      auto entityUIAction = [&]() {
-         if (sceneRoot) {
-            return;
-         }
+      ImGuiTreeNodeFlags nodeFlags =
+         (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
+         | (sceneRoot ? ImGuiTreeNodeFlags_DefaultOpen : 0)
+         | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+         | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap
+         // | ImGuiTreeNodeFlags_FramePadding
+         | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
 
-         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Right-click to open popup %s", name);
-         }
+      bool enabled = entity.Enabled();
+      if (!enabled) {
+         ImGui::PushStyleColor(ImGuiCol_Text, { 0.5f, 0.5f, 0.5f, 1.f });
+      }
+
+      auto id = (void*)(uint64)entity.GetUUID();
+      ui::TreeNode treeNode{ id, nodeFlags, name };
+
+      if (!enabled) {
+         ImGui::PopStyleColor();
+      }
+
+      DragDropChangeParent(entity);
+
+      if (!sceneRoot) {
+         // if (ImGui::IsItemHovered()) {
+         //    ImGui::SetTooltip("Right-click to open popup %s", name);
+         // }
 
          if (UI_DRAG_DROP_SOURCE(DRAG_DROP_ENTITY, entity)) {
             ImGui::Text("Drag&Drop Entity %s", name);
          }
-
-         DragDropChangeParent(entity);
 
          static bool allowToggleEntity = true;
 
@@ -268,23 +284,30 @@ namespace pbe {
                EntityDeserialize(deser, *entity.GetScene());
             }
          }
-      };
 
-      ImGuiTreeNodeFlags nodeFlags =
-         (selection->IsSelected(entity) ? ImGuiTreeNodeFlags_Selected : 0)
-         | (sceneRoot ? ImGuiTreeNodeFlags_DefaultOpen : 0)
-         | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
-         | ImGuiTreeNodeFlags_SpanAvailWidth
-         | (hasChilds ? 0 : ImGuiTreeNodeFlags_Leaf);
+         {
+            UI_PUSH_ID(id);
 
-      if (UI_TREE_NODE((void*)(uint64)entity.GetUUID(), nodeFlags, name)) {
-         entityUIAction();
+            float heightLine = ImGui::GetTextLineHeight();
 
+            ImGui::SameLine(ImGui::GetContentRegionMax().x - heightLine * 0.5f - 10);
+
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_FramePadding, ImVec2{});
+
+            if (ImGui::Checkbox("##Enable", &enabled)) {
+            // if (ImGui::Button("##Enable", { heightLine , heightLine })) {
+               entity.EnableToggle();
+            }
+            if (ImGui::IsItemHovered()) {
+               ImGui::SetTooltip(enabled ? "Disable" : "Enable");
+            }
+         }
+      }
+
+      if (treeNode) {
          for (auto child : trans.children) {
             UIEntity(child);
          }
-      } else {
-         entityUIAction();
       }
    }
 

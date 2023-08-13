@@ -217,7 +217,7 @@ namespace pbe {
       cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(SInstance));
    }
 
-   void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera) {
+   void Renderer::RenderDataPrepare(CommandList& cmd, const Scene& scene, const RenderCamera& cullCamera) {
       opaqueObjs.clear();
       transparentObjs.clear();
 
@@ -256,7 +256,7 @@ namespace pbe {
       }
 
       {
-         auto nLights = (uint)scene.View<LightComponent>().size();
+         auto nLights = scene.CountEntitiesWithComponents<LightComponent>();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
             auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(SLight));
             lightBuffer = Buffer::Create(bufferDesc);
@@ -299,7 +299,7 @@ namespace pbe {
       }
    }
 
-   void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context) {
+   void Renderer::RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context) {
       if (!baseColorPass->Valid()) {
          return;
       }
@@ -367,7 +367,7 @@ namespace pbe {
 
       sceneCB.fogNSteps = fogNSteps;
 
-      sceneCB.nLights = (int)scene.View<LightComponent>().size();
+      sceneCB.nLights = scene.CountEntitiesWithComponents<LightComponent>();
       sceneCB.nDecals = (int)nDecals;
 
       sceneCB.exposition = tonemapExposition;
@@ -376,11 +376,12 @@ namespace pbe {
       sceneCB.directLight.direction = vec3{1, 0, 0};
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
 
-      auto directLightsView = scene.View<SceneTransformComponent, DirectLightComponent>();
-      bool hasDirectLight = directLightsView.size_hint() > 0;
+      bool hasDirectLight = false;
+      if (Entity directEntity = scene.GetAnyWithComponent<DirectLightComponent>()) {
+         hasDirectLight = true;
 
-      if (hasDirectLight) {
-         auto [_, trans, directLight] = *directLightsView.each().begin();
+         auto& trans = directEntity.GetTransform();
+         auto& directLight = directEntity.Get<DirectLightComponent>();
 
          sceneCB.directLight.color = directLight.color * directLight.intensity;
          sceneCB.directLight.direction = trans.Forward();
@@ -404,11 +405,8 @@ namespace pbe {
          sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
       }
 
-      // set sky
-      auto skyView = scene.View<SkyComponent>();
-      if (skyView.size() > 0) {
-         // auto [_, sky] = *skyView.each().begin();
-         auto [_, sky] = *skyView.each().begin();
+      if (Entity skyEntity = scene.GetAnyWithComponent<SkyComponent>()) {
+         const auto& sky = skyEntity.Get<SkyComponent>();
 
          sceneCB.skyIntensity = sky.intensity;
       } else {

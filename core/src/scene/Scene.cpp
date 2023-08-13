@@ -80,6 +80,7 @@ namespace pbe {
       rootEntityId = entity.GetID();
    }
 
+   // todo: duplicate disabled state
    void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID) {
       ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
 
@@ -139,8 +140,39 @@ namespace pbe {
       return duplicatedEntity;
    }
 
+   bool Scene::EntityEnabled(const Entity& entity) const {
+      return !entity.Has<DisableMarker>();
+   }
+
+   void Scene::EntityEnable(Entity& entity) {
+      if (EntityEnabled(entity)) {
+         return;
+      }
+
+      for (auto& child : entity.GetTransform().children) {
+         EntityEnable(child);
+      }
+
+      // todo: iterate over components and call enable
+      entity.Remove<DisableMarker>();
+   }
+
+   // todo: when add child to disabled entity, it must be disabled too
+   void Scene::EntityDisable(Entity& entity) {
+      if (!EntityEnabled(entity)) {
+         return;
+      }
+
+      for (auto& child : entity.GetTransform().children) {
+         EntityDisable(child);
+      }
+
+      // todo: iterate over components and call disable
+      entity.AddMarker<DisableMarker>();
+   }
+
    struct DelayedDestroyMarker {
-      bool withChilds = false;
+      bool withChilds = false; // todo: remove?
    };
 
    void Scene::DestroyDelayed(Entity entity, bool withChilds) {

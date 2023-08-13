@@ -17,6 +17,26 @@ namespace pbe {
       (*this) = {};
    }
 
+   bool Entity::Enabled() const {
+      return scene->EntityEnabled(*this);
+   }
+
+   void Entity::Enable() {
+      scene->EntityEnable(*this);
+   }
+
+   void Entity::Disable() {
+      scene->EntityDisable(*this);
+   }
+
+   void Entity::EnableToggle() {
+      if (Enabled()) {
+         Disable();
+      } else {
+         Enable();
+      }
+   }
+
    SceneTransformComponent& Entity::GetTransform() {
       return Get<SceneTransformComponent>();
    }
@@ -32,4 +52,5 @@ namespace pbe {
    UUID Entity::GetUUID() const {
       return Get<UUIDComponent>().uuid;
    }
+
 }

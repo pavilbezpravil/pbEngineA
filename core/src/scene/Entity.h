@@ -23,6 +23,12 @@ namespace pbe {
       Entity() = default;
       Entity(entt::entity id, Scene* scene);
 
+      template<typename T>
+      void AddMarker() {
+         ASSERT(!Has<T>());
+         scene->registry.emplace<T>(id);
+      }
+
       template<typename T, typename...Cs>
       T& Add(Cs&&... cs) {
          ASSERT(!Has<T>());
@@ -42,7 +48,7 @@ namespace pbe {
 
       template<typename T>
       bool Has() const {
-         return TryGet<T>() != nullptr;
+         return scene->registry.all_of<T>(id);
       }
 
       template<typename T>
@@ -78,11 +84,16 @@ namespace pbe {
       void DestroyDelayed(bool withChilds = true);
       void DestroyImmediate(bool withChilds = true);
 
+      bool Enabled() const;
+      void Enable();
+      void Disable();
+      void EnableToggle();
+
       bool Valid() const {
          return id != entt::null;
       }
 
-      operator bool() const { return Valid(); }
+      operator bool() const { return Valid(); } // todo: include Enabled?
       bool operator==(const Entity&) const = default;
 
       entt::entity GetID() const { return id; }
