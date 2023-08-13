@@ -252,7 +252,8 @@ float3 RayColor(Ray ray, inout uint seed) {
 
                 ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
 
-                energy *= albedo * dot(ray.direction, N);
+                float NDotRayDir =  max(dot(N, ray.direction), 0);
+                energy *= albedo * NDotRayDir;
             } else {
                 // todo:
                 // float3 specular = obj.baseColor;
