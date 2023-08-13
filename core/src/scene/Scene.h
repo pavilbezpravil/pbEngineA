@@ -8,6 +8,7 @@
 
 
 namespace pbe {
+   class System;
    class PhysicsScene;
    struct Deserializer;
    struct Serializer;
@@ -105,11 +106,13 @@ namespace pbe {
       void OnUpdate(float dt);
       void OnStop();
 
+      void AddSystem(Own<System>&& system);
+
       Entity FindByName(std::string_view name);
 
       uint EntitiesCount() const;
 
-      PhysicsScene* GetPhysics() { return pPhysics.get(); }
+      // PhysicsScene* GetPhysics() { return pPhysics; }
 
       Own<Scene> Copy() const;
 
@@ -124,7 +127,7 @@ namespace pbe {
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 
       // todo: move to scene component?
-      Own<PhysicsScene> pPhysics;
+      std::vector<Own<System>> systems;
 
       friend Entity;
    };

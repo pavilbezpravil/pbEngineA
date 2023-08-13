@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Core.h"
+#include "scene/System.h"
 #include "utils/TimedAction.h"
 
 
@@ -12,7 +13,7 @@ namespace pbe {
    void InitPhysics();
    void TermPhysics();
 
-   class PhysicsScene : public PxSimulationEventCallback {
+   class PhysicsScene : public System {
    public:
       PhysicsScene(Scene& scene);
       ~PhysicsScene() override;
@@ -24,12 +25,12 @@ namespace pbe {
       void AddRigidActor(Entity entity);
       void RemoveRigidActor(Entity entity);
 
-      void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override {}
-      void onWake(PxActor** actors, PxU32 count) override {}
-      void onSleep(PxActor** actors, PxU32 count) override {}
-      void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override {}
-      void onTrigger(PxTriggerPair* pairs, PxU32 count) override {}
-      void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override {}
+      void OnSetEventHandlers(entt::registry& registry) override;
+      void OnEntityEnable() override;
+      void OnEntityDisable() override;
+
+      void OnUpdate(float dt) override;
+
    private:
       PxScene* pxScene = nullptr;
       Scene& scene;

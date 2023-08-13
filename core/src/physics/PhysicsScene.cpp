@@ -262,6 +262,35 @@ namespace pbe {
       rb.pxRigidActor = nullptr;
    }
 
+   void PhysicsScene::OnSetEventHandlers(entt::registry& registry) {
+      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
+      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
+
+      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
+      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
+
+      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(this);
+      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(this);
+   }
+
+   void PhysicsScene::OnEntityEnable() {
+      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedEnableMarker>()) {
+         Entity entity{ e, &scene };
+         AddRigidActor(entity);
+      }
+   }
+
+   void PhysicsScene::OnEntityDisable() {
+      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedDisableMarker>()) {
+         Entity entity{ e, &scene };
+         RemoveRigidActor(entity);
+      }
+   }
+
+   void PhysicsScene::OnUpdate(float dt) {
+      Simulation(dt);
+   }
+
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
       Entity e{ entity, &scene };
       AddRigidActor(e);
@@ -345,4 +374,5 @@ namespace pbe {
 
       joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
    }
+
 }

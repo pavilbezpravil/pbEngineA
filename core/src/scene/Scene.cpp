@@ -19,17 +19,8 @@ namespace pbe {
          SetRootEntity(CreateWithUUID(UUID{}, Entity{}, "Scene"));
       }
 
-      pPhysics = std::make_unique<PhysicsScene>(*this); // todo: for all scene is it needed?
-
-      // todo:
-      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(pPhysics);
-      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(pPhysics);
-
-      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(pPhysics);
-      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(pPhysics);
-
-      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(pPhysics);
-      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(pPhysics);
+      // todo: for all scene is it needed?
+      AddSystem(std::make_unique<PhysicsScene>(*this));
    }
 
    Scene::~Scene() {
@@ -162,6 +153,7 @@ namespace pbe {
          return;
       }
 
+      // todo: iterate over all systems or only scripts
       const auto& typer = Typer::Get();
       for (const auto& ci : typer.components) {
          if (!ci.onEnable) {
@@ -190,40 +182,41 @@ namespace pbe {
          EntityDisable(child);
       }
 
-      const auto& typer = Typer::Get();
-      for (const auto& ci : typer.components) {
-         if (!ci.onDisable) {
-            continue;
-         }
-         if (auto* pComponent = ci.tryGet(entity)) {
-            ci.onDisable(pComponent);
-         }
-      }
-
       entity.AddMarker<DelayedDisableMarker>();
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
    }
 
    void Scene::ProcessDelayedEnable() {
-      // todo: call all systems
+      // disable
+      for (auto& system : systems) {
+         system->OnEntityDisable();
+      }
+
+      // todo: iterate over all systems or only scripts
+      // const auto& typer = Typer::Get();
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
+      // }
 
       for (auto e : ViewAll<DelayedDisableMarker>()) {
          registry.emplace<DisableMarker>(e);
       }
+      registry.clear<DelayedDisableMarker>();
 
-      {
-         auto view = ViewAll<DelayedDisableMarker>();
-         registry.remove<DelayedDisableMarker>(view.begin(), view.end());
+      // enable
+      for (auto& system : systems) {
+         system->OnEntityEnable();
       }
+
+      // todo: iterate over all systems or only scripts
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
+      // }
 
       for (auto e : ViewAll<DelayedEnableMarker>()) {
          registry.erase<DisableMarker>(e);
       }
-
-      {
-         auto view = ViewAll<DelayedEnableMarker>();
-         registry.remove<DelayedEnableMarker>(view.begin(), view.end());
-      }
+      registry.clear<DelayedEnableMarker>();
    }
 
    struct DelayedDestroyMarker {
@@ -276,8 +269,8 @@ namespace pbe {
    }
 
    void Scene::OnUpdate(float dt) {
-      if (pPhysics) {
-         pPhysics->Simulation(dt);
+      for (auto& system : systems) {
+         system->OnUpdate(dt);
       }
 
       const auto& typer = Typer::Get();
@@ -293,6 +286,12 @@ namespace pbe {
       for (const auto& si : typer.scripts) {
          si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
       }
+   }
+
+   void Scene::AddSystem(Own<System>&& system) {
+      system->SetScene(this);
+      system->OnSetEventHandlers(registry);
+      systems.emplace_back(std::move(system));
    }
 
    Entity Scene::FindByName(std::string_view name) {
