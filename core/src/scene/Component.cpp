@@ -29,9 +29,8 @@ namespace pbe {
 
       auto drawFloat = [&] (float& val, const ImVec4& color, const char* button) {
          {
-            ImVec4 add = {0.1f, 0.1f, 0.1f, 1};
             UI_PUSH_STYLE_COLOR(ImGuiCol_Button, color);
-            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, color + add);
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, (color + ImVec4{0.1f, 0.1f, 0.1f, 1}));
             UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, color);
             if (ImGui::Button(button)) {
                val = resetVal;

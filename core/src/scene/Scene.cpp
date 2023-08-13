@@ -147,11 +147,18 @@ namespace pbe {
    }
 
    bool Scene::EntityEnabled(const Entity& entity) const {
-      return !entity.Has<DisableMarker>();
+      return !entity.HasAny<DisableMarker, DelayedDisableMarker, DelayedEnableMarker>();
    }
 
    void Scene::EntityEnable(Entity& entity) {
-      if (EntityEnabled(entity)) {
+      if (entity.Has<DelayedEnableMarker>()) {
+         return;
+      }
+      if (entity.HasAny<DelayedDisableMarker>()) {
+         entity.Remove<DelayedDisableMarker>();
+         return;
+      }
+      if (!entity.Has<DisableMarker>()) {
          return;
       }
 
@@ -169,12 +176,13 @@ namespace pbe {
          EntityEnable(child);
       }
 
-      entity.Remove<DisableMarker>();
+      entity.AddMarker<DelayedEnableMarker>();
+      ASSERT(entity.Has<DisableMarker>() && !entity.Has<DelayedDisableMarker>());
    }
 
    // todo: when add child to disabled entity, it must be disabled too
    void Scene::EntityDisable(Entity& entity) {
-      if (!EntityEnabled(entity)) {
+      if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
          return;
       }
 
@@ -192,7 +200,30 @@ namespace pbe {
          }
       }
 
-      entity.AddMarker<DisableMarker>();
+      entity.AddMarker<DelayedDisableMarker>();
+      ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
+   }
+
+   void Scene::ProcessDelayedEnable() {
+      // todo: call all systems
+
+      for (auto e : ViewAll<DelayedDisableMarker>()) {
+         registry.emplace<DisableMarker>(e);
+      }
+
+      {
+         auto view = ViewAll<DelayedDisableMarker>();
+         registry.remove<DelayedDisableMarker>(view.begin(), view.end());
+      }
+
+      for (auto e : ViewAll<DelayedEnableMarker>()) {
+         registry.erase<DisableMarker>(e);
+      }
+
+      {
+         auto view = ViewAll<DelayedEnableMarker>();
+         registry.remove<DelayedEnableMarker>(view.begin(), view.end());
+      }
    }
 
    struct DelayedDestroyMarker {
@@ -229,6 +260,11 @@ namespace pbe {
          DestroyImmediate(Entity{e, this}, marker.withChilds);
       }
       registry.clear<DelayedDestroyMarker>();
+   }
+
+   void Scene::OnTick() {
+      DestroyDelayedEntities();
+      ProcessDelayedEnable();
    }
 
    void Scene::OnStart() {

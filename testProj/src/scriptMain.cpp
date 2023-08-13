@@ -55,10 +55,11 @@ namespace pbe {
    public:
       void OnEnable() override {
          timer = {freq};
+         INFO(__FUNCTION__);
       }
 
       void OnDisable() override {
-         
+         INFO(__FUNCTION__);
       }
 
       void OnUpdate(float dt) override {

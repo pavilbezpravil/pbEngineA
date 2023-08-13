@@ -17,6 +17,8 @@ namespace pbe {
 
    class Entity;
 
+   struct DelayedDisableMarker {};
+   struct DelayedEnableMarker {};
    struct DisableMarker {};
 
    class CORE_API Scene {
@@ -39,9 +41,12 @@ namespace pbe {
       void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
+      // Delayed
       bool EntityEnabled(const Entity& entity) const;
       void EntityEnable(Entity& entity);
       void EntityDisable(Entity& entity);
+
+      void ProcessDelayedEnable();
 
       void DestroyDelayed(Entity entity, bool withChilds = true);
       void DestroyImmediate(Entity entity, bool withChilds = true);
@@ -55,6 +60,11 @@ namespace pbe {
 
       template<typename Type, typename... Other, typename... Exclude>
       auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) {
+         return registry.view<Type, Other...>(excludes);
+      }
+
+      template<typename Type, typename... Other, typename... Exclude>
+      auto ViewAll(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
          return registry.view<Type, Other...>(excludes);
       }
 
@@ -87,6 +97,9 @@ namespace pbe {
             return Entity{ entity, this };
          }
       }
+
+      // call this every frame
+      void OnTick();
 
       void OnStart();
       void OnUpdate(float dt);

@@ -256,7 +256,7 @@ namespace pbe {
       }
 
       {
-         auto nLights = scene.CountEntitiesWithComponents<LightComponent>();
+         auto nLights = (uint)scene.CountEntitiesWithComponents<LightComponent>();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
             auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(SLight));
             lightBuffer = Buffer::Create(bufferDesc);

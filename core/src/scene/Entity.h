@@ -56,9 +56,14 @@ namespace pbe {
          remove_all_with_filter<Exclude...>(scene->registry, id);
       }
 
-      template<typename T>
+      template<typename... Type>
       bool Has() const {
-         return scene->registry.all_of<T>(id);
+         return scene->registry.all_of<Type...>(id);
+      }
+
+      template<typename... Type>
+      bool HasAny() const {
+         return scene->registry.any_of<Type...>(id);
       }
 
       template<typename T>

@@ -87,6 +87,10 @@ namespace pbe {
          }
       }
 
+      if (auto pScene =GetActiveScene()) {
+         pScene->OnTick();
+      }
+
       if (editorState == State::Play && runtimeScene) {
          runtimeScene->OnUpdate(dt);
       }
