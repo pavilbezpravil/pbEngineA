@@ -33,16 +33,24 @@ namespace pbe {
 
    struct ComponentInfo {
       TypeID typeID;
-      std::function<void*(Entity&)> tryGet;
-      std::function<const void*(const Entity&)> tryGetConst;
-      std::function<void*(Entity&)> getOrAdd;
-      std::function<void*(Entity&)> add;
-      std::function<void(Entity&)> remove;
-      std::function<void(void*, const void*)> duplicate;
-      std::function<void(Entity&, const void*)> copyCtor;
-      std::function<void(Entity&, const void*)> moveCtor;
 
-      std::function<void(void*)> onChanged;
+      std::function<void (Entity&, const void*)> copyCtor;
+      std::function<void (Entity&, const void*)> moveCtor;
+
+      std::function<bool (const Entity&)> has;
+      std::function<void* (Entity&)> add;
+      std::function<void (Entity&)> remove;
+      std::function<void (Entity&)> get; // todo: remove?
+
+      std::function<void* (Entity&)> getOrAdd;
+      std::function<void* (Entity&)> tryGet;
+      std::function<const void* (const Entity&)> tryGetConst; // todo: remove?
+
+      std::function<void(void*, const void*)> duplicate; // todo: remove
+
+      std::function<void(void*)> onEnable;
+      std::function<void(void*)> onDisable;
+      std::function<void(void*)> onChanged; // todo: remove?
 
       // todo:
       // ComponentInfo() = default;
@@ -54,7 +62,6 @@ namespace pbe {
       using ApplyFunc = std::function<void(class Script&)>;
 
       TypeID typeID;
-      std::function<void(Scene&)> initialize;
       std::function<void(Scene&, const ApplyFunc&)> sceneApplyFunc;
    };
 

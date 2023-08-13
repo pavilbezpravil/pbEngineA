@@ -33,7 +33,6 @@ namespace pbe {
    }
 
    Scene::~Scene() {
-      // todo: destroy root entity
       registry.clear(); // registry doesn't have call destructor for components without direct call clear
    }
 
@@ -156,11 +155,20 @@ namespace pbe {
          return;
       }
 
+      const auto& typer = Typer::Get();
+      for (const auto& ci : typer.components) {
+         if (!ci.onEnable) {
+            continue;
+         }
+         if (auto* pComponent = ci.tryGet(entity)) {
+            ci.onEnable(pComponent);
+         }
+      }
+
       for (auto& child : entity.GetTransform().children) {
          EntityEnable(child);
       }
 
-      // todo: iterate over components and call enable
       entity.Remove<DisableMarker>();
    }
 
@@ -174,7 +182,16 @@ namespace pbe {
          EntityDisable(child);
       }
 
-      // todo: iterate over components and call disable
+      const auto& typer = Typer::Get();
+      for (const auto& ci : typer.components) {
+         if (!ci.onDisable) {
+            continue;
+         }
+         if (auto* pComponent = ci.tryGet(entity)) {
+            ci.onDisable(pComponent);
+         }
+      }
+
       entity.AddMarker<DisableMarker>();
    }
 
@@ -216,10 +233,6 @@ namespace pbe {
 
    void Scene::OnStart() {
       const auto& typer = Typer::Get();
-
-      for (const auto& si : typer.scripts) {
-         si.initialize(*this);
-      }
 
       for (const auto& si : typer.scripts) {
          si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });

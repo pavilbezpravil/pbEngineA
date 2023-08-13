@@ -16,6 +16,11 @@ namespace pbe {
       }
    }
 
+   template<typename T>
+   concept Entity_HasOwner = requires(T a) {
+      { a.owner };
+   };
+
    struct SceneTransformComponent;
 
    class CORE_API Entity {
@@ -32,7 +37,12 @@ namespace pbe {
       template<typename T, typename...Cs>
       T& Add(Cs&&... cs) {
          ASSERT(!Has<T>());
-         return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+         auto& component = scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+         // not best way to set owner, but it works fine)
+         if constexpr (Entity_HasOwner<T>) {
+            component.owner = *this;
+         }
+         return component;
       }
 
       template<typename T, typename...Cs>
