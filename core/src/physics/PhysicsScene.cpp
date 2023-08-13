@@ -65,15 +65,15 @@ namespace pbe {
       return PxFilterFlag::eDEFAULT;
    }
 
-   Entity* GetEntity(PxActor* actor) {
+   static Entity* GetEntity(PxActor* actor) {
       return (Entity*)actor->userData;
    }
 
-   PxTransform GetTransform(const SceneTransformComponent& trans) {
+   static PxTransform GetTransform(const SceneTransformComponent& trans) {
       return PxTransform{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
    }
 
-   PxGeometryHolder GetPhysGeom(const SceneTransformComponent& trans, const GeometryComponent& geom) {
+   static PxGeometryHolder GetPhysGeom(const SceneTransformComponent& trans, const GeometryComponent& geom) {
       // todo: think about tran.scale
       PxGeometryHolder physGeom;
       if (geom.type == GeomType::Sphere) {
@@ -82,6 +82,14 @@ namespace pbe {
          physGeom = PxBoxGeometry(Vec3ToPx(geom.sizeData * trans.Scale() / 2.f));
       }
       return physGeom;
+   }
+
+   // todo:
+   static PxRigidActor* GetPxActor(Entity e) {
+      if (!e) return nullptr;
+
+      auto rb = e.TryGet<RigidBodyComponent>();
+      return rb ? rb->pxRigidActor : nullptr;
    }
 
    struct SimulationEventCallback : PxSimulationEventCallback {
@@ -188,7 +196,7 @@ namespace pbe {
       // }
    }
 
-   void PhysicsScene::Simulation(float dt) {
+   void PhysicsScene::Simulate(float dt) {
       PROFILE_CPU("Phys simulate");
 
       SyncPhysicsWithScene();
@@ -227,10 +235,58 @@ namespace pbe {
       }
    }
 
+   void PhysicsScene::OnSetEventHandlers(entt::registry& registry) {
+      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
+      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
+
+      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
+      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
+
+      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(this);
+      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(this);
+   }
+
+   void PhysicsScene::OnEntityEnable() {
+      for (auto e : pScene->ViewAll<GeometryComponent, RigidBodyComponent, DelayedEnableMarker>()) {
+         Entity entity{ e, &scene };
+         AddRigidActor(entity);
+      }
+
+      for (auto e : pScene->ViewAll<GeometryComponent, TriggerComponent, DelayedEnableMarker>()) {
+         Entity entity{ e, &scene };
+         AddTrigger(entity);
+      }
+
+      for (auto e : pScene->ViewAll<DistanceJointComponent, DelayedEnableMarker>()) {
+         Entity entity{ e, &scene };
+         AddDistanceJoint(entity);
+      }
+   }
+
+   void PhysicsScene::OnEntityDisable() {
+      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedDisableMarker>()) {
+         Entity entity{ e, &scene };
+         RemoveRigidActor(entity);
+      }
+
+      for (auto e : pScene->ViewAll<TriggerComponent, DelayedDisableMarker>()) {
+         Entity entity{ e, &scene };
+         RemoveTrigger(entity);
+      }
+
+      for (auto e : pScene->ViewAll<DistanceJointComponent, DelayedDisableMarker>()) {
+         Entity entity{ e, &scene };
+         RemoveDistanceJoint(entity);
+      }
+   }
+
+   void PhysicsScene::OnUpdate(float dt) {
+      Simulate(dt);
+   }
+
    void PhysicsScene::AddRigidActor(Entity entity) {
-      auto& trans = entity.Get<SceneTransformComponent>();
-      auto& rb = entity.Get<RigidBodyComponent>();
-      auto& geom = entity.Get<GeometryComponent>();
+      // todo: pass as function argument
+      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
 
       PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
 
@@ -246,14 +302,19 @@ namespace pbe {
          actor = PxCreateStatic(*gPhysics, physTrans, physGeom.any(), *gMaterial);
       }
 
-      actor->userData = new Entity{entity}; // todo: use fixed allocator
+      actor->userData = new Entity{ entity }; // todo: use fixed allocator
       pxScene->addActor(*actor);
 
+      // on moveCtor actor is copied by value, so it may be not null, but it is actor from another entity
+      // ASSERT(!rb.pxRigidActor);
       rb.pxRigidActor = actor;
    }
 
    void PhysicsScene::RemoveRigidActor(Entity entity) {
       auto& rb = entity.Get<RigidBodyComponent>();
+      if (!rb.pxRigidActor) {
+         return;
+      }
 
       pxScene->removeActor(*rb.pxRigidActor);
       delete GetEntity(rb.pxRigidActor);
@@ -262,51 +323,8 @@ namespace pbe {
       rb.pxRigidActor = nullptr;
    }
 
-   void PhysicsScene::OnSetEventHandlers(entt::registry& registry) {
-      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
-      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
-
-      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
-      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
-
-      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(this);
-      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(this);
-   }
-
-   void PhysicsScene::OnEntityEnable() {
-      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedEnableMarker>()) {
-         Entity entity{ e, &scene };
-         AddRigidActor(entity);
-      }
-   }
-
-   void PhysicsScene::OnEntityDisable() {
-      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedDisableMarker>()) {
-         Entity entity{ e, &scene };
-         RemoveRigidActor(entity);
-      }
-   }
-
-   void PhysicsScene::OnUpdate(float dt) {
-      Simulation(dt);
-   }
-
-   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
-      AddRigidActor(e);
-   }
-
-   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
-      RemoveRigidActor(e);
-   }
-
-   void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-
-      auto& trans = entity.Get<SceneTransformComponent>();
-      auto& geom = entity.Get<GeometryComponent>();
-      auto& trigger = entity.Get<TriggerComponent>();
+   void PhysicsScene::AddTrigger(Entity entity) {
+      auto [trans, geom, trigger] = entity.Get<SceneTransformComponent, GeometryComponent, TriggerComponent>();
 
       PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
 
@@ -322,10 +340,11 @@ namespace pbe {
       trigger.pxRigidActor = actor;
    }
 
-   void PhysicsScene::OnDestroyTrigger(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-
+   void PhysicsScene::RemoveTrigger(Entity entity) {
       auto& trigger = entity.Get<TriggerComponent>();
+      if (!trigger.pxRigidActor) {
+         return;
+      }
 
       pxScene->removeActor(*trigger.pxRigidActor);
       delete GetEntity(trigger.pxRigidActor);
@@ -334,21 +353,10 @@ namespace pbe {
       trigger.pxRigidActor = nullptr;
    }
 
-   // todo:
-   static PxRigidActor* GetPxActor(Entity e) {
-      if (!e) return nullptr;
-
-      auto rb = e.TryGet<RigidBodyComponent>();
-      return rb ? rb->pxRigidActor : nullptr;
-   }
-
-   void PhysicsScene::OnConstructDistanceJoint(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
-
-      auto& dj = e.Get<DistanceJointComponent>();
+   void PhysicsScene::AddDistanceJoint(Entity entity) {
+      auto& dj = entity.Get<DistanceJointComponent>();
 
       // todo: one of them must be dynamic
-
       auto actor0 = GetPxActor(dj.entity0);
       auto actor1 = GetPxActor(dj.entity1);
 
@@ -356,11 +364,64 @@ namespace pbe {
          return;
       }
 
-      dj.pxDistanceJoint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+      auto joint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+
+      joint->setMaxDistance(1.5f);
+      joint->setMinDistance(1.f);
+
+      joint->setDamping(0.5f);
+      joint->setStiffness(2000.0f);
+
+      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
+
+      dj.pxDistanceJoint = joint;
    }
 
-   void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity) {
-      // todo: destroy joint
+   void PhysicsScene::RemoveDistanceJoint(Entity entity) {
+      auto& dj = entity.Get<DistanceJointComponent>();
+      if (!dj.pxDistanceJoint) {
+         return;
+      }
+
+      // todo: is it enough?
+      delete dj.pxDistanceJoint;
+   }
+
+   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+      // todo: on each func has this check
+      if (e.Enabled()) {
+         AddRigidActor(e);
+      }
+   }
+
+   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+      RemoveRigidActor(e);
+   }
+
+   void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      if (entity.Enabled()) {
+         AddTrigger(entity);
+      }
+   }
+
+   void PhysicsScene::OnDestroyTrigger(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      RemoveTrigger(entity);
+   }
+
+   void PhysicsScene::OnConstructDistanceJoint(entt::registry& registry, entt::entity entity) {
+      Entity e{ entity, &scene };
+      if (e.Enabled()) {
+         AddDistanceJoint(e);
+      }
+   }
+
+   void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      RemoveDistanceJoint(entity);
    }
 
    void CreateDistanceJoint(const Entity& entity0, const Entity& entity1) {

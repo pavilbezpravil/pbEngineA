@@ -48,8 +48,6 @@ namespace pbe {
 
       std::function<void(void*, const void*)> duplicate; // todo: remove
 
-      std::function<void(void*)> onEnable;
-      std::function<void(void*)> onDisable;
       std::function<void(void*)> onChanged; // todo: remove?
 
       // todo:

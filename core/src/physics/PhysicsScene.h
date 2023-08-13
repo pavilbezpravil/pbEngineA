@@ -19,11 +19,8 @@ namespace pbe {
       ~PhysicsScene() override;
 
       void SyncPhysicsWithScene();
-      void Simulation(float dt);
+      void Simulate(float dt);
       void UpdateSceneAfterPhysics();
-
-      void AddRigidActor(Entity entity);
-      void RemoveRigidActor(Entity entity);
 
       void OnSetEventHandlers(entt::registry& registry) override;
       void OnEntityEnable() override;
@@ -36,6 +33,15 @@ namespace pbe {
       Scene& scene;
 
       TimedAction stepTimer{60.f};
+
+      void AddRigidActor(Entity entity);
+      void RemoveRigidActor(Entity entity);
+
+      void AddTrigger(Entity entity);
+      void RemoveTrigger(Entity entity);
+
+      void AddDistanceJoint(Entity entity);
+      void RemoveDistanceJoint(Entity entity);
 
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);

@@ -83,8 +83,9 @@ namespace pbe {
 
       for (auto child : srcTrans.children) {
          Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
-         if (!src.Enabled()) {
-            duplicatedChild.Disable();
+
+         if (!EntityEnabled(child)) {
+            EntityDisableImmediate(duplicatedChild);
          }
          Duplicate(duplicatedChild, child, copyUUID);
       }
@@ -131,8 +132,8 @@ namespace pbe {
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
       Duplicate(duplicatedEntity, entity, false);
-      if (!entity.Enabled()) {
-         duplicatedEntity.Disable();
+      if (!EntityEnabled(entity)) {
+         EntityDisableImmediate(duplicatedEntity);
       }
       return duplicatedEntity;
    }
@@ -151,17 +152,6 @@ namespace pbe {
       }
       if (!entity.Has<DisableMarker>()) {
          return;
-      }
-
-      // todo: iterate over all systems or only scripts
-      const auto& typer = Typer::Get();
-      for (const auto& ci : typer.components) {
-         if (!ci.onEnable) {
-            continue;
-         }
-         if (auto* pComponent = ci.tryGet(entity)) {
-            ci.onEnable(pComponent);
-         }
       }
 
       for (auto& child : entity.GetTransform().children) {
@@ -322,6 +312,11 @@ namespace pbe {
 
    Scene* Scene::GetCurrentDeserializedScene() {
       return gCurrentDeserializedScene;
+   }
+
+   void Scene::EntityDisableImmediate(Entity& entity) {
+      ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
+      entity.AddMarker<DisableMarker>();
    }
 
    static string gAssetsPath = "../../assets/";

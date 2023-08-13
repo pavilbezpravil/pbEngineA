@@ -66,16 +66,16 @@ namespace pbe {
          return scene->registry.any_of<Type...>(id);
       }
 
-      template<typename T>
-      T& Get() {
-         ASSERT(Has<T>());
-         return scene->registry.get<T>(id);
+      template<typename... Type>
+      decltype(auto) Get() {
+         ASSERT(Has<Type...>());
+         return scene->registry.get<Type...>(id);
       }
 
-      template<typename T>
-      const T& Get() const {
-         ASSERT(Has<T>());
-         return scene->registry.get<T>(id);
+      template<typename... Type>
+      decltype(auto) Get() const {
+         ASSERT(Has<Type...>());
+         return scene->registry.get<Type...>(id);
       }
 
       template<typename T>

@@ -129,6 +129,8 @@ namespace pbe {
       // todo: move to scene component?
       std::vector<Own<System>> systems;
 
+      void EntityDisableImmediate(Entity& entity);
+
       friend Entity;
    };
 

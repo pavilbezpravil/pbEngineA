@@ -157,8 +157,6 @@ namespace pbe {
       \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       \
-      ci.onEnable = GetOnEnable<Component>(); \
-      ci.onDisable = GetOnDisable<Component>(); \
       ci.onChanged = GetOnChanged<Component>(); \
       \
       typer.RegisterComponent(std::move(ci)); \
