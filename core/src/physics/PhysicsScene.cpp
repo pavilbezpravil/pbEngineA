@@ -378,26 +378,27 @@ namespace pbe {
          return;
       }
 
-      // todo: log
-      ASSERT(PxIsRigidDynamic(actor0) || PxIsRigidDynamic(actor1));
+      if (!PxIsRigidDynamic(actor0) && !PxIsRigidDynamic(actor1)) {
+         WARN("Distance joint can be created when min one actor is dynamic");
+         return;
+      }
 
       auto joint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
       if (!joint) {
+         WARN("Cant create distance joint");
          return;
       }
 
       PxWakeUp(actor0);
       PxWakeUp(actor1);
 
-      joint->setMaxDistance(1.5f);
-      joint->setMinDistance(1.f);
+      joint->setMinDistance(dj.minDistance);
+      joint->setMaxDistance(dj.maxDistance);
 
-      joint->setDamping(0.5f);
-      joint->setStiffness(2000.0f);
+      joint->setDamping(dj.damping);
+      joint->setStiffness(dj.stiffness);
 
       joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
-
-      INFO("Joint Created");
 
       dj.pxDistanceJoint = joint;
    }
@@ -408,9 +409,8 @@ namespace pbe {
          return;
       }
 
-      // todo: is it enough?
       dj.pxDistanceJoint->release();
-      // delete dj.pxDistanceJoint;
+      dj.pxDistanceJoint = nullptr;
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {

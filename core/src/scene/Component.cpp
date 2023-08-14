@@ -149,6 +149,12 @@ namespace pbe {
    TYPER_BEGIN(DistanceJointComponent)
       TYPER_FIELD(entity0)
       TYPER_FIELD(entity1)
+
+      TYPER_FIELD(minDistance)
+      TYPER_FIELD(maxDistance)
+
+      TYPER_FIELD(stiffness)
+      TYPER_FIELD(damping)
    TYPER_END()
 
    TYPER_BEGIN(LightComponent)

@@ -127,6 +127,12 @@ namespace pbe {
       Entity entity0;
       Entity entity1;
 
+      float minDistance = 0;
+      float maxDistance = 0;
+
+      float stiffness = 1000.f;
+      float damping = 0.5;
+
       physx::PxDistanceJoint* pxDistanceJoint = nullptr;
    };
 

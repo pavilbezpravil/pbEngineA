@@ -68,6 +68,10 @@ entities:
     DistanceJointComponent:
       entity0: 10042706703820186979
       entity1: 13715450602186190615
+      minDistance: 0.5
+      maxDistance: 2
+      stiffness: 10000
+      damping: 0.5
   - uuid: 16412337017328682443
     tag: Ground
     SceneTransformComponent:

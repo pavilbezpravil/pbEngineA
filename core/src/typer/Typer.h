@@ -37,13 +37,13 @@ namespace pbe {
    struct ComponentInfo {
       TypeID typeID;
 
-      std::function<void (Entity&, const void*)> copyCtor;
-      std::function<void (Entity&, const void*)> moveCtor;
+      std::function<void* (Entity&, const void*)> copyCtor;
+      std::function<void* (Entity&, const void*)> moveCtor;
 
       std::function<bool (const Entity&)> has;
       std::function<void* (Entity&)> add;
       std::function<void (Entity&)> remove;
-      std::function<void (Entity&)> get; // todo: remove?
+      std::function<void* (Entity&)> get; // todo: remove?
 
       std::function<void* (Entity&)> getOrAdd;
       std::function<void* (Entity&)> tryGet;

@@ -143,13 +143,13 @@ namespace pbe {
       ComponentInfo ci{}; \
       ci.typeID = GetTypeID<Component>(); \
       \
-      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
-      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
+      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; return (void*)&dst.Add<Component>((Component&)*srcCompPtr); }; \
+      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; return (void*)&dst.Add<Component>((Component&&)*srcCompPtr); }; \
       \
       ci.has = [](const Entity& e) { return e.Has<Component>(); }; \
       ci.add = [](Entity& e) { return (void*)&e.Add<Component>(); }; \
       ci.remove = [](Entity& e) { e.Remove<Component>(); }; \
-      ci.get = [](Entity& e) { e.Get<Component>(); }; \
+      ci.get = [](Entity& e) { return (void*)&e.Get<Component>(); }; \
       \
       ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
       ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \

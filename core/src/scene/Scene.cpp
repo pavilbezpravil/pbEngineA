@@ -92,22 +92,33 @@ namespace pbe {
 
       const auto& typer = Typer::Get();
 
+      // todo: use entt for iterate components
       for (const auto& ci : typer.components) {
          auto* pSrc = ci.tryGetConst(src);
 
          if (pSrc) {
             // todo:
-            ci.copyCtor(dst, pSrc);
+            auto pDst = ci.copyCtor(dst, pSrc);
 
-            // todo:
-            // auto* pDst = ci.tryGet(dst);
-            // if (pDst) {
-            //    // scene trasform component and tag already exist
-            //    // think how to remove this branch
-            //    ci.duplicate(pDst, pSrc);
-            // } else {
-            //    ci.copyCtor(dst, pSrc);
-            // }
+            const auto& ti = typer.GetTypeInfo(ci.typeID);
+            if (ti.hasEntityRef) {
+               for (const auto& field : ti.fields) {
+                  auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
+
+                  if (filedTypeInfo.hasEntityRef) {
+                     // todo: while dont support nested entity ref
+                     ASSERT(filedTypeInfo.IsSimpleType());
+                     ASSERT(copyUUID);
+
+                     // it like from src, because it was copied by value
+                     auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
+                     if (*pDstEntity) {
+                        auto uuid = pDstEntity->GetUUID();
+                        *pDstEntity = dst.GetScene()->GetEntity(uuid);
+                     }
+                  }
+               }
+            }
          }
       }
    }
