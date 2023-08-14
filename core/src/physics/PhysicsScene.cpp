@@ -357,7 +357,7 @@ namespace pbe {
       return actor->is<PxRigidDynamic>();
    }
 
-   static bool IsPxRigidDynamic(PxRigidActor* actor) {
+   static bool PxIsRigidDynamic(PxRigidActor* actor) {
       return actor->is<PxRigidDynamic>() != nullptr;
    }
 
@@ -379,7 +379,7 @@ namespace pbe {
       }
 
       // todo: log
-      ASSERT(IsPxRigidDynamic(actor0) || IsPxRigidDynamic(actor1));
+      ASSERT(PxIsRigidDynamic(actor0) || PxIsRigidDynamic(actor1));
 
       auto joint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
       if (!joint) {

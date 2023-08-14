@@ -23,12 +23,15 @@ namespace pbe {
       std::string name;
       TypeID typeID;
       int typeSizeOf;
+      bool hasEntityRef = false;
 
       std::vector<TypeField> fields;
 
       std::function<bool(const char*, byte*)> ui;
       std::function<void(Serializer&, const byte*)> serialize;
       std::function<bool(const Deserializer&, byte*)> deserialize;
+
+      bool IsSimpleType() const { return fields.empty(); }
    };
 
    struct ComponentInfo {
@@ -97,10 +100,15 @@ namespace pbe {
       void Serialize(Serializer& ser, std::string_view name, TypeID typeID, const byte* value) const;
       bool Deserialize(const Deserializer& deser, std::string_view name, TypeID typeID, byte* value) const;
 
+      void Finalize();
+
       std::unordered_map<TypeID, TypeInfo> types;
 
       std::vector<ComponentInfo> components;
       std::vector<ScriptInfo> scripts;
+
+   private:
+      void ProcessType(TypeInfo& ti, std::unordered_set<TypeID>& processedTypeIDs);
    };
 
 }
