@@ -1,4 +1,18 @@
 entities:
+  - uuid: 4650434831841081626
+    tag: Joint
+    SceneTransformComponent:
+      position: [-3.45298719, -6.10232925, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 14280430394613666438
+    DistanceJointComponent:
+      entity0: 10828941295371101528
+      entity1: 14192675390969500913
+      minDistance: 0
+      maxDistance: 0
+      stiffness: 1000
+      damping: 0.5
   - uuid: 6036374520866093232
     tag: Sky
     SceneTransformComponent:
@@ -10,6 +24,25 @@ entities:
       directLight: 18446744073709551615
       color: [1, 1, 1]
       intensity: 1
+  - uuid: 7154855269098154875
+    tag: Dyn Cube
+    SceneTransformComponent:
+      position: [4.8089385, -3.82828116, -1.77218199]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 14280430394613666438
+    MaterialComponent:
+      baseColor: [0.831223607, 0.115739994, 0.115739994]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
   - uuid: 10042706703820186979
     tag: Static
     SceneTransformComponent:
@@ -19,6 +52,25 @@ entities:
       parent: 17726055588690943796
     MaterialComponent:
       baseColor: [0.0999839604, 0.139358848, 0.877637148]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+  - uuid: 10828941295371101528
+    tag: Static Cube
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 14280430394613666438
+    MaterialComponent:
+      baseColor: [0.14242731, 0.331224799, 0.675105453]
       roughness: 0.100000001
       metallic: 0
       emissiveColor: [1, 1, 1]
@@ -58,6 +110,33 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+  - uuid: 14192675390969500913
+    tag: Dyn Cube
+    SceneTransformComponent:
+      position: [0.0651566982, -1.00702667, -2.45314813]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 14280430394613666438
+    MaterialComponent:
+      baseColor: [0.755274296, 0.137032866, 0.137032866]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+  - uuid: 14280430394613666438
+    tag: Hier
+    SceneTransformComponent:
+      position: [3.45298719, 6.10232925, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 17726055588690943796
+      children: [14192675390969500913, 10828941295371101528, 7154855269098154875, 4650434831841081626]
   - uuid: 15489993667000155759
     tag: Joint
     SceneTransformComponent:
@@ -97,4 +176,4 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [12066021364222954032, 6036374520866093232, 16412337017328682443, 13715450602186190615, 10042706703820186979, 15489993667000155759]
+      children: [12066021364222954032, 6036374520866093232, 16412337017328682443, 13715450602186190615, 10042706703820186979, 15489993667000155759, 14280430394613666438]

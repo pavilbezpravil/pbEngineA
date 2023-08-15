@@ -70,59 +70,6 @@ namespace pbe {
       rootEntityId = entity.GetID();
    }
 
-   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID) {
-      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
-
-      auto& srcTrans = src.GetTransform();
-
-      // todo:
-      auto& dstTrans = dst.GetTransform();
-      dstTrans.position = srcTrans.position;
-      dstTrans.rotation = srcTrans.rotation;
-      dstTrans.scale = srcTrans.scale;
-
-      for (auto child : srcTrans.children) {
-         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
-
-         if (!EntityEnabled(child)) {
-            EntityDisableImmediate(duplicatedChild);
-         }
-         Duplicate(duplicatedChild, child, copyUUID);
-      }
-
-      const auto& typer = Typer::Get();
-
-      // todo: use entt for iterate components
-      for (const auto& ci : typer.components) {
-         auto* pSrc = ci.tryGetConst(src);
-
-         if (pSrc) {
-            // todo:
-            auto pDst = ci.copyCtor(dst, pSrc);
-
-            const auto& ti = typer.GetTypeInfo(ci.typeID);
-            if (ti.hasEntityRef) {
-               for (const auto& field : ti.fields) {
-                  auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
-
-                  if (filedTypeInfo.hasEntityRef) {
-                     // todo: while dont support nested entity ref
-                     ASSERT(filedTypeInfo.IsSimpleType());
-                     ASSERT(copyUUID);
-
-                     // it like from src, because it was copied by value
-                     auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
-                     if (*pDstEntity) {
-                        auto uuid = pDstEntity->GetUUID();
-                        *pDstEntity = dst.GetScene()->GetEntity(uuid);
-                     }
-                  }
-               }
-            }
-         }
-      }
-   }
-
    Entity Scene::Duplicate(const Entity& entity) {
       // todo: dirty code
       auto name = entity.GetName();
@@ -142,7 +89,10 @@ namespace pbe {
       auto& trans = entity.GetTransform();
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
-      Duplicate(duplicatedEntity, entity, false);
+      std::unordered_map<UUID, Entity> hierEntitiesMap;
+      DuplicateHierEntitiesWithMap(duplicatedEntity, entity, false, hierEntitiesMap);
+
+      Duplicate(duplicatedEntity, entity, false, hierEntitiesMap);
       if (!EntityEnabled(entity)) {
          EntityDisableImmediate(duplicatedEntity);
       }
@@ -314,7 +264,11 @@ namespace pbe {
       Entity srcRoot{ rootEntityId, const_cast<Scene*>(this) };
       Entity dstRoot = pScene->CreateWithUUID(srcRoot.GetUUID(), Entity{}, srcRoot.GetName());
       pScene->SetRootEntity(dstRoot);
-      pScene->Duplicate(dstRoot, srcRoot, true);
+
+      std::unordered_map<UUID, Entity> hierEntitiesMap;
+      pScene->DuplicateHierEntitiesWithMap(dstRoot, srcRoot, true, hierEntitiesMap);
+
+      pScene->Duplicate(dstRoot, srcRoot, true, hierEntitiesMap);
 
       return pScene;
    }
@@ -328,6 +282,79 @@ namespace pbe {
    void Scene::EntityDisableImmediate(Entity& entity) {
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
       entity.AddMarker<DisableMarker>();
+   }
+
+   void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap) {
+      hierEntitiesMap[src.GetUUID()] = dst;
+
+      auto& srcTrans = src.GetTransform();
+
+      for (auto child : srcTrans.children) {
+         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
+         DuplicateHierEntitiesWithMap(duplicatedChild, child, copyUUID, hierEntitiesMap);
+      }
+   }
+
+   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap) {
+      // if copyUUID == true, dst must be in another scene
+      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
+
+      auto& srcTrans = src.GetTransform();
+
+      // todo: move after loop?
+      auto& dstTrans = dst.GetTransform();
+      dstTrans.position = srcTrans.position;
+      dstTrans.rotation = srcTrans.rotation;
+      dstTrans.scale = srcTrans.scale;
+
+      for (auto child : srcTrans.children) {
+         Entity duplicatedChild = hierEntitiesMap[child.GetUUID()];
+
+         // todo: mb all duplicated entities should be disabled by default and after that enabled
+         if (!EntityEnabled(child)) {
+            EntityDisableImmediate(duplicatedChild);
+         }
+         Duplicate(duplicatedChild, child, copyUUID, hierEntitiesMap);
+      }
+
+      const auto& typer = Typer::Get();
+
+      // todo: use entt for iterate components
+      for (const auto& ci : typer.components) {
+         auto* pSrc = ci.tryGetConst(src);
+         if (!pSrc) {
+            continue;
+         }
+
+         auto pDst = ci.copyCtor(dst, pSrc);
+
+         const auto& ti = typer.GetTypeInfo(ci.typeID);
+         if (!ti.hasEntityRef) {
+            continue;
+         }
+
+         for (const auto& field : ti.fields) {
+            auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
+
+            if (filedTypeInfo.hasEntityRef) {
+               // todo: while dont support nested entity ref
+               ASSERT(filedTypeInfo.IsSimpleType());
+
+               // it like from src, because it was copied by value in 'copyCtor'
+               auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
+               if (!*pDstEntity) {
+                  continue;
+               }
+
+               auto uuid = pDstEntity->GetUUID();
+               
+               auto it = hierEntitiesMap.find(uuid);
+               if (it != hierEntitiesMap.end()) {
+                  *pDstEntity = it->second;
+               }
+            }
+         }
+      }
    }
 
    static string gAssetsPath = "../../assets/";

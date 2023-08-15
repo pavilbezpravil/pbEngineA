@@ -38,8 +38,6 @@ namespace pbe {
       Entity GetRootEntity();
       void SetRootEntity(const Entity& entity);
 
-      // todo: to private
-      void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
       // Delayed
@@ -130,6 +128,9 @@ namespace pbe {
       std::vector<Own<System>> systems;
 
       void EntityDisableImmediate(Entity& entity);
+
+      void DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap);
+      void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap);
 
       friend Entity;
    };
