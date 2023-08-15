@@ -155,6 +155,9 @@ namespace pbe {
 
       TYPER_FIELD(stiffness)
       TYPER_FIELD(damping)
+
+      TYPER_FIELD(breakForce)
+      TYPER_FIELD(breakTorque)
    TYPER_END()
 
    TYPER_BEGIN(LightComponent)

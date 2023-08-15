@@ -133,6 +133,9 @@ namespace pbe {
       float stiffness = 1000.f;
       float damping = 0.5;
 
+      float breakForce = INFINITY;
+      float breakTorque = INFINITY;
+
       physx::PxDistanceJoint* pxDistanceJoint = nullptr;
    };
 

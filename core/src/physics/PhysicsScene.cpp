@@ -368,6 +368,10 @@ namespace pbe {
       }
    }
 
+   static float FloatInfToMax(float v) {
+      return v == INFINITY ? PX_MAX_F32 : v;
+   }
+
    void PhysicsScene::AddDistanceJoint(Entity entity) {
       auto& dj = entity.Get<DistanceJointComponent>();
 
@@ -391,6 +395,10 @@ namespace pbe {
 
       PxWakeUp(actor0);
       PxWakeUp(actor1);
+
+
+
+      joint->setBreakForce(FloatInfToMax(dj.breakForce), FloatInfToMax(dj.breakTorque));
 
       joint->setMinDistance(dj.minDistance);
       joint->setMaxDistance(dj.maxDistance);
