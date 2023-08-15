@@ -37,7 +37,7 @@ namespace pbe {
 
    }
 
-   void RTRenderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context) {
+   void RTRenderer::RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context) {
       GPU_MARKER("RT Scene");
       PROFILE_GPU("RT Scene");
 

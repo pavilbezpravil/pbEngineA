@@ -21,6 +21,21 @@ namespace pbe {
    };
 
    template<typename T>
+   concept HasOnEnable = requires(T a) {
+      { a.OnEnable() };
+   };
+
+   template<typename T>
+   concept HasOnDisable = requires(T a) {
+      { a.OnDisable() };
+   };
+
+   template<typename T>
+   concept HasOnChanged = requires(T a) {
+      { a.OnChanged() };
+   };
+
+   template<typename T>
    auto GetSerialize() {
       if constexpr (HasSerialize<T>) {
          return [](Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
@@ -42,6 +57,33 @@ namespace pbe {
    auto GetUI() {
       if constexpr (HasUI<T>) {
          return [](const char* lable, byte* data) -> bool { return ((T*)data)->UI(); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   template<typename T>
+   auto GetOnEnable() {
+      if constexpr (HasOnEnable<T>) {
+         return [](void* data) { ((T*)data)->OnEnable(); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   template<typename T>
+   auto GetOnDisable() {
+      if constexpr (HasOnDisable<T>) {
+         return [](void* data) { ((T*)data)->OnDisable(); };
+      } else {
+         return nullptr;
+      }
+   }
+
+   template<typename T>
+   auto GetOnChanged() {
+      if constexpr (HasOnChanged<T>) {
+         return [](void* data) { ((T*)data)->OnChanged(); };
       } else {
          return nullptr;
       }
@@ -100,14 +142,23 @@ namespace pbe {
       static_assert(std::is_move_assignable_v<Component>); \
       ComponentInfo ci{}; \
       ci.typeID = GetTypeID<Component>(); \
-      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
-      ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
-      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
+      \
+      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; return (void*)&dst.Add<Component>((Component&)*srcCompPtr); }; \
+      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; return (void*)&dst.Add<Component>((Component&&)*srcCompPtr); }; \
+      \
+      ci.has = [](const Entity& e) { return e.Has<Component>(); }; \
       ci.add = [](Entity& e) { return (void*)&e.Add<Component>(); }; \
       ci.remove = [](Entity& e) { e.Remove<Component>(); }; \
+      ci.get = [](Entity& e) { return (void*)&e.Get<Component>(); }; \
+      \
+      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
+      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
+      ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
+      \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
-      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
-      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
+      \
+      ci.onChanged = GetOnChanged<Component>(); \
+      \
       typer.RegisterComponent(std::move(ci)); \
    }
 
@@ -131,12 +182,6 @@ namespace pbe {
       \
       ScriptInfo si{}; \
       si.typeID = GetTypeID<Script>(); \
-      \
-      si.initialize = [] (Scene& scene) { \
-         for (auto [e, script] : scene.View<Script>().each()) { \
-            script.owner = Entity{e, &scene}; \
-         } \
-      }; \
       \
       si.sceneApplyFunc = [] (Scene& scene, const ScriptInfo::ApplyFunc& func) { \
          for (auto [_, script] : scene.View<Script>().each()) { \

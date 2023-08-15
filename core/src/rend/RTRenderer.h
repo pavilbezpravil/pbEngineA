@@ -16,7 +16,7 @@ namespace pbe {
    public:
       void Init();
 
-      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context);
+      void RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context);
 
       Ref<Buffer> rtObjectsBuffer;
    };

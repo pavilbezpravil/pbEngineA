@@ -29,9 +29,8 @@ namespace pbe {
 
       auto drawFloat = [&] (float& val, const ImVec4& color, const char* button) {
          {
-            ImVec4 add = {0.1f, 0.1f, 0.1f, 1};
             UI_PUSH_STYLE_COLOR(ImGuiCol_Button, color);
-            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, color + add);
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, (color + ImVec4{0.1f, 0.1f, 0.1f, 1}));
             UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, color);
             if (ImGui::Button(button)) {
                val = resetVal;
@@ -150,6 +149,12 @@ namespace pbe {
    TYPER_BEGIN(DistanceJointComponent)
       TYPER_FIELD(entity0)
       TYPER_FIELD(entity1)
+
+      TYPER_FIELD(minDistance)
+      TYPER_FIELD(maxDistance)
+
+      TYPER_FIELD(stiffness)
+      TYPER_FIELD(damping)
    TYPER_END()
 
    TYPER_BEGIN(LightComponent)
@@ -431,6 +436,10 @@ namespace pbe {
       // todo:
       auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
+   }
+
+   void RigidBodyComponent::OnChanged() {
+      INFO(__FUNCDNAME__);
    }
 
    void RegisterBasicComponents(Typer& typer) {

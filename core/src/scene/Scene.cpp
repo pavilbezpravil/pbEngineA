@@ -19,21 +19,11 @@ namespace pbe {
          SetRootEntity(CreateWithUUID(UUID{}, Entity{}, "Scene"));
       }
 
-      pPhysics = std::make_unique<PhysicsScene>(*this); // todo: for all scene is it needed?
-
-      // todo:
-      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(pPhysics);
-      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(pPhysics);
-
-      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(pPhysics);
-      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(pPhysics);
-
-      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(pPhysics);
-      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(pPhysics);
+      // todo: for all scene is it needed?
+      AddSystem(std::make_unique<PhysicsScene>(*this));
    }
 
    Scene::~Scene() {
-      // todo: destroy root entity
       registry.clear(); // registry doesn't have call destructor for components without direct call clear
    }
 
@@ -80,43 +70,6 @@ namespace pbe {
       rootEntityId = entity.GetID();
    }
 
-   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID) {
-      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
-
-      auto& srcTrans = src.GetTransform();
-
-      // todo:
-      auto& dstTrans = dst.GetTransform();
-      dstTrans.position = srcTrans.position;
-      dstTrans.rotation = srcTrans.rotation;
-      dstTrans.scale = srcTrans.scale;
-
-      for (auto child : srcTrans.children) {
-         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
-         Duplicate(duplicatedChild, child, copyUUID);
-      }
-
-      const auto& typer = Typer::Get();
-
-      for (const auto& ci : typer.components) {
-         auto* pSrc = ci.tryGetConst(src);
-
-         if (pSrc) {
-            ci.copyCtor(dst, pSrc);
-
-            // todo:
-            // auto* pDst = ci.tryGet(dst);
-            // if (pDst) {
-            //    // scene trasform component and tag already exist
-            //    // think how to remove this branch
-            //    ci.duplicate(pDst, pSrc);
-            // } else {
-            //    ci.copyCtor(dst, pSrc);
-            // }
-         }
-      }
-   }
-
    Entity Scene::Duplicate(const Entity& entity) {
       // todo: dirty code
       auto name = entity.GetName();
@@ -129,18 +82,101 @@ namespace pbe {
 
       int idx = iter + 1 != nameLen ? atoi(name + iter + 1) : 0;
       string_view namePrefix = string_view(name, iter + 1);
+      //
 
       Entity duplicatedEntity = Create(std::format("{} {}", namePrefix, ++idx));
 
       auto& trans = entity.GetTransform();
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
-      Duplicate(duplicatedEntity, entity, false);
+      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
+      DuplicateHierEntitiesWithMap(duplicatedEntity, entity, false, hierEntitiesMap);
+
+      Duplicate(duplicatedEntity, entity, false, hierEntitiesMap);
+
+      DuplicateEntityEnable(duplicatedEntity, hierEntitiesMap);
+      ProcessDelayedEnable();
+
       return duplicatedEntity;
    }
 
+   bool Scene::EntityEnabled(const Entity& entity) const {
+      return !entity.HasAny<DisableMarker, DelayedDisableMarker, DelayedEnableMarker>();
+   }
+
+   void Scene::EntityEnable(Entity& entity) {
+      if (entity.Has<DelayedEnableMarker>()) {
+         return;
+      }
+      if (entity.Has<DelayedDisableMarker>()) {
+         entity.Remove<DelayedDisableMarker>();
+         return;
+      }
+      if (!entity.Has<DisableMarker>()) {
+         return;
+      }
+
+      for (auto& child : entity.GetTransform().children) {
+         EntityEnable(child);
+      }
+
+      entity.AddMarker<DelayedEnableMarker>();
+      ASSERT(entity.Has<DisableMarker>() && !entity.Has<DelayedDisableMarker>());
+   }
+
+   // todo: when add child to disabled entity, it must be disabled too
+   void Scene::EntityDisable(Entity& entity) {
+      if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
+         return;
+      }
+      if (entity.Has<DelayedEnableMarker>()) {
+         entity.Remove<DelayedEnableMarker>();
+         return;
+      }
+
+      for (auto& child : entity.GetTransform().children) {
+         EntityDisable(child);
+      }
+
+      entity.AddMarker<DelayedDisableMarker>();
+      ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
+   }
+
+   void Scene::ProcessDelayedEnable() {
+      // disable
+      for (auto& system : systems) {
+         system->OnEntityDisable();
+      }
+
+      // todo: iterate over all systems or only scripts
+      // const auto& typer = Typer::Get();
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
+      // }
+
+      for (auto e : ViewAll<DelayedDisableMarker>()) {
+         registry.emplace<DisableMarker>(e);
+      }
+      registry.clear<DelayedDisableMarker>();
+
+      // enable
+      for (auto& system : systems) {
+         system->OnEntityEnable();
+      }
+
+      // todo: iterate over all systems or only scripts
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
+      // }
+
+      for (auto e : ViewAll<DelayedEnableMarker>()) {
+         registry.erase<DisableMarker>(e);
+      }
+      registry.clear<DelayedEnableMarker>();
+   }
+
    struct DelayedDestroyMarker {
-      bool withChilds = false;
+      bool withChilds = false; // todo: remove?
    };
 
    void Scene::DestroyDelayed(Entity entity, bool withChilds) {
@@ -175,12 +211,13 @@ namespace pbe {
       registry.clear<DelayedDestroyMarker>();
    }
 
+   void Scene::OnTick() {
+      DestroyDelayedEntities();
+      ProcessDelayedEnable();
+   }
+
    void Scene::OnStart() {
       const auto& typer = Typer::Get();
-
-      for (const auto& si : typer.scripts) {
-         si.initialize(*this);
-      }
 
       for (const auto& si : typer.scripts) {
          si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
@@ -188,8 +225,8 @@ namespace pbe {
    }
 
    void Scene::OnUpdate(float dt) {
-      if (pPhysics) {
-         pPhysics->Simulation(dt);
+      for (auto& system : systems) {
+         system->OnUpdate(dt);
       }
 
       const auto& typer = Typer::Get();
@@ -205,6 +242,12 @@ namespace pbe {
       for (const auto& si : typer.scripts) {
          si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
       }
+   }
+
+   void Scene::AddSystem(Own<System>&& system) {
+      system->SetScene(this);
+      system->OnSetEventHandlers(registry);
+      systems.emplace_back(std::move(system));
    }
 
    Entity Scene::FindByName(std::string_view name) {
@@ -226,7 +269,14 @@ namespace pbe {
       Entity srcRoot{ rootEntityId, const_cast<Scene*>(this) };
       Entity dstRoot = pScene->CreateWithUUID(srcRoot.GetUUID(), Entity{}, srcRoot.GetName());
       pScene->SetRootEntity(dstRoot);
-      pScene->Duplicate(dstRoot, srcRoot, true);
+
+      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
+      pScene->DuplicateHierEntitiesWithMap(dstRoot, srcRoot, true, hierEntitiesMap);
+
+      pScene->Duplicate(dstRoot, srcRoot, true, hierEntitiesMap);
+
+      pScene->DuplicateEntityEnable(dstRoot, hierEntitiesMap);
+      pScene->ProcessDelayedEnable();
 
       return pScene;
    }
@@ -235,6 +285,101 @@ namespace pbe {
 
    Scene* Scene::GetCurrentDeserializedScene() {
       return gCurrentDeserializedScene;
+   }
+
+   void Scene::EntityDisableImmediate(Entity& entity) {
+      ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
+      entity.AddMarker<DisableMarker>();
+   }
+
+   void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
+      hierEntitiesMap[src.GetUUID()] = DuplicateContext{ dst.GetID(), src.Enabled() };
+      // while duplicate entities, disable them
+      dst.GetScene()->EntityDisableImmediate(dst);
+
+      auto& srcTrans = src.GetTransform();
+
+      for (auto child : srcTrans.children) {
+         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
+         DuplicateHierEntitiesWithMap(duplicatedChild, child, copyUUID, hierEntitiesMap);
+      }
+   }
+
+   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
+      // if copyUUID == true, dst must be in another scene
+      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
+
+      auto& srcTrans = src.GetTransform();
+
+      // todo: move after loop?
+      auto& dstTrans = dst.GetTransform();
+      dstTrans.position = srcTrans.position;
+      dstTrans.rotation = srcTrans.rotation;
+      dstTrans.scale = srcTrans.scale;
+
+      for (auto child : srcTrans.children) {
+         Entity duplicatedChild = { hierEntitiesMap[child.GetUUID()].enttEntity, dst.GetScene()};
+         Duplicate(duplicatedChild, child, copyUUID, hierEntitiesMap);
+      }
+
+      const auto& typer = Typer::Get();
+
+      // todo: use entt for iterate components
+      for (const auto& ci : typer.components) {
+         auto* pSrc = ci.tryGetConst(src);
+         if (!pSrc) {
+            continue;
+         }
+
+         auto pDst = ci.copyCtor(dst, pSrc);
+
+         const auto& ti = typer.GetTypeInfo(ci.typeID);
+         if (!ti.hasEntityRef) {
+            continue;
+         }
+
+         for (const auto& field : ti.fields) {
+            auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
+
+            if (filedTypeInfo.hasEntityRef) {
+               // todo: while dont support nested entity ref
+               ASSERT(filedTypeInfo.IsSimpleType());
+
+               // it like from src, because it was copied by value in 'copyCtor'
+               auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
+               if (!*pDstEntity) {
+                  continue;
+               }
+
+               auto uuid = pDstEntity->GetUUID();
+               
+               auto it = hierEntitiesMap.find(uuid);
+               if (it != hierEntitiesMap.end()) {
+                  *pDstEntity = Entity{ it->second.enttEntity, dst.GetScene()};
+               }
+            }
+         }
+      }
+   }
+
+   void Scene::DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
+      ASSERT(root.GetScene() == this);
+      // todo: mb create set with enabled entities?
+      // todo: not fastest solution, find better way to implement copy scene, duplicate logic
+
+      // enable all entities
+      // it only mark for add, so it not lead to init components
+      root.Enable();
+
+      for (auto [_, context] : hierEntitiesMap) {
+         if (context.enabled) {
+            continue;
+         }
+
+         Entity entity{ context.enttEntity, root.GetScene() };
+         EntityDisable(entity);
+      }
+
    }
 
    static string gAssetsPath = "../../assets/";

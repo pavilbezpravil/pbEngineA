@@ -105,12 +105,10 @@ namespace pbe {
 
       static bool viewportToolsWindow = true;
       if (viewportToolsWindow) {
-         auto c = ImVec4{ 0, 0, 0, 0.5 };
-         UI_PUSH_STYLE_COLOR(ImGuiCol_WindowBg, c);
+         UI_PUSH_STYLE_COLOR(ImGuiCol_WindowBg, (ImVec4{ 0, 0, 0, 0.5 }));
 
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowRounding, 10);
-         auto s = ImVec2{ 5, 5 };
-         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, s);
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
 
          if (UI_WINDOW("Viewport tools", &viewportToolsWindow,
             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {

@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Core.h"
+#include "scene/System.h"
 #include "utils/TimedAction.h"
 
 
@@ -12,29 +13,35 @@ namespace pbe {
    void InitPhysics();
    void TermPhysics();
 
-   class PhysicsScene : public PxSimulationEventCallback {
+   class PhysicsScene : public System {
    public:
       PhysicsScene(Scene& scene);
       ~PhysicsScene() override;
 
       void SyncPhysicsWithScene();
-      void Simulation(float dt);
+      void Simulate(float dt);
       void UpdateSceneAfterPhysics();
 
-      void AddRigidActor(Entity entity);
-      void RemoveRigidActor(Entity entity);
+      void OnSetEventHandlers(entt::registry& registry) override;
+      void OnEntityEnable() override;
+      void OnEntityDisable() override;
 
-      void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override {}
-      void onWake(PxActor** actors, PxU32 count) override {}
-      void onSleep(PxActor** actors, PxU32 count) override {}
-      void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override {}
-      void onTrigger(PxTriggerPair* pairs, PxU32 count) override {}
-      void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override {}
+      void OnUpdate(float dt) override;
+
    private:
       PxScene* pxScene = nullptr;
       Scene& scene;
 
       TimedAction stepTimer{60.f};
+
+      void AddRigidActor(Entity entity);
+      void RemoveRigidActor(Entity entity);
+
+      void AddTrigger(Entity entity);
+      void RemoveTrigger(Entity entity);
+
+      void AddDistanceJoint(Entity entity);
+      void RemoveDistanceJoint(Entity entity);
 
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);

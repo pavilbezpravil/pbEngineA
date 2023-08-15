@@ -30,6 +30,7 @@ namespace pbe {
       if (ImGui::TreeNode(ti.name.c_str())) {
          ImGui::Text("typeID: %llu", ti.typeID);
          ImGui::Text("sizeof: %d", ti.typeSizeOf);
+         ImGui::Text("hasEntityRef: %d", ti.hasEntityRef);
 
          if (!ti.fields.empty()) {
             for (const auto& f : ti.fields) {
@@ -79,8 +80,7 @@ namespace pbe {
       return types.at(typeID);
    }
 
-   TypeInfo& Typer::GetTypeInfo(TypeID typeID)
-   {
+   TypeInfo& Typer::GetTypeInfo(TypeID typeID) {
       return types.at(typeID);
    }
 
@@ -162,6 +162,39 @@ namespace pbe {
 
          return success;
       }
+   }
+
+   void Typer::Finalize() {
+      std::unordered_set<TypeID> processedTypeIDs;
+
+      for (auto& entry : types) {
+         TypeInfo& ti = entry.second;
+         ProcessType(ti, processedTypeIDs);
+      }
+   }
+
+   void Typer::ProcessType(TypeInfo& ti, std::unordered_set<TypeID>& processedTypeIDs) {
+      auto processed = processedTypeIDs.find(ti.typeID) != processedTypeIDs.end();
+      if (processed) {
+         return;
+      }
+
+      if (ti.IsSimpleType()) {
+         auto entityTypeID = GetTypeID<Entity>();
+         ti.hasEntityRef = ti.typeID == entityTypeID;
+      } else {
+         for (const auto& field : ti.fields) {
+            auto& filedTypeInfo = GetTypeInfo(field.typeID);
+            ProcessType(filedTypeInfo, processedTypeIDs);
+
+            if (filedTypeInfo.hasEntityRef) {
+               ti.hasEntityRef = true;
+               break;
+            }
+         }
+      }
+
+      processedTypeIDs.insert(ti.typeID);
    }
 
 }

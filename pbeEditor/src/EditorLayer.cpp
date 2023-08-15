@@ -87,6 +87,10 @@ namespace pbe {
          }
       }
 
+      if (auto pScene =GetActiveScene()) {
+         pScene->OnTick();
+      }
+
       if (editorState == State::Play && runtimeScene) {
          runtimeScene->OnUpdate(dt);
       }
@@ -352,6 +356,9 @@ namespace pbe {
          } else {
             dllHandler = LoadLibrary(dllName.data());
          }
+
+         // process new types
+         Typer::Get().Finalize();
 
          if (!dllHandler) {
             WARN("could not load the dynamic library testProj.dll");

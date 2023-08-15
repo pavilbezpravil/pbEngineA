@@ -34,6 +34,17 @@ namespace pbe {
 
       float heightLine = ImGui::GetFrameHeight();
 
+      ImGui::SameLine(contentRegionAvail.x - heightLine * 1.5f);
+      // todo: Undo
+      bool enabled = entity.Enabled();
+      if (ImGui::Checkbox("##EnableInspector", &enabled)) {
+         entity.EnableToggle();
+         edited = true;
+      }
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(enabled ? "Disable" : "Enable");
+      }
+
       ImGui::SameLine(contentRegionAvail.x - heightLine * 0.5f);
       if (ImGui::Button("+", { heightLine , heightLine })) {
          ImGui::OpenPopup("Add Component Popup");
@@ -67,8 +78,7 @@ namespace pbe {
       }
 
       if (UI_TREE_NODE("Scene Transform", DefaultTreeNodeFlags() | ImGuiTreeNodeFlags_DefaultOpen)) {
-         // todo: without name
-         edited |= EditorUI("", entity.GetTransform());
+         edited |= EditorUI(entity.GetTransform());
       }
 
       for (const auto& ci : typer.components) {
@@ -91,8 +101,12 @@ namespace pbe {
             }
 
             if (treeNode) {
-               // todo: without name
-               edited |= EditorUI("", ci.typeID, (byte*)pComponent);
+               if (EditorUI(ci.typeID, (byte*)pComponent)) {
+                  if (ci.onChanged) {
+                     ci.onChanged(pComponent);
+                  }
+                  edited = true;
+               }
             }
          }
       }

@@ -115,6 +115,8 @@ namespace pbe {
       physx::PxRigidActor* pxRigidActor = nullptr;
 
       void SetLinearVelocity(const vec3& v, bool autowake = true);
+
+      void OnChanged();
    };
 
    struct TriggerComponent {
@@ -124,6 +126,12 @@ namespace pbe {
    struct DistanceJointComponent {
       Entity entity0;
       Entity entity1;
+
+      float minDistance = 0;
+      float maxDistance = 0;
+
+      float stiffness = 1000.f;
+      float damping = 0.5;
 
       physx::PxDistanceJoint* pxDistanceJoint = nullptr;
    };

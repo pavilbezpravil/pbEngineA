@@ -14,6 +14,7 @@
 #include "physics/PhysicsScene.h"
 #include "rend/RendRes.h"
 #include "rend/Shader.h"
+#include "typer/Typer.h"
 
 
 namespace pbe {
@@ -21,6 +22,8 @@ namespace pbe {
    Application* sApplication = nullptr;
 
    void Application::OnInit() {
+      Typer::Get().Finalize();
+
       Log::Init();
 
       new Window();
