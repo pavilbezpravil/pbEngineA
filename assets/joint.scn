@@ -1,6 +1,20 @@
 entities:
+  - uuid: 2467802052179178555
+    tag: Joint 1 2
+    SceneTransformComponent:
+      position: [-3.45298719, -6.10232925, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 14280430394613666438
+    DistanceJointComponent:
+      entity0: 10828941295371101528
+      entity1: 7154855269098154875
+      minDistance: 0
+      maxDistance: 0
+      stiffness: 1000
+      damping: 0.5
   - uuid: 4650434831841081626
-    tag: Joint
+    tag: Joint 1 0
     SceneTransformComponent:
       position: [-3.45298719, -6.10232925, 0]
       rotation: [0, -0, 0]
@@ -136,7 +150,7 @@ entities:
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 17726055588690943796
-      children: [14192675390969500913, 10828941295371101528, 7154855269098154875, 4650434831841081626]
+      children: [14192675390969500913, 10828941295371101528, 7154855269098154875, 4650434831841081626, 2467802052179178555]
   - uuid: 15489993667000155759
     tag: Joint
     SceneTransformComponent:

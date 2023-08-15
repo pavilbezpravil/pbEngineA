@@ -89,13 +89,14 @@ namespace pbe {
       auto& trans = entity.GetTransform();
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
-      std::unordered_map<UUID, Entity> hierEntitiesMap;
+      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
       DuplicateHierEntitiesWithMap(duplicatedEntity, entity, false, hierEntitiesMap);
 
       Duplicate(duplicatedEntity, entity, false, hierEntitiesMap);
-      if (!EntityEnabled(entity)) {
-         EntityDisableImmediate(duplicatedEntity);
-      }
+
+      DuplicateEntityEnable(duplicatedEntity, hierEntitiesMap);
+      ProcessDelayedEnable();
+
       return duplicatedEntity;
    }
 
@@ -107,7 +108,7 @@ namespace pbe {
       if (entity.Has<DelayedEnableMarker>()) {
          return;
       }
-      if (entity.HasAny<DelayedDisableMarker>()) {
+      if (entity.Has<DelayedDisableMarker>()) {
          entity.Remove<DelayedDisableMarker>();
          return;
       }
@@ -126,6 +127,10 @@ namespace pbe {
    // todo: when add child to disabled entity, it must be disabled too
    void Scene::EntityDisable(Entity& entity) {
       if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
+         return;
+      }
+      if (entity.Has<DelayedEnableMarker>()) {
+         entity.Remove<DelayedEnableMarker>();
          return;
       }
 
@@ -265,10 +270,13 @@ namespace pbe {
       Entity dstRoot = pScene->CreateWithUUID(srcRoot.GetUUID(), Entity{}, srcRoot.GetName());
       pScene->SetRootEntity(dstRoot);
 
-      std::unordered_map<UUID, Entity> hierEntitiesMap;
+      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
       pScene->DuplicateHierEntitiesWithMap(dstRoot, srcRoot, true, hierEntitiesMap);
 
       pScene->Duplicate(dstRoot, srcRoot, true, hierEntitiesMap);
+
+      pScene->DuplicateEntityEnable(dstRoot, hierEntitiesMap);
+      pScene->ProcessDelayedEnable();
 
       return pScene;
    }
@@ -284,8 +292,10 @@ namespace pbe {
       entity.AddMarker<DisableMarker>();
    }
 
-   void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap) {
-      hierEntitiesMap[src.GetUUID()] = dst;
+   void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
+      hierEntitiesMap[src.GetUUID()] = DuplicateContext{ dst.GetID(), src.Enabled() };
+      // while duplicate entities, disable them
+      dst.GetScene()->EntityDisableImmediate(dst);
 
       auto& srcTrans = src.GetTransform();
 
@@ -295,7 +305,7 @@ namespace pbe {
       }
    }
 
-   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap) {
+   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
       // if copyUUID == true, dst must be in another scene
       ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
 
@@ -308,12 +318,7 @@ namespace pbe {
       dstTrans.scale = srcTrans.scale;
 
       for (auto child : srcTrans.children) {
-         Entity duplicatedChild = hierEntitiesMap[child.GetUUID()];
-
-         // todo: mb all duplicated entities should be disabled by default and after that enabled
-         if (!EntityEnabled(child)) {
-            EntityDisableImmediate(duplicatedChild);
-         }
+         Entity duplicatedChild = { hierEntitiesMap[child.GetUUID()].enttEntity, dst.GetScene()};
          Duplicate(duplicatedChild, child, copyUUID, hierEntitiesMap);
       }
 
@@ -350,11 +355,31 @@ namespace pbe {
                
                auto it = hierEntitiesMap.find(uuid);
                if (it != hierEntitiesMap.end()) {
-                  *pDstEntity = it->second;
+                  *pDstEntity = Entity{ it->second.enttEntity, dst.GetScene()};
                }
             }
          }
       }
+   }
+
+   void Scene::DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
+      ASSERT(root.GetScene() == this);
+      // todo: mb create set with enabled entities?
+      // todo: not fastest solution, find better way to implement copy scene, duplicate logic
+
+      // enable all entities
+      // it only mark for add, so it not lead to init components
+      root.Enable();
+
+      for (auto [_, context] : hierEntitiesMap) {
+         if (context.enabled) {
+            continue;
+         }
+
+         Entity entity{ context.enttEntity, root.GetScene() };
+         EntityDisable(entity);
+      }
+
    }
 
    static string gAssetsPath = "../../assets/";

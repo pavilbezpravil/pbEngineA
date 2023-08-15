@@ -129,8 +129,14 @@ namespace pbe {
 
       void EntityDisableImmediate(Entity& entity);
 
-      void DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap);
-      void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, Entity>& hierEntitiesMap);
+      struct DuplicateContext {
+         entt::entity enttEntity{ entt::null };
+         bool enabled = false;
+      };
+
+      void DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
+      void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
+      void DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
 
       friend Entity;
    };
