@@ -52,6 +52,7 @@ namespace pbe {
 
       void DestroyDelayedEntities();
 
+      // todo: mb DelayedDisableMarker add on 'exludes'?
       template<typename Type, typename... Other, typename... Exclude>
       const auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) const {
          return registry.view<Type, Other...>(excludes);
@@ -139,6 +140,7 @@ namespace pbe {
       void DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
 
       friend Entity;
+      friend CORE_API Own<Scene> SceneDeserialize(std::string_view path);
    };
 
    CORE_API void SceneSerialize(std::string_view path, Scene& scene);

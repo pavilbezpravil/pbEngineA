@@ -376,16 +376,20 @@ namespace pbe {
             continue;
          }
 
-         Entity entity{ context.enttEntity, root.GetScene() };
+         Entity entity{ context.enttEntity, this };
          EntityDisable(entity);
       }
-
    }
 
    static string gAssetsPath = "../../assets/";
 
    string GetAssetsPath(string_view path) {
       return gAssetsPath + path.data();
+   }
+
+   void SomeFunc()
+   {
+      INFO("sdf");
    }
 
    void SceneSerialize(std::string_view path, Scene& scene) {
@@ -451,7 +455,8 @@ namespace pbe {
             entityTag = it["tag"].As<string>();
          }
 
-         scene->CreateWithUUID(UUID{ uuid }, Entity{}, entityTag);
+         Entity entity = scene->CreateWithUUID(UUID{ uuid }, Entity{}, entityTag);
+         scene->EntityDisableImmediate(entity);
       }
 
       // on second iteration create all components
@@ -461,7 +466,7 @@ namespace pbe {
       }
 
       entt::entity rootEntityId = entt::null;
-      for (auto [e, trans] : scene->View<SceneTransformComponent>().each()) {
+      for (auto [e, trans] : scene->ViewAll<SceneTransformComponent>().each()) {
          if (trans.parent) {
             continue;
          }
@@ -471,7 +476,7 @@ namespace pbe {
             auto newRoot = scene->CreateWithUUID(UUID{}, Entity{}, "Scene");
             rootEntityId = newRoot.GetID();
 
-            for (auto [e, trans] : scene->View<SceneTransformComponent>().each()) {
+            for (auto [e, trans] : scene->ViewAll<SceneTransformComponent>().each()) {
                if (!trans.parent) {
                   trans.SetParent(newRoot);
                }
@@ -485,7 +490,12 @@ namespace pbe {
          // break;
       }
 
-      scene->SetRootEntity(Entity{ rootEntityId, scene.get() });
+      Entity rootEntity = { rootEntityId, scene.get() };
+      scene->SetRootEntity(rootEntity);
+
+      // todo: while dont serialize disable state
+      rootEntity.Enable();
+      scene->ProcessDelayedEnable();
 
       gCurrentDeserializedScene = nullptr;
 
@@ -524,11 +534,14 @@ namespace pbe {
 
       Entity entity = scene.GetEntity(uuid);
       if (entity) {
-         entity.RemoveAll<UUIDComponent, TagComponent, SceneTransformComponent>();
+         // todo: нахуй ты это написал, ебаный ишак?
+         // entity.RemoveAll<UUIDComponent, TagComponent, SceneTransformComponent>();
       } else {
          ASSERT(false);
          entity = scene.CreateWithUUID(uuid, Entity{});
       }
+
+      ASSERT(!entity.Enabled());
 
       string name = std::invoke([&] {
          if (deser["tag"]) {
