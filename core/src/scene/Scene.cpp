@@ -405,7 +405,7 @@ namespace pbe {
             {
                std::vector<uint64> entitiesUuids;
 
-               for (auto [_, uuid] : scene.View<UUIDComponent>().each()) {
+               for (auto [_, uuid] : scene.ViewAll<UUIDComponent>().each()) {
                   entitiesUuids.emplace_back((uint64)uuid.uuid);
                }
 
@@ -493,8 +493,6 @@ namespace pbe {
       Entity rootEntity = { rootEntityId, scene.get() };
       scene->SetRootEntity(rootEntity);
 
-      // todo: while dont serialize disable state
-      rootEntity.Enable();
       scene->ProcessDelayedEnable();
 
       gCurrentDeserializedScene = nullptr;
@@ -511,6 +509,11 @@ namespace pbe {
 
          if (const auto* c = entity.TryGet<TagComponent>()) {
             ser.KeyValue("tag", c->tag);
+         }
+
+         if (!entity.Enabled()) {
+            // todo: without value. As I understend, yaml doesnt support key without value
+            ser.KeyValue("disabled", true);
          }
 
          ser.Ser("SceneTransformComponent", entity.GetTransform());
@@ -552,6 +555,8 @@ namespace pbe {
 
       entity.GetOrAdd<TagComponent>().tag = name;
 
+      bool enabled = !deser["disabled"];
+
       deser.Deser("SceneTransformComponent", entity.GetTransform());
 
       const auto& typer = Typer::Get();
@@ -570,6 +575,10 @@ namespace pbe {
             auto* ptr = (byte*)ci.getOrAdd(entity);
             deser.Deser(name, ci.typeID, ptr);
          }
+      }
+
+      if (enabled) {
+         entity.GetScene()->EntityEnable(entity, false);
       }
    }
 }

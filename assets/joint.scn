@@ -1,6 +1,7 @@
 entities:
   - uuid: 2467802052179178555
     tag: Joint 1 2
+    disabled: true
     SceneTransformComponent:
       position: [-3.45298719, -6.10232925, 0]
       rotation: [0, -0, 0]
