@@ -104,7 +104,7 @@ namespace pbe {
       return !entity.HasAny<DisableMarker, DelayedDisableMarker, DelayedEnableMarker>();
    }
 
-   void Scene::EntityEnable(Entity& entity) {
+   void Scene::EntityEnable(Entity& entity, bool withChilds) {
       if (entity.Has<DelayedEnableMarker>()) {
          return;
       }
@@ -116,8 +116,10 @@ namespace pbe {
          return;
       }
 
-      for (auto& child : entity.GetTransform().children) {
-         EntityEnable(child);
+      if (withChilds) {
+         for (auto& child : entity.GetTransform().children) {
+            EntityEnable(child);
+         }
       }
 
       entity.AddMarker<DelayedEnableMarker>();
@@ -125,7 +127,7 @@ namespace pbe {
    }
 
    // todo: when add child to disabled entity, it must be disabled too
-   void Scene::EntityDisable(Entity& entity) {
+   void Scene::EntityDisable(Entity& entity, bool withChilds) {
       if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
          return;
       }
@@ -134,8 +136,10 @@ namespace pbe {
          return;
       }
 
-      for (auto& child : entity.GetTransform().children) {
-         EntityDisable(child);
+      if (withChilds) {
+         for (auto& child : entity.GetTransform().children) {
+            EntityDisable(child);
+         }
       }
 
       entity.AddMarker<DelayedDisableMarker>();
@@ -367,17 +371,13 @@ namespace pbe {
       // todo: mb create set with enabled entities?
       // todo: not fastest solution, find better way to implement copy scene, duplicate logic
 
-      // enable all entities
-      // it only mark for add, so it not lead to init components
-      root.Enable();
-
       for (auto [_, context] : hierEntitiesMap) {
-         if (context.enabled) {
-            continue;
-         }
-
          Entity entity{ context.enttEntity, this };
-         EntityDisable(entity);
+         if (context.enabled) {
+            EntityEnable(entity, false);
+         } else {
+            EntityDisable(entity, false);
+         }
       }
    }
 

@@ -42,8 +42,8 @@ namespace pbe {
 
       // Delayed
       bool EntityEnabled(const Entity& entity) const;
-      void EntityEnable(Entity& entity);
-      void EntityDisable(Entity& entity);
+      void EntityEnable(Entity& entity, bool withChilds = true);
+      void EntityDisable(Entity& entity, bool withChilds = true);
 
       void ProcessDelayedEnable();
 
