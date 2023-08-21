@@ -387,11 +387,6 @@ namespace pbe {
       return gAssetsPath + path.data();
    }
 
-   void SomeFunc()
-   {
-      INFO("sdf");
-   }
-
    void SceneSerialize(std::string_view path, Scene& scene) {
       Serializer ser;
 

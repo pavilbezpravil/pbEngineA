@@ -244,6 +244,7 @@ namespace pbe {
 
       registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(this);
       registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(this);
+      registry.on_update<DistanceJointComponent>().connect<&PhysicsScene::OnUpdateDistanceJoint>(this);
    }
 
    void PhysicsScene::OnEntityEnable() {
@@ -392,23 +393,13 @@ namespace pbe {
          WARN("Cant create distance joint");
          return;
       }
+      dj.pxDistanceJoint = joint;
+
+      // todo: pass DistanceJointComponent or move func to DistanceJointComponent
+      UpdateDistanceJoint(entity);
 
       PxWakeUp(actor0);
       PxWakeUp(actor1);
-
-
-
-      joint->setBreakForce(FloatInfToMax(dj.breakForce), FloatInfToMax(dj.breakTorque));
-
-      joint->setMinDistance(dj.minDistance);
-      joint->setMaxDistance(dj.maxDistance);
-
-      joint->setDamping(dj.damping);
-      joint->setStiffness(dj.stiffness);
-
-      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
-
-      dj.pxDistanceJoint = joint;
    }
 
    void PhysicsScene::RemoveDistanceJoint(Entity entity) {
@@ -419,6 +410,25 @@ namespace pbe {
 
       dj.pxDistanceJoint->release();
       dj.pxDistanceJoint = nullptr;
+   }
+
+   void PhysicsScene::UpdateDistanceJoint(Entity entity) {
+      auto& dj = entity.Get<DistanceJointComponent>();
+      auto joint = dj.pxDistanceJoint;
+      if (!joint) {
+         return;
+      }
+
+      joint->setBreakForce(FloatInfToMax(dj.breakForce), FloatInfToMax(dj.breakTorque));
+
+      joint->setMinDistance(dj.minDistance);
+      joint->setMaxDistance(dj.maxDistance);
+
+      joint->setDamping(dj.damping);
+      joint->setStiffness(dj.stiffness);
+
+      // todo: flags
+      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
@@ -458,6 +468,14 @@ namespace pbe {
       RemoveDistanceJoint(entity);
    }
 
+   void PhysicsScene::OnUpdateDistanceJoint(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      if (entity.Enabled()) {
+         UpdateDistanceJoint(entity);
+      }
+   }
+
+   // todo: remove
    void CreateDistanceJoint(const Entity& entity0, const Entity& entity1) {
       auto joint = PxDistanceJointCreate(*gPhysics, GetPxActor(entity0), PxTransform{ PxIDENTITY{} }, GetPxActor(entity1), PxTransform{ PxIDENTITY{} });
 

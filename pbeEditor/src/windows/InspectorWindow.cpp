@@ -106,6 +106,10 @@ namespace pbe {
                      ci.onChanged(pComponent);
                   }
                   edited = true;
+
+                  if (entity.Enabled()) {
+                     entity.MarkComponentUpdated<DistanceJointComponent>();
+                  }
                }
             }
          }

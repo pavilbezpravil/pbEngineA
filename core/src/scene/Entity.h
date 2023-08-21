@@ -28,6 +28,7 @@ namespace pbe {
       Entity() = default;
       Entity(entt::entity id, Scene* scene);
 
+      // todo: mb remove and add to 'Add' decltype(auto)?
       template<typename T>
       void AddMarker() {
          ASSERT(!Has<T>());
@@ -94,6 +95,12 @@ namespace pbe {
             return *c;
          }
          return Add<T>(std::forward<Cs>(cs)...);
+      }
+
+      template<typename T>
+      void MarkComponentUpdated() {
+         ASSERT(Has<T>());
+         scene->registry.patch<T>(id);
       }
 
       void DestroyDelayed(bool withChilds = true);
