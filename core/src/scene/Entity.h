@@ -112,7 +112,7 @@ namespace pbe {
       void EnableToggle();
 
       bool Valid() const {
-         return id != entt::null;
+         return scene->registry.valid(id);
       }
 
       operator bool() const { return Valid(); } // todo: include Enabled?
