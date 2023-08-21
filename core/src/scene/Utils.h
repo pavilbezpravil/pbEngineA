@@ -23,6 +23,8 @@ namespace pbe {
 
    Entity CORE_API CreateTrigger(Scene& scene, const vec3& pos = {});
 
+   Entity CORE_API SceneAddEntityMenu(Scene& scene);
+
    // todo: 
    template<typename T>
    struct Component {

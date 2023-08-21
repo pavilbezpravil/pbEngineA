@@ -28,6 +28,8 @@ namespace pbe {
 
       void OnUpdate(float dt) override;
 
+      void OnLostFocus() override;
+
       void Zoom(Texture2D& image, vec2 center);
       void Gizmo(const vec2& contentRegion, const vec2& cursorPos);
 
@@ -44,6 +46,7 @@ namespace pbe {
 
    private:
       bool zoomEnable = false;
+      bool cameraMove = false;
    };
 
 }

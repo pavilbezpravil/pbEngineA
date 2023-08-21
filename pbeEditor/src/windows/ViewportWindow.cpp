@@ -197,11 +197,12 @@ namespace pbe {
          if (UI_POPUP("Add")) {
             ImGui::Text("Add");
             ImGui::Separator();
-            // todo: menu items as in scene hierarchy
-            ImGui::Text("Cube");
-            ImGui::Text("Sphere");
-            ImGui::Text("Joint");
-            // ImGui::CloseCurrentPopup();
+
+            Entity addedEntity = SceneAddEntityMenu(*scene);
+            if (addedEntity) {
+               selection->ToggleSelect(addedEntity);
+               // ImGui::CloseCurrentPopup();
+            }
          }
 
          if (zoomEnable) {
@@ -231,14 +232,17 @@ namespace pbe {
 
       camera.NextFrame(); // todo:
 
-      camera.Update(dt);
-
       if (Input::IsKeyDown(VK_RBUTTON)) {
+         cameraMove = true;
          Input::HideMouse(true);
       }
-      if (Input::IsKeyUp(VK_RBUTTON)) {
-         // todo: handle window lost focus
+      if (cameraMove && Input::IsKeyUp(VK_RBUTTON)) {
+         cameraMove = false;
          Input::ShowMouse(true);
+      }
+
+      if (cameraMove) {
+         camera.Update(dt);
       }
 
       if (!Input::IsKeyPressing(VK_RBUTTON)) {
@@ -294,6 +298,14 @@ namespace pbe {
 
          auto& rb = shoot.Get<RigidBodyComponent>();
          rb.SetLinearVelocity(camera.Forward() * 50.f);
+      }
+   }
+
+   void ViewportWindow::OnLostFocus() {
+      INFO("ViewportWindow::OnLostFocus");
+      if (cameraMove) {
+         cameraMove = false;
+         Input::ShowMouse(true);
       }
    }
 

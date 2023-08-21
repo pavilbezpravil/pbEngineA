@@ -40,7 +40,7 @@ namespace pbe {
    }
 
    void Input::HideMouse(bool lock) {
-      ShowCursor(FALSE);
+      while (ShowCursor(FALSE) > 0) {}
       if (lock) {
          LockMousePos(true);
       }
@@ -50,7 +50,7 @@ namespace pbe {
       if (unlock) {
          LockMousePos(false);
       }
-      ShowCursor(TRUE);
+      while (ShowCursor(TRUE) < 0) {}
    }
 
    bool Input::IsKeyDown(int keyCode) {

@@ -19,7 +19,7 @@ namespace pbe {
          }
       }
 
-      void ToggleSelect(Entity entity, bool clearPrev = true) {
+      void ToggleSelect(Entity entity, bool clearPrev) {
          if (clearPrev) {
             ClearSelection();
          }
@@ -30,6 +30,9 @@ namespace pbe {
             Select(entity, clearPrev);
          }
       }
+
+      // check Input ctrl
+      void ToggleSelect(Entity entity);
 
       bool IsSelected(Entity entity) const {
          auto it = std::ranges::find(selected, entity);
