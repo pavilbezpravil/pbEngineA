@@ -102,14 +102,14 @@ namespace pbe {
 
             if (treeNode) {
                if (EditorUI(ci.typeID, (byte*)pComponent)) {
+                  // todo: two way, choose one
                   if (ci.onChanged) {
                      ci.onChanged(pComponent);
                   }
-                  edited = true;
-
                   if (entity.Enabled()) {
-                     entity.MarkComponentUpdated<DistanceJointComponent>();
+                     ci.patch(entity);
                   }
+                  edited = true;
                }
             }
          }

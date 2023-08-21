@@ -2,6 +2,7 @@
 #include "Utils.h"
 
 #include "Component.h"
+#include "physics/PhysComponents.h"
 
 namespace pbe {
 

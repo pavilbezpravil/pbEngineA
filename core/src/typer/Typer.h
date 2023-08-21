@@ -51,6 +51,7 @@ namespace pbe {
 
       std::function<void(void*, const void*)> duplicate; // todo: remove
 
+      std::function<void (Entity&)> patch;
       std::function<void(void*)> onChanged; // todo: remove?
 
       // todo:

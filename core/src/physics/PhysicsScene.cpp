@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "PhysicsScene.h"
+
+#include "PhysComponents.h"
+#include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
 #include "core/Profiler.h"
 #include "scene/Component.h"
@@ -63,33 +66,6 @@ namespace pbe {
                 | PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_LOST
                 | PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eNOTIFY_CONTACT_POINTS;
       return PxFilterFlag::eDEFAULT;
-   }
-
-   static Entity* GetEntity(PxActor* actor) {
-      return (Entity*)actor->userData;
-   }
-
-   static PxTransform GetTransform(const SceneTransformComponent& trans) {
-      return PxTransform{ Vec3ToPx(trans.Position()), QuatToPx(trans.Rotation()) };
-   }
-
-   static PxGeometryHolder GetPhysGeom(const SceneTransformComponent& trans, const GeometryComponent& geom) {
-      // todo: think about tran.scale
-      PxGeometryHolder physGeom;
-      if (geom.type == GeomType::Sphere) {
-         physGeom = PxSphereGeometry(geom.sizeData.x * trans.Scale().x); // todo: scale, default radius == 1 -> diameter == 2 (it is bad)
-      } else if (geom.type == GeomType::Box) {
-         physGeom = PxBoxGeometry(Vec3ToPx(geom.sizeData * trans.Scale() / 2.f));
-      }
-      return physGeom;
-   }
-
-   // todo:
-   static PxRigidActor* GetPxActor(Entity e) {
-      if (!e) return nullptr;
-
-      auto rb = e.TryGet<RigidBodyComponent>();
-      return rb ? rb->pxRigidActor : nullptr;
    }
 
    struct SimulationEventCallback : PxSimulationEventCallback {
@@ -295,10 +271,8 @@ namespace pbe {
 
       PxRigidActor* actor = nullptr;
       if (rb.dynamic) {
-         // todo: density
+         // todo: density, damping
          actor = PxCreateDynamic(*gPhysics, physTrans, physGeom.any(), *gMaterial, 10.0f);
-         // dynamic->setAngularDamping(0.5f);
-         // dynamic->setLinearVelocity(velocity);
       } else {
          actor = PxCreateStatic(*gPhysics, physTrans, physGeom.any(), *gMaterial);
       }
@@ -309,6 +283,8 @@ namespace pbe {
       // on moveCtor actor is copied by value, so it may be not null, but it is actor from another entity
       // ASSERT(!rb.pxRigidActor);
       rb.pxRigidActor = actor;
+
+      rb.OnChanged();
    }
 
    void PhysicsScene::RemoveRigidActor(Entity entity) {
@@ -354,25 +330,6 @@ namespace pbe {
       trigger.pxRigidActor = nullptr;
    }
 
-   static PxRigidDynamic* GetPxRigidDynamic(PxRigidActor* actor) {
-      return actor->is<PxRigidDynamic>();
-   }
-
-   static bool PxIsRigidDynamic(PxRigidActor* actor) {
-      return actor->is<PxRigidDynamic>() != nullptr;
-   }
-
-   static void PxWakeUp(PxRigidActor* actor) {
-      PxRigidDynamic* dynActor = GetPxRigidDynamic(actor);
-      if (dynActor && dynActor->isSleeping()) {
-         dynActor->wakeUp();
-      }
-   }
-
-   static float FloatInfToMax(float v) {
-      return v == INFINITY ? PX_MAX_F32 : v;
-   }
-
    void PhysicsScene::AddDistanceJoint(Entity entity) {
       auto& dj = entity.Get<DistanceJointComponent>();
 
@@ -395,11 +352,7 @@ namespace pbe {
       }
       dj.pxDistanceJoint = joint;
 
-      // todo: pass DistanceJointComponent or move func to DistanceJointComponent
-      UpdateDistanceJoint(entity);
-
-      PxWakeUp(actor0);
-      PxWakeUp(actor1);
+      dj.SetData();
    }
 
    void PhysicsScene::RemoveDistanceJoint(Entity entity) {
@@ -408,27 +361,10 @@ namespace pbe {
          return;
       }
 
+      dj.WakeUp();
+
       dj.pxDistanceJoint->release();
       dj.pxDistanceJoint = nullptr;
-   }
-
-   void PhysicsScene::UpdateDistanceJoint(Entity entity) {
-      auto& dj = entity.Get<DistanceJointComponent>();
-      auto joint = dj.pxDistanceJoint;
-      if (!joint) {
-         return;
-      }
-
-      joint->setBreakForce(FloatInfToMax(dj.breakForce), FloatInfToMax(dj.breakTorque));
-
-      joint->setMinDistance(dj.minDistance);
-      joint->setMaxDistance(dj.maxDistance);
-
-      joint->setDamping(dj.damping);
-      joint->setStiffness(dj.stiffness);
-
-      // todo: flags
-      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
@@ -471,7 +407,7 @@ namespace pbe {
    void PhysicsScene::OnUpdateDistanceJoint(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
       if (entity.Enabled()) {
-         UpdateDistanceJoint(entity);
+         entity.Get<DistanceJointComponent>().SetData();
       }
    }
 

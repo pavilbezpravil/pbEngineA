@@ -42,8 +42,6 @@ namespace pbe {
 
       void AddDistanceJoint(Entity entity);
       void RemoveDistanceJoint(Entity entity);
-      // todo: move to DistanceJointComponent?
-      void UpdateDistanceJoint(Entity entity);
 
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);

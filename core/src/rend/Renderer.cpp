@@ -8,6 +8,7 @@
 #include "core/Profiler.h"
 #include "math/Random.h"
 #include "math/Shape.h"
+#include "physics/PhysComponents.h"
 
 #include "shared/hlslCppShared.hlsli"
 #include "system/Water.h"
@@ -708,6 +709,10 @@ namespace pbe {
             // todo: OBB
             // todo: box, sphere, capsule
             dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f }, vec4_One);
+         }
+
+         for (auto [_, joint] : scene.View<DistanceJointComponent>().each()) {
+            dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{0, 1, 0, 1});
          }
 
          dbgRend.Render(cmd, camera);

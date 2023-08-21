@@ -109,36 +109,6 @@ namespace pbe {
       vec3 sizeData = vec3_One; // todo: full size
    };
 
-   struct CORE_API RigidBodyComponent {
-      bool dynamic = false;
-
-      physx::PxRigidActor* pxRigidActor = nullptr;
-
-      void SetLinearVelocity(const vec3& v, bool autowake = true);
-
-      void OnChanged();
-   };
-
-   struct TriggerComponent {
-      physx::PxRigidActor* pxRigidActor = nullptr;
-   };
-
-   struct DistanceJointComponent {
-      Entity entity0;
-      Entity entity1;
-
-      float minDistance = 0;
-      float maxDistance = 0;
-
-      float stiffness = 1000.f;
-      float damping = 0.5;
-
-      float breakForce = INFINITY;
-      float breakTorque = INFINITY;
-
-      physx::PxDistanceJoint* pxDistanceJoint = nullptr;
-   };
-
    struct LightComponent {
       vec3 color{1};
       float intensity = 1;

@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "math/Random.h"
+#include "physics/PhysComponents.h"
 #include "scene/Component.h"
 #include "scene/Utils.h"
 #include "script/Script.h"

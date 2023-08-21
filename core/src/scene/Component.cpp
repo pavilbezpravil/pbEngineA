@@ -139,27 +139,6 @@ namespace pbe {
       TYPER_FIELD(sizeData)
    TYPER_END()
 
-   TYPER_BEGIN(RigidBodyComponent)
-      TYPER_FIELD(dynamic)
-   TYPER_END()
-
-   TYPER_BEGIN(TriggerComponent)
-   TYPER_END()
-
-   TYPER_BEGIN(DistanceJointComponent)
-      TYPER_FIELD(entity0)
-      TYPER_FIELD(entity1)
-
-      TYPER_FIELD(minDistance)
-      TYPER_FIELD(maxDistance)
-
-      TYPER_FIELD(stiffness)
-      TYPER_FIELD(damping)
-
-      TYPER_FIELD(breakForce)
-      TYPER_FIELD(breakTorque)
-   TYPER_END()
-
    TYPER_BEGIN(LightComponent)
       TYPER_FIELD(color)
       TYPER_FIELD(intensity)
@@ -435,24 +414,11 @@ namespace pbe {
       return editted;
    }
 
-   void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
-      // todo:
-      auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
-      dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
-   }
-
-   void RigidBodyComponent::OnChanged() {
-      INFO(__FUNCDNAME__);
-   }
-
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
       INTERNAL_ADD_COMPONENT(CameraComponent);
       INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
-      INTERNAL_ADD_COMPONENT(RigidBodyComponent);
-      INTERNAL_ADD_COMPONENT(TriggerComponent);
-      INTERNAL_ADD_COMPONENT(DistanceJointComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);

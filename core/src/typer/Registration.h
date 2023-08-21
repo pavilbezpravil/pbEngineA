@@ -157,6 +157,7 @@ namespace pbe {
       \
       ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
       \
+      ci.patch = [](Entity& e) { e.MarkComponentUpdated<Component>(); }; \
       ci.onChanged = GetOnChanged<Component>(); \
       \
       typer.RegisterComponent(std::move(ci)); \
