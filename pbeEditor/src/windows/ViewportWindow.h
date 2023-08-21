@@ -47,6 +47,9 @@ namespace pbe {
    private:
       bool zoomEnable = false;
       bool cameraMove = false;
+
+      void StartCameraMove();
+      void StopCameraMove();
    };
 
 }

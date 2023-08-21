@@ -96,6 +96,15 @@ namespace pbe {
    }
 
    void ViewportWindow::OnWindowUI() {
+      if (focused) {
+         if (Input::IsKeyDown(VK_RBUTTON)) {
+            StartCameraMove();
+         }
+         if (Input::IsKeyUp(VK_RBUTTON)) {
+            StopCameraMove();
+         }
+      }
+
       static int item_current = 0;
       static float renderScale = 1;
       // todo:
@@ -190,7 +199,7 @@ namespace pbe {
          ImGui::Image(srv, imSize);
 
          // todo: window style
-         if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A')) {
+         if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A') && !cameraMove) {
             ImGui::OpenPopup("Add");
          }
 
@@ -201,7 +210,6 @@ namespace pbe {
             Entity addedEntity = SceneAddEntityMenu(*scene);
             if (addedEntity) {
                selection->ToggleSelect(addedEntity);
-               // ImGui::CloseCurrentPopup();
             }
          }
 
@@ -231,15 +239,6 @@ namespace pbe {
       }
 
       camera.NextFrame(); // todo:
-
-      if (Input::IsKeyDown(VK_RBUTTON)) {
-         cameraMove = true;
-         Input::HideMouse(true);
-      }
-      if (cameraMove && Input::IsKeyUp(VK_RBUTTON)) {
-         cameraMove = false;
-         Input::ShowMouse(true);
-      }
 
       if (cameraMove) {
          camera.Update(dt);
@@ -302,11 +301,7 @@ namespace pbe {
    }
 
    void ViewportWindow::OnLostFocus() {
-      INFO("ViewportWindow::OnLostFocus");
-      if (cameraMove) {
-         cameraMove = false;
-         Input::ShowMouse(true);
-      }
+      StopCameraMove();
    }
 
    void ViewportWindow::Zoom(Texture2D& image, vec2 center) {
@@ -371,4 +366,19 @@ namespace pbe {
          }
       }
    }
+
+   void ViewportWindow::StartCameraMove() {
+      if (!cameraMove) {
+         cameraMove = true;
+         Input::HideMouse(true);
+      }
+   }
+
+   void ViewportWindow::StopCameraMove() {
+      if (cameraMove) {
+         cameraMove = false;
+         Input::ShowMouse(true);
+      }
+   }
+
 }
