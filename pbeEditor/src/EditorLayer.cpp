@@ -87,7 +87,7 @@ namespace pbe {
          }
       }
 
-      if (auto pScene =GetActiveScene()) {
+      if (auto pScene = GetActiveScene()) {
          pScene->OnTick();
       }
 
@@ -241,9 +241,30 @@ namespace pbe {
          }
 
          window->OnBefore();
+
          if (UI_WINDOW(window->name.c_str(), &window->show)) {
+            if (ImGui::IsWindowHovered() && (!ImGui::IsAnyItemActive() || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+               ImGui::SetWindowFocus();
+            }
+
+            bool focused = ImGui::IsWindowFocused();
+            if (window->focused != focused) {
+               window->focused = focused;
+               if (focused) {
+                  window->OnFocus();
+               } else {
+                  window->OnLostFocus();
+               }
+            }
+
             window->OnWindowUI();
+         } else {
+            if (window->focused) {
+               window->focused = false;
+               window->OnLostFocus();
+            }
          }
+
          window->OnAfter();
       }
    }

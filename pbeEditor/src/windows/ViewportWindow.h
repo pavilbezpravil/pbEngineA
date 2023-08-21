@@ -38,13 +38,11 @@ namespace pbe {
       Renderer* renderer = {}; // todo:
       RenderContext renderContext;
 
-      bool enableInput = false;
       bool freeCamera = true;
 
       GizmoCfg gizmoCfg;
 
    private:
-      bool selectEntityUnderCursor = false;
       bool zoomEnable = false;
    };
 

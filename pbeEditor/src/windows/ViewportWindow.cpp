@@ -136,21 +136,18 @@ namespace pbe {
          }
       }
 
-      enableInput = ImGui::IsWindowHovered();
-
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (selectEntityUnderCursor) {
+      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
          bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
-         if (entityID != (uint) -1) {
-            Entity e{ entt::entity(entityID), scene};
+         if (entityID != (uint)-1) {
+            Entity e{ entt::entity(entityID), scene };
             selection->ToggleSelect(e, clearPrevSelection);
          } else if (clearPrevSelection) {
             selection->ClearSelection();
          }
-         selectEntityUnderCursor = false;
       }
 
       auto imSize = ImGui::GetContentRegionAvail();
@@ -192,6 +189,21 @@ namespace pbe {
          auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
+         // todo: window style
+         if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A')) {
+            ImGui::OpenPopup("Add");
+         }
+
+         if (UI_POPUP("Add")) {
+            ImGui::Text("Add");
+            ImGui::Separator();
+            // todo: menu items as in scene hierarchy
+            ImGui::Text("Cube");
+            ImGui::Text("Sphere");
+            ImGui::Text("Joint");
+            // ImGui::CloseCurrentPopup();
+         }
+
          if (zoomEnable) {
             Zoom(*image, cursorPixelIdx);
          }
@@ -213,18 +225,12 @@ namespace pbe {
 
    void ViewportWindow::OnUpdate(float dt) {
       // todo:
-      if (!enableInput) {
+      if (!focused) {
          return;
       }
 
-      camera.NextFrame();
+      camera.NextFrame(); // todo:
 
-      if (Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
-         selectEntityUnderCursor = true;
-      }
-
-      // todo:
-      // ImGui::SetWindowFocus(name.data());
       camera.Update(dt);
 
       if (Input::IsKeyDown(VK_RBUTTON)) {

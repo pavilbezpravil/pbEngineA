@@ -17,8 +17,12 @@ namespace pbe {
 
       virtual void OnUpdate(float dt) {}
 
+      virtual void OnFocus() {}
+      virtual void OnLostFocus() {}
+
       std::string name{ "EditorWindow" };
       bool show = true;
+      bool focused = false;
    };
 
 }
