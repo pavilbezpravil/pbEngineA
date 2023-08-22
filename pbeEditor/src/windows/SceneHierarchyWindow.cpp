@@ -106,7 +106,7 @@ namespace pbe {
          }
 
          if (UI_POPUP_CONTEXT_ITEM()) {
-            ImGui::Text("\"%s\"", name);
+            ImGui::MenuItem(name, nullptr, false, false);
 
             ImGui::Separator();
 
@@ -117,7 +117,7 @@ namespace pbe {
 
             ImGui::Separator();
 
-            if (ImGui::Button("Delete")) {
+            if (ImGui::MenuItem("Delete")) {
                // todo: add to pending
                Undo::Get().Delete(entity);
                if (selection) {
@@ -126,21 +126,19 @@ namespace pbe {
                pScene->DestroyImmediate(entity);
             }
 
-            if (ImGui::Button("Unparent")) {
+            if (ImGui::MenuItem("Unparent")) {
                trans.SetParent();
             }
 
-            if (ImGui::Button("Close")) {
-               ImGui::CloseCurrentPopup();
-            }
+            ImGui::Separator();
 
-            if (ImGui::Button("Save to file")) {
+            if (ImGui::MenuItem("Save to file")) {
                Serializer ser;
                EntitySerialize(ser, entity);
                // ser.SaveToFile(std::format("{}.yaml", entity.GetName()));
                ser.SaveToFile("entity.yaml");
             }
-            if (ImGui::Button("Load from file")) {
+            if (ImGui::MenuItem("Load from file")) {
                auto deser = Deserializer::FromFile("entity.yaml");
                EntityDeserialize(deser, *entity.GetScene());
             }

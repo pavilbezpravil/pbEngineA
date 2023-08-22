@@ -78,10 +78,12 @@ namespace pbe {
          bool jointEnabled = selection && selection->selected.size() == 2;
          if (UI_MENU("Joints", jointEnabled)) {
             if (ImGui::MenuItem("Distance")) {
-               auto entity = CreateEmpty(scene, "Distance Joint");
+               Entity parent = selection->selected[0];
+
+               auto entity = CreateEmpty(scene, "Distance Joint", parent);
 
                DistanceJointComponent joint{};
-               joint.entity0 = selection->selected[0];
+               joint.entity0 = parent;
                joint.entity1 = selection->selected[1];
                entity.Add<DistanceJointComponent>(std::move(joint));
 
