@@ -203,13 +203,18 @@ namespace pbe {
             ImGui::OpenPopup("Add");
          }
 
-         if (UI_POPUP("Add")) {
-            ImGui::Text("Add");
-            ImGui::Separator();
+         {
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 7, 7 }));
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_PopupRounding, 7 );
 
-            Entity addedEntity = SceneAddEntityMenu(*scene);
-            if (addedEntity) {
-               selection->ToggleSelect(addedEntity);
+            if (UI_POPUP("Add")) {
+               ImGui::Text("Add");
+               ImGui::Separator();
+
+               Entity addedEntity = SceneAddEntityMenu(*scene);
+               if (addedEntity) {
+                  selection->ToggleSelect(addedEntity);
+               }
             }
          }
 
