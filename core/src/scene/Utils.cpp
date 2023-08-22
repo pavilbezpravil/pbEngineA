@@ -2,6 +2,7 @@
 #include "Utils.h"
 
 #include "Component.h"
+#include "../../../pbeEditor/src/EditorSelection.h"
 #include "gui/Gui.h"
 #include "math/Random.h"
 #include "physics/PhysComponents.h"
@@ -54,7 +55,7 @@ namespace pbe {
       return entity;
    }
 
-   Entity SceneAddEntityMenu(Scene& scene) {
+   Entity SceneAddEntityMenu(Scene& scene, EditorSelection* selection) {
       if (ImGui::MenuItem("Create Empty")) {
          return CreateEmpty(scene);
       }
@@ -72,6 +73,20 @@ namespace pbe {
          }
          if (ImGui::MenuItem("Trigger")) {
             return CreateTrigger(scene);
+         }
+
+         bool jointEnabled = selection && selection->selected.size() == 2;
+         if (UI_MENU("Joints", jointEnabled)) {
+            if (ImGui::MenuItem("Distance")) {
+               auto entity = CreateEmpty(scene, "Distance Joint");
+
+               DistanceJointComponent joint{};
+               joint.entity0 = selection->selected[0];
+               joint.entity1 = selection->selected[1];
+               entity.Add<DistanceJointComponent>(std::move(joint));
+
+               return entity;
+            }
          }
       }
 

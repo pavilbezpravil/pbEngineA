@@ -4,6 +4,8 @@
 
 namespace pbe {
 
+   class EditorSelection;
+
    Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {});
 
    struct CubeDesc {
@@ -23,7 +25,7 @@ namespace pbe {
 
    Entity CORE_API CreateTrigger(Scene& scene, const vec3& pos = {});
 
-   Entity CORE_API SceneAddEntityMenu(Scene& scene);
+   Entity CORE_API SceneAddEntityMenu(Scene& scene, EditorSelection* selection = nullptr);
 
    // todo: 
    template<typename T>

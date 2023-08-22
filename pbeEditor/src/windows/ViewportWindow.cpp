@@ -198,7 +198,6 @@ namespace pbe {
          auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
-         // todo: window style
          if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A') && !cameraMove) {
             ImGui::OpenPopup("Add");
          }
@@ -207,17 +206,24 @@ namespace pbe {
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 7, 7 }));
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_PopupRounding, 7 );
 
+            const auto& colorBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+            UI_PUSH_STYLE_COLOR(ImGuiCol_PopupBg, (ImVec4{ colorBg.x, colorBg.y, colorBg.z, 0.75}));
+
             if (UI_POPUP("Add")) {
                ImGui::Text("Add");
                ImGui::Separator();
 
-               Entity addedEntity = SceneAddEntityMenu(*scene);
+               Entity addedEntity = SceneAddEntityMenu(*scene, selection);
                if (addedEntity) {
                   selection->ToggleSelect(addedEntity);
                }
             }
          }
 
+         // zoom
+         if (Input::IsKeyDown('V')) {
+            zoomEnable = !zoomEnable;
+         }
          if (zoomEnable) {
             Zoom(*image, cursorPixelIdx);
          }
@@ -268,11 +274,6 @@ namespace pbe {
             auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
          }
-      }
-
-      // zoom
-      if (Input::IsKeyDown('V')) {
-         zoomEnable = !zoomEnable;
       }
 
       if (Input::IsKeyDown('X')) { // todo: other key
