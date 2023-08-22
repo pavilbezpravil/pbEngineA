@@ -95,12 +95,14 @@ struct RayHit {
 RayHit CreateRayHit() {
     RayHit hit;
     hit.position = 0;
-    hit.tMin = 0.001; // todo:
+    hit.tMin = 0.0001; // todo:
     hit.tMax = INF;
     hit.normal = 0;
     hit.materialID = 0;
     return hit;
 }
+
+// todo: stop trace if hit from inside
 
 bool IntersectGroundPlane(Ray ray, inout RayHit bestHit) {
     // Calculate distance along the ray where the ground plane is intersected
@@ -252,7 +254,7 @@ float3 RayColor(Ray ray, inout uint seed) {
 
                 ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
 
-                float NDotRayDir =  max(dot(N, ray.direction), 0);
+                float NDotRayDir = max(dot(N, ray.direction), 0);
                 energy *= albedo * NDotRayDir;
             } else {
                 // todo:
