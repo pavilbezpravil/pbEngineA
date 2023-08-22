@@ -31,7 +31,7 @@ namespace pbe {
 
          // todo: undo
          if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
-            Entity entity = SceneAddEntityMenu(scene);
+            Entity entity = SceneAddEntityMenu(scene, vec3_Zero); // todo: spawnPosHint
             if (entity) {
                ToggleSelectEntity(entity);
             }
@@ -110,7 +110,7 @@ namespace pbe {
 
             ImGui::Separator();
 
-            Entity addedEntity = SceneAddEntityMenu(*pScene);
+            Entity addedEntity = SceneAddEntityMenu(*pScene, vec3_Zero); // todo: spawnPosHint
             if (addedEntity) {
                ToggleSelectEntity(addedEntity);
             }

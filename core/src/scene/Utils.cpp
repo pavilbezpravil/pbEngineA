@@ -55,24 +55,24 @@ namespace pbe {
       return entity;
    }
 
-   Entity SceneAddEntityMenu(Scene& scene, EditorSelection* selection) {
+   Entity SceneAddEntityMenu(Scene& scene, const vec3& spawnPosHint, EditorSelection* selection) {
       if (ImGui::MenuItem("Create Empty")) {
          return CreateEmpty(scene);
       }
 
-      if (UI_MENU("Geometry")) {
-         // todo: add just geom without physics
-      }
+      // if (UI_MENU("Geometry")) {
+      //    // todo: add just geom without physics
+      // }
 
       if (UI_MENU("Physics")) {
          if (ImGui::MenuItem("Dynamic Cube")) {
-            return CreateCube(scene);
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .dynamic = true });
          }
          if (ImGui::MenuItem("Static Cube")) {
-            return CreateCube(scene, CubeDesc{ .dynamic = false });
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .dynamic = false });
          }
          if (ImGui::MenuItem("Trigger")) {
-            return CreateTrigger(scene);
+            return CreateTrigger(scene, spawnPosHint);
          }
 
          bool jointEnabled = selection && selection->selected.size() == 2;
@@ -80,7 +80,7 @@ namespace pbe {
             if (ImGui::MenuItem("Distance")) {
                Entity parent = selection->selected[0];
 
-               auto entity = CreateEmpty(scene, "Distance Joint", parent);
+               auto entity = CreateEmpty(scene, "Distance Joint", parent, vec3_Zero);
 
                DistanceJointComponent joint{};
                joint.entity0 = parent;
@@ -146,6 +146,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create wall")) {
             Entity root = scene.Create("Wall");
+            root.GetTransform().position = spawnPosHint;
 
             int size = 10;
             for (int y = 0; y < size; ++y) {
@@ -162,6 +163,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create stack tri")) {
             Entity root = scene.Create("Stack tri");
+            root.GetTransform().position = spawnPosHint;
 
             int size = 10;
             for (int y = 0; y < size; ++y) {
@@ -179,6 +181,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create stack")) {
             Entity root = scene.Create("Stack");
+            root.GetTransform().position = spawnPosHint;
 
             int size = 10;
             for (int i = 0; i < size; ++i) {
@@ -194,7 +197,7 @@ namespace pbe {
          if (ImGui::MenuItem("Create chain")) {
             Entity root = CreateCube(scene, CubeDesc{
                .namePrefix = "Chain",
-               .pos = vec3{0, 10, 0},
+               .pos = spawnPosHint,
                .dynamic = false,
                .color = Random::Color() });
 

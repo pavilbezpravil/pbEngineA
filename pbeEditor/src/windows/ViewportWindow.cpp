@@ -213,7 +213,10 @@ namespace pbe {
                ImGui::Text("Add");
                ImGui::Separator();
 
-               Entity addedEntity = SceneAddEntityMenu(*scene, selection);
+               // todo: throw ray
+               auto spawnPos = camera.position + camera.Forward() * 10.f;
+
+               Entity addedEntity = SceneAddEntityMenu(*scene, spawnPos, selection);
                if (addedEntity) {
                   selection->ToggleSelect(addedEntity);
                }

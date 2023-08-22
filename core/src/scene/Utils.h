@@ -25,7 +25,7 @@ namespace pbe {
 
    Entity CORE_API CreateTrigger(Scene& scene, const vec3& pos = {});
 
-   Entity CORE_API SceneAddEntityMenu(Scene& scene, EditorSelection* selection = nullptr);
+   Entity CORE_API SceneAddEntityMenu(Scene& scene, const vec3& spawnPosHint, EditorSelection* selection = nullptr);
 
    // todo: 
    template<typename T>
