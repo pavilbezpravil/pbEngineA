@@ -52,7 +52,7 @@ namespace pbe {
 
          ~Menu() {
             if (opened) {
-               ImGui::End();
+               ImGui::EndMenu();
             }
          }
 

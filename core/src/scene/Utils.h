@@ -4,7 +4,7 @@
 
 namespace pbe {
 
-   class EditorSelection;
+   struct EditorSelection;
 
    Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {});
 
