@@ -154,6 +154,20 @@ namespace pbe {
       PX_RELEASE(pxScene);
    }
 
+   Entity PhysicsScene::RayCast(const vec3& origin, const vec3& dir, float maxDistance) {
+      PxVec3 pxOrigin = Vec3ToPx(origin);
+      PxVec3 pxDir = Vec3ToPx(dir);
+      PxRaycastBuffer hit;
+
+      if (pxScene->raycast(pxOrigin, pxDir, maxDistance, hit)) {
+         ASSERT(hit.hasBlock);
+         if (hit.hasBlock) {
+           return *GetEntity(hit.block.actor);
+         }
+      }
+      return Entity{};
+   }
+
    void PhysicsScene::SyncPhysicsWithScene() {
       // todo: only for changed entities
 

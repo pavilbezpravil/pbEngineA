@@ -2,6 +2,7 @@
 #include "core/Core.h"
 #include "scene/System.h"
 #include "utils/TimedAction.h"
+#include "math/Types.h"
 
 
 namespace pbe {
@@ -13,10 +14,13 @@ namespace pbe {
    void InitPhysics();
    void TermPhysics();
 
-   class PhysicsScene : public System {
+   class CORE_API PhysicsScene : public System {
    public:
       PhysicsScene(Scene& scene);
       ~PhysicsScene() override;
+
+      // todo: return RayCastResult
+      Entity RayCast(const vec3& origin, const vec3& dir, float maxDistance);
 
       void SyncPhysicsWithScene();
       void Simulate(float dt);

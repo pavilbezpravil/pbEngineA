@@ -111,7 +111,8 @@ namespace pbe {
 
       uint EntitiesCount() const;
 
-      // PhysicsScene* GetPhysics() { return pPhysics; }
+      // todo:
+      PhysicsScene* GetPhysics() { return (PhysicsScene*)systems[0].get(); }
 
       Own<Scene> Copy() const;
 

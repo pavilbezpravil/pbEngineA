@@ -15,6 +15,7 @@
 #include "app/Window.h"
 #include "gui/Gui.h"
 #include "physics/PhysComponents.h"
+#include "physics/PhysicsScene.h"
 #include "scene/Utils.h"
 #include "utils/TimedAction.h"
 
@@ -213,8 +214,14 @@ namespace pbe {
                ImGui::Text("Add");
                ImGui::Separator();
 
-               // todo: throw ray
-               auto spawnPos = camera.position + camera.Forward() * 10.f;
+               // default spawn pos
+               auto spawnPos = camera.position + camera.Forward() * 3.f;
+
+               Entity hittedEntity = scene->GetPhysics()->RayCast(camera.position, camera.Forward(), 100.f);
+               if (hittedEntity) {
+                  // todo: sweep?
+                  spawnPos = hittedEntity.Get<SceneTransformComponent>().Position();
+               }
 
                Entity addedEntity = SceneAddEntityMenu(*scene, spawnPos, selection);
                if (addedEntity) {
