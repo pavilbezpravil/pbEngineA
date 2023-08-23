@@ -290,6 +290,7 @@ namespace pbe {
          if (Input::IsKeyDown('F') && selection->FirstSelected()) {
             auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
+            camera.UpdateView();
          }
       }
 
