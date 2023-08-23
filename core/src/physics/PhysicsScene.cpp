@@ -7,6 +7,7 @@
 #include "core/Profiler.h"
 #include "scene/Component.h"
 #include "scene/Entity.h"
+#include "PhysQuery.h"
 
 
 namespace pbe {
@@ -154,18 +155,23 @@ namespace pbe {
       PX_RELEASE(pxScene);
    }
 
-   Entity PhysicsScene::RayCast(const vec3& origin, const vec3& dir, float maxDistance) {
+   RayCastResult PhysicsScene::RayCast(const vec3& origin, const vec3& dir, float maxDistance) {
       PxVec3 pxOrigin = Vec3ToPx(origin);
       PxVec3 pxDir = Vec3ToPx(dir);
       PxRaycastBuffer hit;
 
-      if (pxScene->raycast(pxOrigin, pxDir, maxDistance, hit)) {
+      if (pxScene->raycast(pxOrigin, pxDir, maxDistance, hit, PxHitFlag::ePOSITION | PxHitFlag::eNORMAL)) {
          ASSERT(hit.hasBlock);
+         ASSERT(hit.nbTouches == 0);
          if (hit.hasBlock) {
-           return *GetEntity(hit.block.actor);
+            return RayCastResult {
+                  .physActor = *GetEntity(hit.block.actor),
+                  .position = PxVec3ToPBE(hit.block.position),
+                  .normal = PxVec3ToPBE(hit.block.normal),
+               };
          }
       }
-      return Entity{};
+      return RayCastResult{};
    }
 
    void PhysicsScene::SyncPhysicsWithScene() {

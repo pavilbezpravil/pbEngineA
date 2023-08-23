@@ -18,6 +18,7 @@
 #include "physics/PhysicsScene.h"
 #include "scene/Utils.h"
 #include "utils/TimedAction.h"
+#include "physics/PhysQuery.h"
 
 
 namespace pbe {
@@ -215,13 +216,14 @@ namespace pbe {
                ImGui::Separator();
 
                // default spawn pos
-               auto spawnPos = camera.position + camera.Forward() * 3.f;
-
-               Entity hittedEntity = scene->GetPhysics()->RayCast(camera.position, camera.Forward(), 100.f);
-               if (hittedEntity) {
-                  // todo: sweep?
-                  spawnPos = hittedEntity.Get<SceneTransformComponent>().Position();
-               }
+               auto spawnPos = std::invoke([&]() {
+                  if (auto result = scene->GetPhysics()->RayCast(camera.position,camera.Forward(), 100.f)) {
+                     // todo: sweep?
+                     return result.position;
+                  } else {
+                     return camera.position + camera.Forward() * 3.f;
+                  }
+               }); 
 
                Entity addedEntity = SceneAddEntityMenu(*scene, spawnPos, selection);
                if (addedEntity) {

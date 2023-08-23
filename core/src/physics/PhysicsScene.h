@@ -14,13 +14,14 @@ namespace pbe {
    void InitPhysics();
    void TermPhysics();
 
+   struct RayCastResult;
+
    class CORE_API PhysicsScene : public System {
    public:
       PhysicsScene(Scene& scene);
       ~PhysicsScene() override;
 
-      // todo: return RayCastResult
-      Entity RayCast(const vec3& origin, const vec3& dir, float maxDistance);
+      RayCastResult RayCast(const vec3& origin, const vec3& dir, float maxDistance);
 
       void SyncPhysicsWithScene();
       void Simulate(float dt);
