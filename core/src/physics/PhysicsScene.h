@@ -48,8 +48,8 @@ namespace pbe {
       void AddTrigger(Entity entity);
       void RemoveTrigger(Entity entity);
 
-      void AddDistanceJoint(Entity entity);
-      void RemoveDistanceJoint(Entity entity);
+      void AddJoint(Entity entity);
+      void RemoveJoint(Entity entity);
 
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
@@ -58,12 +58,9 @@ namespace pbe {
       void OnConstructTrigger(entt::registry& registry, entt::entity entity);
       void OnDestroyTrigger(entt::registry& registry, entt::entity entity);
 
-      void OnConstructDistanceJoint(entt::registry& registry, entt::entity entity);
-      void OnDestroyDistanceJoint(entt::registry& registry, entt::entity entity);
-      void OnUpdateDistanceJoint(entt::registry& registry, entt::entity entity);
+      void OnConstructJoint(entt::registry& registry, entt::entity entity);
+      void OnDestroyJoint(entt::registry& registry, entt::entity entity);
+      void OnUpdateJoint(entt::registry& registry, entt::entity entity);
    };
-
-   // todo:
-   CORE_API void CreateDistanceJoint(const Entity& entity0, const Entity& entity1);
 
 }

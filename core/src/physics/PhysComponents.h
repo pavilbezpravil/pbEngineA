@@ -28,9 +28,26 @@ namespace pbe {
       physx::PxRigidActor* pxRigidActor = nullptr;
    };
 
-   struct DistanceJointComponent {
+   enum class JointType {
+      Fixed,
+      Distance,
+      Revolute,
+      Spherical,
+      Prismatic,
+      // D6,
+      // Gear,
+      // RackAndPinion,
+      // Contact
+   };
+
+   struct JointComponent {
+      JointType type = JointType::Distance;
+
       Entity entity0;
       Entity entity1;
+
+      // vec3 anchor0;
+      // vec3 anchor1;
 
       float minDistance = 0;
       float maxDistance = 0;
@@ -40,13 +57,16 @@ namespace pbe {
 
       float breakForce = INFINITY;
       float breakTorque = INFINITY;
+      bool collisionEnable = false;
 
-      physx::PxDistanceJoint* pxDistanceJoint = nullptr;
+      physx::PxJoint* pxJoint = nullptr;
 
-      void SetData();
+      JointComponent() = default;
+      JointComponent(JointType type);
+
+      void SetData(physx::PxPhysics* pxPhys);
 
       void WakeUp();
    };
-
 
 }

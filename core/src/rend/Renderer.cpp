@@ -711,8 +711,31 @@ namespace pbe {
             dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f }, vec4_One);
          }
 
-         for (auto [_, joint] : scene.View<DistanceJointComponent>().each()) {
-            dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{0, 1, 0, 1});
+         for (auto [_, joint] : scene.View<JointComponent>().each()) {
+            dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{ 1, 1, 1, 1 });
+
+            auto trans0 = joint.entity0.GetTransform();
+
+            auto pos0 = trans0.Position();
+            auto pos1 = joint.entity1.GetTransform().Position();
+            auto dir = glm::normalize(pos1 - pos0);
+
+            if (joint.type == JointType::Fixed) {
+               
+            } else if (joint.type == JointType::Distance) {
+               auto posMin = pos0 + dir * joint.minDistance;
+               auto posMax = pos0 + dir * joint.maxDistance;
+               dbgRend.DrawLine(posMin, posMax, vec4{ 0, 1, 0, 1 });
+            } else if (joint.type == JointType::Revolute) {
+               dbgRend.DrawLine(pos0, pos0 + trans0.Right() * 3.f, vec4{ 1, 0, 0, 1 });
+            } else if (joint.type == JointType::Spherical) {
+               
+            } else if (joint.type == JointType::Prismatic) {
+               // todo:upper limmit
+               dbgRend.DrawLine(pos0 + trans0.Right() * joint.minDistance, pos0 + trans0.Right() * joint.maxDistance, vec4{ 0, 1, 0, 1 });
+            } else {
+               UNIMPLEMENTED();
+            }
          }
 
          dbgRend.Render(cmd, camera);

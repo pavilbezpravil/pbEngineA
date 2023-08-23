@@ -77,17 +77,38 @@ namespace pbe {
 
          bool jointEnabled = selection && selection->selected.size() == 2;
          if (UI_MENU("Joints", jointEnabled)) {
-            if (ImGui::MenuItem("Distance")) {
-               Entity parent = selection->selected[0];
+            Entity parent = selection->selected[0];
 
-               auto entity = CreateEmpty(scene, "Distance Joint", parent, vec3_Zero);
+            JointComponent joint{};
+            joint.entity0 = parent;
+            joint.entity1 = selection->selected[1];
 
-               DistanceJointComponent joint{};
-               joint.entity0 = parent;
-               joint.entity1 = selection->selected[1];
-               entity.Add<DistanceJointComponent>(std::move(joint));
+            auto createJoint = [&](JointType type, string_view name) {
+               joint.type = type;
 
+               auto entity = CreateEmpty(scene, name, parent, vec3_Zero);
+               entity.Add<JointComponent>(std::move(joint));
                return entity;
+            };
+
+            if (ImGui::MenuItem("Fixed")) {
+               return createJoint(JointType::Fixed, "Fixed Joint");
+            }
+
+            if (ImGui::MenuItem("Distance")) {
+               return createJoint(JointType::Distance, "Distance Joint");
+            }
+
+            if (ImGui::MenuItem("Revolute")) {
+               return createJoint(JointType::Revolute, "Revolute Joint");
+            }
+
+            if (ImGui::MenuItem("Spherical")) {
+               return createJoint(JointType::Spherical, "Spherical Joint");
+            }
+
+            if (ImGui::MenuItem("Prismatic")) {
+               return createJoint(JointType::Prismatic, "Prismatic Joint");
             }
          }
       }
@@ -209,8 +230,16 @@ namespace pbe {
                   .pos = vec3{0, i * 2 + 0.5f, 0},
                   .color = Random::Color() });
 
-               // todo:
-               CreateDistanceJoint(prev, cur);
+               JointComponent joint{};
+               joint.entity0 = prev;
+               joint.entity1 = cur;
+               joint.type = JointType::Distance;
+               joint.minDistance = 1;
+               joint.minDistance = 2;
+
+               auto jointEntity = CreateEmpty(scene, "Distance Joint", root, vec3_Zero);
+               jointEntity.Add<JointComponent>(std::move(joint));
+
                prev = cur;
             }
 

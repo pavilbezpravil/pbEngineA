@@ -263,9 +263,9 @@ namespace pbe {
       registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
       registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
 
-      registry.on_construct<DistanceJointComponent>().connect<&PhysicsScene::OnConstructDistanceJoint>(this);
-      registry.on_destroy<DistanceJointComponent>().connect<&PhysicsScene::OnDestroyDistanceJoint>(this);
-      registry.on_update<DistanceJointComponent>().connect<&PhysicsScene::OnUpdateDistanceJoint>(this);
+      registry.on_construct<JointComponent>().connect<&PhysicsScene::OnConstructJoint>(this);
+      registry.on_destroy<JointComponent>().connect<&PhysicsScene::OnDestroyJoint>(this);
+      registry.on_update<JointComponent>().connect<&PhysicsScene::OnUpdateJoint>(this);
    }
 
    void PhysicsScene::OnEntityEnable() {
@@ -279,9 +279,9 @@ namespace pbe {
          AddTrigger(entity);
       }
 
-      for (auto e : pScene->ViewAll<DistanceJointComponent, DelayedEnableMarker>()) {
+      for (auto e : pScene->ViewAll<JointComponent, DelayedEnableMarker>()) {
          Entity entity{ e, &scene };
-         AddDistanceJoint(entity);
+         AddJoint(entity);
       }
    }
 
@@ -296,9 +296,9 @@ namespace pbe {
          RemoveTrigger(entity);
       }
 
-      for (auto e : pScene->ViewAll<DistanceJointComponent, DelayedDisableMarker>()) {
+      for (auto e : pScene->ViewAll<JointComponent, DelayedDisableMarker>()) {
          Entity entity{ e, &scene };
-         RemoveDistanceJoint(entity);
+         RemoveJoint(entity);
       }
    }
 
@@ -375,41 +375,22 @@ namespace pbe {
       trigger.pxRigidActor = nullptr;
    }
 
-   void PhysicsScene::AddDistanceJoint(Entity entity) {
-      auto& dj = entity.Get<DistanceJointComponent>();
-
-      auto actor0 = GetPxActor(dj.entity0);
-      auto actor1 = GetPxActor(dj.entity1);
-
-      if (!actor0 || !actor1) {
-         return;
-      }
-
-      if (!PxIsRigidDynamic(actor0) && !PxIsRigidDynamic(actor1)) {
-         WARN("Distance joint can be created when min one actor is dynamic");
-         return;
-      }
-
-      auto joint = PxDistanceJointCreate(*gPhysics, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
-      if (!joint) {
-         WARN("Cant create distance joint");
-         return;
-      }
-      dj.pxDistanceJoint = joint;
-
-      dj.SetData();
+   void PhysicsScene::AddJoint(Entity entity) {
+      auto& joint = entity.Get<JointComponent>();
+      joint.pxJoint = nullptr; // todo: ctor copy this by value
+      joint.SetData(gPhysics);
    }
 
-   void PhysicsScene::RemoveDistanceJoint(Entity entity) {
-      auto& dj = entity.Get<DistanceJointComponent>();
-      if (!dj.pxDistanceJoint) {
+   void PhysicsScene::RemoveJoint(Entity entity) {
+      auto& joint = entity.Get<JointComponent>();
+      if (!joint.pxJoint) {
          return;
       }
 
-      dj.WakeUp();
+      joint.WakeUp();
 
-      dj.pxDistanceJoint->release();
-      dj.pxDistanceJoint = nullptr;
+      joint.pxJoint->release();
+      joint.pxJoint = nullptr;
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
@@ -437,36 +418,23 @@ namespace pbe {
       RemoveTrigger(entity);
    }
 
-   void PhysicsScene::OnConstructDistanceJoint(entt::registry& registry, entt::entity entity) {
+   void PhysicsScene::OnConstructJoint(entt::registry& registry, entt::entity entity) {
       Entity e{ entity, &scene };
       if (e.Enabled()) {
-         AddDistanceJoint(e);
+         AddJoint(e);
       }
    }
 
-   void PhysicsScene::OnDestroyDistanceJoint(entt::registry& registry, entt::entity _entity) {
+   void PhysicsScene::OnDestroyJoint(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
-      RemoveDistanceJoint(entity);
+      RemoveJoint(entity);
    }
 
-   void PhysicsScene::OnUpdateDistanceJoint(entt::registry& registry, entt::entity _entity) {
+   void PhysicsScene::OnUpdateJoint(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
       if (entity.Enabled()) {
-         entity.Get<DistanceJointComponent>().SetData();
+         entity.Get<JointComponent>().SetData(gPhysics);
       }
-   }
-
-   // todo: remove
-   void CreateDistanceJoint(const Entity& entity0, const Entity& entity1) {
-      auto joint = PxDistanceJointCreate(*gPhysics, GetPxActor(entity0), PxTransform{ PxIDENTITY{} }, GetPxActor(entity1), PxTransform{ PxIDENTITY{} });
-
-      joint->setMaxDistance(1.5f);
-      joint->setMinDistance(1.f);
-
-      joint->setDamping(0.5f);
-      joint->setStiffness(2000.0f);
-
-      joint->setDistanceJointFlags(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED | PxDistanceJointFlag::eMIN_DISTANCE_ENABLED | PxDistanceJointFlag::eSPRING_ENABLED);
    }
 
 }
