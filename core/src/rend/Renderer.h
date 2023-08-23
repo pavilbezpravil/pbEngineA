@@ -45,6 +45,10 @@ namespace pbe {
          return projection * view;
       }
 
+      mat4 GetInvViewProjection() const {
+         return glm::inverse(GetViewProjection());
+      }
+
       void NextFrame();
 
       void UpdateProj(int2 size, float fov = 90.f / 180 * PI) {

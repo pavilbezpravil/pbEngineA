@@ -178,6 +178,7 @@ namespace pbe {
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
          int2 cursorPixelIdx{ mousePos - cursorPos};
+         vec2 cursorUV = vec2(cursorPixelIdx) / vec2(size);
 
          cmd.SetCommonSamplers();
          if (scene) {
@@ -200,8 +201,10 @@ namespace pbe {
          auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
+         static vec2 spawnCursorUV;
          if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A') && !cameraMove) {
             ImGui::OpenPopup("Add");
+            spawnCursorUV = cursorUV;
          }
 
          {
@@ -217,7 +220,11 @@ namespace pbe {
 
                // default spawn pos
                auto spawnPos = std::invoke([&]() {
-                  if (auto result = scene->GetPhysics()->RayCast(camera.position,camera.Forward(), 100.f)) {
+                  auto cursorNDC = (vec2{ 0, 1 } + spawnCursorUV * vec2{ 1, -1 }) * 2.f - 1.f;
+                  auto dir4 = camera.GetInvViewProjection() * vec4{ cursorNDC.x, cursorNDC.y, 0, 1 };
+                  vec3 dir = dir4 / dir4.w;
+                  dir = normalize(dir - camera.position);
+                  if (auto result = scene->GetPhysics()->RayCast(camera.position,dir, 100.f)) {
                      // todo: sweep?
                      return result.position;
                   } else {
