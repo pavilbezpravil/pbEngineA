@@ -23,6 +23,9 @@ namespace pbe {
 
       RayCastResult RayCast(const vec3& origin, const vec3& dir, float maxDistance);
 
+      // todo: geom
+      RayCastResult Sweep(const vec3& origin, const vec3& dir, float maxDistance);
+
       void SyncPhysicsWithScene();
       void Simulate(float dt);
       void UpdateSceneAfterPhysics();

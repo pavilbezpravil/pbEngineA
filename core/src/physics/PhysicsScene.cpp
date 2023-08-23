@@ -168,9 +168,34 @@ namespace pbe {
                   .physActor = *GetEntity(hit.block.actor),
                   .position = PxVec3ToPBE(hit.block.position),
                   .normal = PxVec3ToPBE(hit.block.normal),
+                  .distance = hit.block.distance,
                };
          }
       }
+
+      return RayCastResult{};
+   }
+
+   RayCastResult PhysicsScene::Sweep(const vec3& origin, const vec3& dir, float maxDistance) {
+      PxVec3 pxOrigin = Vec3ToPx(origin);
+      PxVec3 pxDir = Vec3ToPx(dir);
+
+      PxSweepBuffer hit;
+      // todo:
+      auto geom = PxSphereGeometry(0.5f);
+      if (pxScene->sweep(geom, PxTransform{ pxOrigin }, pxDir, maxDistance, hit, PxHitFlag::ePOSITION | PxHitFlag::eNORMAL)) {
+         ASSERT(hit.hasBlock);
+         ASSERT(hit.nbTouches == 0);
+         if (hit.hasBlock) {
+            return RayCastResult{
+                  .physActor = *GetEntity(hit.block.actor),
+                  .position = PxVec3ToPBE(hit.block.position),
+                  .normal = PxVec3ToPBE(hit.block.normal),
+                  .distance = hit.block.distance,
+            };
+         }
+      }
+
       return RayCastResult{};
    }
 

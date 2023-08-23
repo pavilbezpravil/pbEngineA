@@ -218,21 +218,19 @@ namespace pbe {
                ImGui::Text("Add");
                ImGui::Separator();
 
-               // default spawn pos
-               auto spawnPos = std::invoke([&]() {
+               auto spawnPosHint = std::invoke([&]() {
                   auto cursorNDC = (vec2{ 0, 1 } + spawnCursorUV * vec2{ 1, -1 }) * 2.f - 1.f;
                   auto dir4 = camera.GetInvViewProjection() * vec4{ cursorNDC.x, cursorNDC.y, 0, 1 };
                   vec3 dir = dir4 / dir4.w;
                   dir = normalize(dir - camera.position);
-                  if (auto result = scene->GetPhysics()->RayCast(camera.position,dir, 100.f)) {
-                     // todo: sweep?
-                     return result.position;
+                  if (auto hit = scene->GetPhysics()->Sweep(camera.position, dir, 100.f)) {
+                     return camera.position + dir * hit.distance;
                   } else {
                      return camera.position + camera.Forward() * 3.f;
                   }
                }); 
 
-               Entity addedEntity = SceneAddEntityMenu(*scene, spawnPos, selection);
+               Entity addedEntity = SceneAddEntityMenu(*scene, spawnPosHint, selection);
                if (addedEntity) {
                   selection->ToggleSelect(addedEntity);
                }
@@ -308,7 +306,8 @@ namespace pbe {
 
       // todo:
       static TimedAction timer{5};
-      if (timer.Update(dt) > 0 && Input::IsKeyPressing(' ')) {
+      bool doShoot = Input::IsKeyPressing(' ');
+      if (timer.Update(dt, doShoot ? -1 : 1) > 0 && doShoot) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
             shootRoot = scene->Create("Shoots");
