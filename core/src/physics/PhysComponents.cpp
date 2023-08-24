@@ -149,14 +149,23 @@ namespace pbe {
       STRUCT_FIELD(lower)
       STRUCT_FIELD(upper)
    STRUCT_END()
-   
+
+   auto CheckJointType(JointType type) {
+      return [=](auto* byte) { return ((JointComponent*)byte)->type == type; };
+   }
+
    STRUCT_BEGIN(JointComponent)
       STRUCT_FIELD(type)
    
       STRUCT_FIELD(entity0)
       STRUCT_FIELD(entity1)
-   
+
+      STRUCT_FIELD_USE(CheckJointType(JointType::Distance))
+      STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(distance)
+
+      STRUCT_FIELD_USE(CheckJointType(JointType::Prismatic))
+      STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(prismatic)
    
       STRUCT_FIELD(minDistance)

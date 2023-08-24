@@ -12,12 +12,30 @@ namespace pbe {
    class Entity;
    class Scene;
 
+   enum class FieldFlag {
+      None = 0,
+      SkipName = BIT(0),
+   };
+
+   DEFINE_ENUM_FLAG_OPERATORS(FieldFlag);
+
    struct TypeField {
       std::string name;
       TypeID typeID;
       size_t offset;
+      FieldFlag flags = FieldFlag::None;
+
+      const char* Name() const { return bool(flags & FieldFlag::SkipName) ? "" : name.c_str(); }
+
+      bool Use(const byte* value) const {
+         if (use && !use(value)) {
+            return false;
+         }
+         return true;
+      }
 
       std::function<bool(const char*, byte*)> ui;
+      std::function<bool(const byte*)> use;
    };
 
    struct TypeInfo {

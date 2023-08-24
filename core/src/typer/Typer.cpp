@@ -101,11 +101,17 @@ namespace pbe {
 
          if (opened) {
             for (const auto& f : ti.fields) {
+               if (!f.Use(value)) {
+                  continue;
+               }
+
                byte* data = value + f.offset;
+
+               auto fieldName = f.Name();
                if (f.ui) {
-                  edited |= f.ui(f.name.c_str(), data);
+                  edited |= f.ui(fieldName, data);
                } else {
-                  edited |= UI(f.name, f.typeID, data);
+                  edited |= UI(fieldName, f.typeID, data);
                }
             }
          }
@@ -132,8 +138,12 @@ namespace pbe {
          SERIALIZER_MAP(ser);
 
          for (const auto& f : ti.fields) {
+            if (!f.Use(value)) {
+               continue;
+            }
+
             const byte* data = value + f.offset;
-            Serialize(ser, f.name, f.typeID, data);
+            Serialize(ser, f.Name(), f.typeID, data);
          }
       }
    }
@@ -156,8 +166,13 @@ namespace pbe {
          bool success = true;
 
          for (const auto& f : ti.fields) {
+            // todo: all value that use inside lambda should be deserialized before
+            // if (!f.Use(value)) {
+            //    continue;
+            // }
+
             byte* data = value + f.offset;
-            success &= Deserialize(nodeFields, f.name, f.typeID, data);
+            success &= Deserialize(nodeFields, f.Name(), f.typeID, data);
          }
 
          return success;

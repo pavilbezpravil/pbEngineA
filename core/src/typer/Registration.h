@@ -122,6 +122,15 @@ namespace pbe {
 #define STRUCT_FIELD_UI(...) \
       f.ui = __VA_ARGS__;
 
+#define STRUCT_FIELD_USE(...) \
+      f.use = __VA_ARGS__;
+
+#define STRUCT_FIELD_FLAG(flag) \
+      f.flags |= FieldFlag::flag;
+
+#define STRUCT_FIELD_FLAGS(_flags) \
+      f.flags = _flags;
+
 #define STRUCT_FIELD(_name) \
       f.name = #_name; \
       f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
