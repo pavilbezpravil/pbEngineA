@@ -49,12 +49,6 @@ namespace pbe {
       // vec3 anchor0;
       // vec3 anchor1;
 
-      float minDistance = 0;
-      float maxDistance = 0;
-
-      float stiffness = 1000.f;
-      float damping = 0.5;
-
       struct FixedJoint {
       } fixed;
 
@@ -73,8 +67,8 @@ namespace pbe {
       } spherical;
 
       struct PrismaticJoint {
-         float lower = -1;
-         float upper = 1;
+         float lowerLimit = -1;
+         float upperLimit = 1;
       } prismatic;
 
       float breakForce = INFINITY;

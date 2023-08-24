@@ -65,15 +65,15 @@ namespace pbe {
             return;
          }
 
-         pxDistanceJoint->setMinDistance(minDistance);
-         pxDistanceJoint->setMaxDistance(maxDistance);
+         pxDistanceJoint->setMinDistance(distance.minDistance);
+         pxDistanceJoint->setMaxDistance(distance.maxDistance);
 
-         pxDistanceJoint->setDamping(damping);
-         pxDistanceJoint->setStiffness(stiffness);
+         pxDistanceJoint->setDamping(distance.damping);
+         pxDistanceJoint->setStiffness(distance.stiffness);
 
-         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, minDistance > 0);
-         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, maxDistance > 0);
-         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, stiffness > 0);
+         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMIN_DISTANCE_ENABLED, distance.minDistance > 0);
+         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, distance.maxDistance > 0);
+         pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, distance.stiffness > 0);
       } else if (type == JointType::Revolute) {
          auto pxRevoluteJoint = PxRevoluteJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxRevoluteJoint;
@@ -102,7 +102,7 @@ namespace pbe {
          const auto tolerances = pxPhys->getTolerancesScale(); // todo: or set from component?
 
          // todo: name
-         pxPrismaticJoint->setLimit(PxJointLinearLimitPair{ tolerances, minDistance, maxDistance });
+         pxPrismaticJoint->setLimit(PxJointLinearLimitPair{ tolerances, prismatic.lowerLimit, prismatic.upperLimit });
          pxPrismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
       } else {
          UNIMPLEMENTED();
@@ -143,11 +143,14 @@ namespace pbe {
    STRUCT_BEGIN(JointComponent::DistanceJoint)
       STRUCT_FIELD(minDistance)
       STRUCT_FIELD(maxDistance)
+
+      STRUCT_FIELD(stiffness)
+      STRUCT_FIELD(damping)
    STRUCT_END()
 
    STRUCT_BEGIN(JointComponent::PrismaticJoint)
-      STRUCT_FIELD(lower)
-      STRUCT_FIELD(upper)
+      STRUCT_FIELD(lowerLimit)
+      STRUCT_FIELD(upperLimit)
    STRUCT_END()
 
    auto CheckJointType(JointType type) {
@@ -167,13 +170,7 @@ namespace pbe {
       STRUCT_FIELD_USE(CheckJointType(JointType::Prismatic))
       STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(prismatic)
-   
-      STRUCT_FIELD(minDistance)
-      STRUCT_FIELD(maxDistance)
-   
-      STRUCT_FIELD(stiffness)
-      STRUCT_FIELD(damping)
-   
+
       STRUCT_FIELD(breakForce)
       STRUCT_FIELD(breakTorque)
       STRUCT_FIELD(collisionEnable)

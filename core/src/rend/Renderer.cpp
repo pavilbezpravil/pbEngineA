@@ -723,16 +723,18 @@ namespace pbe {
             if (joint.type == JointType::Fixed) {
                
             } else if (joint.type == JointType::Distance) {
-               auto posMin = pos0 + dir * joint.minDistance;
-               auto posMax = pos0 + dir * joint.maxDistance;
+               auto posMin = pos0 + dir * joint.distance.minDistance;
+               auto posMax = pos0 + dir * joint.distance.maxDistance;
                dbgRend.DrawLine(posMin, posMax, vec4{ 0, 1, 0, 1 });
             } else if (joint.type == JointType::Revolute) {
                dbgRend.DrawLine(pos0, pos0 + trans0.Right() * 3.f, vec4{ 1, 0, 0, 1 });
             } else if (joint.type == JointType::Spherical) {
                
             } else if (joint.type == JointType::Prismatic) {
-               // todo:upper limmit
-               dbgRend.DrawLine(pos0 + trans0.Right() * joint.minDistance, pos0 + trans0.Right() * joint.maxDistance, vec4{ 0, 1, 0, 1 });
+               dbgRend.DrawLine(
+                  pos0 + trans0.Right() * joint.prismatic.lowerLimit,
+                  pos0 + trans0.Right() * joint.prismatic.upperLimit,
+                  vec4{ 0, 1, 0, 1 });
             } else {
                UNIMPLEMENTED();
             }
