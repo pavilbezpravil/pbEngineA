@@ -4,6 +4,7 @@
 #include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
 #include "core/Profiler.h"
+#include "gui/Gui.h"
 #include "typer/Registration.h"
 #include "typer/Serialize.h"
 
@@ -131,28 +132,92 @@ namespace pbe {
    TYPER_BEGIN(TriggerComponent)
    TYPER_END()
 
-   TYPER_BEGIN(JointType)
-      TYPER_SERIALIZE([](Serializer& ser, const byte* value) { ser.out << *(int*)value; })
-      TYPER_DESERIALIZE([](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }) // todo:
-      TYPER_UI([](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Fixed\0Distance\0Revolute\0Spherical\0Prismatic\0"); })
+
+#define TYPE_REGISTER_GUARD_UNIQUE(unique) \
+   static TypeRegisterGuard CONCAT(TypeRegisterGuard_, unique)
+
+#define TYPE_BEGIN(type) \
+   TYPE_REGISTER_GUARD_UNIQUE(__LINE__) = \
+      {GetTypeID<type>(), [] () { \
+         using CurrentType = type; \
+         TypeInfo ti; \
+         ti.name = #type; \
+         ti.typeID = GetTypeID<type>(); \
+         ti.typeSizeOf = sizeof(type);
+
+#define STRUCT_BEGIN(type) \
+   TYPE_BEGIN(type) \
+      ti.serialize = GetSerialize<type>(); \
+      ti.deserialize = GetDeserialize<type>(); \
+      ti.ui = GetUI<type>(); \
+      \
+      TypeField f{};
+
+#define STRUCT_FIELD(_name) \
+      f.name = #_name; \
+      f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
+      f.offset = offsetof(CurrentType, _name); \
+      ti.fields.emplace_back(f); \
+      f = {};
+
+#define STRUCT_END() \
+      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
+   }};
+
+#define ENUM_BEGIN(type) \
+   TYPE_BEGIN(type) \
+      static std::string enumDescCombo;
+
+#define ENUM_VALUE(Value) \
+      CurrentType::Value; \
+      enumDescCombo += STRINGIFY(Value); \
+      enumDescCombo += '\0';
+
+#define ENUM_END() \
+      ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(int*)value; }; \
+      ti.deserialize = [](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }; \
+      ti.ui = [](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, enumDescCombo.c_str()); }; \
+      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
+   }};
+
+
+   ENUM_BEGIN(JointType)
+      ENUM_VALUE(Fixed)
+      ENUM_VALUE(Distance)
+      ENUM_VALUE(Revolute)
+      ENUM_VALUE(Spherical)
+      ENUM_VALUE(Prismatic)
+   ENUM_END()
+
+   STRUCT_BEGIN(JointComponent::DistanceJoint)
+      STRUCT_FIELD(minDistance)
+      STRUCT_FIELD(maxDistance)
+   STRUCT_END()
+
+   STRUCT_BEGIN(JointComponent::PrismaticJoint)
+      TYPER_FIELD(lower)
+      TYPER_FIELD(upper)
    TYPER_END()
-
-   TYPER_BEGIN(JointComponent)
+   
+   STRUCT_BEGIN(JointComponent)
       TYPER_FIELD(type)
-
+   
       TYPER_FIELD(entity0)
       TYPER_FIELD(entity1)
-
+   
+      TYPER_FIELD(distance)
+      TYPER_FIELD(prismatic)
+   
       TYPER_FIELD(minDistance)
       TYPER_FIELD(maxDistance)
-
+   
       TYPER_FIELD(stiffness)
       TYPER_FIELD(damping)
-
+   
       TYPER_FIELD(breakForce)
       TYPER_FIELD(breakTorque)
       TYPER_FIELD(collisionEnable)
-   TYPER_END()
+   STRUCT_END()
 
    TYPER_REGISTER_COMPONENT(RigidBodyComponent);
    TYPER_REGISTER_COMPONENT(TriggerComponent);

@@ -4,6 +4,7 @@ namespace pbe {
 
    // using TypeID = uint64;
    using TypeID = entt::id_type;
+   constexpr TypeID InvalidTypeID = 0;
 
    template<typename T>
    TypeID GetTypeID() {

@@ -102,8 +102,8 @@ namespace pbe {
          if (opened) {
             for (const auto& f : ti.fields) {
                byte* data = value + f.offset;
-               if (f.uiFunc) {
-                  edited |= f.uiFunc(f.name.c_str(), data);
+               if (f.ui) {
+                  edited |= f.ui(f.name.c_str(), data);
                } else {
                   edited |= UI(f.name, f.typeID, data);
                }

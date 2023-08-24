@@ -114,7 +114,7 @@ namespace pbe {
 
    // for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'. problem with ','
 #define TYPER_FIELD_UI(...) \
-      f.uiFunc = __VA_ARGS__;
+      f.ui = __VA_ARGS__;
 
 #define TYPER_FIELD(_name) \
       f.name = #_name; \

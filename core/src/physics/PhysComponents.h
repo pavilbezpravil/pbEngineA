@@ -55,6 +55,28 @@ namespace pbe {
       float stiffness = 1000.f;
       float damping = 0.5;
 
+      struct FixedJoint {
+      } fixed;
+
+      struct DistanceJoint {
+         float minDistance = 0;
+         float maxDistance = 0;
+
+         float stiffness = 1000.f;
+         float damping = 0.5;
+      } distance;
+
+      struct RevoluteJoint {
+      } revolute;
+
+      struct SphericalJoint {
+      } spherical;
+
+      struct PrismaticJoint {
+         float lower = -1;
+         float upper = 1;
+      } prismatic;
+
       float breakForce = INFINITY;
       float breakTorque = INFINITY;
       bool collisionEnable = false;

@@ -16,7 +16,8 @@ namespace pbe {
       std::string name;
       TypeID typeID;
       size_t offset;
-      std::function<bool(const char*, byte*)> uiFunc;
+
+      std::function<bool(const char*, byte*)> ui;
    };
 
    struct TypeInfo {
