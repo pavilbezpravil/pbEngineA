@@ -29,10 +29,10 @@ namespace pbe {
 
    constexpr char editorSettingPath[] = "editor.yaml";
 
-   TYPER_BEGIN(EditorSettings)
-      TYPER_FIELD(scenePath)
-      TYPER_FIELD(cameraPos)
-   TYPER_END()
+   STRUCT_BEGIN(EditorSettings)
+      STRUCT_FIELD(scenePath)
+      STRUCT_FIELD(cameraPos)
+   STRUCT_END()
 
    void EditorLayer::OnAttach() {
       Deserialize(editorSettingPath, editorSettings);

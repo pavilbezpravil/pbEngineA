@@ -123,63 +123,14 @@ namespace pbe {
    }
 
 
-   TYPER_BEGIN(RigidBodyComponent)
-      TYPER_FIELD(dynamic)
-      TYPER_FIELD(linearDamping)
-      TYPER_FIELD(angularDamping)
-   TYPER_END()
+   STRUCT_BEGIN(RigidBodyComponent)
+      STRUCT_FIELD(dynamic)
+      STRUCT_FIELD(linearDamping)
+      STRUCT_FIELD(angularDamping)
+   STRUCT_END()
 
-   TYPER_BEGIN(TriggerComponent)
-   TYPER_END()
-
-
-#define TYPE_REGISTER_GUARD_UNIQUE(unique) \
-   static TypeRegisterGuard CONCAT(TypeRegisterGuard_, unique)
-
-#define TYPE_BEGIN(type) \
-   TYPE_REGISTER_GUARD_UNIQUE(__LINE__) = \
-      {GetTypeID<type>(), [] () { \
-         using CurrentType = type; \
-         TypeInfo ti; \
-         ti.name = #type; \
-         ti.typeID = GetTypeID<type>(); \
-         ti.typeSizeOf = sizeof(type);
-
-#define STRUCT_BEGIN(type) \
-   TYPE_BEGIN(type) \
-      ti.serialize = GetSerialize<type>(); \
-      ti.deserialize = GetDeserialize<type>(); \
-      ti.ui = GetUI<type>(); \
-      \
-      TypeField f{};
-
-#define STRUCT_FIELD(_name) \
-      f.name = #_name; \
-      f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
-      f.offset = offsetof(CurrentType, _name); \
-      ti.fields.emplace_back(f); \
-      f = {};
-
-#define STRUCT_END() \
-      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
-   }};
-
-#define ENUM_BEGIN(type) \
-   TYPE_BEGIN(type) \
-      static std::string enumDescCombo;
-
-#define ENUM_VALUE(Value) \
-      CurrentType::Value; \
-      enumDescCombo += STRINGIFY(Value); \
-      enumDescCombo += '\0';
-
-#define ENUM_END() \
-      ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(int*)value; }; \
-      ti.deserialize = [](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }; \
-      ti.ui = [](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, enumDescCombo.c_str()); }; \
-      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
-   }};
-
+   STRUCT_BEGIN(TriggerComponent)
+   STRUCT_END()
 
    ENUM_BEGIN(JointType)
       ENUM_VALUE(Fixed)
@@ -195,28 +146,28 @@ namespace pbe {
    STRUCT_END()
 
    STRUCT_BEGIN(JointComponent::PrismaticJoint)
-      TYPER_FIELD(lower)
-      TYPER_FIELD(upper)
-   TYPER_END()
+      STRUCT_FIELD(lower)
+      STRUCT_FIELD(upper)
+   STRUCT_END()
    
    STRUCT_BEGIN(JointComponent)
-      TYPER_FIELD(type)
+      STRUCT_FIELD(type)
    
-      TYPER_FIELD(entity0)
-      TYPER_FIELD(entity1)
+      STRUCT_FIELD(entity0)
+      STRUCT_FIELD(entity1)
    
-      TYPER_FIELD(distance)
-      TYPER_FIELD(prismatic)
+      STRUCT_FIELD(distance)
+      STRUCT_FIELD(prismatic)
    
-      TYPER_FIELD(minDistance)
-      TYPER_FIELD(maxDistance)
+      STRUCT_FIELD(minDistance)
+      STRUCT_FIELD(maxDistance)
    
-      TYPER_FIELD(stiffness)
-      TYPER_FIELD(damping)
+      STRUCT_FIELD(stiffness)
+      STRUCT_FIELD(damping)
    
-      TYPER_FIELD(breakForce)
-      TYPER_FIELD(breakTorque)
-      TYPER_FIELD(collisionEnable)
+      STRUCT_FIELD(breakForce)
+      STRUCT_FIELD(breakTorque)
+      STRUCT_FIELD(collisionEnable)
    STRUCT_END()
 
    TYPER_REGISTER_COMPONENT(RigidBodyComponent);

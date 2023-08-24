@@ -70,10 +70,10 @@ namespace pbe {
 
    constexpr char viewportSettingPath[] = "scene_viewport.yaml";
 
-   TYPER_BEGIN(ViewportSettings)
-      TYPER_FIELD(cameraPos)
-      TYPER_FIELD(cameraAngles)
-   TYPER_END()
+   STRUCT_BEGIN(ViewportSettings)
+      STRUCT_FIELD(cameraPos)
+      STRUCT_FIELD(cameraAngles)
+   STRUCT_END()
 
    ViewportWindow::ViewportWindow(std::string_view name) : EditorWindow(name) {
       ViewportSettings viewportSettings;

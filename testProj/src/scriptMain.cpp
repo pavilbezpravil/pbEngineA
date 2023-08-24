@@ -16,10 +16,10 @@ namespace pbe {
       int intValue = 2;
    };
 
-   TYPER_BEGIN(TestValues)
-      TYPER_FIELD(floatValue)
-      TYPER_FIELD(intValue)
-   TYPER_END()
+   STRUCT_BEGIN(TestValues)
+      STRUCT_FIELD(floatValue)
+      STRUCT_FIELD(intValue)
+   STRUCT_END()
 
    class TestScript : public Script {
    public:
@@ -43,11 +43,11 @@ namespace pbe {
       bool doMove = false;
    };
 
-   TYPER_BEGIN(TestScript)
-      TYPER_FIELD(values)
-      TYPER_FIELD(speed)
-      TYPER_FIELD(doMove)
-   TYPER_END()
+   STRUCT_BEGIN(TestScript)
+      STRUCT_FIELD(values)
+      STRUCT_FIELD(speed)
+      STRUCT_FIELD(doMove)
+   STRUCT_END()
    TYPER_REGISTER_COMPONENT(TestScript);
    TYPER_REGISTER_SCRIPT(TestScript);
 
@@ -89,11 +89,11 @@ namespace pbe {
       TimedAction timer;
    };
 
-   TYPER_BEGIN(CubeSpawnerScript)
-      TYPER_FIELD(spawn)
-      TYPER_FIELD(freq)
-      TYPER_FIELD(initialSpeed)
-   TYPER_END()
+   STRUCT_BEGIN(CubeSpawnerScript)
+      STRUCT_FIELD(spawn)
+      STRUCT_FIELD(freq)
+      STRUCT_FIELD(initialSpeed)
+   STRUCT_END()
    TYPER_REGISTER_COMPONENT(CubeSpawnerScript);
    TYPER_REGISTER_SCRIPT(CubeSpawnerScript);
 

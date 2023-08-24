@@ -89,41 +89,63 @@ namespace pbe {
       }
    }
 
-#define TYPER_BEGIN(type) \
-   static TypeRegisterGuard TypeRegisterGuard_##type = {GetTypeID<type>(), \
-         [] () { \
-      using CurrentType = type; \
-      TypeInfo ti; \
-      ti.name = #type; \
-      ti.typeID = GetTypeID<type>(); \
-      ti.typeSizeOf = sizeof(type); \
+#define TYPE_REGISTER_GUARD_UNIQUE(unique) \
+   static TypeRegisterGuard CONCAT(TypeRegisterGuard_, unique)
+
+#define TYPE_BEGIN(type) \
+   TYPE_REGISTER_GUARD_UNIQUE(__LINE__) = \
+      {GetTypeID<type>(), [] () { \
+         using CurrentType = type; \
+         TypeInfo ti; \
+         ti.name = #type; \
+         ti.typeID = GetTypeID<type>(); \
+         ti.typeSizeOf = sizeof(type);
+
+#define TYPE_SERIALIZE(...) \
+         ti.serialize = __VA_ARGS__;
+
+#define TYPE_DESERIALIZE(...) \
+         ti.deserialize = __VA_ARGS__;
+
+#define TYPE_UI(...) \
+         ti.ui = __VA_ARGS__;
+
+#define STRUCT_BEGIN(type) \
+   TYPE_BEGIN(type) \
       ti.serialize = GetSerialize<type>(); \
       ti.deserialize = GetDeserialize<type>(); \
       ti.ui = GetUI<type>(); \
       \
       TypeField f{};
 
-#define TYPER_SERIALIZE(...) \
-      ti.serialize = __VA_ARGS__;
-
-#define TYPER_DESERIALIZE(...) \
-      ti.deserialize = __VA_ARGS__;
-
-#define TYPER_UI(...) \
-      ti.ui = __VA_ARGS__;
-
    // for handle initialization like this 'TYPER_FIELD_UI2(UISliderFloat{ .min = -10, .max = 15 })'. problem with ','
-#define TYPER_FIELD_UI(...) \
+#define STRUCT_FIELD_UI(...) \
       f.ui = __VA_ARGS__;
 
-#define TYPER_FIELD(_name) \
+#define STRUCT_FIELD(_name) \
       f.name = #_name; \
       f.typeID = GetTypeID<decltype(CurrentType{}._name)>(); \
       f.offset = offsetof(CurrentType, _name); \
       ti.fields.emplace_back(f); \
       f = {};
 
-#define TYPER_END() \
+#define STRUCT_END() \
+      Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
+   }};
+
+#define ENUM_BEGIN(type) \
+   TYPE_BEGIN(type) \
+      static std::string enumDescCombo;
+
+#define ENUM_VALUE(Value) \
+      CurrentType::Value; \
+      enumDescCombo += STRINGIFY(Value); \
+      enumDescCombo += '\0';
+
+#define ENUM_END() \
+      ti.serialize = [](Serializer& ser, const byte* value) { ser.out << *(int*)value; }; \
+      ti.deserialize = [](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }; \
+      ti.ui = [](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, enumDescCombo.c_str()); }; \
       Typer::Get().RegisterType(ti.typeID, std::move(ti)); \
    }};
 

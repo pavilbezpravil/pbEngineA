@@ -13,9 +13,9 @@ namespace pbe {
 
    constexpr char savePath[] = "sahdertoy.yaml";
 
-   TYPER_BEGIN(ShaderToySettings)
-      TYPER_FIELD(path)
-   TYPER_END()
+   STRUCT_BEGIN(ShaderToySettings)
+      STRUCT_FIELD(path)
+   STRUCT_END()
 
    ShaderToyWindow::ShaderToyWindow(): EditorWindow("ShaderToy") {
       Deserialize(savePath, settings);
