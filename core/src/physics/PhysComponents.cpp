@@ -81,6 +81,16 @@ namespace pbe {
             WARN("Cant create revolute joint");
             return;
          }
+
+         // pxRevoluteJoint->setLimit(PxJointAngularLimitPair{ revolute.lowerLimit, revolute.upperLimit, PxSpring{ revolute.stiffness, revolute.damping } });
+
+         auto a = pxRevoluteJoint->getDriveVelocity();
+         auto b = pxRevoluteJoint->getDriveForceLimit();
+         auto c = pxRevoluteJoint->getDriveGearRatio();
+
+         pxRevoluteJoint->setDriveVelocity(revolute.driveVelocity);
+         pxRevoluteJoint->setDriveForceLimit(revolute.driveForceLimit);
+         pxRevoluteJoint->setDriveGearRatio(revolute.driveGearRatio);
          // todo:
       } else if (type == JointType::Spherical) {
          auto pxSphericalJoint = PxSphericalJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
@@ -143,6 +153,14 @@ namespace pbe {
    STRUCT_BEGIN(JointComponent::DistanceJoint)
       STRUCT_FIELD(minDistance)
       STRUCT_FIELD(maxDistance)
+
+      STRUCT_FIELD(stiffness)
+      STRUCT_FIELD(damping)
+   STRUCT_END()
+
+   STRUCT_BEGIN(JointComponent::RevoluteJoint)
+      STRUCT_FIELD(lowerLimit)
+      STRUCT_FIELD(upperLimit)
 
       STRUCT_FIELD(stiffness)
       STRUCT_FIELD(damping)

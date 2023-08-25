@@ -61,6 +61,15 @@ namespace pbe {
       } distance;
 
       struct RevoluteJoint {
+         // limit
+         float lowerLimit = 0;
+         float upperLimit = 0;
+         float stiffness = 0;
+         float damping = 0;
+
+         float driveVelocity = 0;
+         float driveForceLimit = 0;
+         float driveGearRatio = 0;
       } revolute;
 
       struct SphericalJoint {
