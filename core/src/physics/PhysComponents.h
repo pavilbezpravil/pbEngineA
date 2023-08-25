@@ -62,14 +62,17 @@ namespace pbe {
 
       struct RevoluteJoint {
          // limit
+         bool limitEnable = false; // todo: make flags
          float lowerLimit = 0;
          float upperLimit = 0;
          float stiffness = 0;
          float damping = 0;
 
+         bool driveEnable = false; // todo: make flags
+         bool driveFreespin = false; // todo: make flags
          float driveVelocity = 0;
-         float driveForceLimit = 0;
-         float driveGearRatio = 0;
+         float driveForceLimit = INFINITY;
+         float driveGearRatio = 1;
       } revolute;
 
       struct SphericalJoint {

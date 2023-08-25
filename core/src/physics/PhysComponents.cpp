@@ -18,11 +18,27 @@ namespace pbe {
    }
 
    void RigidBodyComponent::OnChanged() {
+      // PxU32 jointCount = pxRigidActor->getNbConstraints();
+      //
+      // PxConstraint** joints = new PxConstraint * [jointCount]; // todo: allocation
+      // pxRigidActor->getConstraints(joints, jointCount);
+      //
+      // for (PxU32 i = 0; i < jointCount; i++) {
+      //    joints[i]->;
+      // }
+      //
+      // delete[] joints;
+      //
+      // if (auto pxDynamic = GetPxRigidDynamic(pxRigidActor)) {
+      //    pxDynamic->setLinearDamping(linearDamping);
+      //    pxDynamic->setAngularDamping(angularDamping);
+      // }
+
       // todo: dont support changing dynamic/static
       if (!dynamic) {
          return;
       }
-
+      
       auto dynamic = GetPxRigidDynamic(pxRigidActor);
       dynamic->setLinearDamping(linearDamping);
       dynamic->setAngularDamping(angularDamping);
@@ -82,16 +98,20 @@ namespace pbe {
             return;
          }
 
-         // pxRevoluteJoint->setLimit(PxJointAngularLimitPair{ revolute.lowerLimit, revolute.upperLimit, PxSpring{ revolute.stiffness, revolute.damping } });
+         if (revolute.limitEnable) {
+            pxRevoluteJoint->setLimit(PxJointAngularLimitPair{ revolute.lowerLimit, revolute.upperLimit,
+               PxSpring{ revolute.stiffness, revolute.damping } });
+            pxRevoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, revolute.limitEnable);
+         }
 
-         auto a = pxRevoluteJoint->getDriveVelocity();
-         auto b = pxRevoluteJoint->getDriveForceLimit();
-         auto c = pxRevoluteJoint->getDriveGearRatio();
+         if (revolute.driveEnable) {
+            pxRevoluteJoint->setDriveVelocity(revolute.driveVelocity);
+            pxRevoluteJoint->setDriveForceLimit(FloatInfToMax(revolute.driveForceLimit));
+            pxRevoluteJoint->setDriveGearRatio(revolute.driveGearRatio);
 
-         pxRevoluteJoint->setDriveVelocity(revolute.driveVelocity);
-         pxRevoluteJoint->setDriveForceLimit(revolute.driveForceLimit);
-         pxRevoluteJoint->setDriveGearRatio(revolute.driveGearRatio);
-         // todo:
+            pxRevoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_ENABLED, revolute.driveEnable);
+            pxRevoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_FREESPIN, revolute.driveFreespin);
+         }
       } else if (type == JointType::Spherical) {
          auto pxSphericalJoint = PxSphericalJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxSphericalJoint;
@@ -159,11 +179,17 @@ namespace pbe {
    STRUCT_END()
 
    STRUCT_BEGIN(JointComponent::RevoluteJoint)
+      STRUCT_FIELD(limitEnable)
       STRUCT_FIELD(lowerLimit)
       STRUCT_FIELD(upperLimit)
-
       STRUCT_FIELD(stiffness)
       STRUCT_FIELD(damping)
+
+      STRUCT_FIELD(driveEnable)
+      STRUCT_FIELD(driveFreespin)
+      STRUCT_FIELD(driveVelocity)
+      STRUCT_FIELD(driveForceLimit)
+      STRUCT_FIELD(driveGearRatio)
    STRUCT_END()
 
    STRUCT_BEGIN(JointComponent::PrismaticJoint)
@@ -184,6 +210,10 @@ namespace pbe {
       STRUCT_FIELD_USE(CheckJointType(JointType::Distance))
       STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(distance)
+
+      STRUCT_FIELD_USE(CheckJointType(JointType::Revolute))
+      STRUCT_FIELD_FLAG(SkipName)
+      STRUCT_FIELD(revolute)
 
       STRUCT_FIELD_USE(CheckJointType(JointType::Prismatic))
       STRUCT_FIELD_FLAG(SkipName)
