@@ -259,6 +259,7 @@ namespace pbe {
    void PhysicsScene::OnSetEventHandlers(entt::registry& registry) {
       registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
       registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
+      registry.on_update<RigidBodyComponent>().connect<&PhysicsScene::OnUpdateRigidBody>(this);
 
       registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
       registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
@@ -306,12 +307,11 @@ namespace pbe {
       Simulate(dt);
    }
 
-   void PhysicsScene::AddRigidActor(Entity entity) {
+   static PxRigidActor* CreateSceneRigidActor(PxScene* pxScene, Entity entity) {
       // todo: pass as function argument
       auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
 
       PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
-
       PxTransform physTrans = GetTransform(trans);
 
       PxRigidActor* actor = nullptr;
@@ -325,24 +325,81 @@ namespace pbe {
       actor->userData = new Entity{ entity }; // todo: use fixed allocator
       pxScene->addActor(*actor);
 
-      // on moveCtor actor is copied by value, so it may be not null, but it is actor from another entity
-      // ASSERT(!rb.pxRigidActor);
-      rb.pxRigidActor = actor;
-
-      rb.OnChanged();
+      return actor;
    }
 
-   void PhysicsScene::RemoveRigidActor(Entity entity) {
-      auto& rb = entity.Get<RigidBodyComponent>();
-      if (!rb.pxRigidActor) {
-         return;
-      }
-
+   void RemoveSceneRigidActor(PxScene* pxScene, RigidBodyComponent& rb) {
       pxScene->removeActor(*rb.pxRigidActor);
       delete GetEntity(rb.pxRigidActor);
       rb.pxRigidActor->userData = nullptr;
 
       rb.pxRigidActor = nullptr;
+   }
+
+   void PhysicsScene::AddRigidActor(Entity entity) {
+      // todo: pass as function argument
+      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
+      PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
+
+      ASSERT(!rb.pxRigidActor);
+      rb.pxRigidActor = actor;
+
+      rb.SetData();
+   }
+
+   void PhysicsScene::RemoveRigidActor(Entity entity) {
+      auto& rb = entity.Get<RigidBodyComponent>();
+      ASSERT(rb.pxRigidActor);
+      RemoveSceneRigidActor(pxScene, rb);
+   }
+
+   void PhysicsScene::UpdateRigidActor(Entity entity) {
+      auto& rb = entity.Get<RigidBodyComponent>();
+      ASSERT(rb.pxRigidActor);
+
+      bool isDynamic = rb.pxRigidActor->is<PxRigidDynamic>();
+      bool isDynamicChanged = isDynamic != rb.dynamic;
+      if (isDynamicChanged) {
+         PxRigidActor* newActor = CreateSceneRigidActor(pxScene, entity);
+
+         {
+            PxU32 jointCount = rb.pxRigidActor->getNbConstraints();
+
+            PxConstraint** joints = new PxConstraint* [jointCount]; // todo: allocation
+            rb.pxRigidActor->getConstraints(joints, jointCount);
+
+            for (PxU32 i = 0; i < jointCount; i++) {
+               auto pxJoint = joints[i];
+
+               PxRigidActor *actor0, *actor1;
+               pxJoint->getActors(actor0, actor1);
+
+               Entity e0 = *GetEntity(actor0);
+               Entity e1 = *GetEntity(actor1);
+
+               if (actor0 == rb.pxRigidActor) {
+                  pxJoint->setActors(newActor, actor1);
+                  PxWakeUp(actor1);
+               } else {
+                  ASSERT(actor1 == rb.pxRigidActor);
+                  pxJoint->setActors(actor0, newActor);
+                  PxWakeUp(actor0);
+               }
+
+               PxWakeUp(actor0);
+               PxWakeUp(actor1);
+               PxWakeUp(newActor);
+            }
+
+            delete[] joints;
+         }
+
+         RemoveSceneRigidActor(pxScene, rb);
+
+         rb.pxRigidActor = newActor;
+      }
+
+      rb.SetData();
    }
 
    void PhysicsScene::AddTrigger(Entity entity) {
@@ -393,21 +450,32 @@ namespace pbe {
       joint.pxJoint = nullptr;
    }
 
-   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
+   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      // todo: when copy component copy ptr to
+      entity.Get<RigidBodyComponent>().pxRigidActor = nullptr;
+
       // todo: on each func has this check
-      if (e.Enabled()) {
-         AddRigidActor(e);
+      if (entity.Enabled()) {
+         AddRigidActor(entity);
       }
    }
 
-   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
-      RemoveRigidActor(e);
+   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      RemoveRigidActor(entity);
+   }
+
+   void PhysicsScene::OnUpdateRigidBody(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      if (entity.Enabled()) {
+         UpdateRigidActor(entity);
+      }
    }
 
    void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
+      entity.Get<TriggerComponent>().pxRigidActor = nullptr; // todo:
       if (entity.Enabled()) {
          AddTrigger(entity);
       }
@@ -418,10 +486,11 @@ namespace pbe {
       RemoveTrigger(entity);
    }
 
-   void PhysicsScene::OnConstructJoint(entt::registry& registry, entt::entity entity) {
-      Entity e{ entity, &scene };
-      if (e.Enabled()) {
-         AddJoint(e);
+   void PhysicsScene::OnConstructJoint(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      entity.Get<JointComponent>().pxJoint = nullptr; // todo:
+      if (entity.Enabled()) {
+         AddJoint(entity);
       }
    }
 
@@ -435,6 +504,10 @@ namespace pbe {
       if (entity.Enabled()) {
          entity.Get<JointComponent>().SetData(gPhysics);
       }
+   }
+
+   PxPhysics* GetPxPhysics() {
+      return gPhysics;
    }
 
 }

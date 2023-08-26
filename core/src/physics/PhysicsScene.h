@@ -44,6 +44,7 @@ namespace pbe {
 
       void AddRigidActor(Entity entity);
       void RemoveRigidActor(Entity entity);
+      void UpdateRigidActor(Entity entity);
 
       void AddTrigger(Entity entity);
       void RemoveTrigger(Entity entity);
@@ -54,6 +55,7 @@ namespace pbe {
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
       void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
+      void OnUpdateRigidBody(entt::registry& registry, entt::entity entity);
 
       void OnConstructTrigger(entt::registry& registry, entt::entity entity);
       void OnDestroyTrigger(entt::registry& registry, entt::entity entity);
@@ -62,5 +64,9 @@ namespace pbe {
       void OnDestroyJoint(entt::registry& registry, entt::entity entity);
       void OnUpdateJoint(entt::registry& registry, entt::entity entity);
    };
+
+
+   // todo: move to separate file
+   PxPhysics* GetPxPhysics();
 
 }

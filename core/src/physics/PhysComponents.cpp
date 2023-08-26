@@ -17,24 +17,7 @@ namespace pbe {
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
-   void RigidBodyComponent::OnChanged() {
-      // PxU32 jointCount = pxRigidActor->getNbConstraints();
-      //
-      // PxConstraint** joints = new PxConstraint * [jointCount]; // todo: allocation
-      // pxRigidActor->getConstraints(joints, jointCount);
-      //
-      // for (PxU32 i = 0; i < jointCount; i++) {
-      //    joints[i]->;
-      // }
-      //
-      // delete[] joints;
-      //
-      // if (auto pxDynamic = GetPxRigidDynamic(pxRigidActor)) {
-      //    pxDynamic->setLinearDamping(linearDamping);
-      //    pxDynamic->setAngularDamping(angularDamping);
-      // }
-
-      // todo: dont support changing dynamic/static
+   void RigidBodyComponent::SetData() {
       if (!dynamic) {
          return;
       }
