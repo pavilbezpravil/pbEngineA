@@ -229,7 +229,9 @@ namespace pbe {
 
    void PhysicsScene::RemoveRigidActor(Entity entity) {
       auto& rb = entity.Get<RigidBodyComponent>();
-      ASSERT(rb.pxRigidActor);
+      if (!rb.pxRigidActor) {
+         return;
+      }
       RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
       rb.pxRigidActor = nullptr;
    }

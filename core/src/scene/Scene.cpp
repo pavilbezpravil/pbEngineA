@@ -122,7 +122,7 @@ namespace pbe {
          }
       }
 
-      entity.AddMarker<DelayedEnableMarker>();
+      entity.Add<DelayedEnableMarker>();
       ASSERT(entity.Has<DisableMarker>() && !entity.Has<DelayedDisableMarker>());
    }
 
@@ -142,7 +142,7 @@ namespace pbe {
          }
       }
 
-      entity.AddMarker<DelayedDisableMarker>();
+      entity.Add<DelayedDisableMarker>();
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
    }
 
@@ -293,7 +293,7 @@ namespace pbe {
 
    void Scene::EntityDisableImmediate(Entity& entity) {
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
-      entity.AddMarker<DisableMarker>();
+      entity.Add<DisableMarker>();
    }
 
    void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {

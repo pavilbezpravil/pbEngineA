@@ -28,22 +28,21 @@ namespace pbe {
       Entity() = default;
       Entity(entt::entity id, Scene* scene);
 
-      // todo: mb remove and add to 'Add' decltype(auto)?
-      template<typename T>
-      void AddMarker() {
-         ASSERT(!Has<T>());
-         scene->registry.emplace<T>(id);
-      }
-
       template<typename T, typename...Cs>
-      T& Add(Cs&&... cs) {
+      decltype(auto) Add(Cs&&... cs) {
          ASSERT(!Has<T>());
-         auto& component = scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
-         // not best way to set owner, but it works fine)
-         if constexpr (Entity_HasOwner<T>) {
-            component.owner = *this;
+
+         if constexpr (std::is_empty_v<T>) {
+            return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+         } else {
+            // todo: remove branch
+            auto& component = scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+            // not best way to set owner, but it works fine)
+            if constexpr (Entity_HasOwner<T>) {
+               component.owner = *this;
+            }
+            return component;
          }
-         return component;
       }
 
       template<typename T, typename...Cs>
