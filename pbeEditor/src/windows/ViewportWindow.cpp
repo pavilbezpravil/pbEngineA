@@ -391,7 +391,7 @@ namespace pbe {
             trans.SetScale(scale);
          }
 
-         selectedEntity.Add<TransformChangedMarker>();
+         selectedEntity.AddOrReplace<TransformChangedMarker>();
       }
    }
 

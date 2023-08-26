@@ -100,8 +100,6 @@ namespace pbe {
    void PhysicsScene::Simulate(float dt) {
       PROFILE_CPU("Phys simulate");
 
-      SyncPhysicsWithScene();
-
       int steps = stepTimer.Update(dt);
       if (steps > 2) {
          stepTimer.Reset();

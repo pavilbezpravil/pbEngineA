@@ -94,7 +94,7 @@ namespace pbe {
 
       void WakeUp();
 
-      bool IsValid() const { return pxJoint != nullptr; }
+      bool IsValid() const { return pxJoint != nullptr && entity0 && entity1; }
    };
 
 }

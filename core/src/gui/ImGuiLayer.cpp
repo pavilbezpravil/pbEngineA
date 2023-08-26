@@ -377,8 +377,8 @@ namespace pbe {
       //io.ConfigViewportsNoDefaultParent = true;
       //io.ConfigDockingAlwaysTabBar = true;
       //io.ConfigDockingTransparentPayload = true;
-      //io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;     // FIXME-DPI: Experimental. THIS CURRENTLY DOESN'T WORK AS EXPECTED. DON'T USE IN USER APP!
-      //io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports; // FIXME-DPI: Experimental.
+      // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;     // FIXME-DPI: Experimental. THIS CURRENTLY DOESN'T WORK AS EXPECTED. DON'T USE IN USER APP!
+      // io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports; // FIXME-DPI: Experimental.
 
       // Setup Dear ImGui style
       ImGui::StyleColorsDark();
@@ -410,6 +410,9 @@ namespace pbe {
       //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
       //IM_ASSERT(font != NULL);
       io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16);
+
+      float dpiScale = GetDpiForWindow(sWindow->hwnd) / 96.0f; // 96 - general Windows DPI
+      ImGui::GetIO().FontGlobalScale = dpiScale;
 
       // ThemeDark();
       // ThemeDeepDark();

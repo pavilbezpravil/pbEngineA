@@ -218,6 +218,8 @@ namespace pbe {
    void Scene::OnTick() {
       DestroyDelayedEntities();
       ProcessDelayedEnable();
+
+      GetPhysics()->SyncPhysicsWithScene();
    }
 
    void Scene::OnStart() {

@@ -46,6 +46,11 @@ namespace pbe {
       }
 
       template<typename T, typename...Cs>
+      decltype(auto) AddOrReplace(Cs&&... cs) {
+         return scene->registry.emplace_or_replace<T>(id, std::forward<Cs>(cs)...);
+      }
+
+      template<typename T, typename...Cs>
       void Remove() {
          ASSERT(Has<T>());
          scene->registry.erase<T>(id);
