@@ -45,7 +45,7 @@ namespace pbe {
       }
 
       if (!PxIsRigidDynamic(actor0) && !PxIsRigidDynamic(actor1)) {
-         WARN("Joint can be created when min one actor is dynamic");
+         WARN("Joint: at least one actor must be non-static");
          return;
       }
 
@@ -191,15 +191,15 @@ namespace pbe {
       STRUCT_FIELD(entity1)
 
       STRUCT_FIELD_USE(CheckJointType(JointType::Distance))
-      STRUCT_FIELD_FLAG(SkipName)
+      // STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(distance)
 
       STRUCT_FIELD_USE(CheckJointType(JointType::Revolute))
-      STRUCT_FIELD_FLAG(SkipName)
+      // STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(revolute)
 
       STRUCT_FIELD_USE(CheckJointType(JointType::Prismatic))
-      STRUCT_FIELD_FLAG(SkipName)
+      // STRUCT_FIELD_FLAG(SkipName)
       STRUCT_FIELD(prismatic)
 
       STRUCT_FIELD(breakForce)

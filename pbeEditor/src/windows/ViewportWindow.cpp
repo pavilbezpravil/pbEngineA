@@ -318,10 +318,11 @@ namespace pbe {
                .parent = shootRoot,
                .namePrefix = "Shoot cube",
                .pos = camera.position,
+               .scale = vec3_One * 0.5f,
             });
 
          auto& rb = shoot.Get<RigidBodyComponent>();
-         rb.SetLinearVelocity(camera.Forward() * 50.f);
+         rb.SetLinearVelocity(camera.Forward() * 25.f);
       }
    }
 

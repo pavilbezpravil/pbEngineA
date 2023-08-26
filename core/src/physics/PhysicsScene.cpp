@@ -328,12 +328,10 @@ namespace pbe {
       return actor;
    }
 
-   void RemoveSceneRigidActor(PxScene* pxScene, RigidBodyComponent& rb) {
-      pxScene->removeActor(*rb.pxRigidActor);
-      delete GetEntity(rb.pxRigidActor);
-      rb.pxRigidActor->userData = nullptr;
-
-      rb.pxRigidActor = nullptr;
+   void RemoveSceneRigidActor(PxScene* pxScene, PxRigidActor* pxRigidActor) {
+      pxScene->removeActor(*pxRigidActor);
+      delete (Entity*)pxRigidActor->userData;
+      pxRigidActor->userData = nullptr;
    }
 
    void PhysicsScene::AddRigidActor(Entity entity) {
@@ -350,7 +348,8 @@ namespace pbe {
    void PhysicsScene::RemoveRigidActor(Entity entity) {
       auto& rb = entity.Get<RigidBodyComponent>();
       ASSERT(rb.pxRigidActor);
-      RemoveSceneRigidActor(pxScene, rb);
+      RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
+      rb.pxRigidActor = nullptr;
    }
 
    void PhysicsScene::UpdateRigidActor(Entity entity) {
@@ -362,40 +361,33 @@ namespace pbe {
       if (isDynamicChanged) {
          PxRigidActor* newActor = CreateSceneRigidActor(pxScene, entity);
 
-         {
-            PxU32 jointCount = rb.pxRigidActor->getNbConstraints();
+         PxU32 nbConstrains = rb.pxRigidActor->getNbConstraints();
 
-            PxConstraint** joints = new PxConstraint* [jointCount]; // todo: allocation
-            rb.pxRigidActor->getConstraints(joints, jointCount);
+         if (nbConstrains) {
+            PxConstraint* constrains[8];
+            ASSERT(nbConstrains <= _countof(constrains));
+            nbConstrains = std::min(nbConstrains, (uint)_countof(constrains));
+            rb.pxRigidActor->getConstraints(constrains, nbConstrains);
 
-            for (PxU32 i = 0; i < jointCount; i++) {
-               auto pxJoint = joints[i];
+            for (PxU32 i = 0; i < nbConstrains; i++) {
+               auto pxConstrain = constrains[i];
+               auto pEntity = (Entity*)pxConstrain->userData;
+               // todo: mb PxConstraint::userData should be PxJoint?
+               auto pxJoint = pEntity->Get<JointComponent>().pxJoint;
 
-               PxRigidActor *actor0, *actor1;
+               PxRigidActor* actor0, * actor1;
                pxJoint->getActors(actor0, actor1);
-
-               Entity e0 = *GetEntity(actor0);
-               Entity e1 = *GetEntity(actor1);
 
                if (actor0 == rb.pxRigidActor) {
                   pxJoint->setActors(newActor, actor1);
-                  PxWakeUp(actor1);
                } else {
                   ASSERT(actor1 == rb.pxRigidActor);
                   pxJoint->setActors(actor0, newActor);
-                  PxWakeUp(actor0);
                }
-
-               PxWakeUp(actor0);
-               PxWakeUp(actor1);
-               PxWakeUp(newActor);
             }
-
-            delete[] joints;
          }
 
-         RemoveSceneRigidActor(pxScene, rb);
-
+         RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
          rb.pxRigidActor = newActor;
       }
 
@@ -426,7 +418,7 @@ namespace pbe {
       }
 
       pxScene->removeActor(*trigger.pxRigidActor);
-      delete GetEntity(trigger.pxRigidActor);
+      delete (Entity*)trigger.pxRigidActor->userData;
       trigger.pxRigidActor->userData = nullptr;
 
       trigger.pxRigidActor = nullptr;
@@ -436,6 +428,13 @@ namespace pbe {
       auto& joint = entity.Get<JointComponent>();
       joint.pxJoint = nullptr; // todo: ctor copy this by value
       joint.SetData(gPhysics);
+
+      // todo: or full init in joint or here
+      if (joint.pxJoint) {
+         auto pEntity = new Entity{ entity };
+         joint.pxJoint->userData = pEntity;
+         joint.pxJoint->getConstraint()->userData = pEntity;
+      }
    }
 
    void PhysicsScene::RemoveJoint(Entity entity) {
@@ -446,8 +445,13 @@ namespace pbe {
 
       joint.WakeUp();
 
+      delete (Entity*)joint.pxJoint->userData;
+      joint.pxJoint->getConstraint()->userData = nullptr;
+      joint.pxJoint->userData = nullptr;
+
       joint.pxJoint->release();
       joint.pxJoint = nullptr;
+      
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {

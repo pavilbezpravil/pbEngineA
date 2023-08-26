@@ -12,8 +12,8 @@ namespace pbe {
       // todo: mb have different components for static and dynamic rigid bodies
       bool dynamic = false;
 
-      float linearDamping = 0.5f;
-      float angularDamping = 0.5f;
+      float linearDamping = 0.1f;
+      float angularDamping = 0.1f;
 
       physx::PxRigidActor* pxRigidActor = nullptr;
 
@@ -93,6 +93,8 @@ namespace pbe {
       void SetData(physx::PxPhysics* pxPhys);
 
       void WakeUp();
+
+      bool IsValid() const { return pxJoint != nullptr; }
    };
 
 }

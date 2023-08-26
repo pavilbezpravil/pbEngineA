@@ -712,6 +712,10 @@ namespace pbe {
          }
 
          for (auto [_, joint] : scene.View<JointComponent>().each()) {
+            if (!joint.IsValid()) {
+               continue;
+            }
+
             dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{ 1, 1, 1, 1 });
 
             auto trans0 = joint.entity0.GetTransform();
