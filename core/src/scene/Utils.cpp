@@ -236,6 +236,7 @@ namespace pbe {
                joint.type = JointType::Distance;
                joint.distance.minDistance = 1;
                joint.distance.maxDistance = 2;
+               joint.distance.stiffness = 0;
 
                auto jointEntity = CreateEmpty(scene, "Distance Joint", root, vec3_Zero);
                jointEntity.Add<JointComponent>(std::move(joint));

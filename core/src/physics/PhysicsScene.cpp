@@ -82,21 +82,19 @@ namespace pbe {
    }
 
    void PhysicsScene::SyncPhysicsWithScene() {
-      // todo: only for changed entities
-
-      for (auto [_, trans, rb] :
-         scene.View<SceneTransformComponent, TriggerComponent>().each()) {
-         rb.pxRigidActor->setGlobalPose(GetTransform(trans));
+      for (auto [_, trans, trigger] :
+         scene.View<SceneTransformComponent, TriggerComponent, TransformChangedMarker>().each()) {
+         trigger.pxRigidActor->setGlobalPose(GetTransform(trans));
       }
 
-      // for (auto [_, trans, rb] :
-      //    scene.View<SceneTransformComponent, RigidBodyComponent>().each()) {
-      //    if (rb.dynamic) {
-      //       continue;
-      //    }
-      //
-      //    rb.pxRigidActor->setGlobalPose(GetTransform(trans));
-      // }
+      for (auto [_, trans, rb] :
+         scene.View<SceneTransformComponent, RigidBodyComponent, TransformChangedMarker>().each()) {
+         rb.pxRigidActor->setGlobalPose(GetTransform(trans));
+         PxWakeUp(rb.pxRigidActor);
+      }
+
+      // todo:
+      scene.ClearComponent<TransformChangedMarker>();
    }
 
    void PhysicsScene::Simulate(float dt) {

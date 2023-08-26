@@ -21,6 +21,8 @@ namespace pbe {
    // todo: move to math
    CORE_API std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform);
 
+   struct TransformChangedMarker {};
+
    struct CORE_API SceneTransformComponent {
       SceneTransformComponent() = default;
       SceneTransformComponent(Entity entity, Entity parent = {});

@@ -390,6 +390,8 @@ namespace pbe {
          if (gizmoCfg.operation & ImGuizmo::OPERATION::SCALE) {
             trans.SetScale(scale);
          }
+
+         selectedEntity.Add<TransformChangedMarker>();
       }
    }
 

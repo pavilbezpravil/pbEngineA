@@ -98,6 +98,11 @@ namespace pbe {
          }
       }
 
+      template<typename Component>
+      void ClearComponent() {
+         registry.clear<Component>();
+      }
+
       // call this every frame
       void OnTick();
 
