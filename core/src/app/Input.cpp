@@ -53,26 +53,26 @@ namespace pbe {
       while (ShowCursor(TRUE) < 0) {}
    }
 
-   bool Input::IsKeyDown(int keyCode) {
-      return sInput.keyDown[keyCode];
+   bool Input::IsKeyDown(KeyCode keyCode) {
+      return sInput.keyDown[(int)keyCode];
    }
 
-   bool Input::IsKeyPressing(int keyCode) {
-      return sInput.keyPressing[keyCode];
+   bool Input::IsKeyPressing(KeyCode keyCode) {
+      return sInput.keyPressing[(int)keyCode];
    }
 
-   bool Input::IsKeyUp(int keyCode) {
-      return sInput.keyUp[keyCode];
+   bool Input::IsKeyUp(KeyCode keyCode) {
+      return sInput.keyUp[(int)keyCode];
    }
 
    void Input::OnEvent(Event& event) {
       if (auto e = event.GetEvent<KeyDownEvent>()) {
-         sInput.keyDown[e->keyCode] = true;
-         sInput.keyPressing[e->keyCode] = true;
+         sInput.keyDown[(int)e->keyCode] = true;
+         sInput.keyPressing[(int)e->keyCode] = true;
       }
       if (auto e = event.GetEvent<KeyUpEvent>()) {
-         sInput.keyPressing[e->keyCode] = false;
-         sInput.keyUp[e->keyCode] = true;
+         sInput.keyPressing[(int)e->keyCode] = false;
+         sInput.keyUp[(int)e->keyCode] = true;
       }
    }
 

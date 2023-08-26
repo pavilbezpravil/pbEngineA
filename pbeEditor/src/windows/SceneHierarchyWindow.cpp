@@ -43,7 +43,7 @@ namespace pbe {
          // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
          ImGui::Dummy(ImGui::GetContentRegionAvail());
          DragDropChangeParent(pScene->GetRootEntity());
-         if (ImGui::IsItemClicked() && !Input::IsKeyPressing(VK_CONTROL)) {
+         if (ImGui::IsItemClicked() && !Input::IsKeyPressing(KeyCode::Ctrl)) {
             selection->ClearSelection();
          }
       }

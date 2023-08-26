@@ -1,4 +1,5 @@
 #pragma once
+#include "KeyCode.h"
 #include "core/Core.h"
 #include "math/Types.h"
 
@@ -21,9 +22,9 @@ namespace pbe {
       static void HideMouse(bool lock = false);
       static void ShowMouse(bool unlock = false);
 
-      static bool IsKeyDown(int keyCode);
-      static bool IsKeyPressing(int keyCode);
-      static bool IsKeyUp(int keyCode);
+      static bool IsKeyDown(KeyCode keyCode);
+      static bool IsKeyPressing(KeyCode keyCode);
+      static bool IsKeyUp(KeyCode keyCode);
 
       static void OnEvent(Event& event);
       static void ClearKeys();

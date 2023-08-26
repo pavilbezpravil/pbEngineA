@@ -85,7 +85,7 @@ namespace pbe {
       }
 
       if (auto* key = event.GetEvent<KeyDownEvent>()) {
-         if (Input::IsKeyPressing(VK_CONTROL) && key->keyCode == 'R') {
+         if (Input::IsKeyPressing(KeyCode::Ctrl) && key->keyCode == KeyCode::R) {
             ReloadShaders();
             event.handled = true;
          }

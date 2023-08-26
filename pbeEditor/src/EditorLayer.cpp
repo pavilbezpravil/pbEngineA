@@ -271,11 +271,11 @@ namespace pbe {
 
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyDownEvent>()) {
-         if (e->keyCode == VK_ESCAPE) {
+         if (e->keyCode == KeyCode::Escape) {
             editorSelection.ClearSelection();
          }
 
-         if (e->keyCode == VK_DELETE) {
+         if (e->keyCode == KeyCode::Delete) {
             for (auto entity : editorSelection.selected) {
                Undo::Get().Delete(entity); // todo: undo not each but all at once
                GetActiveScene()->DestroyImmediate(entity);
@@ -283,12 +283,12 @@ namespace pbe {
             editorSelection.ClearSelection();
          }
 
-         if (Input::IsKeyPressing(VK_CONTROL)) {
-            if (e->keyCode == 'P') {
+         if (Input::IsKeyPressing(KeyCode::Ctrl)) {
+            if (e->keyCode == KeyCode::P) {
                TogglePlayStop();
             }
 
-            if (e->keyCode == 'D') {
+            if (e->keyCode == KeyCode::D) {
                auto prevSelected = editorSelection.selected;
                editorSelection.ClearSelection();
 
@@ -298,13 +298,13 @@ namespace pbe {
                }
             }
 
-            if (e->keyCode == 'Z') {
+            if (e->keyCode == KeyCode::Z) {
                // todo: dont work
                // Undo::Get().PopAction();
             }
 
             // test message box
-            if (e->keyCode == 'M') {
+            if (e->keyCode == KeyCode::M) {
                MessageBox(sWindow->hwnd, "Test", "MsgBox Window", MB_OK);
             }
          }

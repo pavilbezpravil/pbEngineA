@@ -1,4 +1,5 @@
 #pragma once
+#include "KeyCode.h"
 #include "math/Types.h"
 
 namespace pbe {
@@ -33,7 +34,6 @@ namespace pbe {
       virtual EventType GetEventType() = 0;
    };
 
-
    struct AppQuitEvent : Event {
       EVENT_TYPE(AppQuit)
    };
@@ -55,17 +55,17 @@ namespace pbe {
    };
 
    struct KeyDownEvent : Event {
-      KeyDownEvent(int keyCode) : keyCode(keyCode) {}
+      KeyDownEvent(KeyCode keyCode) : keyCode(keyCode) {}
 
-      int keyCode = -1;
+      KeyCode keyCode = KeyCode::None;
 
       EVENT_TYPE(KeyDown)
    };
 
    struct KeyUpEvent : Event {
-      KeyUpEvent(int keyCode) : keyCode(keyCode) {}
+      KeyUpEvent(KeyCode keyCode) : keyCode(keyCode) {}
 
-      int keyCode = -1;
+      KeyCode keyCode = KeyCode::None;
 
       EVENT_TYPE(KeyUp)
    };

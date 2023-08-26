@@ -99,10 +99,10 @@ namespace pbe {
 
    void ViewportWindow::OnWindowUI() {
       if (focused) {
-         if (Input::IsKeyDown(VK_RBUTTON)) {
+         if (Input::IsKeyDown(KeyCode::RightButton)) {
             StartCameraMove();
          }
-         if (Input::IsKeyUp(VK_RBUTTON)) {
+         if (Input::IsKeyUp(KeyCode::RightButton)) {
             StopCameraMove();
          }
       }
@@ -149,10 +149,10 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
+      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver()) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
-         bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
+         bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Ctrl);
          if (entityID != (uint)-1) {
             Entity e{ entt::entity(entityID), scene };
             selection->ToggleSelect(e, clearPrevSelection);
@@ -202,7 +202,7 @@ namespace pbe {
          ImGui::Image(srv, imSize);
 
          static vec2 spawnCursorUV;
-         if (Input::IsKeyPressing(VK_SHIFT) && Input::IsKeyDown('A') && !cameraMove) {
+         if (Input::IsKeyPressing(KeyCode::Shift) && Input::IsKeyDown(KeyCode::A) && !cameraMove) {
             ImGui::OpenPopup("Add");
             spawnCursorUV = cursorUV;
          }
@@ -238,7 +238,7 @@ namespace pbe {
          }
 
          // zoom
-         if (Input::IsKeyDown('V')) {
+         if (Input::IsKeyDown(KeyCode::V)) {
             zoomEnable = !zoomEnable;
          }
          if (zoomEnable) {
@@ -272,33 +272,33 @@ namespace pbe {
          camera.Update(dt);
       }
 
-      if (!Input::IsKeyPressing(VK_RBUTTON)) {
-         if (Input::IsKeyDown('W')) {
+      if (!Input::IsKeyPressing(KeyCode::RightButton)) {
+         if (Input::IsKeyDown(KeyCode::W)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
          }
-         if (Input::IsKeyDown('R')) {
+         if (Input::IsKeyDown(KeyCode::R)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
          }
-         if (Input::IsKeyDown('S')) {
+         if (Input::IsKeyDown(KeyCode::S)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
          }
 
-         if (Input::IsKeyDown('Q')) {
+         if (Input::IsKeyDown(KeyCode::Q)) {
             gizmoCfg.space = 1 - gizmoCfg.space;
          }
 
-         if (Input::IsKeyDown('F') && selection->FirstSelected()) {
+         if (Input::IsKeyDown(KeyCode::F) && selection->FirstSelected()) {
             auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
             camera.UpdateView();
          }
       }
 
-      if (Input::IsKeyDown('X')) { // todo: other key
+      if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
          freeCamera = !freeCamera;
       }
 
-      if (Input::IsKeyDown('C')) { // todo: other key
+      if (Input::IsKeyDown(KeyCode::C)) { // todo: other key
          if (Entity e = selection->FirstSelected()) {
             e.Get<SceneTransformComponent>().SetPosition(camera.position);
             // todo: set rotation
@@ -307,7 +307,7 @@ namespace pbe {
 
       // todo:
       static TimedAction timer{5};
-      bool doShoot = Input::IsKeyPressing(' ');
+      bool doShoot = Input::IsKeyPressing(KeyCode::Space);
       if (timer.Update(dt, doShoot ? -1 : 1) > 0 && doShoot) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
@@ -361,7 +361,7 @@ namespace pbe {
       ImGuizmo::SetDrawlist();
       ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
 
-      bool snap = Input::IsKeyPressing(VK_CONTROL);
+      bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
 
       auto& trans = selectedEntity.Get<SceneTransformComponent>();
       mat4 entityTransform = trans.GetMatrix();

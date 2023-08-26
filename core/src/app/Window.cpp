@@ -50,7 +50,7 @@ namespace pbe {
             break;
          }
 
-         KeyDownEvent e{ (int)wParam };
+         KeyDownEvent e{ (KeyCode)wParam };
          sWindow->eventCallback(e);
          return 0;
       }
@@ -59,7 +59,7 @@ namespace pbe {
             break;
          }
 
-         KeyUpEvent e{ (int)wParam };
+         KeyUpEvent e{ (KeyCode)wParam };
          sWindow->eventCallback(e);
          return 0;
       }
@@ -69,22 +69,22 @@ namespace pbe {
          //    break;
          // }
 
-         KeyDownEvent e{ (int)VK_LBUTTON };
+         KeyDownEvent e{ KeyCode::LeftButton };
          sWindow->eventCallback(e);
          return 0;
       }
       case WM_LBUTTONUP: {
-         KeyUpEvent e{ (int)VK_LBUTTON };
+         KeyUpEvent e{ KeyCode::LeftButton };
          sWindow->eventCallback(e);
          return 0;
       }
       case WM_RBUTTONDOWN: {
-         KeyDownEvent e{ (int)VK_RBUTTON };
+         KeyDownEvent e{ KeyCode::RightButton };
          sWindow->eventCallback(e);
          return 0;
       }
       case WM_RBUTTONUP: {
-         KeyUpEvent e{ (int)VK_RBUTTON };
+         KeyUpEvent e{ KeyCode::RightButton };
          sWindow->eventCallback(e);
          return 0;
       }

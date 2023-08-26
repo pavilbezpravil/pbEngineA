@@ -6,7 +6,7 @@
 namespace pbe {
 
    void EditorSelection::ToggleSelect(Entity entity) {
-      bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
+      bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Ctrl);
       ToggleSelect(entity, clearPrevSelection);
    }
 
