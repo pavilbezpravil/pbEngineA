@@ -11,7 +11,7 @@
 #include "core/CVar.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
-#include "physics/PhysicsScene.h"
+#include "physics/Phys.h"
 #include "rend/RendRes.h"
 #include "rend/Shader.h"
 #include "typer/Typer.h"

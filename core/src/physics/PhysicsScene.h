@@ -6,13 +6,9 @@
 
 
 namespace pbe {
+
    class Entity;
    class Scene;
-
-   using namespace physx;
-
-   void InitPhysics();
-   void TermPhysics();
 
    struct RayCastResult;
 
@@ -37,7 +33,7 @@ namespace pbe {
       void OnUpdate(float dt) override;
 
    private:
-      PxScene* pxScene = nullptr;
+      physx::PxScene* pxScene = nullptr;
       Scene& scene;
 
       TimedAction stepTimer{60.f};
@@ -64,9 +60,5 @@ namespace pbe {
       void OnDestroyJoint(entt::registry& registry, entt::entity entity);
       void OnUpdateJoint(entt::registry& registry, entt::entity entity);
    };
-
-
-   // todo: move to separate file
-   PxPhysics* GetPxPhysics();
 
 }

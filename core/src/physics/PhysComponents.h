@@ -90,7 +90,7 @@ namespace pbe {
       JointComponent() = default;
       JointComponent(JointType type);
 
-      void SetData(physx::PxPhysics* pxPhys);
+      void SetData(const Entity& entity);
 
       void WakeUp();
 

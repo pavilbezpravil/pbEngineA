@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "PhysComponents.h"
 
+#include "Phys.h"
 #include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
 #include "core/Profiler.h"
@@ -29,7 +30,7 @@ namespace pbe {
 
    JointComponent::JointComponent(JointType type) : type(type) { }
 
-   void JointComponent::SetData(physx::PxPhysics* pxPhys) {
+   void JointComponent::SetData(const Entity& entity) {
       // todo: ctor
       // todo: if type state the same it is not need to recreate joint
       if (pxJoint) {
@@ -50,14 +51,14 @@ namespace pbe {
       }
 
       if (type == JointType::Fixed) {
-         auto pxFixedJoint = PxFixedJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxFixedJoint = PxFixedJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxFixedJoint;
          if (!pxJoint) {
             WARN("Cant create fixed joint");
             return;
          }
       } else if (type == JointType::Distance) {
-         auto pxDistanceJoint = PxDistanceJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxDistanceJoint = PxDistanceJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxDistanceJoint;
          if (!pxJoint) {
             WARN("Cant create distance joint");
@@ -74,7 +75,7 @@ namespace pbe {
          pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, distance.maxDistance > 0);
          pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, distance.stiffness > 0);
       } else if (type == JointType::Revolute) {
-         auto pxRevoluteJoint = PxRevoluteJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxRevoluteJoint = PxRevoluteJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxRevoluteJoint;
          if (!pxJoint) {
             WARN("Cant create revolute joint");
@@ -96,7 +97,7 @@ namespace pbe {
             pxRevoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_FREESPIN, revolute.driveFreespin);
          }
       } else if (type == JointType::Spherical) {
-         auto pxSphericalJoint = PxSphericalJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxSphericalJoint = PxSphericalJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxSphericalJoint;
          if (!pxJoint) {
             WARN("Cant create spherical joint");
@@ -104,7 +105,7 @@ namespace pbe {
          }
          // todo:
       } else if (type == JointType::Prismatic) {
-         auto pxPrismaticJoint = PxPrismaticJointCreate(*pxPhys, actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxPrismaticJoint = PxPrismaticJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
          pxJoint = pxPrismaticJoint;
          if (!pxJoint) {
             WARN("Cant create prismatic joint");
@@ -112,7 +113,7 @@ namespace pbe {
          }
          // todo:
 
-         const auto tolerances = pxPhys->getTolerancesScale(); // todo: or set from component?
+         const auto tolerances = GetPxPhysics()->getTolerancesScale(); // todo: or set from component?
 
          // todo: name
          pxPrismaticJoint->setLimit(PxJointLinearLimitPair{ tolerances, prismatic.lowerLimit, prismatic.upperLimit });
@@ -123,6 +124,10 @@ namespace pbe {
 
       pxJoint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, collisionEnable);
       pxJoint->setBreakForce(FloatInfToMax(breakForce), FloatInfToMax(breakTorque));
+
+      auto pEntity = new Entity{ entity }; // todo: allocation
+      pxJoint->userData = pEntity;
+      pxJoint->getConstraint()->userData = pEntity;
 
       WakeUp();
    }

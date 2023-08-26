@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "PhysicsScene.h"
 
+#include "Phys.h"
 #include "PhysComponents.h"
 #include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
@@ -12,134 +13,15 @@
 
 namespace pbe {
 
-#define PVD_HOST "127.0.0.1"	//Set this to the IP address of the system running the PhysX Visual Debugger that you want to connect to.
-
-   static PxDefaultAllocator gAllocator;
-   static PxDefaultErrorCallback	gErrorCallback;
-   static PxFoundation* gFoundation = NULL;
-   static PxPhysics* gPhysics = NULL;
-   static PxDefaultCpuDispatcher* gDispatcher = NULL;
-   static PxMaterial* gMaterial = NULL;
-   static PxPvd* gPvd = NULL;
-
-   void InitPhysics() {
-      gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
-
-      gPvd = PxCreatePvd(*gFoundation);
-      PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
-      gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
-
-      gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
-      gDispatcher = PxDefaultCpuDispatcherCreate(2);
-      gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.25f);
-   }
-
-   void TermPhysics() {
-      PX_RELEASE(gDispatcher);
-      PX_RELEASE(gPhysics);
-      if (gPvd) {
-         PxPvdTransport* transport = gPvd->getTransport();
-         gPvd->release();	gPvd = NULL;
-         PX_RELEASE(transport);
-      }
-      PX_RELEASE(gFoundation);
-   }
-
-   // todo: delete?
-   PxFilterFlags contactReportFilterShader(
-         PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-         PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-         PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
-      PX_UNUSED(attributes0);
-      PX_UNUSED(attributes1);
-      PX_UNUSED(filterData0);
-      PX_UNUSED(filterData1);
-      PX_UNUSED(constantBlockSize);
-      PX_UNUSED(constantBlock);
-
-      if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1)) {
-         pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
-         return PxFilterFlag::eDEFAULT;
-      }
-
-      // todo:
-      pairFlags = PxPairFlag::eCONTACT_DEFAULT
-                | PxPairFlag::eNOTIFY_TOUCH_FOUND | PxPairFlag::eNOTIFY_TOUCH_LOST
-                | PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eNOTIFY_CONTACT_POINTS;
-      return PxFilterFlag::eDEFAULT;
-   }
-
-   struct SimulationEventCallback : PxSimulationEventCallback {
-      PhysicsScene* physScene{};
-      SimulationEventCallback(PhysicsScene* physScene) : physScene(physScene) {}
-
-      void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override {}
-
-      void onWake(PxActor** actors, PxU32 count) override {
-         for (PxU32 i = 0; i < count; i++) {
-            Entity& e = *GetEntity(actors[i]);
-            INFO("Wake event {}", e.GetName());
-         }
-      }
-
-      void onSleep(PxActor** actors, PxU32 count) override {
-         for (PxU32 i = 0; i < count; i++) {
-            Entity& e = *GetEntity(actors[i]);
-            INFO("Sleep event {}", e.GetName());
-         }
-      }
-
-      void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override {
-         for (PxU32 i = 0; i < nbPairs; i++) {
-            const PxContactPair& cp = pairs[i];
-
-            Entity& e0 = *GetEntity(pairHeader.actors[0]);
-            Entity& e1 = *GetEntity(pairHeader.actors[1]);
-
-            if (cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-               INFO("onContact eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
-               // physScene->scene.DispatchEvent<ContactEnterEvent>(e0, e1);
-            } else if (cp.events & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-               INFO("onContact eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
-               // physScene->scene.DispatchEvent<ContactExitEvent>(e0, e1);
-            }
-         }
-      }
-
-      void onTrigger(PxTriggerPair* pairs, PxU32 count) override {
-         for (PxU32 i = 0; i < count; i++) {
-            const PxTriggerPair& pair = pairs[i];
-            if (pair.flags & (PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER | PxTriggerPairFlag::eREMOVED_SHAPE_OTHER)) {
-               continue;
-            }
-
-            Entity& e0 = *GetEntity(pair.triggerActor);
-            Entity& e1 = *GetEntity(pair.otherActor);
-
-            if (pair.status & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-               INFO("onTrigger eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
-               e1.DestroyDelayed();
-               // physScene->scene.DispatchEvent<TriggerEnterEvent>(e0, e1);
-            } else if (pair.status & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-               INFO("onTrigger eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
-               // physScene->scene.DispatchEvent<TriggerExitEvent>(e0, e1);
-            }
-         }
-      }
-
-      // todo: advance?
-      void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override {}
-   };
-
    PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
-      PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
+      PxSceneDesc sceneDesc(GetPxPhysics()->getTolerancesScale());
       sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
-      sceneDesc.cpuDispatcher = gDispatcher;
+      sceneDesc.cpuDispatcher = GetPxCpuDispatcher();
       sceneDesc.filterShader = PxDefaultSimulationFilterShader;
       // sceneDesc.filterShader = contactReportFilterShader;
       sceneDesc.simulationEventCallback = new SimulationEventCallback(this);
       sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-      pxScene = gPhysics->createScene(sceneDesc);
+      pxScene = GetPxPhysics()->createScene(sceneDesc);
 
       PxPvdSceneClient* pvdClient = pxScene->getScenePvdClient();
       if (pvdClient) {
@@ -317,9 +199,9 @@ namespace pbe {
       PxRigidActor* actor = nullptr;
       if (rb.dynamic) {
          // todo: density, damping
-         actor = PxCreateDynamic(*gPhysics, physTrans, physGeom.any(), *gMaterial, 10.0f);
+         actor = PxCreateDynamic(*GetPxPhysics(), physTrans, physGeom.any(), *GetPxMaterial(), 10.0f);
       } else {
-         actor = PxCreateStatic(*gPhysics, physTrans, physGeom.any(), *gMaterial);
+         actor = PxCreateStatic(*GetPxPhysics(), physTrans, physGeom.any(), *GetPxMaterial());
       }
 
       actor->userData = new Entity{ entity }; // todo: use fixed allocator
@@ -400,9 +282,9 @@ namespace pbe {
       PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
 
       const PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eTRIGGER_SHAPE;
-      PxShape* shape = gPhysics->createShape(physGeom.any(), *gMaterial, true, shapeFlags);
+      PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true, shapeFlags);
 
-      PxRigidStatic* actor = gPhysics->createRigidStatic(GetTransform(trans));
+      PxRigidStatic* actor = GetPxPhysics()->createRigidStatic(GetTransform(trans));
       actor->attachShape(*shape);
       actor->userData = new Entity{ entity }; // todo: use fixed allocator
       pxScene->addActor(*actor);
@@ -427,14 +309,7 @@ namespace pbe {
    void PhysicsScene::AddJoint(Entity entity) {
       auto& joint = entity.Get<JointComponent>();
       joint.pxJoint = nullptr; // todo: ctor copy this by value
-      joint.SetData(gPhysics);
-
-      // todo: or full init in joint or here
-      if (joint.pxJoint) {
-         auto pEntity = new Entity{ entity };
-         joint.pxJoint->userData = pEntity;
-         joint.pxJoint->getConstraint()->userData = pEntity;
-      }
+      joint.SetData(entity);
    }
 
    void PhysicsScene::RemoveJoint(Entity entity) {
@@ -506,12 +381,8 @@ namespace pbe {
    void PhysicsScene::OnUpdateJoint(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
       if (entity.Enabled()) {
-         entity.Get<JointComponent>().SetData(gPhysics);
+         entity.Get<JointComponent>().SetData(entity);
       }
-   }
-
-   PxPhysics* GetPxPhysics() {
-      return gPhysics;
    }
 
 }
