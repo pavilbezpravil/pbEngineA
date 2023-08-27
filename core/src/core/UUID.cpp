@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "UUID.h"
-#include "typer/Typer.h"
 
 #include <random>
 
@@ -10,15 +9,7 @@ namespace pbe {
    static std::mt19937_64 sEng(sRandomDevice());
    static std::uniform_int_distribution<uint64_t> sDistribution;
 
-   // todo:: add custom ser deser
-   TYPER_BEGIN(UUID)
-   // ti.serialize = [](YAML::Emitter& emitter, const char* name, const byte* value) { emitter << YAML::Key << name << YAML::Value << *(Type*)value; }; \
-   // ti.deserialize = [](const YAML::Node& node, const char* name, byte* value) { *(Type*)value = node[name].as<Type>(); };
-   TYPER_END()
-   
-
-   UUID::UUID() : uuid(sDistribution(sEng)) {
-   }
+   UUID::UUID() : uuid(sDistribution(sEng)) {}
 
    bool UUID::Valid() const {
       return uuid != (uint64)UUID_INVALID;

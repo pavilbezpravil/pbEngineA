@@ -10,25 +10,29 @@
 #include "core/Type.h"
 #include "fs/FileSystem.h"
 #include "gui/Gui.h"
+
 #include "scene/Scene.h"
 #include "scene/Entity.h"
 #include "scene/Utils.h"
+
 #include "typer/Serialize.h"
-#include "typer/Typer.h"
+#include "typer/Registration.h"
+
 #include "windows/EditorWindows.h"
 #include "windows/ViewportWindow.h"
 #include "windows/SceneHierarchyWindow.h"
 #include "windows/InspectorWindow.h"
+#include "windows/ShaderToyWindow.h"
 
 
 namespace pbe {
 
    constexpr char editorSettingPath[] = "editor.yaml";
 
-   TYPER_BEGIN(EditorSettings)
-      TYPER_FIELD(scenePath)
-      TYPER_FIELD(cameraPos)
-   TYPER_END()
+   STRUCT_BEGIN(EditorSettings)
+      STRUCT_FIELD(scenePath)
+      STRUCT_FIELD(cameraPos)
+   STRUCT_END()
 
    void EditorLayer::OnAttach() {
       Deserialize(editorSettingPath, editorSettings);
@@ -38,6 +42,7 @@ namespace pbe {
       ReloadDll();
 
       AddEditorWindow(new ConfigVarsWindow("ConfigVars"), true);
+      AddEditorWindow(new ShaderToyWindow());
       AddEditorWindow(sceneHierarchyWindow = new SceneHierarchyWindow("SceneHierarchy"), true);
       AddEditorWindow(inspectorWindow = new InspectorWindow("Inspector"), true);
       AddEditorWindow(viewportWindow = new ViewportWindow("Viewport"), true);
@@ -47,34 +52,6 @@ namespace pbe {
       sceneHierarchyWindow->selection = &editorSelection;
       viewportWindow->selection = &editorSelection;
       inspectorWindow->selection = &editorSelection;
-
-      viewportWindow->customHeadFunc = [&]() {
-         switch (editorState) {
-            case State::Edit:
-               if (ImGui::Button("Play") && editorScene) {
-                  OnPlay();
-               }
-               break;
-            case State::Play:
-               if (ImGui::Button("Stop")) {
-                  OnStop();
-               }
-               break;
-            default: UNIMPLEMENTED();
-         }
-
-         // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
-         // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
-         //    
-         // }
-
-         if (editorState == State::Edit) {
-            ImGui::SameLine();
-            if (ImGui::Button("Reload dll")) {
-               ReloadDll();
-            }
-         }
-      };
 
       // todo:
       renderer.reset(new Renderer());
@@ -108,6 +85,10 @@ namespace pbe {
          if (window->show) {
             window->OnUpdate(dt);
          }
+      }
+
+      if (auto pScene = GetActiveScene()) {
+         pScene->OnTick();
       }
 
       if (editorState == State::Play && runtimeScene) {
@@ -218,6 +199,36 @@ namespace pbe {
 
             ImGui::MenuItem("ImGuiDemoWindow", NULL, &showImGuiWindow);
          }
+
+         {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f);
+
+            switch (editorState) {
+               case State::Edit:
+                  if (ImGui::Button("Play") && editorScene) {
+                     OnPlay();
+                  }
+                  break;
+               case State::Play:
+                  if (ImGui::Button("Stop")) {
+                     OnStop();
+                  }
+                  break;
+               default: UNIMPLEMENTED();
+            }
+
+            // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
+            // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
+            //    
+            // }
+
+            if (editorState == State::Edit) {
+               ImGui::SameLine();
+               if (ImGui::Button("Reload dll")) {
+                  ReloadDll();
+               }
+            }
+         }
       }
 
       if (showImGuiWindow) {
@@ -225,21 +236,46 @@ namespace pbe {
       }
 
       for (auto& window : editorWindows) {
-         if (window->show) {
-            if (UI_WINDOW(window->name.c_str(), &window->show)) {
-               window->OnImGuiRender();
+         if (!window->show) {
+            continue;
+         }
+
+         window->OnBefore();
+
+         if (UI_WINDOW(window->name.c_str(), &window->show)) {
+            if (ImGui::IsWindowHovered() && (!ImGui::IsAnyItemActive() || ImGui::IsMouseClicked(ImGuiMouseButton_Right))) {
+               ImGui::SetWindowFocus();
+            }
+
+            bool focused = ImGui::IsWindowFocused();
+            if (window->focused != focused) {
+               window->focused = focused;
+               if (focused) {
+                  window->OnFocus();
+               } else {
+                  window->OnLostFocus();
+               }
+            }
+
+            window->OnWindowUI();
+         } else {
+            if (window->focused) {
+               window->focused = false;
+               window->OnLostFocus();
             }
          }
+
+         window->OnAfter();
       }
    }
 
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyDownEvent>()) {
-         if (e->keyCode == VK_ESCAPE) {
+         if (e->keyCode == KeyCode::Escape) {
             editorSelection.ClearSelection();
          }
 
-         if (e->keyCode == VK_DELETE) {
+         if (e->keyCode == KeyCode::Delete) {
             for (auto entity : editorSelection.selected) {
                Undo::Get().Delete(entity); // todo: undo not each but all at once
                GetActiveScene()->DestroyImmediate(entity);
@@ -247,12 +283,12 @@ namespace pbe {
             editorSelection.ClearSelection();
          }
 
-         if (Input::IsKeyPressing(VK_CONTROL)) {
-            if (e->keyCode == 'P') {
+         if (Input::IsKeyPressing(KeyCode::Ctrl)) {
+            if (e->keyCode == KeyCode::P) {
                TogglePlayStop();
             }
 
-            if (e->keyCode == 'D') {
+            if (e->keyCode == KeyCode::D) {
                auto prevSelected = editorSelection.selected;
                editorSelection.ClearSelection();
 
@@ -262,13 +298,13 @@ namespace pbe {
                }
             }
 
-            if (e->keyCode == 'Z') {
+            if (e->keyCode == KeyCode::Z) {
                // todo: dont work
                // Undo::Get().PopAction();
             }
 
             // test message box
-            if (e->keyCode == 'M') {
+            if (e->keyCode == KeyCode::M) {
                MessageBox(sWindow->hwnd, "Test", "MsgBox Window", MB_OK);
             }
          }
@@ -306,6 +342,7 @@ namespace pbe {
    void EditorLayer::OnPlay() {
       runtimeScene = editorScene->Copy();
       SetActiveScene(runtimeScene.get());
+      // viewportWindow->freeCamera = false;
       runtimeScene->OnStart();
       editorState = State::Play;
    }
@@ -340,6 +377,9 @@ namespace pbe {
          } else {
             dllHandler = LoadLibrary(dllName.data());
          }
+
+         // process new types
+         Typer::Get().Finalize();
 
          if (!dllHandler) {
             WARN("could not load the dynamic library testProj.dll");

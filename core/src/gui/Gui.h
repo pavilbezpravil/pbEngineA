@@ -52,7 +52,7 @@ namespace pbe {
 
          ~Menu() {
             if (opened) {
-               ImGui::End();
+               ImGui::EndMenu();
             }
          }
 
@@ -88,6 +88,41 @@ namespace pbe {
 
 #define UI_PUSH_ID(id) ui::PushID uiPushID{id}
 
+      struct PushStyleVar {
+         PushStyleVar(ImGuiStyleVar idx, float val) {
+            ImGui::PushStyleVar(idx, val);
+         }
+
+         PushStyleVar(ImGuiStyleVar idx, const ImVec2& val) {
+            ImGui::PushStyleVar(idx, val);
+         }
+
+         ~PushStyleVar() {
+            ImGui::PopStyleVar();
+         }
+      };
+
+#define __UI_PUSH_STYLE_VAR(unique, idx, val) ui::PushStyleVar CONCAT(uiPushStyleVar_, unique){idx, val}
+#define UI_PUSH_STYLE_VAR(idx, ...) __UI_PUSH_STYLE_VAR(__LINE__, idx, __VA_ARGS__)
+
+
+      struct PushStyleColor {
+         PushStyleColor(ImGuiCol idx, const ImVec4& col) {
+            ImGui::PushStyleColor(idx, col);
+         }
+
+         PushStyleColor(ImGuiStyleVar idx, ImU32 col) {
+            ImGui::PushStyleColor(idx, col);
+         }
+
+         ~PushStyleColor() {
+            ImGui::PopStyleColor();
+         }
+      };
+
+#define __UI_PUSH_STYLE_COLOR(unique, idx, val) ui::PushStyleColor CONCAT(uiPushStyleColor_, unique){idx, val}
+#define UI_PUSH_STYLE_COLOR(idx, ...) __UI_PUSH_STYLE_COLOR(__LINE__, idx, __VA_ARGS__)
+
       struct TreeNode {
          TreeNode(const char* name, ImGuiTreeNodeFlags flags = 0) {
             opened = ImGui::TreeNodeEx(name, flags);
@@ -119,6 +154,9 @@ namespace pbe {
       struct PopupContextX {
          PopupContextX(int type, const char* name = nullptr, ImGuiPopupFlags flags = 1) {
             switch (type) {
+               case 0:
+                  opened = ImGui::BeginPopup(name, flags);
+                  break;
                case 1:
                   opened = ImGui::BeginPopupContextItem(name, flags);
                   break;
@@ -145,6 +183,7 @@ namespace pbe {
          bool opened = false;
       };
 
+#define UI_POPUP(...) ui::PopupContextX uiPopupContextItem{0, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_ITEM(...) ui::PopupContextX uiPopupContextItem{1, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_WINDOW(...) ui::PopupContextX uiPopupContextWindow{2, __VA_ARGS__}
 #define UI_POPUP_CONTEXT_VOID(...) ui::PopupContextX uiPopupContextVoid{3, __VA_ARGS__}
@@ -202,12 +241,22 @@ namespace pbe {
 
    CORE_API ImGuiContext* GetImGuiContext();
 
-   CORE_API bool EditorUI(std::string_view name, TypeID typeID, byte* value);
+   CORE_API bool EditorUI(std::string_view lable, TypeID typeID, byte* value);
+   CORE_API bool EditorUI(TypeID typeID, byte* value);
+
+   // todo: mb delete?
+   CORE_API ImGuiTreeNodeFlags DefaultTreeNodeFlags();
 
    template<typename T>
-   bool EditorUI(std::string_view name, T& value) {
+   bool EditorUI(std::string_view lable, T& value) {
       const auto typeID = GetTypeID<T>();
-      return EditorUI(name, typeID, (byte*)&value);
+      return EditorUI(lable, typeID, (byte*)&value);
+   }
+
+   template<typename T>
+   bool EditorUI(T& value) {
+      const auto typeID = GetTypeID<T>();
+      return EditorUI("", typeID, (byte*)&value);
    }
 
    bool UIColorEdit3(const char* name, byte* value);

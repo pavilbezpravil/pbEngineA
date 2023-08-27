@@ -4,6 +4,8 @@
 
 namespace pbe {
 
+   struct EditorSelection;
+
    Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {});
 
    struct CubeDesc {
@@ -20,6 +22,10 @@ namespace pbe {
 
    Entity CORE_API CreateDirectLight(Scene& scene, string_view namePrefix = "Direct Light", const vec3& pos = {});
    Entity CORE_API CreateSky(Scene& scene, string_view namePrefix = "Sky", const vec3& pos = {});
+
+   Entity CORE_API CreateTrigger(Scene& scene, const vec3& pos = {});
+
+   Entity CORE_API SceneAddEntityMenu(Scene& scene, const vec3& spawnPosHint, EditorSelection* selection = nullptr);
 
    // todo: 
    template<typename T>

@@ -16,6 +16,11 @@ namespace pbe {
       }
    }
 
+   template<typename T>
+   concept Entity_HasOwner = requires(T a) {
+      { a.owner };
+   };
+
    struct SceneTransformComponent;
 
    class CORE_API Entity {
@@ -24,14 +29,30 @@ namespace pbe {
       Entity(entt::entity id, Scene* scene);
 
       template<typename T, typename...Cs>
-      T& Add(Cs&&... cs) {
+      decltype(auto) Add(Cs&&... cs) {
          ASSERT(!Has<T>());
-         return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+
+         if constexpr (std::is_empty_v<T>) {
+            return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+         } else {
+            // todo: remove branch
+            auto& component = scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
+            // not best way to set owner, but it works fine)
+            if constexpr (Entity_HasOwner<T>) {
+               component.owner = *this;
+            }
+            return component;
+         }
+      }
+
+      template<typename T, typename...Cs>
+      decltype(auto) AddOrReplace(Cs&&... cs) {
+         return scene->registry.emplace_or_replace<T>(id, std::forward<Cs>(cs)...);
       }
 
       template<typename T, typename...Cs>
       void Remove() {
-         ASSERT(!Has<T>());
+         ASSERT(Has<T>());
          scene->registry.erase<T>(id);
       }
 
@@ -40,21 +61,26 @@ namespace pbe {
          remove_all_with_filter<Exclude...>(scene->registry, id);
       }
 
-      template<typename T>
+      template<typename... Type>
       bool Has() const {
-         return TryGet<T>() != nullptr;
+         return scene->registry.all_of<Type...>(id);
       }
 
-      template<typename T>
-      T& Get() {
-         ASSERT(Has<T>());
-         return scene->registry.get<T>(id);
+      template<typename... Type>
+      bool HasAny() const {
+         return scene->registry.any_of<Type...>(id);
       }
 
-      template<typename T>
-      const T& Get() const {
-         ASSERT(Has<T>());
-         return scene->registry.get<T>(id);
+      template<typename... Type>
+      decltype(auto) Get() {
+         ASSERT(Has<Type...>());
+         return scene->registry.get<Type...>(id);
+      }
+
+      template<typename... Type>
+      decltype(auto) Get() const {
+         ASSERT(Has<Type...>());
+         return scene->registry.get<Type...>(id);
       }
 
       template<typename T>
@@ -67,21 +93,33 @@ namespace pbe {
          return scene->registry.try_get<T>(id);
       }
 
-      template<typename T>
-      T& GetOrAdd() {
+      template<typename T, typename...Cs>
+      T& GetOrAdd(Cs&&... cs) {
          if (auto c = TryGet<T>()) {
             return *c;
          }
-         return Add<T>();
+         return Add<T>(std::forward<Cs>(cs)...);
       }
 
+      template<typename T>
+      void MarkComponentUpdated() {
+         ASSERT(Has<T>());
+         scene->registry.patch<T>(id);
+      }
+
+      void DestroyDelayed(bool withChilds = true);
       void DestroyImmediate(bool withChilds = true);
 
+      bool Enabled() const;
+      void Enable();
+      void Disable();
+      void EnableToggle();
+
       bool Valid() const {
-         return id != entt::null;
+         return id != entt::null && scene->registry.valid(id);
       }
 
-      operator bool() const { return Valid(); }
+      operator bool() const { return Valid(); } // todo: include Enabled?
       bool operator==(const Entity&) const = default;
 
       entt::entity GetID() const { return id; }

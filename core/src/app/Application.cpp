@@ -11,9 +11,10 @@
 #include "core/CVar.h"
 #include "core/Thread.h"
 #include "gui/ImGuiLayer.h"
-#include "physics/PhysicsScene.h"
+#include "physics/Phys.h"
 #include "rend/RendRes.h"
 #include "rend/Shader.h"
+#include "typer/Typer.h"
 
 
 namespace pbe {
@@ -21,6 +22,8 @@ namespace pbe {
    Application* sApplication = nullptr;
 
    void Application::OnInit() {
+      Typer::Get().Finalize();
+
       Log::Init();
 
       new Window();
@@ -82,7 +85,7 @@ namespace pbe {
       }
 
       if (auto* key = event.GetEvent<KeyDownEvent>()) {
-         if (Input::IsKeyPressing(VK_CONTROL) && key->keyCode == 'R') {
+         if (Input::IsKeyPressing(KeyCode::Ctrl) && key->keyCode == KeyCode::R) {
             ReloadShaders();
             event.handled = true;
          }

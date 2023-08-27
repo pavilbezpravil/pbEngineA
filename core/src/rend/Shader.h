@@ -146,7 +146,7 @@ namespace pbe {
       }
    };
 
-   class GpuProgram : public RefCounted {
+   class CORE_API GpuProgram : public RefCounted {
    public:
       static Ref<GpuProgram> Create(const ProgramDesc& desc);
 
@@ -198,7 +198,7 @@ namespace pbe {
    // public:
    // };
 
-   GpuProgram* GetGpuProgram(const ProgramDesc& desc);
+   CORE_API GpuProgram* GetGpuProgram(const ProgramDesc& desc);
    void TermGpuPrograms();
 
    extern CORE_API std::vector<Shader*> sShaders;

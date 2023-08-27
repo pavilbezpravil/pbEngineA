@@ -25,7 +25,7 @@ namespace pbe {
    CVarSlider<float> cTerrainPatchSize{ C_TERRAIN_PATH "patch size", 4.f, 1.f, 32.f };
    CVarSlider<int> cTerrainPatchCount{ C_TERRAIN_PATH "patch count", 64, 1, 512 };
 
-   void Terrain::Render(CommandList& cmd, Scene& scene, RenderContext& cameraContext) {
+   void Terrain::Render(CommandList& cmd, const Scene& scene, RenderContext& cameraContext) {
       if (!cTerrainDraw) {
          return;
       }

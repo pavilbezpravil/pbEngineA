@@ -1,39 +1,10 @@
 #pragma once
 
 #include "Entity.h"
-#include "core/Type.h"
 #include "core/UUID.h"
 #include "math/Types.h"
 
 namespace pbe {
-
-   void __ComponentUnreg(TypeID typeID);
-
-   struct CORE_API ComponentRegisterGuard : RegisterGuardT<decltype([](TypeID typeID) { __ComponentUnreg(typeID); }) > {
-      using RegisterGuardT::RegisterGuardT;
-   };
-
-#define INTERNAL_ADD_COMPONENT(Component) \
-   { \
-      static_assert(std::is_move_assignable_v<Component>); \
-      ComponentInfo ci{}; \
-      ci.typeID = GetTypeID<Component>(); \
-      ci.tryGet = [](Entity& e) { return (void*)e.TryGet<Component>(); }; \
-      ci.tryGetConst = [](const Entity& e) { return (const void*)e.TryGet<Component>(); }; \
-      ci.getOrAdd = [](Entity& e) { return (void*)&e.GetOrAdd<Component>(); }; \
-      ci.duplicate = [](void* dst, const void* src) { *(Component*)dst = *(Component*)src; }; \
-      ci.copyCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&)*srcCompPtr); }; \
-      ci.moveCtor = [](Entity& dst, const void* src) { auto srcCompPtr = (Component*)src; dst.Add<Component>((Component&&)*srcCompPtr); }; \
-      typer.RegisterComponent(std::move(ci)); \
-   }
-
-#define TYPER_REGISTER_COMPONENT(Component) \
-   static void TyperComponentRegister_##Component() { \
-      auto& typer = Typer::Get(); \
-      ComponentInfo ci{}; \
-      INTERNAL_ADD_COMPONENT(Component); \
-   } \
-   static ComponentRegisterGuard ComponentInfo_##Component = {GetTypeID<Component>(), TyperComponentRegister_##Component};
 
    struct UUIDComponent {
       UUID uuid;
@@ -43,8 +14,14 @@ namespace pbe {
       std::string tag;
    };
 
+   struct CameraComponent {
+      bool main = false;
+   };
+
    // todo: move to math
    CORE_API std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform);
+
+   struct TransformChangedMarker {};
 
    struct CORE_API SceneTransformComponent {
       SceneTransformComponent() = default;
@@ -86,6 +63,10 @@ namespace pbe {
       bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
       bool SetParentInternal(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
       int GetChildIdx() const;
+
+      void Serialize(Serializer& ser) const;
+      bool Deserialize(const Deserializer& deser);
+      bool UI();
    };
 
    struct MaterialComponent {
@@ -128,21 +109,6 @@ namespace pbe {
    struct GeometryComponent {
       GeomType type = GeomType::Box;
       vec3 sizeData = vec3_One; // todo: full size
-   };
-
-   struct CORE_API RigidBodyComponent {
-      bool dynamic = false;
-
-      physx::PxRigidActor* pxRigidActor = nullptr;
-
-      void SetLinearVelocity(const vec3& v, bool autowake = true);
-   };
-
-   struct DistanceJointComponent {
-      Entity entity0;
-      Entity entity1;
-
-      physx::PxDistanceJoint* pxDistanceJoint = nullptr;
    };
 
    struct LightComponent {

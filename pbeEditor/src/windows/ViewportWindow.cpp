@@ -11,8 +11,14 @@
 #include "rend/RendRes.h"
 #include "math/Types.h"
 #include "typer/Serialize.h"
+#include "typer/Registration.h"
 #include "app/Window.h"
 #include "gui/Gui.h"
+#include "physics/PhysComponents.h"
+#include "physics/PhysicsScene.h"
+#include "scene/Utils.h"
+#include "utils/TimedAction.h"
+#include "physics/PhysQuery.h"
 
 
 namespace pbe {
@@ -26,7 +32,7 @@ namespace pbe {
    public:
       TextureViewWindow() : EditorWindow("Texture View") {}
 
-      void OnImGuiRender() override {
+      void OnWindowUI() override {
          UI_WINDOW("Texture View"); // todo:
          if (!texture) {
             ImGui::Text("No texture selected");
@@ -64,12 +70,12 @@ namespace pbe {
 
    constexpr char viewportSettingPath[] = "scene_viewport.yaml";
 
-   TYPER_BEGIN(ViewportSettings)
-      TYPER_FIELD(cameraPos)
-      TYPER_FIELD(cameraAngles)
-   TYPER_END()
+   STRUCT_BEGIN(ViewportSettings)
+      STRUCT_FIELD(cameraPos)
+      STRUCT_FIELD(cameraAngles)
+   STRUCT_END()
 
-   ViewportWindow::ViewportWindow(std::string_view name): EditorWindow(name) {
+   ViewportWindow::ViewportWindow(std::string_view name) : EditorWindow(name) {
       ViewportSettings viewportSettings;
       Deserialize(viewportSettingPath, viewportSettings);
 
@@ -83,44 +89,76 @@ namespace pbe {
          ViewportSettings{.cameraPos = camera.position, .cameraAngles = camera.cameraAngle});
    }
 
-   void ViewportWindow::OnImGuiRender() {
-      enableInput = ImGui::IsWindowHovered();
+   void ViewportWindow::OnBefore() {
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+   }
 
-      if (customHeadFunc) {
-         customHeadFunc();
-         // todo:
-         ImGui::SameLine();
+   void ViewportWindow::OnAfter() {
+      ImGui::PopStyleVar();
+   }
+
+   void ViewportWindow::OnWindowUI() {
+      if (focused) {
+         if (Input::IsKeyDown(KeyCode::RightButton)) {
+            StartCameraMove();
+         }
+         if (Input::IsKeyUp(KeyCode::RightButton)) {
+            StopCameraMove();
+         }
       }
 
       static int item_current = 0;
-      const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO"};
-
-      ImGui::SetNextItemWidth(80);
-      ImGui::Combo("Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
-      ImGui::SameLine();
-
       static float renderScale = 1;
-      ImGui::SetNextItemWidth(100);
-      ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
-      ImGui::SameLine();
-
       // todo:
       static bool textureViewWindow = false;
-      ImGui::Checkbox("Texture View", &textureViewWindow);
+
+      auto viewportCursorPos = ImGui::GetCursorScreenPos();
+      auto startCursorPos = ImGui::GetCursorPos();
+
+      static bool viewportToolsWindow = true;
+      if (viewportToolsWindow) {
+         UI_PUSH_STYLE_COLOR(ImGuiCol_WindowBg, (ImVec4{ 0, 0, 0, 0.5 }));
+
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowRounding, 10);
+         UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
+
+         if (UI_WINDOW("Viewport tools", &viewportToolsWindow,
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize)) {
+            ImGui::SetWindowPos(viewportCursorPos + ImVec2{ 20, 5 });
+
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
+
+            const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO" };
+
+            ImGui::SetNextItemWidth(90);
+            ImGui::Combo("##Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+            ImGui::SameLine(0, 0);
+
+            ImGui::SetNextItemWidth(100);
+            ImGui::SliderFloat("Scale", &renderScale, 0.1f, 2.f);
+            ImGui::SameLine();
+
+            // todo:
+            ImGui::Checkbox("Texture View", &textureViewWindow);
+            ImGui::SameLine();
+
+            ImGui::SetWindowSize(ImVec2{ -1, -1 });
+         }
+      }
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (selectEntityUnderCursor) {
+      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver()) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
-         bool clearPrevSelection = !Input::IsKeyPressing(VK_CONTROL);
-         if (entityID != (uint) -1) {
-            Entity e{ entt::entity(entityID), scene};
+         bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Ctrl);
+         if (entityID != (uint)-1) {
+            Entity e{ entt::entity(entityID), scene };
             selection->ToggleSelect(e, clearPrevSelection);
          } else if (clearPrevSelection) {
             selection->ClearSelection();
          }
-         selectEntityUnderCursor = false;
       }
 
       auto imSize = ImGui::GetContentRegionAvail();
@@ -140,10 +178,19 @@ namespace pbe {
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
          int2 cursorPixelIdx{ mousePos - cursorPos};
+         vec2 cursorUV = vec2(cursorPixelIdx) / vec2(size);
 
          cmd.SetCommonSamplers();
          if (scene) {
             renderContext.cursorPixelIdx = cursorPixelIdx;
+
+            Entity e = scene->GetAnyWithComponent<CameraComponent>();
+            if (!freeCamera && e) {
+               auto& trans = e.Get<SceneTransformComponent>();
+               camera.position = trans.Position();
+               camera.SetViewDirection(trans.Forward());
+            }
+
             renderer->RenderScene(cmd, *scene, camera, renderContext);
          }
          cmd.pContext->ClearState(); // todo:
@@ -154,6 +201,46 @@ namespace pbe {
          auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 
+         static vec2 spawnCursorUV;
+         if (Input::IsKeyPressing(KeyCode::Shift) && Input::IsKeyDown(KeyCode::A) && !cameraMove) {
+            ImGui::OpenPopup("Add");
+            spawnCursorUV = cursorUV;
+         }
+
+         {
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 7, 7 }));
+            UI_PUSH_STYLE_VAR(ImGuiStyleVar_PopupRounding, 7 );
+
+            const auto& colorBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+            UI_PUSH_STYLE_COLOR(ImGuiCol_PopupBg, (ImVec4{ colorBg.x, colorBg.y, colorBg.z, 0.75}));
+
+            if (UI_POPUP("Add")) {
+               ImGui::Text("Add");
+               ImGui::Separator();
+
+               auto spawnPosHint = std::invoke([&]() {
+                  auto cursorNDC = (vec2{ 0, 1 } + spawnCursorUV * vec2{ 1, -1 }) * 2.f - 1.f;
+                  auto dir4 = camera.GetInvViewProjection() * vec4{ cursorNDC.x, cursorNDC.y, 0, 1 };
+                  vec3 dir = dir4 / dir4.w;
+                  dir = normalize(dir - camera.position);
+                  if (auto hit = scene->GetPhysics()->Sweep(camera.position, dir, 100.f)) {
+                     return camera.position + dir * hit.distance;
+                  } else {
+                     return camera.position + camera.Forward() * 3.f;
+                  }
+               }); 
+
+               Entity addedEntity = SceneAddEntityMenu(*scene, spawnPosHint, selection);
+               if (addedEntity) {
+                  selection->ToggleSelect(addedEntity);
+               }
+            }
+         }
+
+         // zoom
+         if (Input::IsKeyDown(KeyCode::V)) {
+            zoomEnable = !zoomEnable;
+         }
          if (zoomEnable) {
             Zoom(*image, cursorPixelIdx);
          }
@@ -162,82 +249,85 @@ namespace pbe {
 
          if (textureViewWindow) {
             gTextureViewWindow.texture = renderContext.linearDepth;
-            gTextureViewWindow.OnImGuiRender();
+            gTextureViewWindow.OnWindowUI();
          }
+      }
+
+      ImGui::SetCursorPos(startCursorPos + ImVec2{ 3, 5 });
+
+      if (ImGui::Button("=")) {
+         viewportToolsWindow = !viewportToolsWindow;
       }
    }
 
    void ViewportWindow::OnUpdate(float dt) {
       // todo:
-      if (!enableInput) {
+      if (!focused) {
          return;
       }
 
-      camera.NextFrame();
+      camera.NextFrame(); // todo:
 
-      if (Input::IsKeyDown(VK_LBUTTON) && !ImGuizmo::IsOver()) {
-         selectEntityUnderCursor = true;
+      if (cameraMove) {
+         camera.Update(dt);
       }
 
-      // todo:
-      // ImGui::SetWindowFocus(name.data());
-      camera.Update(dt);
-
-      if (Input::IsKeyDown(VK_RBUTTON)) {
-         Input::HideMouse(true);
-      }
-      if (Input::IsKeyUp(VK_RBUTTON)) {
-         Input::ShowMouse(true);
-      }
-
-      if (!Input::IsKeyPressing(VK_RBUTTON)) {
-         if (Input::IsKeyDown('W')) {
+      if (!Input::IsKeyPressing(KeyCode::RightButton)) {
+         if (Input::IsKeyDown(KeyCode::W)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
          }
-         if (Input::IsKeyDown('R')) {
+         if (Input::IsKeyDown(KeyCode::R)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
          }
-         if (Input::IsKeyDown('S')) {
+         if (Input::IsKeyDown(KeyCode::S)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
          }
 
-         if (Input::IsKeyDown('Q')) {
+         if (Input::IsKeyDown(KeyCode::Q)) {
             gizmoCfg.space = 1 - gizmoCfg.space;
          }
 
-         if (Input::IsKeyDown('F') && selection->FirstSelected()) {
+         if (Input::IsKeyDown(KeyCode::F) && selection->FirstSelected()) {
             auto selectedEntity = selection->FirstSelected();
             camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
+            camera.UpdateView();
          }
       }
 
-      // zoom
-      if (Input::IsKeyDown('V')) {
-         zoomEnable = !zoomEnable;
+      if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
+         freeCamera = !freeCamera;
+      }
+
+      if (Input::IsKeyDown(KeyCode::C)) { // todo: other key
+         if (Entity e = selection->FirstSelected()) {
+            e.Get<SceneTransformComponent>().SetPosition(camera.position);
+            // todo: set rotation
+         }
       }
 
       // todo:
-      static float acc = 0;
-      acc += dt;
-      if (acc > 0.2 && Input::IsKeyPressing(' ')) {
+      static TimedAction timer{5};
+      bool doShoot = Input::IsKeyPressing(KeyCode::Space);
+      if (timer.Update(dt, doShoot ? -1 : 1) > 0 && doShoot) {
          Entity shootRoot = scene->FindByName("Shoots");
          if (!shootRoot) {
             shootRoot = scene->Create("Shoots");
          }
 
-         acc = 0;
-         auto shoot = scene->Create(shootRoot, "Shoot cube");
-         shoot.Get<SceneTransformComponent>().SetPosition(camera.position);
-         shoot.Add<MaterialComponent>();
-         shoot.Add<GeometryComponent>();
+         auto shoot = CreateCube(*scene, CubeDesc{
+               .parent = shootRoot,
+               .namePrefix = "Shoot cube",
+               .pos = camera.position,
+               .scale = vec3_One * 0.5f,
+            });
 
-         // todo:
-         RigidBodyComponent _rb;
-         _rb.dynamic = true;
-
-         auto& rb = shoot.Add<RigidBodyComponent>(_rb);
-         rb.SetLinearVelocity(camera.Forward() * 50.f);
+         auto& rb = shoot.Get<RigidBodyComponent>();
+         rb.SetLinearVelocity(camera.Forward() * 25.f);
       }
+   }
+
+   void ViewportWindow::OnLostFocus() {
+      StopCameraMove();
    }
 
    void ViewportWindow::Zoom(Texture2D& image, vec2 center) {
@@ -271,7 +361,7 @@ namespace pbe {
       ImGuizmo::SetDrawlist();
       ImGuizmo::SetRect(cursorPos.x, cursorPos.y, contentRegion.x, contentRegion.y);
 
-      bool snap = Input::IsKeyPressing(VK_CONTROL);
+      bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
 
       auto& trans = selectedEntity.Get<SceneTransformComponent>();
       mat4 entityTransform = trans.GetMatrix();
@@ -300,6 +390,23 @@ namespace pbe {
          if (gizmoCfg.operation & ImGuizmo::OPERATION::SCALE) {
             trans.SetScale(scale);
          }
+
+         selectedEntity.AddOrReplace<TransformChangedMarker>();
       }
    }
+
+   void ViewportWindow::StartCameraMove() {
+      if (!cameraMove) {
+         cameraMove = true;
+         Input::HideMouse(true);
+      }
+   }
+
+   void ViewportWindow::StopCameraMove() {
+      if (cameraMove) {
+         cameraMove = false;
+         Input::ShowMouse(true);
+      }
+   }
+
 }

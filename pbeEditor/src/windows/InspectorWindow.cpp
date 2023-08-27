@@ -8,61 +8,115 @@
 
 namespace pbe {
 
-   void InspectorWindow::OnImGuiRender() {
+   void InspectorWindow::OnWindowUI() {
       Entity entity = selection ? selection->FirstSelected() : Entity{};
 
       if (!entity.Valid()) {
          ImGui::Text("No entity");
-      } else {
-         Undo::Get().SaveForFuture(entity);
+         return;
+      }
 
-         bool edited = false;
+      Undo::Get().SaveForFuture(entity);
 
-         // ImGui::Text("%s %llu", entity.Get<TagComponent>().tag.c_str(), (uint64)entity.Get<UUIDComponent>().uuid);
+      const auto& typer = Typer::Get();
 
-         std::string name = entity.Get<TagComponent>().tag;
-         name.reserve(glm::max((int)name.size(), 64));
+      bool edited = false;
 
-         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-         if (ImGui::InputText("Name", name.data(), name.capacity())) {
-            entity.Get<TagComponent>().tag = name.c_str();
-            edited = true;
+      auto contentRegionAvail = ImGui::GetContentRegionAvail();
+
+      std::string name = entity.Get<TagComponent>().tag;
+      name.reserve(glm::max((int)name.size(), 64));
+
+      if (ImGui::InputText("##Name", name.data(), name.capacity())) {
+         entity.Get<TagComponent>().tag = name.c_str();
+         edited = true;
+      }
+
+      float heightLine = ImGui::GetFrameHeight();
+
+      ImGui::SameLine(contentRegionAvail.x - heightLine * 1.5f);
+      // todo: Undo
+      bool enabled = entity.Enabled();
+      if (ImGui::Checkbox("##EnableInspector", &enabled)) {
+         entity.EnableToggle();
+         edited = true;
+      }
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip(enabled ? "Disable" : "Enable");
+      }
+
+      ImGui::SameLine(contentRegionAvail.x - heightLine * 0.5f);
+      if (ImGui::Button("+", { heightLine , heightLine })) {
+         ImGui::OpenPopup("Add Component Popup");
+      }
+      if (ImGui::IsItemHovered()) {
+         ImGui::SetTooltip("Add Component");
+      }
+
+      auto processComponentName = [] (const std::string& name) -> std::string {
+         // todo: allocation
+         std::string result = name;
+         auto pos = result.find("Component");
+         if (pos != string::npos) {
+            result = result.erase(pos);
          }
+         return result;
+      };
 
-         ImGui::SameLine();
-         ImGui::Text("0x%jx", (uint64)entity.Get<UUIDComponent>().uuid);
-
-         edited |= EditorUI("Scene Transform", entity.GetTransform());
-
-         const auto& typer = Typer::Get();
-
+      if (UI_POPUP("Add Component Popup")) {
          for (const auto& ci : typer.components) {
-            if (auto* pComponent = ci.tryGet(entity)) {
-               const auto& ti = typer.GetTypeInfo(ci.typeID);
-               edited |= EditorUI(ti.name.data(), ci.typeID, (byte*)pComponent);
-            }
-         }
-
-         if (UI_POPUP_CONTEXT_ITEM("Add Component Popup")) {
-            for (const auto& ci : typer.components) {
-               auto* pComponent = ci.tryGet(entity);
-               if (!pComponent) {
-                  auto text = std::format("Add {}", typer.GetTypeInfo(ci.typeID).name);
-                  if (ImGui::Button(text.data())) {
-                     ci.getOrAdd(entity);
-                     edited = true;
-                  }
+            auto* pComponent = ci.tryGet(entity);
+            if (!pComponent) {
+               auto processedName = processComponentName(typer.GetTypeInfo(ci.typeID).name);
+               if (ImGui::MenuItem(processedName.data())) {
+                  ci.getOrAdd(entity);
+                  edited = true;
+                  ImGui::CloseCurrentPopup();
                }
             }
          }
+      }
 
-         if (ImGui::Button("Add Component")) {
-            ImGui::OpenPopup("Add Component Popup");
-         }
+      if (UI_TREE_NODE("Scene Transform", DefaultTreeNodeFlags() | ImGuiTreeNodeFlags_DefaultOpen)) {
+         edited |= EditorUI(entity.GetTransform());
+      }
 
-         if (edited) {
-            Undo::Get().PushSave();
+      for (const auto& ci : typer.components) {
+         if (auto* pComponent = ci.tryGet(entity)) {
+            const auto& ti = typer.GetTypeInfo(ci.typeID);
+
+            auto processedName = processComponentName(ti.name);
+            ui::TreeNode treeNode{ processedName.c_str(), DefaultTreeNodeFlags() };
+
+            {
+               UI_PUSH_ID((int)ci.typeID);
+
+               ImGui::SameLine(contentRegionAvail.x - heightLine * 0.5f);
+               if (ImGui::Button("X", { heightLine , heightLine })) {
+                  ci.remove(entity);
+               }
+               if (ImGui::IsItemHovered()) {
+                  ImGui::SetTooltip("Remove Component");
+               }
+            }
+
+            if (treeNode) {
+               if (EditorUI(ci.typeID, (byte*)pComponent)) {
+                  // todo: two way, choose one
+                  if (ci.onChanged) {
+                     ci.onChanged(pComponent);
+                  }
+                  if (entity.Enabled()) {
+                     ci.patch(entity);
+                  }
+                  edited = true;
+               }
+            }
          }
+      }
+
+      if (edited) {
+         Undo::Get().PushSave();
       }
    }
 

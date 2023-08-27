@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "DbgRend.h"
 
+#include "scene/Entity.h"
+#include "scene/Component.h"
 #include "RendRes.h"
 #include "Shader.h"
 #include "CommandList.h"
@@ -156,6 +158,14 @@ namespace pbe {
          auto start = pos + forward * 2.f + outNormal;
          DrawLine(start, start + outNormal, colors[i]);
       }
+   }
+
+   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const vec4& color) {
+      if (!entity0 || !entity1) {
+         return;
+      }
+
+      DrawLine(entity0.GetTransform().Position(), entity1.GetTransform().Position(), color);
    }
 
    void DbgRend::Clear() {

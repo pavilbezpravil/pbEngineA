@@ -6,63 +6,66 @@
 
 #include <glm/gtx/matrix_decompose.hpp>
 
+#include "imgui_internal.h"
 #include "gui/Gui.h"
+#include "typer/Registration.h"
 #include "typer/Serialize.h"
 #include "physics/PhysXTypeConvet.h"
 
 namespace pbe {
 
-   void TransSerialize(Serializer& ser, const byte* value) {
-      auto& trans = *(const SceneTransformComponent*)value;
+   bool Vec3UI(const char* label, vec3& v, float resetVal, float columnWidth) {
+      UI_PUSH_ID(label);
 
-      SERIALIZER_MAP(ser);
+      ImGui::Columns(2);
 
-      ser.Ser("position", trans.position);
-      ser.Ser("rotation", trans.rotation);
-      ser.Ser("scale", trans.scale);
+      ImGui::SetColumnWidth(-1, columnWidth);
+      ImGui::Text(label);
+      ImGui::NextColumn();
 
-      if (trans.HasParent()) {
-         ser.KeyValue("parent", trans.parent.Get<UUIDComponent>().uuid);
-      }
+      ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 
-      if (trans.HasChilds()) {
-         ser.Key("children");
+      bool edited = false;
 
-         auto& out = ser.out;
-         out << YAML::Flow;
-         SERIALIZER_SEQ(ser);
+      auto drawFloat = [&] (float& val, const ImVec4& color, const char* button) {
+         {
+            UI_PUSH_STYLE_COLOR(ImGuiCol_Button, color);
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, (color + ImVec4{0.1f, 0.1f, 0.1f, 1}));
+            UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, color);
+            if (ImGui::Button(button)) {
+               val = resetVal;
+               edited = true;
+            }
+         }
 
-         for (auto children : trans.children) {
-            out << (uint64)children.GetUUID();
+         ImGui::SameLine();
+
+         {
+            UI_PUSH_ID(button);
+            edited |= ImGui::DragFloat("##DragFloat", &val, 0.1f, 0, 0, "%.2f");
+         }
+
+         ImGui::PopItemWidth();
+      };
+
+      UI_PUSH_STYLE_VAR(ImGuiStyleVar_ItemSpacing, ImVec2{});
+      drawFloat(v.x, { 0.8f, 0.1f, 0.15f, 1 }, "X");
+      ImGui::SameLine();
+      drawFloat(v.y, { 0.2f, 0.7f, 0.2f, 1 }, "Y");
+      ImGui::SameLine();
+      drawFloat(v.z, { 0.1f, 0.25f, 0.8f, 1 }, "Z");
+
+      if (v != vec3{resetVal}) {
+         ImGui::SameLine(0, 10);
+         if (ImGui::Button("-")) {
+            v = { resetVal };
+            edited = true;
          }
       }
-   };
 
-   bool TransDeserialize(const Deserializer& deser, byte* value) {
-      auto& trans = *(SceneTransformComponent*)value;
+      ImGui::Columns(1);
 
-      // todo:
-      trans.RemoveAllChild();
-
-      bool success = true;
-
-      success &= deser.Deser("position", trans.position);
-      success &= deser.Deser("rotation", trans.rotation);
-      success &= deser.Deser("scale", trans.scale);
-
-      // note: we will be added by our parent
-      // auto parent = deser.Deser<uint64>("parent");
-
-      if (auto children = deser["children"]) {
-         trans.children.reserve(children.node.size());
-
-         for (auto child : children.node) {
-            uint64 childUuid = child.as<uint64>(); // todo: check
-            trans.AddChild(trans.entity.GetScene()->GetEntity(childUuid), -1, true);
-         }
-      }
-
-      return success;
+      return edited;
    }
 
    bool GeomUI(const char* name, byte* value) {
@@ -70,126 +73,108 @@ namespace pbe {
 
       bool editted = false;
 
-      if (UI_TREE_NODE(name, ImGuiTreeNodeFlags_SpanFullWidth)) {
-         // editted |= ImGui::Combo("Type", (int*)&geom.type, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0");
-         editted |= EditorUI("type", geom.type);
+      // editted |= ImGui::Combo("Type", (int*)&geom.type, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0");
+      editted |= EditorUI("type", geom.type);
 
-         if (geom.type == GeomType::Sphere) {
-            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
-         } else if (geom.type == GeomType::Box) {
-            editted |= ImGui::InputFloat3("Size", &geom.sizeData.x);
-         } else {
-            // Cylinder, Cone, Capsule
-            editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
-            editted |= ImGui::InputFloat("Height", &geom.sizeData.y);
-         }
+      if (geom.type == GeomType::Sphere) {
+         editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+      } else if (geom.type == GeomType::Box) {
+         editted |= ImGui::InputFloat3("Size", &geom.sizeData.x);
+      } else {
+         // Cylinder, Cone, Capsule
+         editted |= ImGui::InputFloat("Radius", &geom.sizeData.x);
+         editted |= ImGui::InputFloat("Height", &geom.sizeData.y);
       }
 
       return editted;
    }
 
-   TYPER_BEGIN(TagComponent)
-      TYPER_FIELD(tag)
-   TYPER_END()
+   STRUCT_BEGIN(TagComponent)
+      STRUCT_FIELD(tag)
+   STRUCT_END()
 
-   TYPER_BEGIN(SceneTransformComponent)
-      TYPER_SERIALIZE(TransSerialize)
-      TYPER_DESERIALIZE(TransDeserialize)
+   STRUCT_BEGIN(CameraComponent)
+      STRUCT_FIELD(main)
+   STRUCT_END()
 
-      TYPER_FIELD(position)
-      TYPER_FIELD(rotation)
-      TYPER_FIELD(scale)
-   TYPER_END()
+   STRUCT_BEGIN(SceneTransformComponent)
+      STRUCT_FIELD(position)
+      STRUCT_FIELD(rotation)
+      STRUCT_FIELD(scale)
+   STRUCT_END()
 
-   TYPER_BEGIN(MaterialComponent)
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(baseColor)
+   STRUCT_BEGIN(MaterialComponent)
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(baseColor)
 
-      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
-      TYPER_FIELD(roughness)
+      STRUCT_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
+      STRUCT_FIELD(roughness)
 
-      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
-      TYPER_FIELD(metallic)
+      STRUCT_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
+      STRUCT_FIELD(metallic)
 
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(emissiveColor)
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(emissiveColor)
 
-      TYPER_FIELD(emissivePower)
+      STRUCT_FIELD(emissivePower)
 
-      TYPER_FIELD(opaque)
-   TYPER_END()
+      STRUCT_FIELD(opaque)
+   STRUCT_END()
 
-   TYPER_BEGIN(GeomType)
-      TYPER_SERIALIZE([](Serializer& ser, const byte* value) { ser.out << *(int*)value; })
-      TYPER_DESERIALIZE([](const Deserializer& deser, byte* value) { *(int*)value = deser.node.as<int>(); return true; }) // todo:
-      TYPER_UI([](const char* name, byte* value) { return ImGui::Combo(name, (int*)value, "Sphere\0Box\0Cylinder\0Cone\0Capsule\0"); })
-   TYPER_END()
+   ENUM_BEGIN(GeomType)
+      ENUM_VALUE(Sphere)
+      ENUM_VALUE(Box)
+      ENUM_VALUE(Cylinder)
+      ENUM_VALUE(Cone)
+      ENUM_VALUE(Capsule)
+   ENUM_END()
 
-   // TYPER_BEGIN(GeomType)
-   // todo: try
-      // TYPER_FIELD_UI(UICombo{ .items = { "Box", "Sphere", "Cylinder", "Capsule", "Cone", "Plane" } })
-      // TYPER_FIELD(type)
-   // TYPER_END(GeomType)
+   STRUCT_BEGIN(GeometryComponent)
+      TYPE_UI(GeomUI)
+      STRUCT_FIELD(type)
+      STRUCT_FIELD(sizeData)
+   STRUCT_END()
 
-   TYPER_BEGIN(GeometryComponent)
-      TYPER_UI(GeomUI)
-      TYPER_FIELD(type)
-      TYPER_FIELD(sizeData)
-   TYPER_END()
+   STRUCT_BEGIN(LightComponent)
+      STRUCT_FIELD(color)
+      STRUCT_FIELD(intensity)
+      STRUCT_FIELD(radius)
+   STRUCT_END()
 
-   TYPER_BEGIN(RigidBodyComponent)
-      TYPER_FIELD(dynamic)
-   TYPER_END()
+   STRUCT_BEGIN(DirectLightComponent)
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(color)
 
-   TYPER_BEGIN(DistanceJointComponent)
-      TYPER_FIELD(entity0)
-      TYPER_FIELD(entity1)
-   TYPER_END()
+      STRUCT_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
+      STRUCT_FIELD(intensity)
+   STRUCT_END()
 
-   TYPER_BEGIN(LightComponent)
-      TYPER_FIELD(color)
-      TYPER_FIELD(intensity)
-      TYPER_FIELD(radius)
-   TYPER_END()
+   STRUCT_BEGIN(DecalComponent)
+      STRUCT_FIELD(baseColor)
+      STRUCT_FIELD(metallic)
+      STRUCT_FIELD(roughness)
+   STRUCT_END()
 
-   TYPER_BEGIN(DirectLightComponent)
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(color)
+   STRUCT_BEGIN(SkyComponent)
+      STRUCT_FIELD(directLight)
 
-      TYPER_FIELD_UI(UISliderFloat{ .min = 0, .max = 10 })
-      TYPER_FIELD(intensity)
-   TYPER_END()
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(color)
+      STRUCT_FIELD(intensity)
+   STRUCT_END()
 
-   TYPER_BEGIN(DecalComponent)
-      TYPER_FIELD(baseColor)
-      TYPER_FIELD(metallic)
-      TYPER_FIELD(roughness)
-   TYPER_END()
+   STRUCT_BEGIN(WaterComponent)
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(fogColor)
 
-   TYPER_BEGIN(SkyComponent)
-      TYPER_FIELD(directLight)
+      STRUCT_FIELD(fogUnderwaterLength)
+      STRUCT_FIELD(softZ)
+   STRUCT_END()
 
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(color)
-      TYPER_FIELD(intensity)
-   TYPER_END()
-
-   TYPER_BEGIN(WaterComponent)
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(fogColor)
-
-      TYPER_FIELD(fogUnderwaterLength)
-      TYPER_FIELD(softZ)
-   TYPER_END()
-
-   TYPER_BEGIN(TerrainComponent)
-      TYPER_FIELD_UI(UIColorEdit3)
-      TYPER_FIELD(color)
-   TYPER_END()
-
-   void __ComponentUnreg(TypeID typeID) {
-      Typer::Get().UnregisterComponent(typeID);
-   }
+   STRUCT_BEGIN(TerrainComponent)
+      STRUCT_FIELD_UI(UIColorEdit3)
+      STRUCT_FIELD(color)
+   STRUCT_END()
 
    vec3 SceneTransformComponent::Position() const {
       vec3 pos = position;
@@ -360,54 +345,82 @@ namespace pbe {
       return (int)std::ranges::distance(pTrans.children.begin(), std::ranges::find(pTrans.children, entity));
    }
 
-   void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
+   void SceneTransformComponent::Serialize(Serializer& ser) const {
+      SERIALIZER_MAP(ser);
+
+      ser.Ser("position", position);
+      ser.Ser("rotation", rotation);
+      ser.Ser("scale", scale);
+
+      if (HasParent()) {
+         ser.KeyValue("parent", parent.Get<UUIDComponent>().uuid);
+      }
+
+      if (HasChilds()) {
+         ser.Key("children");
+
+         auto& out = ser.out;
+         out << YAML::Flow;
+         SERIALIZER_SEQ(ser);
+
+         for (auto children : children) {
+            out << (uint64)children.GetUUID();
+         }
+      }
+   };
+
+   bool SceneTransformComponent::Deserialize(const Deserializer& deser) {
       // todo:
-      auto dynamic = pxRigidActor->is<physx::PxRigidDynamic>();
-      dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
+      RemoveAllChild();
+
+      bool success = true;
+
+      success &= deser.Deser("position", position);
+      success &= deser.Deser("rotation", rotation);
+      success &= deser.Deser("scale", scale);
+
+      // note: we will be added by our parent
+      // auto parent = deser.Deser<uint64>("parent");
+
+      if (auto childrenDeser = deser["children"]) {
+         children.reserve(childrenDeser.node.size());
+
+         for (auto child : childrenDeser.node) {
+            uint64 childUuid = child.as<uint64>(); // todo: check
+            AddChild(entity.GetScene()->GetEntity(childUuid), -1, true);
+         }
+      }
+
+      return success;
    }
 
-   template<typename T>
-   concept HasSerialize = requires(T a, Serializer& ser) {
-      { a.Serialize(ser) };
-   };
+   bool SceneTransformComponent::UI() {
+      bool editted = false;
 
-   struct Test {
-      void Serialize(Serializer& ser) {
-         // INFO("Serialize");
-      }
-   };
+      editted |= Vec3UI("Position", position, 0, 70);
 
-   template<typename T>
-   auto GetSerialize() {
-      if constexpr (HasSerialize<T>) {
-         return [] (Serializer& ser, const byte* data) { ((T*)data)->Serialize(ser); };
-      } else {
-         return nullptr;
+      auto degrees = glm::degrees(glm::eulerAngles(rotation));
+      if (Vec3UI("Rotation", degrees, 0, 70)) {
+         rotation = glm::radians(degrees);
+         editted = true;
       }
+
+      editted |= Vec3UI("Scale", scale, 1, 70);
+
+      return editted;
    }
 
    void RegisterBasicComponents(Typer& typer) {
       // INTERNAL_ADD_COMPONENT(SceneTransformComponent);
+      INTERNAL_ADD_COMPONENT(CameraComponent);
       INTERNAL_ADD_COMPONENT(MaterialComponent);
       INTERNAL_ADD_COMPONENT(GeometryComponent);
-      INTERNAL_ADD_COMPONENT(RigidBodyComponent);
-      INTERNAL_ADD_COMPONENT(DistanceJointComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);
       INTERNAL_ADD_COMPONENT(SkyComponent);
       INTERNAL_ADD_COMPONENT(WaterComponent);
       INTERNAL_ADD_COMPONENT(TerrainComponent);
-
-      // todo:
-      Test t;
-      Serializer ser;
-
-      auto s = GetSerialize<Test>();
-      std::function<void(Serializer&, const byte*)> f = s;
-      if (f) {
-         f(ser, (byte*)&t);
-      }
    }
 
 }

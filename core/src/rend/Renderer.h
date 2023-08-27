@@ -45,13 +45,17 @@ namespace pbe {
          return projection * view;
       }
 
+      mat4 GetInvViewProjection() const {
+         return glm::inverse(GetViewProjection());
+      }
+
       void NextFrame();
 
       void UpdateProj(int2 size, float fov = 90.f / 180 * PI) {
          projection = glm::perspectiveFov(fov, (float)size.x, (float)size.y, zNear, zFar);
       }
 
-      void UpdateView(const vec3& direction, const vec3& up = vec3_Y) {
+      void UpdateViewByDirection(const vec3& direction, const vec3& up = vec3_Y) {
          view = glm::lookAt(position, position + direction, up);
       }
 
@@ -124,9 +128,9 @@ namespace pbe {
       void Init();
 
       void UpdateInstanceBuffer(CommandList& cmd, const std::vector<RenderObject>& renderObjs);
-      void RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera);
+      void RenderDataPrepare(CommandList& cmd, const Scene& scene, const RenderCamera& cullCamera);
 
-      void RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context);
+      void RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context);
       void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program);
 
       uint GetEntityIDUnderCursor(CommandList& cmd);

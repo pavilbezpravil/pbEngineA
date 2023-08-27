@@ -8,6 +8,7 @@
 #include "core/Profiler.h"
 #include "math/Random.h"
 #include "math/Shape.h"
+#include "physics/PhysComponents.h"
 
 #include "shared/hlslCppShared.hlsli"
 #include "system/Water.h"
@@ -217,7 +218,7 @@ namespace pbe {
       cmd.UpdateSubresource(*instanceBuffer, instances.data(), 0, instances.size() * sizeof(SInstance));
    }
 
-   void Renderer::RenderDataPrepare(CommandList& cmd, Scene& scene, const RenderCamera& cullCamera) {
+   void Renderer::RenderDataPrepare(CommandList& cmd, const Scene& scene, const RenderCamera& cullCamera) {
       opaqueObjs.clear();
       transparentObjs.clear();
 
@@ -256,7 +257,7 @@ namespace pbe {
       }
 
       {
-         auto nLights = (uint)scene.View<LightComponent>().size();
+         auto nLights = (uint)scene.CountEntitiesWithComponents<LightComponent>();
          if (!lightBuffer || lightBuffer->ElementsCount() < nLights) {
             auto bufferDesc = Buffer::Desc::Structured("light buffer", nLights, sizeof(SLight));
             lightBuffer = Buffer::Create(bufferDesc);
@@ -299,7 +300,7 @@ namespace pbe {
       }
    }
 
-   void Renderer::RenderScene(CommandList& cmd, Scene& scene, const RenderCamera& camera, RenderContext& context) {
+   void Renderer::RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context) {
       if (!baseColorPass->Valid()) {
          return;
       }
@@ -367,7 +368,7 @@ namespace pbe {
 
       sceneCB.fogNSteps = fogNSteps;
 
-      sceneCB.nLights = (int)scene.View<LightComponent>().size();
+      sceneCB.nLights = scene.CountEntitiesWithComponents<LightComponent>();
       sceneCB.nDecals = (int)nDecals;
 
       sceneCB.exposition = tonemapExposition;
@@ -376,11 +377,12 @@ namespace pbe {
       sceneCB.directLight.direction = vec3{1, 0, 0};
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
 
-      auto directLightsView = scene.View<SceneTransformComponent, DirectLightComponent>();
-      bool hasDirectLight = directLightsView.size_hint() > 0;
+      bool hasDirectLight = false;
+      if (Entity directEntity = scene.GetAnyWithComponent<DirectLightComponent>()) {
+         hasDirectLight = true;
 
-      if (hasDirectLight) {
-         auto [_, trans, directLight] = *directLightsView.each().begin();
+         auto& trans = directEntity.GetTransform();
+         auto& directLight = directEntity.Get<DirectLightComponent>();
 
          sceneCB.directLight.color = directLight.color * directLight.intensity;
          sceneCB.directLight.direction = trans.Forward();
@@ -404,11 +406,8 @@ namespace pbe {
          sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
       }
 
-      // set sky
-      auto skyView = scene.View<SkyComponent>();
-      if (skyView.size() > 0) {
-         // auto [_, sky] = *skyView.each().begin();
-         auto [_, sky] = *skyView.each().begin();
+      if (Entity skyEntity = scene.GetAnyWithComponent<SkyComponent>()) {
+         const auto& sky = skyEntity.Get<SkyComponent>();
 
          sceneCB.skyIntensity = sky.intensity;
       } else {
@@ -704,6 +703,50 @@ namespace pbe {
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
             dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
+         }
+
+         for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
+            // todo: OBB
+            // todo: box, sphere, capsule
+            dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f }, vec4_One);
+         }
+
+         for (auto [_, joint] : scene.View<JointComponent>().each()) {
+            if (!joint.IsValid()) {
+               continue;
+            }
+
+            dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{ 1, 1, 1, 1 });
+
+            auto trans0 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor0);
+            auto trans1 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor1);
+
+            auto pos0 = trans0->position;
+            auto pos1 = trans1->position;
+            auto dir = glm::normalize(pos1 - pos0);
+
+            auto sphere = Sphere{ pos0, 0.2f };
+
+            auto defColor = vec4{ 0, 1, 0, 1 };
+            if (joint.type == JointType::Fixed) {
+               dbgRend.DrawSphere(sphere, defColor);
+            } else if (joint.type == JointType::Distance) {
+               auto posMin = pos0 + dir * joint.distance.minDistance;
+               auto posMax = pos0 + dir * joint.distance.maxDistance;
+               dbgRend.DrawLine(posMin, posMax, defColor);
+            } else if (joint.type == JointType::Revolute) {
+               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, vec4{ 1, 0, 0, 1 });
+               dbgRend.DrawSphere(sphere, defColor);
+            } else if (joint.type == JointType::Spherical) {
+               dbgRend.DrawSphere(sphere, defColor);
+            } else if (joint.type == JointType::Prismatic) {
+               dbgRend.DrawLine(
+                  pos0 + trans0->Right() * joint.prismatic.lowerLimit,
+                  pos0 + trans0->Right() * joint.prismatic.upperLimit,
+                  defColor);
+            } else {
+               UNIMPLEMENTED();
+            }
          }
 
          dbgRend.Render(cmd, camera);

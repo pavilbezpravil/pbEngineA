@@ -8,6 +8,7 @@
 
 
 namespace pbe {
+   class System;
    class PhysicsScene;
    struct Deserializer;
    struct Serializer;
@@ -16,6 +17,10 @@ namespace pbe {
    class UUID;
 
    class Entity;
+
+   struct DelayedDisableMarker {};
+   struct DelayedEnableMarker {};
+   struct DisableMarker {};
 
    class CORE_API Scene {
    public:
@@ -33,42 +38,86 @@ namespace pbe {
       Entity GetRootEntity();
       void SetRootEntity(const Entity& entity);
 
-      // todo: to private
-      void Duplicate(Entity& dst, const Entity& src, bool copyUUID);
       Entity Duplicate(const Entity& entity);
 
+      // Delayed
+      bool EntityEnabled(const Entity& entity) const;
+      void EntityEnable(Entity& entity, bool withChilds = true);
+      void EntityDisable(Entity& entity, bool withChilds = true);
+
+      void ProcessDelayedEnable();
+
+      void DestroyDelayed(Entity entity, bool withChilds = true);
       void DestroyImmediate(Entity entity, bool withChilds = true);
 
+      void DestroyDelayedEntities();
+
+      // todo: mb DelayedDisableMarker add on 'exludes'?
       template<typename Type, typename... Other, typename... Exclude>
-      const auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) const {
+      const auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) const {
          return registry.view<Type, Other...>(excludes);
       }
 
       template<typename Type, typename... Other, typename... Exclude>
-      auto View(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
+      auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) {
          return registry.view<Type, Other...>(excludes);
       }
 
-      // todo: return multiple
+      template<typename Type, typename... Other, typename... Exclude>
+      auto ViewAll(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
+         return registry.view<Type, Other...>(excludes);
+      }
+
+      template<typename Type, typename... Other>
+      int CountEntitiesWithComponents() const {
+         int count = 0;
+         View<Type, Other...>().each([&](auto& c) {
+            ++count;
+         });
+         return count;
+      }
+
       template<typename Component>
-      Component* GetAnyWithComponent() {
-         auto view = registry.view<Component>();
-         if (view.empty()) {
-            return nullptr;
+      Entity GetAnyWithComponent() const {
+         auto entity = View<Component>().front();
+         if (entity == entt::null) {
+            return Entity{};
          } else {
-            return registry.try_get<Component>(view.front());
+            // todo: const_cast((
+            return Entity{ entity, const_cast<Scene*>(this) };
          }
       }
+
+      template<typename Component>
+      Entity GetAnyWithComponent() {
+         auto entity = View<Component>().front();
+         if (entity == entt::null) {
+            return Entity{};
+         } else {
+            return Entity{ entity, this };
+         }
+      }
+
+      template<typename Component>
+      void ClearComponent() {
+         registry.clear<Component>();
+      }
+
+      // call this every frame
+      void OnTick();
 
       void OnStart();
       void OnUpdate(float dt);
       void OnStop();
 
+      void AddSystem(Own<System>&& system);
+
       Entity FindByName(std::string_view name);
 
       uint EntitiesCount() const;
 
-      PhysicsScene* GetPhysics() { return pPhysics.get(); }
+      // todo:
+      PhysicsScene* GetPhysics() { return (PhysicsScene*)systems[0].get(); }
 
       Own<Scene> Copy() const;
 
@@ -83,9 +132,21 @@ namespace pbe {
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 
       // todo: move to scene component?
-      Own<PhysicsScene> pPhysics;
+      std::vector<Own<System>> systems;
+
+      void EntityDisableImmediate(Entity& entity);
+
+      struct DuplicateContext {
+         entt::entity enttEntity{ entt::null };
+         bool enabled = false;
+      };
+
+      void DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
+      void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
+      void DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
 
       friend Entity;
+      friend CORE_API Own<Scene> SceneDeserialize(std::string_view path);
    };
 
    CORE_API void SceneSerialize(std::string_view path, Scene& scene);

@@ -3,7 +3,6 @@
 #include "EditorCamera.h"
 #include "EditorSelection.h"
 #include "EditorWindow.h"
-#include "core/Ref.h"
 #include "rend/Renderer.h"
 
 namespace pbe {
@@ -23,27 +22,34 @@ namespace pbe {
       ViewportWindow(std::string_view name);
       ~ViewportWindow();
 
-      void OnImGuiRender() override;
+      void OnBefore() override;
+      void OnAfter() override;
+      void OnWindowUI() override;
+
       void OnUpdate(float dt) override;
+
+      void OnLostFocus() override;
 
       void Zoom(Texture2D& image, vec2 center);
       void Gizmo(const vec2& contentRegion, const vec2& cursorPos);
 
       Scene* scene{};
       EditorSelection* selection{};
-      std::function<void(void)> customHeadFunc; // todo: better name
 
       EditorCamera camera;
       Renderer* renderer = {}; // todo:
       RenderContext renderContext;
 
-      bool enableInput = false;
+      bool freeCamera = true;
 
       GizmoCfg gizmoCfg;
 
    private:
-      bool selectEntityUnderCursor = false;
       bool zoomEnable = false;
+      bool cameraMove = false;
+
+      void StartCameraMove();
+      void StopCameraMove();
    };
 
 }

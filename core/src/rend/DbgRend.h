@@ -4,6 +4,8 @@
 #include "core/Ref.h"
 
 namespace pbe {
+   class Entity;
+
    struct AABB;
    struct Sphere;
    struct Frustum;
@@ -24,6 +26,8 @@ namespace pbe {
       void DrawAABBOrderPoints(const vec3 points[8], const vec4& color = vec4_One);
       void DrawViewProjection(const mat4& invViewProjection, const vec4& color = vec4_One);
       void DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const vec4& color = vec4_One);
+
+      void DrawLine(const Entity& entity0, const Entity& entity1, const vec4& color = vec4_One);
 
       void Clear();
 

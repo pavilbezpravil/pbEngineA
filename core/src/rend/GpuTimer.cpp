@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "GpuTimer.h"
 
+#include "Device.h"
 #include "core/Assert.h"
 
 
