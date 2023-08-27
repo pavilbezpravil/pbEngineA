@@ -38,14 +38,37 @@ namespace pbe {
       // Contact
    };
 
+   // todo:
+   struct Transform {
+      vec3 position;
+      quat rotation;
+
+      vec3 Right() const {
+         return rotation * vec3_Right;
+      }
+
+      vec3 Up() const {
+         return rotation * vec3_Up;
+      }
+
+      vec3 Forward() const {
+         return rotation * vec3_Forward;
+      }
+   };
+
+   struct JointAnchor {
+      vec3 position{};
+      quat rotation = quat_Identity;
+   };
+
    struct JointComponent {
       JointType type = JointType::Distance;
 
       Entity entity0;
       Entity entity1;
 
-      // vec3 anchor0;
-      // vec3 anchor1;
+      JointAnchor anchor0;
+      JointAnchor anchor1;
 
       struct FixedJoint {
       } fixed;
@@ -90,11 +113,18 @@ namespace pbe {
       JointComponent() = default;
       JointComponent(JointType type);
 
+      bool IsValid() const { return pxJoint != nullptr && entity0 && entity1; }
+
       void SetData(const Entity& entity);
 
       void WakeUp();
 
-      bool IsValid() const { return pxJoint != nullptr && entity0 && entity1; }
+      enum class Anchor {
+         Anchor0,
+         Anchor1,
+      };
+
+      std::optional<Transform> GetAnchorTransform(Anchor anchor) const;
    };
 
 }

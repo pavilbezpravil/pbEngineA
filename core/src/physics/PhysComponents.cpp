@@ -34,6 +34,8 @@ namespace pbe {
       // todo: ctor
       // todo: if type state the same it is not need to recreate joint
       if (pxJoint) {
+         // todo: several place for this
+         delete (Entity*)pxJoint->userData;
          pxJoint->release();
          pxJoint = nullptr;
       }
@@ -45,20 +47,23 @@ namespace pbe {
          return;
       }
 
+      auto localFrame0 = PxTransform{ Vec3ToPx(anchor0.position), QuatToPx(anchor0.rotation) };
+      auto localFrame1 = PxTransform{ Vec3ToPx(anchor1.position), QuatToPx(anchor1.rotation) };
+
       if (!PxIsRigidDynamic(actor0) && !PxIsRigidDynamic(actor1)) {
          WARN("Joint: at least one actor must be non-static");
          return;
       }
 
       if (type == JointType::Fixed) {
-         auto pxFixedJoint = PxFixedJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxFixedJoint = PxFixedJointCreate(*GetPxPhysics(), actor0, localFrame0, actor1, localFrame1);
          pxJoint = pxFixedJoint;
          if (!pxJoint) {
             WARN("Cant create fixed joint");
             return;
          }
       } else if (type == JointType::Distance) {
-         auto pxDistanceJoint = PxDistanceJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxDistanceJoint = PxDistanceJointCreate(*GetPxPhysics(), actor0, localFrame0, actor1, localFrame1);
          pxJoint = pxDistanceJoint;
          if (!pxJoint) {
             WARN("Cant create distance joint");
@@ -75,7 +80,7 @@ namespace pbe {
          pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, distance.maxDistance > 0);
          pxDistanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eSPRING_ENABLED, distance.stiffness > 0);
       } else if (type == JointType::Revolute) {
-         auto pxRevoluteJoint = PxRevoluteJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxRevoluteJoint = PxRevoluteJointCreate(*GetPxPhysics(), actor0, localFrame0, actor1, localFrame1);
          pxJoint = pxRevoluteJoint;
          if (!pxJoint) {
             WARN("Cant create revolute joint");
@@ -97,7 +102,7 @@ namespace pbe {
             pxRevoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eDRIVE_FREESPIN, revolute.driveFreespin);
          }
       } else if (type == JointType::Spherical) {
-         auto pxSphericalJoint = PxSphericalJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxSphericalJoint = PxSphericalJointCreate(*GetPxPhysics(), actor0, localFrame0, actor1, localFrame1);
          pxJoint = pxSphericalJoint;
          if (!pxJoint) {
             WARN("Cant create spherical joint");
@@ -105,7 +110,7 @@ namespace pbe {
          }
          // todo:
       } else if (type == JointType::Prismatic) {
-         auto pxPrismaticJoint = PxPrismaticJointCreate(*GetPxPhysics(), actor0, PxTransform{ PxIDENTITY{} }, actor1, PxTransform{ PxIDENTITY{} });
+         auto pxPrismaticJoint = PxPrismaticJointCreate(*GetPxPhysics(), actor0, localFrame0, actor1, localFrame1);
          pxJoint = pxPrismaticJoint;
          if (!pxJoint) {
             WARN("Cant create prismatic joint");
@@ -140,6 +145,17 @@ namespace pbe {
       PxWakeUp(actor1);
    }
 
+   std::optional<Transform> JointComponent::GetAnchorTransform(Anchor anchor) const {
+      auto actor = GetPxActor(anchor == Anchor::Anchor0 ? entity0 : entity1);
+      if (!actor) {
+         return {};
+      }
+      auto localFrame = anchor == Anchor::Anchor0 ? anchor0 : anchor1;
+      // todo: use pb math instead of px
+      auto globalFrame = actor->getGlobalPose() * PxTransform{ Vec3ToPx(localFrame.position), QuatToPx(localFrame.rotation) };
+      return std::optional{ Transform{PxVec3ToPBE(globalFrame.p), PxQuatToPBE(globalFrame.q)} };
+   }
+
 
    STRUCT_BEGIN(RigidBodyComponent)
       STRUCT_FIELD(dynamic)
@@ -157,6 +173,11 @@ namespace pbe {
       ENUM_VALUE(Spherical)
       ENUM_VALUE(Prismatic)
    ENUM_END()
+
+   STRUCT_BEGIN(JointAnchor)
+      STRUCT_FIELD(position)
+      STRUCT_FIELD(rotation)
+   STRUCT_END()
 
    STRUCT_BEGIN(JointComponent::DistanceJoint)
       STRUCT_FIELD(minDistance)
@@ -194,6 +215,9 @@ namespace pbe {
    
       STRUCT_FIELD(entity0)
       STRUCT_FIELD(entity1)
+
+      STRUCT_FIELD(anchor0)
+      STRUCT_FIELD(anchor1)
 
       STRUCT_FIELD_USE(CheckJointType(JointType::Distance))
       // STRUCT_FIELD_FLAG(SkipName)

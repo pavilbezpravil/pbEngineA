@@ -718,27 +718,32 @@ namespace pbe {
 
             dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{ 1, 1, 1, 1 });
 
-            auto trans0 = joint.entity0.GetTransform();
+            auto trans0 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor0);
+            auto trans1 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor1);
 
-            auto pos0 = trans0.Position();
-            auto pos1 = joint.entity1.GetTransform().Position();
+            auto pos0 = trans0->position;
+            auto pos1 = trans1->position;
             auto dir = glm::normalize(pos1 - pos0);
 
+            auto sphere = Sphere{ pos0, 0.2f };
+
+            auto defColor = vec4{ 0, 1, 0, 1 };
             if (joint.type == JointType::Fixed) {
-               
+               dbgRend.DrawSphere(sphere, defColor);
             } else if (joint.type == JointType::Distance) {
                auto posMin = pos0 + dir * joint.distance.minDistance;
                auto posMax = pos0 + dir * joint.distance.maxDistance;
-               dbgRend.DrawLine(posMin, posMax, vec4{ 0, 1, 0, 1 });
+               dbgRend.DrawLine(posMin, posMax, defColor);
             } else if (joint.type == JointType::Revolute) {
-               dbgRend.DrawLine(pos0, pos0 + trans0.Right() * 3.f, vec4{ 1, 0, 0, 1 });
+               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, vec4{ 1, 0, 0, 1 });
+               dbgRend.DrawSphere(sphere, defColor);
             } else if (joint.type == JointType::Spherical) {
-               
+               dbgRend.DrawSphere(sphere, defColor);
             } else if (joint.type == JointType::Prismatic) {
                dbgRend.DrawLine(
-                  pos0 + trans0.Right() * joint.prismatic.lowerLimit,
-                  pos0 + trans0.Right() * joint.prismatic.upperLimit,
-                  vec4{ 0, 1, 0, 1 });
+                  pos0 + trans0->Right() * joint.prismatic.lowerLimit,
+                  pos0 + trans0->Right() * joint.prismatic.upperLimit,
+                  defColor);
             } else {
                UNIMPLEMENTED();
             }
