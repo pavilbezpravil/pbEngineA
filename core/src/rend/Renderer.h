@@ -75,6 +75,8 @@ namespace pbe {
 
       // todo: simplify adding new rt
       // rt
+      Ref<Texture2D> rtColorNoisyTex;
+
       Ref<Texture2D> historyTex;
       Ref<Texture2D> historyTexPrev;
 
@@ -86,9 +88,6 @@ namespace pbe {
 
       Ref<Texture2D> reprojectCountTex;
       Ref<Texture2D> reprojectCountTexPrev;
-
-      Ref<Texture2D> objIDTex;
-      Ref<Texture2D> objIDTexPrev;
 
       // todo:
       Ref<Buffer> underCursorBuffer;

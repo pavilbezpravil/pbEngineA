@@ -365,6 +365,7 @@ namespace pbe {
       CommandList& cmd;
    };
 
+   // todo: remove
 #define CMD_BINDS_GUARD() CmdBindsGuard cmdBindsGuard { cmd };
 
    struct GpuMarker {

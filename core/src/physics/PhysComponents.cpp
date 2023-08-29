@@ -36,6 +36,7 @@ namespace pbe {
       if (pxJoint) {
          // todo: several place for this
          delete (Entity*)pxJoint->userData;
+         pxJoint->userData = nullptr;
          pxJoint->release();
          pxJoint = nullptr;
       }

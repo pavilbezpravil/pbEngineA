@@ -132,6 +132,7 @@ namespace pbe {
             .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
             .name = "rt history",
          };
+         context.rtColorNoisyTex = Texture2D::Create(texDesc);
          context.historyTex = Texture2D::Create(texDesc);
          context.historyTexPrev = Texture2D::Create(texDesc);
 
@@ -161,15 +162,6 @@ namespace pbe {
          };
          context.reprojectCountTex = Texture2D::Create(texDesc);
          context.reprojectCountTexPrev = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R32_UINT,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt obj id",
-         };
-         context.objIDTex = Texture2D::Create(texDesc);
-         context.objIDTexPrev = Texture2D::Create(texDesc);
       }
 
       return context;

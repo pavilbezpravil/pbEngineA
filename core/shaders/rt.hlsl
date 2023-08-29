@@ -5,7 +5,7 @@
 #include "pbr.hlsli"
 #include "sky.hlsli"
 
-RWTexture2D<float4> gColor : register(u0);
+RWTexture2D<float4> gColorOut : register(u0);
 
 cbuffer gRTConstantsCB : register(b0) {
   SRTConstants gRTConstants;
@@ -285,7 +285,6 @@ float3 RayColor(Ray ray, inout uint seed) {
 
 RWTexture2D<float> gDepthOut : register(u1);
 RWTexture2D<float4> gNormalOut : register(u2);
-RWTexture2D<uint> gObjIDOut : register(u3);
 
 // todo:
 #define EDITOR
@@ -307,7 +306,6 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
     if (hit.tMax < INF) {
         SRTObject obj = gRtObjects[hit.materialID];
 
-        gObjIDOut[id] = obj.id;
         gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
         float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
@@ -317,7 +315,6 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
             SetEntityUnderCursor(id, obj.id);
         #endif
     } else {
-        gObjIDOut[id] = -1;
         gNormalOut[id] = 0;
         gDepthOut[id] = 1;
     }
@@ -350,7 +347,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
     color /= nRays;
 
-    gColor[id.xy] = float4(color, 1);
+    gColorOut[id.xy] = float4(color, 1);
 }
 
 
@@ -363,8 +360,7 @@ Texture2D<float4> gNormal : register(s4);
 Texture2D<float4> gHistory : register(s5); // prev
 Texture2D<uint> gReprojectCount : register(s6); // prev
 
-Texture2D<uint> gObjIDPrev : register(s7);
-Texture2D<uint> gObjID : register(s8);
+Texture2D<float4> gColor : register(s7);
 
 RWTexture2D<float4> gHistoryOut : register(u4);
 RWTexture2D<uint> gReprojectCountOut : register(u5);
@@ -402,9 +398,8 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float historyWeight = gRTConstants.historyWeight;
 
-        float3 color = gColor[id].xyz;
+        float3 color = gColorOut[id].xyz;
 
-        uint objID = gObjID[id];
         float3 normal = NormalFromTex(gNormal[id]);
         // validDepth = depthRaw != 1
         //            || gDepth[id + int2( 1, 0)] != 1
@@ -417,8 +412,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         bool successReproject = true;
 
-        if (objID != -1 && prevInScreen) {
-            uint objIDPrev = gObjIDPrev[prevSampleIdx];
+        if (prevInScreen) {
             float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
 
             float normalCoeff = pow(max(dot(normal, normalPrev), 0), 3); // todo:
@@ -436,7 +430,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
             // dbgColor.r += 1 - depthCoeff;
 
-            if (objIDPrev != objID || normalFail || depthFail) {
+            if (normalFail || depthFail) {
                 historyWeight = 0;
                 successReproject = false;
 
@@ -472,13 +466,13 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
         color4.xyz += dbgColor;
         // color4.xyz = normal;
-        gColor[id] = color4;
+        gColorOut[id] = color4;
     #else
         float w = gRTConstants.historyWeight;
-        float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
+        float3 history = gHistoryOut[id.xy].xyz * w + gColorOut[id.xy].xyz * (1 - w);
         float4 color = float4(history, 1);
 
-        gColor[id.xy] = color;
+        gColorOut[id.xy] = color;
         gHistoryOut[id.xy] = color;
     #endif
 }
@@ -493,6 +487,14 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
+    float3 color = gColor[id].xyz;
+
+    gHistoryOut[id] = float4(color, 1);
+    gColorOut[id] = float4(color, 1);
+
+    return;
+
+#if 0
     uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
 
     // uint nSamples = gRTConstants.nSamples;
@@ -501,7 +503,6 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
     float2 uv = (float2(id) + 0.5) / float2(gRTConstants.rtSize);
     float2 invSize = 1 / float2(gRTConstants.rtSize);
 
-    uint objID = gObjID[id];
     float3 posW = GetWorldPositionFromDepth(uv, gDepth[id], gCamera.invViewProjection);
     float3 normal = NormalFromTex(gNormalPrev[id]);
     uint reprojectCount = gReprojectCount[id];
@@ -522,14 +523,9 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
 
         uint2 sampleIdx = sampleUv * gCamera.rtSize;
 
-        uint sampleObjID = gObjID[sampleIdx];
         float3 samplePosW = GetWorldPositionFromDepth(uv, gDepth[sampleIdx], gCamera.invViewProjection);
         float3 sampleNormal = NormalFromTex(gNormalPrev[sampleIdx]);
         // uint sampleReprojectCount = gReprojectCount[sampleIdx];
-
-        if (objID != sampleObjID) {
-            continue;
-        }
         
         color += gHistory[sampleIdx].xyz;
         successSamples += 1;
@@ -549,5 +545,6 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
 
     // color.r = 0.001;
     gHistoryOut[id] = float4(color, 1);
-    gColor[id] = float4(color, 1);
+    gColorOut[id] = float4(color, 1);
+#endif
 }
