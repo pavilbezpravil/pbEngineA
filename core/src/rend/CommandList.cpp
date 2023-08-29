@@ -50,6 +50,7 @@ namespace pbe {
       std::pair<int, ID3D11SamplerState**> samplers[] = {
          {SAMPLER_SLOT_WRAP_POINT, &rendres::samplerStateWrapPoint},
          {SAMPLER_SLOT_WRAP_LINEAR, &rendres::samplerStateWrapLinear},
+         {SAMPLER_SLOT_CLAMP_POINT, &rendres::samplerStateClampPoint},
          {SAMPLER_SLOT_SHADOW, &rendres::samplerStateShadow},
       };
 

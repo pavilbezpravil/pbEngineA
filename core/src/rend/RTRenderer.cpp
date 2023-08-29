@@ -27,7 +27,7 @@ namespace pbe {
    CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
-   CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 1, 0, 1 };
+   CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 0.5f, 0, 1 };
    CVarValue<bool> cvReprojectionShowNewPixel{ "render/rt/reprojection/show new pixel", false };
    CVarValue<bool> cvReprojectionObjID{ "render/rt/reprojection/obj id", true };
    CVarValue<bool> cvReprojectionNormal{ "render/rt/reprojection/normal", true };
@@ -97,8 +97,8 @@ namespace pbe {
       }
 
       if (resetHistory || !cvAccumulate) {
-         cmd.ClearUAVUint(*context.reprojectCountTexPrev);
-         cmd.ClearUAVFloat(*context.historyTex);
+         // cmd.ClearUAVUint(*context.reprojectCountTexPrev);
+         // cmd.ClearUAVFloat(*context.historyTex);
 
          accumulatedFrames = 0;
       }

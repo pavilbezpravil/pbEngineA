@@ -367,7 +367,7 @@ RWTexture2D<uint> gReprojectCountOut : register(u5);
 
 // #define ENABLE_REPROJECTION
 
-float3 NormalFromTex(float4 normal) {
+float3 NormalFromTex(float3 normal) {
     // todo: dont know why, but it produce artifacts
     // return normal.xyz * 2 - 1;
     return SafeNormalize(normal.xyz * 2 - 1);
@@ -400,7 +400,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
 
         float3 color = gColorOut[id].xyz;
 
-        float3 normal = NormalFromTex(gNormal[id]);
+        float3 normal = NormalFromTex(gNormal[id].xyz);
         // validDepth = depthRaw != 1
         //            || gDepth[id + int2( 1, 0)] != 1
         //            || gDepth[id + int2(-1, 0)] != 1
@@ -413,7 +413,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         bool successReproject = true;
 
         if (prevInScreen) {
-            float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
+            float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx].xyz);
 
             float normalCoeff = pow(max(dot(normal, normalPrev), 0), 3); // todo:
             bool normalFail = normalCoeff <= 0;
@@ -481,6 +481,8 @@ void DenoiseSample() {
     
 }
 
+#define METHOD 1
+
 [numthreads(8, 8, 1)]
 void DenoiseCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -489,62 +491,84 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
 
     float3 color = gColor[id].xyz;
 
+#if METHOD == 0
     gHistoryOut[id] = float4(color, 1);
     gColorOut[id] = float4(color, 1);
+#elif METHOD == 1
 
-    return;
-
-#if 0
     uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
 
-    // uint nSamples = gRTConstants.nSamples;
-    uint nSamples = 20;
+    // todo: mb tex size different from rt size?
+    float2 rtSizeInv = 1 / float2(gCamera.rtSize);
 
-    float2 uv = (float2(id) + 0.5) / float2(gRTConstants.rtSize);
-    float2 invSize = 1 / float2(gRTConstants.rtSize);
+    float2 uv = (float2(id) + 0.5) * rtSizeInv;
 
-    float3 posW = GetWorldPositionFromDepth(uv, gDepth[id], gCamera.invViewProjection);
-    float3 normal = NormalFromTex(gNormalPrev[id]);
-    uint reprojectCount = gReprojectCount[id];
+    float depth = gDepth[id];
     
-    float3 color = 0;
-
-    float successSamples = 1;
-    color += gHistory[id].xyz;
-
-    for (int i = 0; i < nSamples; i++) {
-        float2 offset = RandomFloat2(seed) * 2 - 1;
-        float2 kernelSize = 2; // todo:
-        float2 sampleUv = uv + offset * invSize * kernelSize;
-
-        if (any(sampleUv < 0 || sampleUv > 1)) {
-            continue; // todo: return to screen
-        }
-
-        uint2 sampleIdx = sampleUv * gCamera.rtSize;
-
-        float3 samplePosW = GetWorldPositionFromDepth(uv, gDepth[sampleIdx], gCamera.invViewProjection);
-        float3 sampleNormal = NormalFromTex(gNormalPrev[sampleIdx]);
-        // uint sampleReprojectCount = gReprojectCount[sampleIdx];
-        
-        color += gHistory[sampleIdx].xyz;
-        successSamples += 1;
+    if (depth > 0.999) {
+        gHistoryOut[id] = float4(color, 1);
+        gColorOut[id] = float4(color, 1);
+        return;
     }
+    
+    // float2 motion = uMotion.Sample(MinMagMipNearestWrapEdge, input.texCoord).rg;
+    float2 motion = 0;
+    float3 normal = NormalFromTex(gNormal[id].xyz);
+    
+    float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
 
-    color /= successSamples;
+    float3 colNew = color;
 
-    // float4 color = gHistory[id];
+    float3 org = colNew;
+    float3 mi = colNew;
+    float3 ma = colNew;
+    
+    float tot = 1.0;
+    
+    const float goldenAngle = 2.39996323;
+    const float size = 12.0;
+    const float radInc = 1.0;
+    
+    float radius = 0.5;
+    
+    // todo: blue noise
+    for (float ang = RandomFloat(seed) * goldenAngle; radius < size; ang += goldenAngle) {
+        radius += radInc;
+        float2 sampleUV = uv + float2(cos(ang), sin(ang)) * rtSizeInv * radius;
+        
+        float weight = saturate(1.2 - radius / size);
+        
+        // Check depth
+        float sampleDepth = gDepth.SampleLevel(gSamplerPointClamp, sampleUV, 0);
+        float3 samplePosW = GetWorldPositionFromDepth(sampleUV, sampleDepth, gCamera.invViewProjection);
 
-    // color = gHistory[id] 
-    //       + gHistory[id + int2( 1, 0)]
-    //       + gHistory[id + int2(-1, 0)]
-    //       + gHistory[id + int2( 0, 1)]
-    //       + gHistory[id + int2( 0,-1)];
-    // color /= 5;
+        float3 toSample = normalize(samplePosW - posW);
+        float toSampleDotN = dot(toSample, normal);
+        weight *= step(abs(toSampleDotN), 0.2);
+        
+        // Check normal
+        float3 sampleNormal = NormalFromTex(gNormal.SampleLevel(gSamplerPointClamp, sampleUV, 0).xyz);
+        weight *= step(0.9, dot(normal, sampleNormal));
+        
+        float3 sampleColor = gColor.SampleLevel(gSamplerPointClamp, sampleUV, 0).xyz;
+        float3 mc = lerp(org, sampleColor, weight);
+        
+        mi = min(mi, mc);
+        ma = max(ma, mc);
+        
+        colNew += weight * sampleColor;
+        tot += weight;
+    }
+    
+    colNew /= tot;
+    
+    float3 colOld = gHistory.SampleLevel(gSamplerPointClamp, uv - motion, 0).xyz;
+    colOld = clamp(colOld, mi, ma);
 
+    colNew = lerp(colNew, colOld, gRTConstants.historyWeight);
 
-    // color.r = 0.001;
-    gHistoryOut[id] = float4(color, 1);
-    gColorOut[id] = float4(color, 1);
+    gHistoryOut[id] = float4(colNew, 1);
+    gColorOut[id] = float4(colNew, 1);
+
 #endif
 }
