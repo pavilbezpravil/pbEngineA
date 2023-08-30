@@ -526,7 +526,7 @@ void DenoiseCS (uint2 id : SV_DispatchThreadID) {
     float tot = 1.0;
     
     const float goldenAngle = 2.39996323;
-    const float size = 12.0;
+    const float size = 6.0;
     const float radInc = 1.0;
     
     float radius = 0.5;

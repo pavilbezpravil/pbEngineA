@@ -58,7 +58,7 @@ namespace pbe {
       if (v != vec3{resetVal}) {
          ImGui::SameLine(0, 10);
          if (ImGui::Button("-")) {
-            v = { resetVal };
+            v = vec3{ resetVal };
             edited = true;
          }
       }

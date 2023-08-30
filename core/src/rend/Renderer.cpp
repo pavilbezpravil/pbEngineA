@@ -668,7 +668,6 @@ namespace pbe {
          cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
          DbgRend& dbgRend = *scene.dbgRend;
-         dbgRend.Clear();
 
          // int size = 50;
          //
@@ -742,6 +741,7 @@ namespace pbe {
          }
 
          dbgRend.Render(cmd, camera);
+         dbgRend.Clear();
       }
    }
 

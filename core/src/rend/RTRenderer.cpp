@@ -2,6 +2,7 @@
 #include "RTRenderer.h"
 #include "Buffer.h"
 #include "CommandList.h"
+#include "DbgRend.h"
 #include "Renderer.h" // todo:
 #include "Shader.h"
 #include "Texture2D.h"
@@ -18,8 +19,8 @@
 
 namespace pbe {
 
-   CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 128 };
-   CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 3, 1, 8 };
+   CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 32 };
+   CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 2, 1, 8 };
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", false };
@@ -37,6 +38,118 @@ namespace pbe {
 
    }
 
+   struct BVH {
+      struct Node {
+         vec3 aabbMin;
+         uint objIdx = UINT_MAX;
+
+         vec3 aabbMax;
+         uint pad;
+      };
+
+      std::vector<Node> nodes;
+
+      std::vector<Node> buildedNodes;
+
+      void Build(const std::vector<AABB>& aabbs) {
+         // todo: do it thought generator
+         nodes.resize(aabbs.size());
+
+         for (int i = 0; i < aabbs.size(); ++i) {
+            nodes[i] = Node {
+               .aabbMin = aabbs[i].min,
+               .objIdx = (uint)i,
+               .aabbMax = aabbs[i].max,
+            };
+         }
+
+         // todo: not best size
+         buildedNodes.reserve(aabbs.size() * 2);
+         BuildRecursive(0, 0, (int)nodes.size());
+      }
+
+      void BuildRecursive(int buildNodeIdx, int start, int end) {
+         int count = end - start;
+         if (count == 0) {
+            return;
+         }
+
+         AABB combinedAABB = AABB::MinMax(nodes[start].aabbMin, nodes[start].aabbMax);
+         for (int i = 1; i < count; ++i) {
+            auto& node = nodes[start + i];
+            combinedAABB.AddAABB(AABB::MinMax(node.aabbMin, node.aabbMax));
+         }
+
+         int mid = start + (count + 1) / 2;
+
+         if (count > 2) {
+            int axis = IndexOfLargestValue(combinedAABB.Size());
+            std::sort(nodes.begin() + start, nodes.begin() + end,
+               [axis](const Node& a, const Node& b) { return a.aabbMin[axis] < b.aabbMin[axis]; });
+         } else {
+            mid = start + 1;
+         }
+
+         int reqSize = buildNodeIdx + 1;
+         if (reqSize > buildedNodes.size()) {
+            buildedNodes.resize(reqSize);
+         }
+
+         buildedNodes[buildNodeIdx] = Node {
+            .aabbMin = combinedAABB.min,
+            .objIdx = count == 1 ? nodes[start].objIdx : UINT_MAX,
+            .aabbMax = combinedAABB.max,
+         };
+
+         if (count > 1) {
+            BuildRecursive(LeftIdx(buildNodeIdx), start, mid);
+            BuildRecursive(RightIdx(buildNodeIdx), mid, end);
+         }
+      }
+
+      int ParentIdx(int idx) const {
+         return idx == 0 ? 0 : (idx - 1) / 2;
+      }
+
+      int LeftIdx(int idx) const {
+         return idx * 2 + 1;
+      }
+
+      int RightIdx(int idx) const {
+         return idx * 2 + 2;
+      }
+
+      int IndexOfLargestValue(const vec3& vector) {
+         int index = 0;
+         float maxValue = vector[0];
+
+         for (int i = 1; i < 3; ++i) {
+            if (vector[i] > maxValue) {
+               index = i;
+               maxValue = vector[i];
+            }
+         }
+
+         return index;
+      }
+
+      void Render(DbgRend& dbgRend, int idx = 0, int level = 0) {
+         if (idx >= buildedNodes.size()) {
+            return;
+         }
+
+         auto& node = buildedNodes[idx];
+
+         vec3 color = Random::Color(level);
+         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), vec4(color, 1));
+
+         if (node.objIdx == UINT_MAX) {
+            Render(dbgRend, LeftIdx(idx), level + 1);
+            Render(dbgRend, RightIdx(idx), level + 1);
+         }
+      }
+   };
+
    void RTRenderer::RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context) {
       GPU_MARKER("RT Scene");
       PROFILE_GPU("RT Scene");
@@ -45,7 +158,10 @@ namespace pbe {
 
       std::vector<SRTObject> objs;
 
-      for (auto [e, trans, material, geom] : scene.View<SceneTransformComponent, MaterialComponent, GeometryComponent>().each()) {
+      std::vector<AABB> aabbs;
+
+      for (auto [e, trans, material, geom]
+         : scene.View<SceneTransformComponent, MaterialComponent, GeometryComponent>().each()) {
          SRTObject obj;
          obj.position = trans.Position();
          obj.id = (uint)e;
@@ -63,8 +179,21 @@ namespace pbe {
             importanceSampleObjIdx = (uint)objs.size();
          }
 
+         auto aabb = AABB::CenterHalfSize(trans.Position(), trans.Scale() * 0.5f);
+         aabbs.emplace_back(aabb);
+
          objs.emplace_back(obj);
       }
+
+      // todo: dont create every frame
+      BVH bvh;
+      bvh.Build(aabbs);
+
+      auto& dbgRender = *scene.dbgRend;
+      for (auto& aabb : aabbs) {
+         dbgRender.DrawAABB(aabb);
+      }
+      bvh.Render(dbgRender);
 
       uint nObj = (uint)objs.size();
 
