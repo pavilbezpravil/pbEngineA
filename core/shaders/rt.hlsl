@@ -5,6 +5,10 @@
 #include "pbr.hlsli"
 #include "sky.hlsli"
 
+static uint UINT_MAX = uint(-1);
+
+#define USE_BVH
+
 RWTexture2D<float4> gColorOut : register(u0);
 
 cbuffer gRTConstantsCB : register(b0) {
@@ -12,6 +16,7 @@ cbuffer gRTConstantsCB : register(b0) {
 }
 
 StructuredBuffer<SRTObject> gRtObjects : register(t0);
+StructuredBuffer<BVHNode> gBVHNodes : register(t1);
 // StructuredBuffer<SMaterial> gMaterials;
 
 struct Sphere {
@@ -49,7 +54,7 @@ uint pcg_hash(uint input) {
 
 float RandomFloat(inout uint seed) {
     seed = pcg_hash(seed);
-    return (float)seed / (float)uint(-1);
+    return (float)seed / (float)UINT_MAX;
 }
 
 float2 RandomFloat2(inout uint seed) {
@@ -136,7 +141,23 @@ bool IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere) {
     return false;
 }
 
+bool IntersectAABB_Fast(Ray ray, float bestHitTMax, float3 aabbMin, float3 aabbMax) {
+    // todo: ray inv direction
+    float3 tMin = (aabbMin - ray.origin) / ray.direction;
+    float3 tMax = (aabbMax - ray.origin) / ray.direction;
+    float3 t1 = min(tMin, tMax);
+    float3 t2 = max(tMin, tMax);
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    if (tFar > tNear && tNear < bestHitTMax && tFar > 0) {
+        return true;
+    }
+    return false;
+}
+
 bool IntersectAABB(Ray ray, inout RayHit bestHit, float3 center, float3 halfSize) {
+    // todo: optimize - min\max
     float3 boxMin = center - halfSize;
     float3 boxMax = center + halfSize;
 
@@ -178,6 +199,87 @@ bool IntersectOBB(Ray ray, inout RayHit bestHit, float3 center, float4 rotation,
     return false;
 }
 
+#ifdef USE_BVH
+
+// RayHit BVHTraverse(Ray ray) {
+RayHit Trace(Ray ray) {
+    RayHit bestHit = CreateRayHit();
+
+    if (gRTConstants.bvhNodes == 0) {
+        return bestHit;
+    }
+
+    float tMax = INF;
+
+    const uint BVH_STACK_SIZE = 32;
+    uint stack[BVH_STACK_SIZE];
+    int stackPtr = 0;
+
+    stack[0] = 0;
+
+    while (stackPtr >= 0) {
+        int iNode = stack[stackPtr];
+
+        uint objIdx = gBVHNodes[iNode].objIdx;
+        bool isLeaf = objIdx != UINT_MAX;
+
+        // todo: slow
+        if (isLeaf) {
+            SRTObject obj = gRtObjects[objIdx];
+            int geomType = obj.geomType;
+
+            // geomType = 0;
+            if (geomType == 1) {
+                // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
+                if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
+                    bestHit.materialID = objIdx;
+                }
+            } else {
+                if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
+                    bestHit.materialID = objIdx;
+                }
+            }
+
+            stackPtr--;
+            continue;
+        }
+
+        uint iNodeLeft = iNode * 2 + 1;
+        uint iNodeRight = iNode * 2 + 2;
+
+        BVHNode nodeLeft = gBVHNodes[iNodeLeft];
+        BVHNode nodeRight = gBVHNodes[iNodeRight];
+
+        bool intersectL = IntersectAABB_Fast(ray, bestHit.tMax, nodeLeft.aabbMin, nodeLeft.aabbMax);
+        bool intersectR = IntersectAABB_Fast(ray, bestHit.tMax, nodeRight.aabbMin, nodeRight.aabbMax);
+
+        // todo: simplify
+        if (!intersectL && !intersectR) {
+            stackPtr--;
+        } else {
+            if (intersectL && intersectR) {
+                stack[stackPtr] = iNodeLeft;
+
+                // todo: assert?
+                if (stackPtr + 1 < BVH_STACK_SIZE) {
+                    stackPtr++;
+                    stack[stackPtr] = iNodeRight;
+                }
+            } else {
+                if (intersectL) {
+                    stack[stackPtr] = iNodeLeft;
+                } else {
+                    stack[stackPtr] = iNodeRight;
+                }
+            }
+        }
+    }
+
+    return bestHit;
+}
+
+#else
+
 RayHit Trace(Ray ray) {
     RayHit bestHit = CreateRayHit();
     // if (IntersectGroundPlane(ray, bestHit)) {
@@ -203,6 +305,8 @@ RayHit Trace(Ray ray) {
 
     return bestHit;
 }
+
+#endif
 
 // write luminance from rgb
 float Luminance(float3 color) {
@@ -351,6 +455,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 }
 
 
+// todo: register s?
 Texture2D<float> gDepthPrev : register(s1);
 Texture2D<float> gDepth : register(s2);
 

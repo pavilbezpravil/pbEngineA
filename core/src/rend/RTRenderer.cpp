@@ -26,6 +26,7 @@ namespace pbe {
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", false };
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
    CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
+   CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
    CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 0.5f, 0, 1 };
@@ -50,6 +51,10 @@ namespace pbe {
       std::vector<Node> nodes;
 
       std::vector<Node> buildedNodes;
+
+      int Nodes() const {
+         return (int)buildedNodes.size();
+      }
 
       void Build(const std::vector<AABB>& aabbs) {
          nodes.clear();
@@ -76,6 +81,23 @@ namespace pbe {
          BuildRecursive(0, 0, size);
       }
 
+      void Render(DbgRend& dbgRend, int idx = 0, int level = 0) {
+         if (idx >= buildedNodes.size()) {
+            return;
+         }
+
+         auto& node = buildedNodes[idx];
+
+         vec3 color = Random::Color(level);
+         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), vec4(color, 1));
+
+         if (node.objIdx == UINT_MAX) {
+            Render(dbgRend, LeftIdx(idx), level + 1);
+            Render(dbgRend, RightIdx(idx), level + 1);
+         }
+      }
+
+   private:
       void BuildRecursive(int buildNodeIdx, int start, int end) {
          int count = end - start;
          if (count == 0) {
@@ -127,6 +149,7 @@ namespace pbe {
          return idx * 2 + 2;
       }
 
+      // todo: move to common
       int IndexOfLargestValue(const vec3& vector) {
          int index = 0;
          float maxValue = vector[0];
@@ -139,22 +162,6 @@ namespace pbe {
          }
 
          return index;
-      }
-
-      void Render(DbgRend& dbgRend, int idx = 0, int level = 0) {
-         if (idx >= buildedNodes.size()) {
-            return;
-         }
-
-         auto& node = buildedNodes[idx];
-
-         vec3 color = Random::Color(level);
-         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), vec4(color, 1));
-
-         if (node.objIdx == UINT_MAX) {
-            Render(dbgRend, LeftIdx(idx), level + 1);
-            Render(dbgRend, RightIdx(idx), level + 1);
-         }
       }
    };
 
@@ -221,11 +228,21 @@ namespace pbe {
       BVH bvh;
       bvh.Build(aabbs);
 
-      auto& dbgRender = *scene.dbgRend;
-      for (auto& aabb : aabbs) {
-         dbgRender.DrawAABB(aabb);
+      if (cvBvhAABBRender) {
+         auto& dbgRender = *scene.dbgRend;
+         // for (auto& aabb : aabbs) {
+         //    dbgRender.DrawAABB(aabb);
+         // }
+         bvh.Render(dbgRender);
       }
-      bvh.Render(dbgRender);
+
+      // todo: make it dynamic
+      int bvhNodes = bvh.Nodes();
+      if (!bvhNodesBuffer || bvhNodesBuffer->ElementsCount() < bvhNodes) {
+         auto bufferDesc = Buffer::Desc::Structured("BVHNodes", bvhNodes, sizeof(BVHNode));
+         bvhNodesBuffer = Buffer::Create(bufferDesc);
+      }
+      cmd.UpdateSubresource(*bvhNodesBuffer, bvh.buildedNodes.data(), 0, bvhNodes * sizeof(BVHNode));
 
       uint nObj = (uint)objs.size();
 
@@ -279,11 +296,14 @@ namespace pbe {
       rtCB.debugFlags |= cvReprojectionNormal ? DBG_FLAG_REPR_NORMAL : 0;
       rtCB.debugFlags |= cvReprojectionDepth ? DBG_FLAG_REPR_DEPTH : 0;
 
+      rtCB.bvhNodes = bvhNodes;
+
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
       auto setSharedResource = [&](GpuProgram& pass) {
          cmd.SetCB<SRTConstants>(pass.GetBindPoint("gRTConstantsCB"), rtConstantsCB.buffer, rtConstantsCB.offset);
          cmd.SetSRV(pass.GetBindPoint("gRtObjects"), rtObjectsBuffer);
+         cmd.SetSRV(pass.GetBindPoint("gBVHNodes"), bvhNodesBuffer);
       };
 
       CMD_BINDS_GUARD();

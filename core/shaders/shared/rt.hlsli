@@ -19,6 +19,13 @@ struct SRTObject {
    int    geomType;
 };
 
+struct BVHNode {
+   float3 aabbMin;
+   uint   objIdx;
+   float3 aabbMax;
+   uint   pad;
+};
+
 struct SRTConstants {
    uint2 rtSize;
    int rayDepth;
@@ -30,5 +37,6 @@ struct SRTConstants {
    uint importanceSampleObjIdx; // todo:
 
    uint debugFlags;
-   float3 _dymmy23;
+   uint bvhNodes;
+   float2 _dymmy23;
 };
