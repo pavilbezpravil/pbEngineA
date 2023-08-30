@@ -52,10 +52,18 @@ namespace pbe {
       std::vector<Node> buildedNodes;
 
       void Build(const std::vector<AABB>& aabbs) {
-         // todo: do it thought generator
-         nodes.resize(aabbs.size());
+         nodes.clear();
+         buildedNodes.clear();
 
-         for (int i = 0; i < aabbs.size(); ++i) {
+         int size = (int)aabbs.size();
+         if (size == 0) {
+            return;
+         }
+
+         // todo: do it thought generator
+         nodes.resize(size);
+
+         for (int i = 0; i < size; ++i) {
             nodes[i] = Node {
                .aabbMin = aabbs[i].min,
                .objIdx = (uint)i,
@@ -64,8 +72,8 @@ namespace pbe {
          }
 
          // todo: not best size
-         buildedNodes.reserve(aabbs.size() * 2);
-         BuildRecursive(0, 0, (int)nodes.size());
+         buildedNodes.reserve(size* 2);
+         BuildRecursive(0, 0, size);
       }
 
       void BuildRecursive(int buildNodeIdx, int start, int end) {
@@ -162,14 +170,18 @@ namespace pbe {
 
       for (auto [e, trans, material, geom]
          : scene.View<SceneTransformComponent, MaterialComponent, GeometryComponent>().each()) {
+         auto rotation = trans.Rotation();
+         auto position = trans.Position();
+         auto scale = trans.Scale();
+
          SRTObject obj;
-         obj.position = trans.Position();
+         obj.position = position;
          obj.id = (uint)e;
 
-         obj.rotation = glm::make_vec4(glm::value_ptr(trans.Rotation()));
+         obj.rotation = glm::make_vec4(glm::value_ptr(rotation));
 
          obj.geomType = (int)geom.type;
-         obj.halfSize = geom.sizeData / 2.f * trans.Scale();
+         obj.halfSize = geom.sizeData / 2.f * scale;
 
          obj.baseColor = material.baseColor;
          obj.metallic = material.metallic;
@@ -179,7 +191,27 @@ namespace pbe {
             importanceSampleObjIdx = (uint)objs.size();
          }
 
-         auto aabb = AABB::CenterHalfSize(trans.Position(), trans.Scale() * 0.5f);
+         // todo: sphere may be optimized
+         // todo: not fastest way
+
+         auto extends = scale * 0.5f;
+         auto aabb = AABB::Empty();
+
+         if (geom.type == GeomType::Box) {
+            aabb.AddPoint(rotation * extends);
+            aabb.AddPoint(rotation * vec3{ -extends.x, extends.y, extends.z });
+            aabb.AddPoint(rotation * vec3{ extends.x, -extends.y, extends.z });
+            aabb.AddPoint(rotation * vec3{ extends.x, extends.y, -extends.z });
+
+            vec3 absMax = glm::max(abs(aabb.min), abs(aabb.max));
+            aabb.min = -absMax;
+            aabb.max = absMax;
+
+            aabb.Translate(position);
+         } else {
+            aabb = AABB::Extends(trans.Position(), trans.Scale() * 0.5f);
+         }
+
          aabbs.emplace_back(aabb);
 
          objs.emplace_back(obj);
