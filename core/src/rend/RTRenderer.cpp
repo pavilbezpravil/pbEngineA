@@ -393,7 +393,7 @@ namespace pbe {
 
          // cvHistoryReprojection&& cvAccumulate
 
-         auto desc = ProgramDesc::Cs("rt.hlsl", "DenoiseCS");
+         auto desc = ProgramDesc::Cs("denoise.hlsl", "DenoiseCS");
          auto pass = GetGpuProgram(desc);
 
          cmd.SetCompute(*pass);

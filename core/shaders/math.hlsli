@@ -7,6 +7,10 @@ static const float PI_2 = 3.14159265359;
 static const float FLT_MAX = asfloat(0x7F7FFFFF);
 static const float EPSILON = 0.000001;
 
+static const uint UINT_MAX = uint(-1);
+
+static const float INF = 1000000; // todo: FLT_MAX?
+
 float Eerp(float a, float b, float t) {
     return pow(a, 1 - t) * pow(b, t);
 }

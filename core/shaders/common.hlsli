@@ -119,6 +119,12 @@ float3 SafeNormalize(float3 v) {
     }
 }
 
+float3 NormalFromTex(float3 normal) {
+    // todo: dont know why, but it produce artifacts
+    // return normal.xyz * 2 - 1;
+    return SafeNormalize(normal.xyz * 2 - 1);
+}
+
 float PlaneDistance(float4 planeEq, float3 pos) {
    return dot(planeEq, float4(pos, 1));
 }
