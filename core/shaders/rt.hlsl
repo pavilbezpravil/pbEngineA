@@ -9,8 +9,6 @@
 
 #define USE_BVH
 
-RWTexture2D<float4> gColorOut : register(u0);
-
 cbuffer gRTConstantsCB : register(b0) {
   SRTConstants gRTConstants;
 }
@@ -210,6 +208,16 @@ float3 RayColor(Ray ray, inout uint seed) {
     return color;
 }
 
+
+uint GetRandomSeed(uint2 id) {
+    return id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01);
+}
+
+float2 GetUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
+    return (float2(id.xy) + pixelOffset) / float2(texSize);
+}
+
+#if 0
 RWTexture2D<float> gDepthOut : register(u1);
 RWTexture2D<float4> gNormalOut : register(u2);
 
@@ -220,13 +228,12 @@ RWTexture2D<float4> gNormalOut : register(u2);
 #endif
 
 [numthreads(8, 8, 1)]
-void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
+void GBufferCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
 
-    // todo: jitter
-    float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
+    float2 uv = GetUV(id, gRTConstants.rtSize);
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
@@ -246,6 +253,9 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
         gDepthOut[id] = 1;
     }
 }
+#endif
+
+RWTexture2D<float4> gColorOut : register(u0);
 
 [numthreads(8, 8, 1)]
 void rtCS (uint2 id : SV_DispatchThreadID) {
@@ -253,16 +263,15 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
+    uint seed = GetRandomSeed(id);
 
     int nRays = gRTConstants.nRays;
 
     float3 color = 0;
 
     for (int i = 0; i < nRays; i++) {
-        float2 offset = RandomFloat2(seed); // todo: halton sequence
-        // float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
-        float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
+        float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
+        float2 uv = GetUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
         color += RayColor(ray, seed);
