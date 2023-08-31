@@ -199,7 +199,25 @@ bool IntersectOBB(Ray ray, inout RayHit bestHit, float3 center, float4 rotation,
     return false;
 }
 
+void IntersectObj(Ray ray, inout RayHit bestHit, SRTObject obj, uint objIdx) {
+    int geomType = obj.geomType;
+
+    // geomType = 0;
+    if (geomType == 1) {
+        // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
+        if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
+            bestHit.materialID = objIdx;
+        }
+    } else {
+        if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
+            bestHit.materialID = objIdx;
+        }
+    }
+}
+
 #ifdef USE_BVH
+
+// #define DELAYED_INTERSECT
 
 // RayHit BVHTraverse(Ray ray) {
 RayHit Trace(Ray ray) {
@@ -211,7 +229,14 @@ RayHit Trace(Ray ray) {
 
     float tMax = INF;
 
-    const uint BVH_STACK_SIZE = 32;
+    #ifdef DELAYED_INTERSECT
+        // todo: group shared?
+        const uint BVH_LEAF_INTERSECTS = 18;
+        uint leafs[BVH_LEAF_INTERSECTS];
+        uint nLeafsIntersects = 0;
+    #endif
+
+    const uint BVH_STACK_SIZE = 12;
     uint stack[BVH_STACK_SIZE];
     stack[0] = UINT_MAX;
     int stackPtr = 1;
@@ -224,20 +249,15 @@ RayHit Trace(Ray ray) {
 
         // todo: slow
         if (isLeaf) {
-            SRTObject obj = gRtObjects[objIdx];
-            int geomType = obj.geomType;
-
-            // geomType = 0;
-            if (geomType == 1) {
-                // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
-                if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
-                    bestHit.materialID = objIdx;
+            #ifdef DELAYED_INTERSECT
+                // todo: message it?
+                if (nLeafsIntersects < BVH_LEAF_INTERSECTS - 1) {
+                    leafs[nLeafsIntersects++] = objIdx;
                 }
-            } else {
-                if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
-                    bestHit.materialID = objIdx;
-                }
-            }
+            #else
+                SRTObject obj = gRtObjects[objIdx];
+                IntersectObj(ray, bestHit, obj, objIdx);
+            #endif
 
             iNode = stack[--stackPtr];
             continue;
@@ -259,12 +279,21 @@ RayHit Trace(Ray ray) {
 
             if (intersectL && intersectR) {
                 // todo: message it?
-                if (stackPtr + 1 < BVH_STACK_SIZE) {
+                if (stackPtr < BVH_STACK_SIZE - 1) {
                     stack[stackPtr++] = iNodeRight;
                 }
             }
         }
     }
+
+    #ifdef DELAYED_INTERSECT
+        for (int i = 0; i < nLeafsIntersects; ++i) {
+            uint objIdx = leafs[i];
+
+            SRTObject obj = gRtObjects[objIdx];
+            IntersectObj(ray, bestHit, obj, objIdx);
+        }
+    #endif
 
     return bestHit;
 }

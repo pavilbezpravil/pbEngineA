@@ -35,6 +35,21 @@ namespace pbe {
    CVarValue<bool> cvReprojectionNormal{ "render/rt/reprojection/normal", true };
    CVarValue<bool> cvReprojectionDepth{ "render/rt/reprojection/depth", true };
 
+   // todo: move to common
+   static int IndexOfLargestValue(const vec3& vector) {
+      int index = 0;
+      float maxValue = vector[0];
+
+      for (int i = 1; i < 3; ++i) {
+         if (vector[i] > maxValue) {
+            index = i;
+            maxValue = vector[i];
+         }
+      }
+
+      return index;
+   }
+
    void RTRenderer::Init() {
 
    }
@@ -148,21 +163,6 @@ namespace pbe {
       int RightIdx(int idx) const {
          return idx * 2 + 2;
       }
-
-      // todo: move to common
-      int IndexOfLargestValue(const vec3& vector) {
-         int index = 0;
-         float maxValue = vector[0];
-
-         for (int i = 1; i < 3; ++i) {
-            if (vector[i] > maxValue) {
-               index = i;
-               maxValue = vector[i];
-            }
-         }
-
-         return index;
-      }
    };
 
    void RTRenderer::RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context) {
@@ -216,7 +216,8 @@ namespace pbe {
 
             aabb.Translate(position);
          } else {
-            aabb = AABB::Extends(trans.Position(), trans.Scale() * 0.5f);
+            auto sphereExtends = vec3{ extends.x };
+            aabb = AABB::Extends(trans.Position(), sphereExtends);
          }
 
          aabbs.emplace_back(aabb);
