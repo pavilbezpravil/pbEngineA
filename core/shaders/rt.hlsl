@@ -64,9 +64,9 @@ RayHit Trace(Ray ray) {
     const uint BVH_STACK_SIZE = 12;
     uint stack[BVH_STACK_SIZE];
     stack[0] = UINT_MAX;
-    int stackPtr = 1;
+    uint stackPtr = 1;
 
-    int iNode = 0;
+    uint iNode = 0;
 
     while (iNode != UINT_MAX) {
         uint objIdx = gBVHNodes[iNode].objIdx;
@@ -214,7 +214,7 @@ uint GetRandomSeed(uint2 id) {
 }
 
 float2 GetUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
-    return (float2(id.xy) + pixelOffset) / float2(texSize);
+    return (float2(id) + 0.5 + pixelOffset) / float2(texSize);
 }
 
 #if 0
@@ -255,8 +255,8 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 }
 #endif
 
-Texture2D<float4> gNormal;
 Texture2D<float> gDepth;
+Texture2D<float4> gNormal;
 
 RWTexture2D<float4> gColorOut : register(u0);
 
@@ -274,6 +274,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
+        offset = 0;
         float2 uv = GetUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
@@ -285,28 +286,77 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id.xy] = float4(color, 1);
 }
 
+bool ClipByDepth(float depth) {
+    return depth > 0.9999;
+}
+
 [numthreads(8, 8, 1)]
-void RTDiffuseCS (uint2 id : SV_DispatchThreadID) {
+void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
 
+    float2 uv = GetUV(id, gRTConstants.rtSize);
+
+    float depth = gDepth[id];
+    if (ClipByDepth(depth)) {
+        gColorOut[id] = float4(0, 0, 0, 1);
+        return;
+    }
+
+    float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
+
+    float4 normalRoughness = gNormal[id];
+    float3 normal = NormalFromTex(normalRoughness.xyz);
+    float roughness = normalRoughness.w;
+    roughness *= roughness; // todo:
+
     uint seed = GetRandomSeed(id);
-    int nRays = gRTConstants.nRays;
+
+    // todo:
+    // int nRays = gRTConstants.nRays;
+    int nRays = 1;
 
     float3 color = 0;
 
-    for (int i = 0; i < nRays; i++) {
-        float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
-        float2 uv = GetUV(id, gRTConstants.rtSize, offset);
+    float3 V = normalize(gCamera.position - posW);
 
-        Ray ray = CreateCameraRay(uv);
+    for (int i = 0; i < nRays; i++) {
+        Ray ray;
+        ray.origin = posW + normal * 0.05; // todo: bias
+
+        #if defined(DIFFUSE)
+            float3 L = -gScene.directLight.direction;
+            float NDotL = dot(normal, L);
+
+            if (NDotL > 0) {
+                const float spread = 0.02; // todo:
+                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                RayHit shadowHit = Trace(shadowRay);
+                if (shadowHit.tMax == INF) {
+                    float3 directLightShade = NDotL * gScene.directLight.color;
+                    color += directLightShade;
+                }
+            }
+
+            ray.direction = normalize(RandomInHemisphere(normal, seed));
+        #elif defined(SPECULAR)
+            ray.direction = reflect(-V, normal);
+            ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness);
+        #else
+            // #error "Define DIFFUSE or SPECULAR"
+        #endif
+
         color += RayColor(ray, seed);
     }
 
     color /= nRays;
 
-    gColorOut[id.xy] = float4(color, 1);
+    // color = normal * 0.5 + 0.5;
+    // color = reflect(V, normal) * 0.5 + 0.5;
+    // color = frac(posW);
+
+    gColorOut[id] = float4(color, 1);
 }
 
 Texture2D<float4> gBaseColor;
@@ -319,14 +369,32 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float3 baseColor = gBaseColor[id].xyz;
+    float depth = gDepth[id];
+    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
+
+    float3 V = normalize(gCamera.position - posW);
+    if (ClipByDepth(depth)) {
+        float3 skyColor = GetSkyColor(-V);
+        gColorOut[id] = float4(skyColor, 1);
+        return;
+    }
+
     float3 normal = NormalFromTex(gNormal[id].xyz);
+
+    float4 baseColorMetallic = gBaseColor[id];
+    float3 baseColor = baseColorMetallic.xyz;
+    float  metallic = baseColorMetallic.w;
 
     float3 diffuse = gDiffuse[id].xyz;
     float3 specular = gSpecular[id].xyz;
 
+    float3 F0 = lerp(0.04, baseColor, metallic);
+    float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
+
     // todo:
-    float3 color = diffuse;
+    float3 albedo = baseColor * (1 - metallic);
+    float3 color = (1 - F) * albedo * diffuse / PI + F * specular;
 
     gColorOut[id] = float4(color, 1);
 }
