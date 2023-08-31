@@ -129,7 +129,7 @@ namespace pbe {
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
-            const char* items[] = { "ColorLDR", "ColorHDR", "Unlit", "Normal", "Motion" };
+            const char* items[] = { "ColorLDR", "ColorHDR", "Unlit", "Normal", "Diffuse", "Specular",  "Motion" };
 
             ImGui::SetNextItemWidth(90);
             ImGui::Combo("##Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
@@ -195,7 +195,10 @@ namespace pbe {
          }
          cmd.pContext->ClearState(); // todo:
 
-         Texture2D* sceneRTs[] = { renderContext.colorLDR, renderContext.colorHDR, renderContext.baseColorTex, renderContext.normalTex, renderContext.motionTex };
+         Texture2D* sceneRTs[] = { renderContext.colorLDR, renderContext.colorHDR,
+            renderContext.baseColorTex, renderContext.normalTex,
+            renderContext.diffuseTex, renderContext.specularTex,
+            renderContext.motionTex };
 
          Texture2D* image = sceneRTs[item_current];
          auto srv = image->srv.Get();

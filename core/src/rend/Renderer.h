@@ -91,6 +91,12 @@ namespace pbe {
       Ref<Texture2D> reprojectCountTex;
       Ref<Texture2D> reprojectCountTexPrev;
 
+      Ref<Texture2D> diffuseTex;
+      Ref<Texture2D> diffuseHistoryTex;
+
+      Ref<Texture2D> specularTex;
+      Ref<Texture2D> specularHistoryTex;
+
       // todo:
       Ref<Buffer> underCursorBuffer;
       int2 cursorPixelIdx{-1};

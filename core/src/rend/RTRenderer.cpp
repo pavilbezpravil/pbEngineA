@@ -25,6 +25,8 @@ namespace pbe {
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", false };
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
+   CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
+   CVarValue<bool> cvRTSpecular{ "render/rt/specular", true };
    CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
@@ -328,7 +330,7 @@ namespace pbe {
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
 
-      {
+      if (0) {
          GPU_MARKER("Ray Trace");
          PROFILE_GPU("Ray Trace");
 
@@ -346,6 +348,26 @@ namespace pbe {
          cmd.SetUAV(pass->GetBindPoint("gColorOut"), context.rtColorNoisyTex);
 
          cmd.Dispatch2D(outTexSize, int2{8, 8});
+      }
+
+      if (cvRTDiffuse) {
+         GPU_MARKER("RT Diffuse");
+         PROFILE_GPU("RT Diffuse");
+
+         auto desc = ProgramDesc::Cs("rt.hlsl", "RTDiffuseCS");
+         // if (cvImportanceSampling) {
+         //    desc.cs.defines.AddDefine("IMPORTANCE_SAMPLING");
+         // }
+
+         auto pass = GetGpuProgram(desc);
+         cmd.SetCompute(*pass);
+         setSharedResource(*pass);
+
+         CMD_BINDS_GUARD();
+
+         cmd.SetUAV(pass->GetBindPoint("gColorOut"), context.diffuseTex);
+
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
 
       if (cvAccumulate && !cvDenoise) {
@@ -387,7 +409,7 @@ namespace pbe {
          // }
       }
 
-      if (cvDenoise) {
+      if (cvDenoise && false) {
          GPU_MARKER("Denoise");
          PROFILE_GPU("Denoise");
 
@@ -415,6 +437,28 @@ namespace pbe {
 
          std::swap(context.historyTex, context.historyTexPrev);
          std::swap(context.reprojectCountTex, context.reprojectCountTexPrev);
+      }
+
+      {
+         GPU_MARKER("RT Combine");
+         PROFILE_GPU("RT Combine");
+
+         auto desc = ProgramDesc::Cs("rt.hlsl", "RTCombineCS");
+
+         auto pass = GetGpuProgram(desc);
+         cmd.SetCompute(*pass);
+         setSharedResource(*pass);
+
+         CMD_BINDS_GUARD();
+
+         pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
+         pass->SetSRV(cmd, "gNormal", context.normalTex);
+         pass->SetSRV(cmd, "gDiffuse", context.diffuseTex);
+         pass->SetSRV(cmd, "gSpecular", context.specularTex);
+
+         pass->SetUAV(cmd, "gColorOut", context.colorHDR);
+
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
    }
 

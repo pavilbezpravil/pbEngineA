@@ -169,6 +169,25 @@ namespace pbe {
          };
          context.reprojectCountTex = Texture2D::Create(texDesc);
          context.reprojectCountTexPrev = Texture2D::Create(texDesc);
+
+         // todo: can we use 3 channel?
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt diffuse",
+         };
+         context.diffuseTex = Texture2D::Create(texDesc);
+         context.diffuseHistoryTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt specular",
+         };
+         context.specularTex = Texture2D::Create(texDesc);
+         context.specularHistoryTex = Texture2D::Create(texDesc);
       }
 
       return context;
@@ -465,7 +484,11 @@ namespace pbe {
             PROFILE_GPU("GBuffer");
 
             std::swap(context.depth, context.depthPrev);
-            cmd.ClearDepthTarget(*context.depth, 1);
+
+            cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
+            cmd.ClearRenderTarget(*context.normalTex, vec4{ 0, 0, 0, 1 });
+            cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
+            // cmd.ClearDepthTarget(*context.depth, 1);
 
             Texture2D* rts[] = { context.baseColorTex, context.normalTex, context.motionTex };
             cmd.SetRenderTargets(_countof(rts), rts, context.depth);

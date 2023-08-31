@@ -255,6 +255,9 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 }
 #endif
 
+Texture2D<float4> gNormal;
+Texture2D<float> gDepth;
+
 RWTexture2D<float4> gColorOut : register(u0);
 
 [numthreads(8, 8, 1)]
@@ -280,4 +283,50 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     color /= nRays;
 
     gColorOut[id.xy] = float4(color, 1);
+}
+
+[numthreads(8, 8, 1)]
+void RTDiffuseCS (uint2 id : SV_DispatchThreadID) {
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
+
+    uint seed = GetRandomSeed(id);
+    int nRays = gRTConstants.nRays;
+
+    float3 color = 0;
+
+    for (int i = 0; i < nRays; i++) {
+        float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
+        float2 uv = GetUV(id, gRTConstants.rtSize, offset);
+
+        Ray ray = CreateCameraRay(uv);
+        color += RayColor(ray, seed);
+    }
+
+    color /= nRays;
+
+    gColorOut[id.xy] = float4(color, 1);
+}
+
+Texture2D<float4> gBaseColor;
+Texture2D<float4> gDiffuse;
+Texture2D<float4> gSpecular;
+
+[numthreads(8, 8, 1)]
+void RTCombineCS (uint2 id : SV_DispatchThreadID) {
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
+
+    float3 baseColor = gBaseColor[id].xyz;
+    float3 normal = NormalFromTex(gNormal[id].xyz);
+
+    float3 diffuse = gDiffuse[id].xyz;
+    float3 specular = gSpecular[id].xyz;
+
+    // todo:
+    float3 color = diffuse;
+
+    gColorOut[id] = float4(color, 1);
 }
