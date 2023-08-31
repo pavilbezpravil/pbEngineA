@@ -473,6 +473,7 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
+         pass->SetSRV(cmd, "gDepth", context.depth); // todo: too match place for sample depth
          pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
          pass->SetSRV(cmd, "gDiffuse", context.diffuseTex);
