@@ -213,13 +213,12 @@ RayHit Trace(Ray ray) {
 
     const uint BVH_STACK_SIZE = 32;
     uint stack[BVH_STACK_SIZE];
-    int stackPtr = 0;
+    stack[0] = UINT_MAX;
+    int stackPtr = 1;
 
-    stack[0] = 0;
+    int iNode = 0;
 
-    while (stackPtr >= 0) {
-        int iNode = stack[stackPtr];
-
+    while (iNode != UINT_MAX) {
         uint objIdx = gBVHNodes[iNode].objIdx;
         bool isLeaf = objIdx != UINT_MAX;
 
@@ -240,7 +239,7 @@ RayHit Trace(Ray ray) {
                 }
             }
 
-            stackPtr--;
+            iNode = stack[--stackPtr];
             continue;
         }
 
@@ -253,23 +252,15 @@ RayHit Trace(Ray ray) {
         bool intersectL = IntersectAABB_Fast(ray, bestHit.tMax, nodeLeft.aabbMin, nodeLeft.aabbMax);
         bool intersectR = IntersectAABB_Fast(ray, bestHit.tMax, nodeRight.aabbMin, nodeRight.aabbMax);
 
-        // todo: simplify
         if (!intersectL && !intersectR) {
-            stackPtr--;
+            iNode = stack[--stackPtr];
         } else {
-            if (intersectL && intersectR) {
-                stack[stackPtr] = iNodeLeft;
+            iNode = intersectL ? iNodeLeft : iNodeRight;
 
-                // todo: assert?
+            if (intersectL && intersectR) {
+                // todo: message it?
                 if (stackPtr + 1 < BVH_STACK_SIZE) {
-                    stackPtr++;
-                    stack[stackPtr] = iNodeRight;
-                }
-            } else {
-                if (intersectL) {
-                    stack[stackPtr] = iNodeLeft;
-                } else {
-                    stack[stackPtr] = iNodeRight;
+                    stack[stackPtr++] = iNodeRight;
                 }
             }
         }
