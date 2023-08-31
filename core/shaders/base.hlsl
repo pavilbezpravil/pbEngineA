@@ -51,6 +51,11 @@ VsOut vs_main(VsIn input) {
    return output;
 }
 
+// todo:
+// #define GBUFFER
+
+#ifndef GBUFFER
+
 struct PsOut {
    float4 color : SV_Target0;
 };
@@ -121,10 +126,6 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    // color = noise(posW * 0.3);
 
-   // color = ACESFilm(color);
-   // color = color / (color + 1);
-   // color = GammaCorrection(color); // todo: use srgb
-
    PsOut output = (PsOut)0;
    output.color.rgb = color;
 
@@ -143,3 +144,38 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    return output;
 }
+
+#else
+
+struct PsOut {
+   float4 baseColor : SV_Target0;
+   float4 normal : SV_Target1;
+   float2 motion : SV_Target2;
+};
+
+// ps uses UAV writes, it removes early z test
+[earlydepthstencil]
+PsOut ps_main(VsOut input) : SV_TARGET {
+   uint2 pixelIdx = input.posH.xy;
+   float2 screenUV = float2(pixelIdx) / gCamera.rtSize;
+
+   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+   // float3 posW = input.posW;
+
+   SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+   SMaterial material = instance.material;
+
+   PsOut output;
+   output.baseColor = float4(material.baseColor, material.metallic);
+   output.normal = float4(normalW * 0.5 + 0.5, material.roughness);
+   output.motion = 0; // todo:
+
+   #if defined(EDITOR)
+      // todo:
+      // SetEntityUnderCursor(pixelIdx, instance.entityID);
+   #endif
+
+   return output;
+}
+
+#endif

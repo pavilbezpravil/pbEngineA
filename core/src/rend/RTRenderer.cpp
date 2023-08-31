@@ -310,7 +310,7 @@ namespace pbe {
       CMD_BINDS_GUARD();
 
       // todo: generate by rasterizator
-      if (cvDenoise) {
+      if (cvDenoise && false) {
          GPU_MARKER("GBuffer");
          PROFILE_GPU("GBuffer");
 
@@ -320,7 +320,7 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         cmd.SetUAV(pass->GetBindPoint("gDepthOut"), context.depthTex);
+         // cmd.SetUAV(pass->GetBindPoint("gDepthOut"), context.depthTex);
          cmd.SetUAV(pass->GetBindPoint("gNormalOut"), context.normalTex);
 
          cmd.SetUAV(pass->GetBindPoint("gUnderCursorBuffer"), context.underCursorBuffer); // todo: only for editor
@@ -367,9 +367,9 @@ namespace pbe {
          CMD_BINDS_GUARD();
 
          cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
-         cmd.SetSRV(pass->GetBindPoint("gDepthPrev"), context.depthTexPrev);
-         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
-         cmd.SetSRV(pass->GetBindPoint("gNormalPrev"), context.normalTexPrev);
+         // cmd.SetSRV(pass->GetBindPoint("gDepthPrev"), context.depthTexPrev);
+         // cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
+         // cmd.SetSRV(pass->GetBindPoint("gNormalPrev"), context.normalTexPrev);
          cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTex);
          cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTexPrev);
 
@@ -402,7 +402,8 @@ namespace pbe {
          CMD_BINDS_GUARD();
 
          // cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
-         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
+         // cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
+         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depth);
          cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTex);
          cmd.SetSRV(pass->GetBindPoint("gColor"), context.rtColorNoisyTex);
          cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTex);
@@ -414,8 +415,6 @@ namespace pbe {
 
          std::swap(context.historyTex, context.historyTexPrev);
          std::swap(context.reprojectCountTex, context.reprojectCountTexPrev);
-         std::swap(context.normalTex, context.normalTexPrev);
-         std::swap(context.depthTex, context.depthTexPrev);
       }
    }
 

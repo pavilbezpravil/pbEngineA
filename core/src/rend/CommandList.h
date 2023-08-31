@@ -228,6 +228,18 @@ namespace pbe {
          pContext->ClearRenderTargetView(rt.rtv.Get(), &color.x);
       }
 
+      void SetRenderTargets(uint nRT, Texture2D** rt = nullptr, Texture2D* depth = nullptr) {
+         ASSERT(nRT <= 4);
+         ID3D11RenderTargetView* rtvs[4];
+         for (uint i = 0; i < nRT; i++) {
+            rtvs[i] = rt[i]->rtv.Get();
+         }
+
+         ID3D11DepthStencilView* dsv = depth ? depth->dsv.Get() : nullptr;
+
+         pContext->OMSetRenderTargets(nRT, rtvs, dsv);
+      }
+
       void SetRenderTargets(Texture2D* rt = nullptr, Texture2D* depth = nullptr) {
          int nRtvs = rt ? 1 : 0;
          ID3D11RenderTargetView** rtv = rt ? rt->rtv.GetAddressOf() : nullptr;

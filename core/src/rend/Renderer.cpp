@@ -90,9 +90,10 @@ namespace pbe {
 
       texDesc.name = "scene depth";
       // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
+      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS; // todo: 32 bit
       texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
       context.depth = Texture2D::Create(texDesc);
+      context.depthPrev = Texture2D::Create(texDesc);
 
       texDesc.name = "scene depth without water";
       texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -138,12 +139,11 @@ namespace pbe {
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt depth",
+            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .name = "scene albedo",
          };
-         context.depthTex = Texture2D::Create(texDesc);
-         context.depthTexPrev = Texture2D::Create(texDesc);
+         context.baseColorTex = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,
@@ -152,7 +152,14 @@ namespace pbe {
             .name = "rt normal",
          };
          context.normalTex = Texture2D::Create(texDesc);
-         context.normalTexPrev = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R16G16_FLOAT,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .name = "scene motion",
+         };
+         context.motionTex = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,
@@ -453,6 +460,30 @@ namespace pbe {
       cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
       if (rayTracingSceneRender) {
+         {
+            GPU_MARKER("GBuffer");
+            PROFILE_GPU("GBuffer");
+
+            std::swap(context.depth, context.depthPrev);
+            cmd.ClearDepthTarget(*context.depth, 1);
+
+            Texture2D* rts[] = { context.baseColorTex, context.normalTex, context.motionTex };
+            cmd.SetRenderTargets(_countof(rts), rts, context.depth);
+            cmd.SetViewport({}, context.depth->GetDesc().size);
+
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+            programDesc.vs.defines.AddDefine("GBUFFER");
+            programDesc.ps.defines.AddDefine("GBUFFER");
+
+            auto baseZPass = GetGpuProgram(programDesc);
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
+
+            cmd.SetRenderTargets();
+         }
+
          rtRenderer->RenderScene(cmd, scene, camera, context);
          ResetCS_SRV_UAV();
       } else {

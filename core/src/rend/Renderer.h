@@ -65,9 +65,13 @@ namespace pbe {
    struct RenderContext {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> colorLDR;
+
       Ref<Texture2D> depth;
+      Ref<Texture2D> depthPrev;
+
       Ref<Texture2D> depthWithoutWater;
       Ref<Texture2D> linearDepth;
+
       Ref<Texture2D> waterRefraction;
       Ref<Texture2D> ssao;
 
@@ -80,11 +84,9 @@ namespace pbe {
       Ref<Texture2D> historyTex;
       Ref<Texture2D> historyTexPrev;
 
-      Ref<Texture2D> depthTex;
-      Ref<Texture2D> depthTexPrev;
-
+      Ref<Texture2D> baseColorTex;
       Ref<Texture2D> normalTex;
-      Ref<Texture2D> normalTexPrev;
+      Ref<Texture2D> motionTex;
 
       Ref<Texture2D> reprojectCountTex;
       Ref<Texture2D> reprojectCountTexPrev;
