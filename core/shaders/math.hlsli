@@ -36,4 +36,16 @@ float3 QuatMulVec3(float4 qInv, float3 v) {
     return v + ((uv * qInv.x) + uuv) * 2;
 }
 
+struct Ray {
+    float3 origin;
+    float3 direction;
+};
+
+Ray CreateRay(float3 origin, float3 direction) {
+    Ray ray;
+    ray.origin = origin;
+    ray.direction = direction;
+    return ray;
+}
+
 #endif
