@@ -93,7 +93,11 @@ namespace pbe {
       texDesc.format = DXGI_FORMAT_R24G8_TYPELESS; // todo: 32 bit
       texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
       context.depth = Texture2D::Create(texDesc);
-      context.depthPrev = Texture2D::Create(texDesc);
+
+      texDesc.name = "scene view z";
+      texDesc.format = DXGI_FORMAT_R16_FLOAT;
+      texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+      context.viewz = Texture2D::Create(texDesc);
 
       texDesc.name = "scene depth without water";
       texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -127,17 +131,7 @@ namespace pbe {
          auto& outTexture = *context.colorHDR;
          auto outTexSize = outTexture.GetDesc().size;
 
-         Texture2D::Desc texDesc{
-            .size = outTexSize,
-            .format = outTexture.GetDesc().format,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt history",
-         };
-         context.rtColorNoisyTex = Texture2D::Create(texDesc);
-         context.historyTex = Texture2D::Create(texDesc);
-         context.historyTexPrev = Texture2D::Create(texDesc);
-
-         texDesc = {
+         Texture2D::Desc texDesc {
             .size = outTexSize,
             .format = DXGI_FORMAT_R8G8B8A8_UNORM,
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
@@ -155,22 +149,12 @@ namespace pbe {
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R16G16_FLOAT,
-            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene motion",
          };
          context.motionTex = Texture2D::Create(texDesc);
 
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R8_UINT,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt reproject count",
-         };
-         context.reprojectCountTex = Texture2D::Create(texDesc);
-         context.reprojectCountTexPrev = Texture2D::Create(texDesc);
-
-         // todo: can we use 3 channel?
          texDesc = {
             .size = outTexSize,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
@@ -195,7 +179,6 @@ namespace pbe {
 
    void Renderer::Init() {
       rtRenderer.reset(new RTRenderer());
-      rtRenderer->Init();
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
@@ -336,6 +319,10 @@ namespace pbe {
       cmd.ClearRenderTarget(*context.colorLDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.normalTex, vec4{0, 0, 0, 0});
+      cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
+      cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
+
+      cmd.ClearRenderTarget(*context.viewz, vec4{ 0, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
 
       cmd.SetRasterizerState(rendres::rasterizerState);
@@ -483,14 +470,8 @@ namespace pbe {
             GPU_MARKER("GBuffer");
             PROFILE_GPU("GBuffer");
 
-            std::swap(context.depth, context.depthPrev);
-
-            cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
-            cmd.ClearRenderTarget(*context.normalTex, vec4{ 0, 0, 0, 1 });
-            cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
-            // cmd.ClearDepthTarget(*context.depth, 1);
-
-            Texture2D* rts[] = { context.baseColorTex, context.normalTex, context.motionTex };
+            Texture2D* rts[] = { context.baseColorTex,
+               context.normalTex, context.motionTex, context.viewz };
             cmd.SetRenderTargets(_countof(rts), rts, context.depth);
             cmd.SetViewport({}, context.depth->GetDesc().size);
 

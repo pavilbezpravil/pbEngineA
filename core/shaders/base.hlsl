@@ -148,9 +148,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 #else
 
 struct PsOut {
+   // float4 emissive  : SV_Target0;
    float4 baseColor : SV_Target0;
-   float4 normal : SV_Target1;
-   float2 motion : SV_Target2;
+   float4 normal    : SV_Target1;
+   float2 motion    : SV_Target2;
+   float  viewz     : SV_Target3;
 };
 
 // ps uses UAV writes, it removes early z test
@@ -169,6 +171,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    output.baseColor = float4(material.baseColor, material.metallic);
    output.normal = float4(normalW * 0.5 + 0.5, material.roughness);
    output.motion = 0; // todo:
+   output.viewz = length(input.posW - gCamera.position); // todo:
 
    #if defined(EDITOR)
       // todo:

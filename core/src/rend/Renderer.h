@@ -67,7 +67,8 @@ namespace pbe {
       Ref<Texture2D> colorLDR;
 
       Ref<Texture2D> depth;
-      Ref<Texture2D> depthPrev;
+
+      Ref<Texture2D> viewz; // linear view z
 
       Ref<Texture2D> depthWithoutWater;
       Ref<Texture2D> linearDepth;
@@ -77,19 +78,9 @@ namespace pbe {
 
       Ref<Texture2D> shadowMap;
 
-      // todo: simplify adding new rt
-      // rt
-      Ref<Texture2D> rtColorNoisyTex;
-
-      Ref<Texture2D> historyTex;
-      Ref<Texture2D> historyTexPrev;
-
       Ref<Texture2D> baseColorTex;
       Ref<Texture2D> normalTex;
       Ref<Texture2D> motionTex;
-
-      Ref<Texture2D> reprojectCountTex;
-      Ref<Texture2D> reprojectCountTexPrev;
 
       Ref<Texture2D> diffuseTex;
       Ref<Texture2D> diffuseHistoryTex;

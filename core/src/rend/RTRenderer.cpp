@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "CommandList.h"
 #include "DbgRend.h"
+#include "NRDDenoiser.h"
 #include "Renderer.h" // todo:
 #include "Shader.h"
 #include "Texture2D.h"
@@ -27,15 +28,9 @@ namespace pbe {
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true };
-   CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
+   CVarValue<bool> cvDenoise{ "render/rt/denoise", false };
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
-
-   CVarSlider<float> cvReprojectionHistoryWeight{ "render/rt/reprojection/history weight", 0.5f, 0, 1 };
-   CVarValue<bool> cvReprojectionShowNewPixel{ "render/rt/reprojection/show new pixel", false };
-   CVarValue<bool> cvReprojectionObjID{ "render/rt/reprojection/obj id", true };
-   CVarValue<bool> cvReprojectionNormal{ "render/rt/reprojection/normal", true };
-   CVarValue<bool> cvReprojectionDepth{ "render/rt/reprojection/depth", true };
 
    // todo: move to common
    static int IndexOfLargestValue(const vec3& vector) {
@@ -52,8 +47,9 @@ namespace pbe {
       return index;
    }
 
-   void RTRenderer::Init() {
-
+   RTRenderer::~RTRenderer() {
+      // todo: not here
+      NRDTerm();
    }
 
    struct BVH {
@@ -266,15 +262,13 @@ namespace pbe {
 
       bool resetHistory = cvClearHistory;
 
-      float historyWeight = cvReprojectionHistoryWeight;
+      float historyWeight = 0;
 
       if (cvAccumulate) {
          historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
          accumulatedFrames += cvNRays;
 
          resetHistory |= camera.prevViewProjection != camera.GetViewProjection();
-      } else {
-         accumulatedFrames = 0;
       }
 
       if (resetHistory || !cvAccumulate) {
@@ -292,12 +286,6 @@ namespace pbe {
       rtCB.random01 = Random::Float(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
       rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
-
-      rtCB.debugFlags = 0;
-      rtCB.debugFlags |= cvReprojectionShowNewPixel ? DBG_FLAG_SHOW_NEW_PIXEL : 0;
-      rtCB.debugFlags |= cvReprojectionObjID ? DBG_FLAG_REPR_OBJ_ID : 0;
-      rtCB.debugFlags |= cvReprojectionNormal ? DBG_FLAG_REPR_NORMAL : 0;
-      rtCB.debugFlags |= cvReprojectionDepth ? DBG_FLAG_REPR_DEPTH : 0;
 
       rtCB.bvhNodes = bvhNodes;
 
@@ -345,7 +333,7 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         cmd.SetUAV(pass->GetBindPoint("gColorOut"), context.rtColorNoisyTex);
+         // cmd.SetUAV(pass->GetBindPoint("gColorOut"), context.rtColorNoisyTex);
 
          cmd.Dispatch2D(outTexSize, int2{8, 8});
       }
@@ -392,7 +380,10 @@ namespace pbe {
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
 
-      if (cvAccumulate && !cvDenoise) {
+      Texture2D* diffuse = context.diffuseTex;
+      Texture2D* specular = context.specularTex;
+
+      if (cvAccumulate && !cvDenoise && false) {
          UNIMPLEMENTED();
 
          // todo: incorrect name
@@ -410,55 +401,40 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
-         // cmd.SetSRV(pass->GetBindPoint("gDepthPrev"), context.depthTexPrev);
-         // cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
-         // cmd.SetSRV(pass->GetBindPoint("gNormalPrev"), context.normalTexPrev);
-         cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTex);
-         cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTexPrev);
-
-         cmd.SetUAV(pass->GetBindPoint("gReprojectCountOut"), context.reprojectCountTex);
          cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
-         cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTex);
 
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
-
-         // if (cvHistoryReprojection) {
-         //    std::swap(context.historyTex, context.historyTexPrev);
-         //    std::swap(context.reprojectCountTex, context.reprojectCountTexPrev);
-         //    std::swap(context.normalTex, context.normalTexPrev);
-         //    std::swap(context.depthTex, context.depthTexPrev);
-         // }
       }
 
-      if (cvDenoise && false) {
+      if (cvDenoise) {
          GPU_MARKER("Denoise");
          PROFILE_GPU("Denoise");
 
-         // cvHistoryReprojection&& cvAccumulate
+         DenoiseCallDesc desc;
 
-         auto desc = ProgramDesc::Cs("denoise.hlsl", "DenoiseCS");
-         auto pass = GetGpuProgram(desc);
+         desc.textureSize = outTexSize;
 
-         cmd.SetCompute(*pass);
-         setSharedResource(*pass);
+         // todo: prev
+         // todo: mb transpose
+         desc.mViewToClip = transpose(camera.projection);
+         desc.mViewToClipPrev = transpose(camera.projection);
 
-         CMD_BINDS_GUARD();
+         desc.mWorldToView = transpose(camera.view);
+         desc.mWorldToViewPrev = transpose(camera.view);
 
-         // cmd.SetSRV(pass->GetBindPoint("gReprojectCount"), context.reprojectCountTexPrev);
-         // cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depthTex);
-         cmd.SetSRV(pass->GetBindPoint("gDepth"), context.depth);
-         cmd.SetSRV(pass->GetBindPoint("gNormal"), context.normalTex);
-         cmd.SetSRV(pass->GetBindPoint("gColor"), context.rtColorNoisyTex);
-         cmd.SetSRV(pass->GetBindPoint("gHistory"), context.historyTex);
+         desc.IN_MV = context.motionTex;
+         desc.IN_NORMAL_ROUGHNESS = context.normalTex;
+         desc.IN_VIEWZ = context.viewz;
+         desc.IN_DIFF_RADIANCE_HITDIST = context.diffuseTex;
+         desc.IN_SPEC_RADIANCE_HITDIST = context.specularTex;
+         desc.OUT_DIFF_RADIANCE_HITDIST = context.diffuseHistoryTex;
+         desc.OUT_SPEC_RADIANCE_HITDIST = context.specularHistoryTex; // todo: names
 
-         cmd.SetUAV(pass->GetBindPoint("gHistoryOut"), context.historyTexPrev); // todo: not prev
-         cmd.SetUAV(pass->GetBindPoint("gColorOut"), context.colorHDR);
+         NRDResize(outTexSize);
+         NRDDenoise(desc);
 
-         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
-
-         std::swap(context.historyTex, context.historyTexPrev);
-         std::swap(context.reprojectCountTex, context.reprojectCountTexPrev);
+         diffuse = context.diffuseHistoryTex;
+         // specular = context.specularHistoryTex;
       }
 
       {
@@ -476,8 +452,8 @@ namespace pbe {
          pass->SetSRV(cmd, "gDepth", context.depth); // todo: too match place for sample depth
          pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
-         pass->SetSRV(cmd, "gDiffuse", context.diffuseTex);
-         pass->SetSRV(cmd, "gSpecular", context.specularTex);
+         pass->SetSRV(cmd, "gDiffuse", diffuse);
+         pass->SetSRV(cmd, "gSpecular", specular);
 
          pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 

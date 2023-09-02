@@ -22,13 +22,19 @@ project "core"
    pchheader "pch.h"
    pchsource "src/pch.cpp"
 
-   includedirs( libsinfo.core.includedirs )
    includedirs {
-      "path",
+      libsinfo.core.includedirs,
+      -- todo: compile option. It must be easyly disabled
+      libsinfo.nrd.includepath,
+      libsinfo.nrd.integration_includepath,
+      libsinfo.nri.includepath,
    }
 
    libdirs {
-      "%{libsinfo.physx.libDir}",
+      -- "%{libsinfo.physx.libDir}",
+      libsinfo.physx.libDir,
+      libsinfo.nrd.libDir,
+      libsinfo.nri.libDir,
    }
 
    links {
@@ -38,10 +44,14 @@ project "core"
        "PhysXExtensions_static_64",
        "PhysXFoundation_64",
        "PhysXPvdSDK_static_64",
+       "NRD",
+       "NRI",
    }
 
    postbuildcommands {
       '{COPY} "%{libsinfo.physx.libDir}/*.dll" "%{cfg.targetdir}"',
+      '{COPY} "%{libsinfo.nrd.libDir}/*.dll" "%{cfg.targetdir}"',
+      '{COPY} "%{libsinfo.nri.libDir}/*.dll" "%{cfg.targetdir}"',
    }
 
    defines { "CORE_API_EXPORT" }
