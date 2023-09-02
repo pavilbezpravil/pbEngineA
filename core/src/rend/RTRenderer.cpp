@@ -28,7 +28,7 @@ namespace pbe {
    CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true };
-   CVarValue<bool> cvDenoise{ "render/rt/denoise", false };
+   CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
@@ -433,8 +433,15 @@ namespace pbe {
          NRDResize(outTexSize);
          NRDDenoise(desc);
 
-         diffuse = context.diffuseHistoryTex;
+         // diffuse = context.diffuseHistoryTex;
          // specular = context.specularHistoryTex;
+
+         // cmd.pContext->VSSetShaderResources(5, 1, nullptr);
+         // cmd.pContext->HSSetShaderResources(5, 1, nullptr);
+         // cmd.pContext->DSSetShaderResources(5, 1, nullptr);
+         // cmd.pContext->CSSetShaderResources(5, 1, nullptr);
+
+         cmd.SetSRV_Dx11({5}, nullptr);
       }
 
       {

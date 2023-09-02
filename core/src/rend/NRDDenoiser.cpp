@@ -12,6 +12,35 @@
 #include "NRDIntegration.hpp"
 #include "Extensions/NRIWrapperD3D11.h"
 
+/*
+
+NRD\Shaders\Include\REBLUR\REBLUR_DiffuseSpecular_TemporalAccumulation.hlsli
+
+gIn_Prev_InternalData
+
+uint4 TexGather(Texture2D<uint> tex, float2 uv)
+{
+    uint2 size;
+    tex.GetDimensions(size.x, size.y);
+
+    // xy = uv / gInvScreenSize;
+    int2 xy = int2(uv * float2(size));
+
+    int2 tlPos = min(max(xy + int2(-1, -1), 0), size - 1);
+    int2 trPos = min(max(xy + int2( 0, -1), 0), size - 1);
+    int2 blPos = min(max(xy + int2(-1,  0), 0), size - 1);
+    int2 brPos = min(max(xy, 0), size - 1);
+
+    uint tl = tex.Load(int3(tlPos, 0)); // Top-Left
+    uint tr = tex.Load(int3(trPos, 0)); // Top-Right
+    uint bl = tex.Load(int3(blPos, 0)); // Bottom-Left
+    uint br = tex.Load(int3(brPos, 0)); // Bottom-Right
+
+    return uint4(tl, tr, bl, br);
+}
+ 
+ */
+
 namespace pbe {
 
    NrdIntegration NRD = NrdIntegration(2);
@@ -39,6 +68,7 @@ namespace pbe {
       // Wrap the device
       nri::DeviceCreationD3D11Desc deviceDesc = {};
       deviceDesc.d3d11Device = sDevice->g_pd3dDevice;
+      // deviceDesc.d3d11Device->AddRef();
       deviceDesc.agsContextAssociatedWithDevice = nullptr;
       // deviceDesc.callbackInterface = nullptr;
       // deviceDesc.memoryAllocatorInterface = nullptr;
@@ -47,10 +77,6 @@ namespace pbe {
 
       nri::Result nriResult = nri::CreateDeviceFromD3D11Device(deviceDesc, nriDevice);
       ASSERT(nriResult == nri::Result::SUCCESS);
-
-      // Wrap the command buffer
-      nri::CommandBufferD3D11Desc commandBufferDesc = {};
-      commandBufferDesc.d3d11DeviceContext = sDevice->g_pd3dDeviceContext;
 
       // Get core functionality
       nriResult = nri::GetInterface(*nriDevice,
@@ -65,12 +91,18 @@ namespace pbe {
          NRI_INTERFACE(nri::WrapperD3D11Interface), (nri::WrapperD3D11Interface*)&NRI);
       ASSERT(nriResult == nri::Result::SUCCESS);
 
+      // Wrap the command buffer
+      nri::CommandBufferD3D11Desc commandBufferDesc = {};
+      commandBufferDesc.d3d11DeviceContext = sDevice->g_pd3dDeviceContext;
+      // commandBufferDesc.d3d11DeviceContext->AddRef();
+
       nriResult = NRI.CreateCommandBufferD3D11(*nriDevice, commandBufferDesc, nriCommandBuffer);
       ASSERT(nriResult == nri::Result::SUCCESS);
    }
 
    constexpr nrd::Identifier NRD_DENOISE_DIFFUSE = 0;
    constexpr nrd::Identifier NRD_DENOISE_SPECULAR = 1;
+   constexpr nrd::Identifier NRD_DENOISE_DIFFUSE_SPECULAR = 1;
 
    void NRDDenoisersInit(uint2 renderResolution) {
       if (nriRenderResolution == renderResolution) {
@@ -82,8 +114,9 @@ namespace pbe {
       //=======================================================================================================
       const nrd::DenoiserDesc denoiserDescs[] =
       {
-         { NRD_DENOISE_DIFFUSE, nrd::Denoiser::REBLUR_DIFFUSE, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
-         { NRD_DENOISE_SPECULAR, nrd::Denoiser::REBLUR_SPECULAR, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
+         // { NRD_DENOISE_DIFFUSE, nrd::Denoiser::REBLUR_DIFFUSE, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
+         // { NRD_DENOISE_SPECULAR, nrd::Denoiser::REBLUR_SPECULAR, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
+         { NRD_DENOISE_DIFFUSE_SPECULAR, nrd::Denoiser::REBLUR_DIFFUSE_SPECULAR, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
       };
 
       nrd::InstanceCreationDesc instanceCreationDesc = {};
@@ -154,11 +187,14 @@ namespace pbe {
       NRD.SetCommonSettings(commonSettings);
 
       // Set settings for each method in the NRD instance
-      nrd::ReblurSettings settings1 = {};
-      NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE, &settings1);
+      // nrd::ReblurSettings settings1 = {};
+      // NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE, &settings1);
+      //
+      // nrd::ReblurSettings settings2 = {};
+      // NRD.SetDenoiserSettings(NRD_DENOISE_SPECULAR, &settings2);
 
       nrd::ReblurSettings settings2 = {};
-      NRD.SetDenoiserSettings(NRD_DENOISE_SPECULAR, &settings2);
+      NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE_SPECULAR, &settings2);
 
       // Fill up the user pool
       NrdUserPool userPool = {};
@@ -170,6 +206,7 @@ namespace pbe {
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, integrationTex[2]);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, integrationTex[3]);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, integrationTex[4]);
+
          NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, integrationTex[5]);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, integrationTex[6]);
       };
@@ -187,9 +224,13 @@ namespace pbe {
       nri::Result result = NRI.BeginCommandBuffer(*nriCommandBuffer, nullptr, 0);
       ASSERT(result == nri::Result::SUCCESS);
       {
+
+         // todo: NRD\Source\Reblur.cpp
+         // REBLUR_FORMAT_PREV_INTERNAL_DATA Format::R16_UINT -> Format::R32_UINT. Dx11 doesn't support R16_UINT for gather
+
          // todo:
          // const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE, NRD_DENOISE_SPECULAR };
-         const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE };
+         const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE_SPECULAR };
          NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, userPool, enableDescriptorCaching);
       }
       result = NRI.EndCommandBuffer(*nriCommandBuffer);
@@ -203,6 +244,7 @@ namespace pbe {
       nri::CommandQueue* nriQueue = nullptr;
       NRI.GetCommandQueue(*nriDevice, nri::CommandQueueType::GRAPHICS, nriQueue);
 
+      INFO("Submitting NRD command buffer...");
       NRI.QueueSubmit(*nriQueue, queueSubmitDesc);
 
       // IMPORTANT: NRD integration binds own descriptor pool, don't forget to re-bind back your pool (heap)
@@ -229,8 +271,9 @@ namespace pbe {
       // SHUTDOWN - DESTROY
       //=======================================================================================================
 
+      // todo:
       // Release wrapped device
-      nri::DestroyDevice(*nriDevice);
+      // nri::DestroyDevice(*nriDevice);
 
       nriDevice = nullptr;
       nriCommandBuffer = nullptr;

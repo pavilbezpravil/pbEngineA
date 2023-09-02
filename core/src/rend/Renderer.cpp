@@ -94,11 +94,6 @@ namespace pbe {
       texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
       context.depth = Texture2D::Create(texDesc);
 
-      texDesc.name = "scene view z";
-      texDesc.format = DXGI_FORMAT_R16_FLOAT;
-      texDesc.bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-      context.viewz = Texture2D::Create(texDesc);
-
       texDesc.name = "scene depth without water";
       texDesc.bindFlags = D3D11_BIND_SHADER_RESOURCE;
       context.depthWithoutWater = Texture2D::Create(texDesc);
@@ -141,19 +136,27 @@ namespace pbe {
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
-            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
-            .name = "rt normal",
-         };
-         context.normalTex = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene motion",
          };
          context.motionTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .name = "scene normal",
+         };
+         context.normalTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R32_FLOAT,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .name = "scene view z",
+         };
+         context.viewz = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,
