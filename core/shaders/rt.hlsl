@@ -7,6 +7,9 @@
 #include "random.hlsli"
 #include "intersection.hlsli"
 
+#include "NRDEncoding.hlsli"
+#include "NRD.hlsli"
+
 #define USE_BVH
 
 cbuffer gRTConstantsCB : register(b0) {
@@ -306,9 +309,10 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
 
-    float4 normalRoughness = gNormal[id];
-    float3 normal = NormalFromTex(normalRoughness.xyz);
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
+    float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
+
     roughness *= roughness; // todo:
 
     uint seed = GetRandomSeed(id);
@@ -356,6 +360,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // color = reflect(V, normal) * 0.5 + 0.5;
     // color = frac(posW);
 
+    // float normHitDist = REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, float4 hitDistParams, roughness = 1.0);
+    // REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
+
     gColorOut[id] = float4(color, 1);
 }
 
@@ -380,7 +387,8 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float3 normal = NormalFromTex(gNormal[id].xyz);
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
+    float3 normal = normalRoughness.xyz;
 
     float4 baseColorMetallic = gBaseColor[id];
     float3 baseColor = baseColorMetallic.xyz;

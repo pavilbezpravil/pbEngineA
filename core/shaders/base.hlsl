@@ -4,6 +4,9 @@
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 
+#include "NRDEncoding.hlsli"
+#include "NRD.hlsli"
+
 #ifndef ZPASS
    #define COLOR_PASS
 #endif
@@ -169,7 +172,8 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    PsOut output;
    output.baseColor = float4(material.baseColor, material.metallic);
-   output.normal = float4(normalW * 0.5 + 0.5, material.roughness);
+   // output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW * 0.5 + 0.5, material.roughness);
+   output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW, material.roughness);
    output.motion = 0; // todo:
    output.viewz = length(input.posW - gCamera.position); // todo:
 

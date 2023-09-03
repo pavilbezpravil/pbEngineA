@@ -32,6 +32,12 @@ namespace pbe {
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
+   // todo: remove
+   pbe::CVarValue<bool> cvDenoise2{ "render/denoise trigger bool", true };
+   pbe::CVarTrigger cvDenoiseTrigger{ "render/denoise trigger" };
+
+   pbe::CVarValue<bool>  cvNRDValidation{ "render/denoise/nrd validation", false };
+
    // todo: move to common
    static int IndexOfLargestValue(const vec3& vector) {
       int index = 0;
@@ -422,6 +428,8 @@ namespace pbe {
          desc.mWorldToView = transpose(camera.view);
          desc.mWorldToViewPrev = transpose(camera.view);
 
+         desc.callDenoise = cvDenoiseTrigger || cvDenoise2;
+
          desc.IN_MV = context.motionTex;
          desc.IN_NORMAL_ROUGHNESS = context.normalTex;
          desc.IN_VIEWZ = context.viewz;
@@ -430,21 +438,37 @@ namespace pbe {
          desc.OUT_DIFF_RADIANCE_HITDIST = context.diffuseHistoryTex;
          desc.OUT_SPEC_RADIANCE_HITDIST = context.specularHistoryTex; // todo: names
 
+         if (cvNRDValidation) {
+            desc.validation = true;
+            desc.OUT_VALIDATION = context.colorHDR;
+         }
+
+         // cmd.ClearSRV_CS();
+         // cmd.ClearUAV_CS();
+
          NRDResize(outTexSize);
          NRDDenoise(desc);
 
-         // diffuse = context.diffuseHistoryTex;
-         // specular = context.specularHistoryTex;
+         if (desc.callDenoise) {
+            diffuse = context.diffuseHistoryTex;
+            specular = context.specularHistoryTex;   
+         }
 
          // cmd.pContext->VSSetShaderResources(5, 1, nullptr);
          // cmd.pContext->HSSetShaderResources(5, 1, nullptr);
          // cmd.pContext->DSSetShaderResources(5, 1, nullptr);
          // cmd.pContext->CSSetShaderResources(5, 1, nullptr);
 
-         cmd.SetSRV_Dx11({5}, nullptr);
+         // cmd.SetSRV_Dx11({5}, nullptr);
+
+         // cmd.pContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL,
+         //    nullptr, nullptr, 0, num, storages, nullptr);
+
+         cmd.ClearSRV_CS();
+         cmd.ClearUAV_CS();
       }
 
-      {
+      if (!cvNRDValidation) {
          GPU_MARKER("RT Combine");
          PROFILE_GPU("RT Combine");
 

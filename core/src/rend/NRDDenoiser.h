@@ -29,6 +29,9 @@ namespace pbe {
       mat4 mViewToClipPrev{};
       mat4 mWorldToViewPrev{};
 
+      bool validation = false;
+      bool callDenoise = false;
+
       Texture2D* IN_MV{};
       Texture2D* IN_NORMAL_ROUGHNESS{};
       Texture2D* IN_VIEWZ{};
@@ -37,10 +40,10 @@ namespace pbe {
 
       Texture2D* OUT_DIFF_RADIANCE_HITDIST{};
       Texture2D* OUT_SPEC_RADIANCE_HITDIST{};
+
+      Texture2D* OUT_VALIDATION{};
    };
 
-   void NRDInit();
-   void NRDDenoisersInit(uint2 renderResolution);
    void NRDDenoise(const DenoiseCallDesc& desc);
    void NRDTerm(); // call on resize too
 

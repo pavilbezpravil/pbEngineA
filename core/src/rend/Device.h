@@ -1,6 +1,6 @@
 #pragma once
 
-#include <d3d11_3.h>
+#include <d3d11_4.h>
 #include <dxgi.h>
 
 #include "core/Core.h"
@@ -21,8 +21,8 @@ namespace pbe {
 
       void Present();
 
-      ID3D11Device3* g_pd3dDevice{};
-      ID3D11DeviceContext3* g_pd3dDeviceContext{};
+      ID3D11Device5* g_pd3dDevice{};
+      ID3D11DeviceContext4* g_pd3dDeviceContext{};
       IDXGISwapChain* g_pSwapChain{};
       ID3D11Debug* g_d3dDebug{};
 

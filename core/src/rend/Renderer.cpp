@@ -144,7 +144,7 @@ namespace pbe {
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            .format = DXGI_FORMAT_R10G10B10A2_UNORM,
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
             .name = "scene normal",
          };
@@ -325,7 +325,7 @@ namespace pbe {
       cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
       cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
 
-      cmd.ClearRenderTarget(*context.viewz, vec4{ 0, 0, 0, 0 }); // todo: why it defaults for NRD?
+      cmd.ClearRenderTarget(*context.viewz, vec4{ 500000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
 
       cmd.SetRasterizerState(rendres::rasterizerState);
