@@ -248,6 +248,13 @@ namespace pbe {
          pContext->OMSetRenderTargets(nRT, rtvs, dsv);
       }
 
+      // dx11 way to set UAV in ps shader
+      void SetPsUAV(uint slot, GPUResource* res = nullptr) {
+         ID3D11UnorderedAccessView* uav[] = { res ? res->uav.Get() : nullptr};
+         pContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL,
+            nullptr, nullptr, slot, 1, uav, nullptr);
+      }
+
       void SetRenderTargets(Texture2D* rt = nullptr, Texture2D* depth = nullptr) {
          int nRtvs = rt ? 1 : 0;
          ID3D11RenderTargetView** rtv = rt ? rt->rtv.GetAddressOf() : nullptr;

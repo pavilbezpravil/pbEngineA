@@ -179,8 +179,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    output.viewz = mul(float4(input.posW, 1), gCamera.view).z;
 
    #if defined(EDITOR)
-      // todo:
-      // SetEntityUnderCursor(pixelIdx, instance.entityID);
+      SetEntityUnderCursor(pixelIdx, instance.entityID);
    #endif
 
    return output;

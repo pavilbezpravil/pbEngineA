@@ -476,7 +476,10 @@ namespace pbe {
 
             Texture2D* rts[] = { context.baseColorTex,
                context.normalTex, context.motionTex, context.viewz };
-            cmd.SetRenderTargets(_countof(rts), rts, context.depth);
+            uint nRts = _countof(rts);
+            cmd.SetRenderTargets(nRts, rts, context.depth);
+            cmd.SetPsUAV(nRts, context.underCursorBuffer);
+
             cmd.SetViewport({}, context.depth->GetDesc().size);
 
             cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
