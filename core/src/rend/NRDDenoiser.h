@@ -2,6 +2,7 @@
 #include "math/Types.h"
 
 namespace pbe {
+   class CommandList;
 
    class Texture2D;
 
@@ -44,7 +45,7 @@ namespace pbe {
       Texture2D* OUT_VALIDATION{};
    };
 
-   void NRDDenoise(const DenoiseCallDesc& desc);
+   void NRDDenoise(CommandList& cmd, const DenoiseCallDesc& desc);
    void NRDTerm(); // call on resize too
 
    // todo:

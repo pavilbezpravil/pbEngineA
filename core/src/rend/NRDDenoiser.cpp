@@ -9,7 +9,7 @@
 #include "NRD.h"
 #include "NRI.h"
 #include "Extensions/NRIHelper.h"
-#include "NRDIntegration.hpp"
+#include "NRDIntegration2.hpp"
 #include "core/CVar.h"
 #include "Extensions/NRIWrapperD3D11.h"
 
@@ -111,7 +111,7 @@ namespace pbe {
       ASSERT(result);
    }
 
-   void NRDDenoise(const DenoiseCallDesc& desc) {
+   void NRDDenoise(CommandList& cmd, const DenoiseCallDesc& desc) {
       // Wrap required textures (better do it only once on initialization)
       Texture2D* textures[] = {
          desc.IN_MV, desc.IN_NORMAL_ROUGHNESS, desc.IN_VIEWZ,
@@ -187,17 +187,30 @@ namespace pbe {
       {
          // Fill only required "in-use" inputs and outputs in appropriate slots using entryDescs & entryFormat,
          // applying remapping if necessary. Unused slots will be {nullptr, nri::Format::UNKNOWN}
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, integrationTex[0]);
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, integrationTex[1]);
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, integrationTex[2]);
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, integrationTex[3]);
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, integrationTex[4]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, integrationTex[0]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, integrationTex[1]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, integrationTex[2]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, integrationTex[3]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, integrationTex[4]);
+         //
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, integrationTex[5]);
+         // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, integrationTex[6]);
+         //
+         // if (desc.validation) {
+         //    NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, integrationTex[7]);
+         // }
 
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, integrationTex[5]);
-         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, integrationTex[6]);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, desc.IN_MV);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, desc.IN_NORMAL_ROUGHNESS);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, desc.IN_VIEWZ);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, desc.IN_DIFF_RADIANCE_HITDIST);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, desc.IN_SPEC_RADIANCE_HITDIST);
+
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, desc.OUT_DIFF_RADIANCE_HITDIST);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, desc.OUT_SPEC_RADIANCE_HITDIST);
 
          if (desc.validation) {
-            NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, integrationTex[7]);
+            NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, desc.OUT_VALIDATION);
          }
       };
 
@@ -228,7 +241,7 @@ namespace pbe {
          //    }, 3);
 
          if (desc.callDenoise) {
-            NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, userPool, enableDescriptorCaching);
+            NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, cmd, userPool, enableDescriptorCaching);
          }
          // NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, userPool, enableDescriptorCaching);
       }
@@ -287,8 +300,7 @@ namespace pbe {
       }
 
       if (nriRenderResolution != renderResolution) {
-         bool nrdInited = NRD.GetTotalMemoryUsageInMb() != 0;
-         if (nrdInited) {
+         if (NRD.Inited()) {
             NRD.Destroy();
          }
          NRDDenoisersInit(renderResolution);

@@ -32,6 +32,10 @@ namespace pbe {
       std::vector<CmdBind> binds;
    };
 
+   inline uint CbSizeAlign(uint size) {
+      return ((size - 1) / 256 + 1) * 256; // todo:
+   }
+
    class CORE_API CommandList {
    public:
       CommandList(ID3D11DeviceContext3* pContext) : pContext(pContext) {
@@ -51,6 +55,7 @@ namespace pbe {
 
       // todo: i suppose for dx12 size unnecessary
       void SetCB(const BindPoint& bind, Buffer* buffer, uint offsetInBytes, uint size) {
+         size = CbSizeAlign(size);
          if (!bind) {
             return;
          }
@@ -71,12 +76,16 @@ namespace pbe {
          pContext->CSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
       }
 
+      OffsetedBuffer AllocAndSetCB(const BindPoint& bind, const void* data, uint dataSize) {
+         auto dynCB = AllocDynConstantBuffer(data, dataSize);
+         SetCB(bind, dynCB.buffer, dynCB.offset, dataSize);
+         return dynCB;
+      }
+
       template<typename T>
       OffsetedBuffer AllocAndSetCB(const BindPoint& bind, const T& data) {
          constexpr uint dataSize = sizeof(T);
-         auto dynCB = AllocDynConstantBuffer((const void*)&data, dataSize);
-         SetCB(bind, dynCB.buffer, dynCB.offset, dataSize);
-         return dynCB;
+         return AllocAndSetCB(bind, (const void*)&data, dataSize);
       }
 
       void SetSRV_Dx11(const BindPoint& bind, ID3D11ShaderResourceView* srv) {
@@ -154,8 +163,7 @@ namespace pbe {
       }
 
       OffsetedBuffer AllocDynConstantBuffer(const void* data, uint size) {
-         size = ((size - 1) / 256 + 1) * 256; // todo:
-
+         size = CbSizeAlign(size);
          return AllocDynBuffer(data, size, dynConstBuffers);
       }
 

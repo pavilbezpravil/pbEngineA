@@ -447,7 +447,7 @@ namespace pbe {
          // cmd.ClearUAV_CS();
 
          NRDResize(outTexSize);
-         NRDDenoise(desc);
+         NRDDenoise(cmd, desc);
 
          if (desc.callDenoise) {
             diffuse = context.diffuseHistoryTex;
