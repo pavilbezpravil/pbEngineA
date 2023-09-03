@@ -141,12 +141,19 @@ RayHit Trace(Ray ray) {
 
 #endif
 
-float3 RayColor(Ray ray, inout uint seed) {
+float3 RayColor(Ray ray, int nRayDepth, out float firstHitDistance, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
 
-    for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
+    firstHitDistance = 0;
+
+    for (int depth = 0; depth < nRayDepth; depth++) {
         RayHit hit = Trace(ray);
+
+        if (depth == 0) {
+            firstHitDistance += hit.tMax;
+        }
+
         if (hit.tMax < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
             // return hit.normal * 0.5f + 0.5f;
@@ -207,6 +214,8 @@ float3 RayColor(Ray ray, inout uint seed) {
             break;
         }
     }
+
+    firstHitDistance /= nRayDepth;
 
     return color;
 }
@@ -282,7 +291,8 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
         float2 uv = GetUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
-        color += RayColor(ray, seed);
+        float firstHitDistance;
+        color += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
     }
 
     color /= nRays;
@@ -319,12 +329,13 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     uint seed = GetRandomSeed(id);
 
     // todo:
-    // int nRays = gRTConstants.nRays;
-    int nRays = 1;
+    int nRays = gRTConstants.nRays;
 
     float3 radiance = 0;
 
     float3 V = normalize(gCamera.position - posW);
+
+    float firstHitDistance;
 
     for (int i = 0; i < nRays; i++) {
         Ray ray;
@@ -352,7 +363,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             // #error "Define DIFFUSE or SPECULAR"
         #endif
 
-        radiance += RayColor(ray, seed);
+        radiance += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
     }
 
     radiance /= nRays;
@@ -361,10 +372,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // color = reflect(V, normal) * 0.5 + 0.5;
     // color = frac(posW);
 
-    float hitDist = 1; // todo:
     float viewZ = gViewZ[id];
 
-    float normHitDist = REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    float normHitDist = REBLUR_FrontEnd_GetNormHitDist(firstHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
     gColorOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
 }
 
