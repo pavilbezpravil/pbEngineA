@@ -131,9 +131,7 @@ void NrdIntegration::CreateResources()
 
     m_TexturePool2.resize(poolSize);
 
-    // Texture pool
     for (uint32_t i = 0; i < poolSize; i++) {
-        // Create NRI texture
         const nrd::TextureDesc& nrdTextureDesc = (i < instanceDesc.permanentPoolSize) ? instanceDesc.permanentPool[i] : instanceDesc.transientPool[i - instanceDesc.permanentPoolSize];
         const nri::Format format = NRD_GetNriFormat(nrdTextureDesc.format);
 
@@ -156,9 +154,7 @@ void NrdIntegration::CreateResources()
         m_TexturePool2[i] = Texture2D::Create(desc);
     }
 
-    // Samplers
-    for (uint32_t i = 0; i < instanceDesc.samplersNum; i++)
-    {
+    for (uint32_t i = 0; i < instanceDesc.samplersNum; i++) {
         nrd::Sampler nrdSampler = instanceDesc.samplers[i];
 
         D3D11_SAMPLER_DESC samplerDesc2 = {};
@@ -281,9 +277,6 @@ void NrdIntegration::Dispatch(CommandList& cmd, const nrd::DispatchDesc& dispatc
     if (dispatchDesc.constantBufferDataSize) {
        ASSERT(pipelineDesc.hasConstantData);
        // todo: I think all cb in 0 slot
-
-       // auto cbSize = NRD_GetAlignedSize(instanceDesc.constantBufferMaxDataSize, deviceDesc.constantBufferOffsetAlignment);
-
        cmd.AllocAndSetCB({ 0 }, dispatchDesc.constantBufferData, dispatchDesc.constantBufferDataSize);
     } else {
        ASSERT(!pipelineDesc.hasConstantData);

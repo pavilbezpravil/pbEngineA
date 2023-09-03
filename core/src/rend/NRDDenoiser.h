@@ -31,7 +31,7 @@ namespace pbe {
       mat4 mWorldToViewPrev{};
 
       bool validation = false;
-      bool callDenoise = false;
+      bool clearHistory = false;
 
       Texture2D* IN_MV{};
       Texture2D* IN_NORMAL_ROUGHNESS{};

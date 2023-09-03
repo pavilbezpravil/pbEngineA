@@ -171,8 +171,8 @@ namespace pbe {
       commonSettings.motionVectorScale[2] = 0;
       commonSettings.isMotionVectorInWorldSpace = true;
 
-      // commonSettings.accumulationMode = nrd::AccumulationMode::CONTINUE;
-      commonSettings.accumulationMode = nrd::AccumulationMode::CLEAR_AND_RESTART;
+      // todo: better nrd::AccumulationMode::RESTART
+      commonSettings.accumulationMode = desc.clearHistory ? nrd::AccumulationMode::CLEAR_AND_RESTART : nrd::AccumulationMode::CONTINUE;
       commonSettings.enableValidation = desc.validation;
       commonSettings.splitScreen = cvNRDSplitScreen;
 
@@ -185,21 +185,6 @@ namespace pbe {
       // Fill up the user pool
       NrdUserPool userPool = {};
       {
-         // Fill only required "in-use" inputs and outputs in appropriate slots using entryDescs & entryFormat,
-         // applying remapping if necessary. Unused slots will be {nullptr, nri::Format::UNKNOWN}
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, integrationTex[0]);
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, integrationTex[1]);
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, integrationTex[2]);
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_DIFF_RADIANCE_HITDIST, integrationTex[3]);
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SPEC_RADIANCE_HITDIST, integrationTex[4]);
-         //
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, integrationTex[5]);
-         // NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, integrationTex[6]);
-         //
-         // if (desc.validation) {
-         //    NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, integrationTex[7]);
-         // }
-
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, desc.IN_MV);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_NORMAL_ROUGHNESS, desc.IN_NORMAL_ROUGHNESS);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_VIEWZ, desc.IN_VIEWZ);
@@ -224,39 +209,24 @@ namespace pbe {
       NRD.NewFrame(frameIdx);
 
       // const nri::Result result = NRI.BeginCommandBuffer(nriCommandBuffer, m_DescriptorPool, 0);
-      nri::Result result = NRI.BeginCommandBuffer(*nriCommandBuffer, nullptr, 0);
-      ASSERT(result == nri::Result::SUCCESS);
+      // nri::Result result = NRI.BeginCommandBuffer(*nriCommandBuffer, nullptr, 0);
+      // ASSERT(result == nri::Result::SUCCESS);
       {
-
-         // todo: NRD\Source\Reblur.cpp
-         // REBLUR_FORMAT_PREV_INTERNAL_DATA Format::R16_UINT -> Format::R32_UINT. Dx11 doesn't support R16_UINT for gather
-
-         // todo:
-         // const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE, NRD_DENOISE_SPECULAR };
          const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE_SPECULAR };
-
-         // CALL_N_TIMES([&] {
-         //       INFO("NRD Denoise");
-         //       NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, userPool, enableDescriptorCaching);
-         //    }, 3);
-
-         if (desc.callDenoise) {
-            NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, cmd, userPool, enableDescriptorCaching);
-         }
-         // NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, userPool, enableDescriptorCaching);
+         NRD.Denoise(denoisers, _countof(denoisers), *nriCommandBuffer, cmd, userPool, enableDescriptorCaching);
       }
-      result = NRI.EndCommandBuffer(*nriCommandBuffer);
-      ASSERT(result == nri::Result::SUCCESS);
-
-      nri::QueueSubmitDesc queueSubmitDesc = {};
-      queueSubmitDesc.physicalDeviceIndex = 0;
-      queueSubmitDesc.commandBufferNum = 1;
-      queueSubmitDesc.commandBuffers = &nriCommandBuffer;
-
-      nri::CommandQueue* nriQueue = nullptr;
-      NRI.GetCommandQueue(*nriDevice, nri::CommandQueueType::GRAPHICS, nriQueue);
-
-      NRI.QueueSubmit(*nriQueue, queueSubmitDesc);
+      // result = NRI.EndCommandBuffer(*nriCommandBuffer);
+      // ASSERT(result == nri::Result::SUCCESS);
+      //
+      // nri::QueueSubmitDesc queueSubmitDesc = {};
+      // queueSubmitDesc.physicalDeviceIndex = 0;
+      // queueSubmitDesc.commandBufferNum = 1;
+      // queueSubmitDesc.commandBuffers = &nriCommandBuffer;
+      //
+      // nri::CommandQueue* nriQueue = nullptr;
+      // NRI.GetCommandQueue(*nriDevice, nri::CommandQueueType::GRAPHICS, nriQueue);
+      //
+      // NRI.QueueSubmit(*nriQueue, queueSubmitDesc);
 
       // IMPORTANT: NRD integration binds own descriptor pool, don't forget to re-bind back your pool (heap)
 

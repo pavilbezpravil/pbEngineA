@@ -24,19 +24,13 @@ namespace pbe {
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 2, 1, 8 };
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
-   CVarValue<bool> cvHistoryReprojection{ "render/rt/history reprojection", false };
-   CVarValue<bool> cvImportanceSampling{ "render/rt/importance sampling", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true };
-   CVarValue<bool> cvDenoise{ "render/rt/denoise", true };
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
-   CVarTrigger cvClearHistory{ "render/rt/clear history"};
 
-   // todo: remove
-   pbe::CVarValue<bool> cvDenoise2{ "render/denoise trigger bool", true };
-   pbe::CVarTrigger cvDenoiseTrigger{ "render/denoise trigger" };
-
-   pbe::CVarValue<bool>  cvNRDValidation{ "render/denoise/nrd validation", false };
+   CVarValue<bool> cvDenoise{ "render/denoise/enable", false };
+   CVarValue<bool> cvNRDValidation{ "render/denoise/nrd validation", false };
+   CVarTrigger cvClearHistory{ "render/denoise/clear history" };
 
    // todo: move to common
    static int IndexOfLargestValue(const vec3& vector) {
@@ -389,29 +383,6 @@ namespace pbe {
       Texture2D* diffuse = context.diffuseTex;
       Texture2D* specular = context.specularTex;
 
-      if (cvAccumulate && !cvDenoise && false) {
-         UNIMPLEMENTED();
-
-         // todo: incorrect name
-         GPU_MARKER("Reproject");
-         PROFILE_GPU("Reproject");
-
-         auto desc = ProgramDesc::Cs("rt.hlsl", "HistoryAccCS");
-         if (cvHistoryReprojection) {
-            desc.cs.defines.AddDefine("ENABLE_REPROJECTION");
-         }
-
-         auto pass = GetGpuProgram(desc);
-         cmd.SetCompute(*pass);
-         setSharedResource(*pass);
-
-         CMD_BINDS_GUARD();
-
-         cmd.SetUAV(pass->GetBindPoint("gColor"), context.colorHDR);
-
-         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
-      }
-
       if (cvDenoise) {
          GPU_MARKER("Denoise");
          PROFILE_GPU("Denoise");
@@ -420,6 +391,8 @@ namespace pbe {
 
          desc.textureSize = outTexSize;
 
+         desc.clearHistory = cvClearHistory;
+
          // todo: prev
          // todo: mb transpose
          desc.mViewToClip = transpose(camera.projection);
@@ -427,8 +400,6 @@ namespace pbe {
 
          desc.mWorldToView = transpose(camera.view);
          desc.mWorldToViewPrev = transpose(camera.view);
-
-         desc.callDenoise = cvDenoiseTrigger || cvDenoise2;
 
          desc.IN_MV = context.motionTex;
          desc.IN_NORMAL_ROUGHNESS = context.normalTex;
@@ -449,23 +420,8 @@ namespace pbe {
          NRDResize(outTexSize);
          NRDDenoise(cmd, desc);
 
-         if (desc.callDenoise) {
-            diffuse = context.diffuseHistoryTex;
-            specular = context.specularHistoryTex;   
-         }
-
-         // cmd.pContext->VSSetShaderResources(5, 1, nullptr);
-         // cmd.pContext->HSSetShaderResources(5, 1, nullptr);
-         // cmd.pContext->DSSetShaderResources(5, 1, nullptr);
-         // cmd.pContext->CSSetShaderResources(5, 1, nullptr);
-
-         // cmd.SetSRV_Dx11({5}, nullptr);
-
-         // cmd.pContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL,
-         //    nullptr, nullptr, 0, num, storages, nullptr);
-
-         cmd.ClearSRV_CS();
-         cmd.ClearUAV_CS();
+         diffuse = context.diffuseHistoryTex;
+         specular = context.specularHistoryTex;
       }
 
       if (!cvNRDValidation) {
