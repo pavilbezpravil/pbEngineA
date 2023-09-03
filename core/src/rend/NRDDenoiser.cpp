@@ -80,9 +80,9 @@ namespace pbe {
       // commonSettings.motionVectorScale[1] = 1.0f / float(desc.textureSize.y);
       // commonSettings.motionVectorScale[2] = 0.0f;
 
-      commonSettings.motionVectorScale[0] = 0;
-      commonSettings.motionVectorScale[1] = 0;
-      commonSettings.motionVectorScale[2] = 0;
+      commonSettings.motionVectorScale[0] = 1;
+      commonSettings.motionVectorScale[1] = 1;
+      commonSettings.motionVectorScale[2] = 1;
       commonSettings.isMotionVectorInWorldSpace = true;
 
       // todo: better nrd::AccumulationMode::RESTART
