@@ -24,7 +24,8 @@ namespace pbe {
       mat4 view{};
       mat4 projection{};
 
-      mat4 prevViewProjection{};
+      mat4 prevView{};
+      mat4 prevProjection{};
 
       float zNear = 0.1f;
       float zFar = 1000.f;
@@ -43,6 +44,10 @@ namespace pbe {
 
       mat4 GetViewProjection() const {
          return projection * view;
+      }
+
+      mat4 GetPrevViewProjection() const {
+         return prevProjection * prevView;
       }
 
       mat4 GetInvViewProjection() const {

@@ -1,5 +1,10 @@
 #include "pch.h"
 #include "RTRenderer.h"
+
+// todo: remove include
+#include "NRD.h"
+#include <NRDSettings.h>
+
 #include "Buffer.h"
 #include "CommandList.h"
 #include "DbgRend.h"
@@ -268,7 +273,7 @@ namespace pbe {
          historyWeight = (float)accumulatedFrames / (float)(accumulatedFrames + cvNRays);
          accumulatedFrames += cvNRays;
 
-         resetHistory |= camera.prevViewProjection != camera.GetViewProjection();
+         resetHistory |= camera.GetPrevViewProjection() != camera.GetViewProjection();
       }
 
       if (resetHistory || !cvAccumulate) {
@@ -288,6 +293,10 @@ namespace pbe {
       rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
 
       rtCB.bvhNodes = bvhNodes;
+
+      nrd::HitDistanceParameters hitDistanceParametrs{};
+      rtCB.nrdHitDistParams = { hitDistanceParametrs.A, hitDistanceParametrs.B,
+         hitDistanceParametrs.C, hitDistanceParametrs.D };
 
       auto rtConstantsCB = cmd.AllocDynConstantBuffer(rtCB);
 
@@ -373,6 +382,7 @@ namespace pbe {
          CMD_BINDS_GUARD();
 
          pass->SetSRV(cmd, "gDepth", context.depth);
+         pass->SetSRV(cmd, "gViewZ", context.viewz);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
 
          pass->SetUAV(cmd, "gColorOut", context.specularTex);
@@ -390,16 +400,12 @@ namespace pbe {
          DenoiseCallDesc desc;
 
          desc.textureSize = outTexSize;
-
          desc.clearHistory = cvClearHistory;
 
-         // todo: prev
-         // todo: mb transpose
-         desc.mViewToClip = transpose(camera.projection);
-         desc.mViewToClipPrev = transpose(camera.projection);
-
-         desc.mWorldToView = transpose(camera.view);
-         desc.mWorldToViewPrev = transpose(camera.view);
+         desc.mViewToClip = camera.projection;
+         desc.mViewToClipPrev = camera.prevProjection;
+         desc.mWorldToView = camera.view;
+         desc.mWorldToViewPrev = camera.prevView;
 
          desc.IN_MV = context.motionTex;
          desc.IN_NORMAL_ROUGHNESS = context.normalTex;
@@ -413,9 +419,6 @@ namespace pbe {
             desc.validation = true;
             desc.OUT_VALIDATION = context.colorHDR;
          }
-
-         // cmd.ClearSRV_CS();
-         // cmd.ClearUAV_CS();
 
          NRDResize(outTexSize);
          NRDDenoise(cmd, desc);
@@ -437,6 +440,7 @@ namespace pbe {
          CMD_BINDS_GUARD();
 
          pass->SetSRV(cmd, "gDepth", context.depth); // todo: too match place for sample depth
+         pass->SetSRV(cmd, "gViewZ", context.viewz);
          pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
          pass->SetSRV(cmd, "gDiffuse", diffuse);

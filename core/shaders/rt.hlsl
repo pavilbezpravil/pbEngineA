@@ -259,6 +259,7 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 #endif
 
 Texture2D<float> gDepth;
+Texture2D<float> gViewZ;
 Texture2D<float4> gNormal;
 
 RWTexture2D<float4> gColorOut : register(u0);
@@ -321,7 +322,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // int nRays = gRTConstants.nRays;
     int nRays = 1;
 
-    float3 color = 0;
+    float3 radiance = 0;
 
     float3 V = normalize(gCamera.position - posW);
 
@@ -339,7 +340,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.tMax == INF) {
                     float3 directLightShade = NDotL * gScene.directLight.color;
-                    color += directLightShade;
+                    radiance += directLightShade;
                 }
             }
 
@@ -351,19 +352,20 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             // #error "Define DIFFUSE or SPECULAR"
         #endif
 
-        color += RayColor(ray, seed);
+        radiance += RayColor(ray, seed);
     }
 
-    color /= nRays;
+    radiance /= nRays;
 
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
     // color = frac(posW);
 
-    // float normHitDist = REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, float4 hitDistParams, roughness = 1.0);
-    // REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
+    float hitDist = 1; // todo:
+    float viewZ = gViewZ[id];
 
-    gColorOut[id] = float4(color, 1);
+    float normHitDist = REBLUR_FrontEnd_GetNormHitDist(hitDist, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    gColorOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
 }
 
 Texture2D<float4> gBaseColor;
@@ -394,8 +396,8 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 baseColor = baseColorMetallic.xyz;
     float  metallic = baseColorMetallic.w;
 
-    float3 diffuse = gDiffuse[id].xyz;
-    float3 specular = gSpecular[id].xyz;
+    float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
+    float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
 
     float3 F0 = lerp(0.04, baseColor, metallic);
     float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);

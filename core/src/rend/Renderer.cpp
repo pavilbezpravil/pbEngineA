@@ -47,7 +47,8 @@ namespace pbe {
    }
 
    void RenderCamera::NextFrame() {
-      prevViewProjection = GetViewProjection();
+      prevView = view;
+      prevProjection = projection;
    }
 
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
@@ -55,7 +56,7 @@ namespace pbe {
       cameraCB.projection = glm::transpose(projection);
       cameraCB.viewProjection = glm::transpose(GetViewProjection());
       cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
-      cameraCB.prevViewProjection = glm::transpose(prevViewProjection);
+      cameraCB.prevViewProjection = glm::transpose(GetPrevViewProjection());
       cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
       cameraCB.position = position;
 

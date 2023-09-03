@@ -37,6 +37,8 @@ struct SRTConstants {
    uint _dfsdf;
    uint bvhNodes;
    float2 _dymmy23;
+
+   float4 nrdHitDistParams;
 };
 
 #endif

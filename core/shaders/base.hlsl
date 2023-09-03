@@ -172,10 +172,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    PsOut output;
    output.baseColor = float4(material.baseColor, material.metallic);
-   // output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW * 0.5 + 0.5, material.roughness);
    output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW, material.roughness);
    output.motion = 0; // todo:
-   output.viewz = length(input.posW - gCamera.position); // todo:
+
+   // todo: do it in vs
+   output.viewz = mul(float4(input.posW, 1), gCamera.view).z;
 
    #if defined(EDITOR)
       // todo:
