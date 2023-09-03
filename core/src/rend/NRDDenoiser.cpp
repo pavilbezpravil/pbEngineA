@@ -116,7 +116,7 @@ namespace pbe {
    }
 
    void NRDTerm() {
-      if (NRD.Inited()) {
+      if (!NRD.Inited()) {
          return;
       }
 
