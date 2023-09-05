@@ -146,7 +146,7 @@ RayHit Trace(Ray ray) {
 
 #endif
 
-float3 RayColor(Ray ray, int nRayDepth, inout float firstHitDistance, inout uint seed) {
+float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
 
@@ -154,7 +154,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float firstHitDistance, inout uint
         RayHit hit = Trace(ray);
 
         if (depth == 0) {
-            firstHitDistance += hit.tMax;
+            hitDistance += hit.tMax;
         }
 
         if (hit.tMax < INF) {
@@ -319,6 +319,9 @@ float3 ReconstructWorldPosition( float3 viewPos ) {
     return mul(float4(viewPos, 1), GetCamera().invView).xyz;
 }
 
+RWTexture2D<float4> gDiffuseOut;
+RWTexture2D<float4> gSpecularOut;
+
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -334,6 +337,8 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
     float3 posW = ReconstructWorldPosition(viewPos);
 
+    float3 V = normalize(gCamera.position - posW);
+
     float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
@@ -343,17 +348,24 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // todo:
     int nRays = gRTConstants.nRays;
 
-    float3 radiance = 0;
+    float diffuseHitDistance = 0;
+    float specularHitDistance = 0;
 
-    float3 V = normalize(gCamera.position - posW);
+    float3 diffuseRadiance = 0;
+    float3 specularRadiance = 0;
 
-    float firstHitDistance = 0;
+    Ray ray;
+    ray.origin = posW;
 
     for (int i = 0; i < nRays; i++) {
-        Ray ray;
-        ray.origin = posW;
+        ray.direction = reflect(-V, normal);
+        ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness * roughness);
 
-        #if defined(DIFFUSE)
+        specularRadiance += RayColor(ray, gRTConstants.rayDepth, specularHitDistance, seed);
+    }
+
+    for (int i = 0; i < nRays; i++) {
+        #if 1
             float3 L = -gScene.directLight.direction;
             float NDotL = dot(normal, L);
 
@@ -363,30 +375,30 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 RayHit shadowHit = Trace(shadowRay);
                 if (shadowHit.tMax == INF) {
                     float3 directLightShade = NDotL * gScene.directLight.color;
-                    radiance += directLightShade;
+                    diffuseRadiance += directLightShade;
                 }
             }
-
-            ray.direction = normalize(RandomInHemisphere(normal, seed));
-        #elif defined(SPECULAR)
-            ray.direction = reflect(-V, normal);
-            ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness * roughness);
-        #else
-            // #error "Define DIFFUSE or SPECULAR"
         #endif
 
-        radiance += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
+        ray.direction = normalize(RandomInHemisphere(normal, seed));
+        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed);
     }
 
-    firstHitDistance /= nRays;
-    radiance /= nRays;
+    diffuseHitDistance /= nRays;
+    diffuseRadiance /= nRays;
+
+    specularHitDistance /= nRays;
+    specularRadiance /= nRays;
 
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
     // radiance = frac(posW);
 
-    float normHitDist = REBLUR_FrontEnd_GetNormHitDist(firstHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
-    gColorOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
+    float diffuseNormHitDist = REBLUR_FrontEnd_GetNormHitDist(diffuseHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    gDiffuseOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(diffuseRadiance, diffuseNormHitDist);
+
+    float specularNormHitDist = REBLUR_FrontEnd_GetNormHitDist(specularHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(specularRadiance, specularNormHitDist);
 }
 
 Texture2D<float4> gBaseColor;

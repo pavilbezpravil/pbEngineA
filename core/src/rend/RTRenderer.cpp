@@ -30,7 +30,7 @@ namespace pbe {
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
-   CVarValue<bool> cvRTSpecular{ "render/rt/specular", true };
+   CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
 
    CVarValue<bool> cvDenoise{ "render/denoise/enable", false };
@@ -350,8 +350,8 @@ namespace pbe {
       }
 
       if (cvRTDiffuse) {
-         GPU_MARKER("RT Diffuse");
-         PROFILE_GPU("RT Diffuse");
+         GPU_MARKER("RT Diffuse&Specular");
+         PROFILE_GPU("RT Diffuse&Specular");
 
          auto desc = ProgramDesc::Cs("rt.hlsl", "RTDiffuseSpecularCS");
          desc.cs.defines.AddDefine("DIFFUSE");
@@ -366,29 +366,8 @@ namespace pbe {
          pass->SetSRV(cmd, "gViewZ", context.viewz);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
 
-         pass->SetUAV(cmd, "gColorOut", context.diffuseTex);
-
-         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
-      }
-
-      if (cvRTSpecular) {
-         GPU_MARKER("RT Specular");
-         PROFILE_GPU("RT Specular");
-
-         auto desc = ProgramDesc::Cs("rt.hlsl", "RTDiffuseSpecularCS");
-         desc.cs.defines.AddDefine("SPECULAR");
-
-         auto pass = GetGpuProgram(desc);
-         cmd.SetCompute(*pass);
-         setSharedResource(*pass);
-
-         CMD_BINDS_GUARD();
-
-         pass->SetSRV(cmd, "gDepth", context.depth);
-         pass->SetSRV(cmd, "gViewZ", context.viewz);
-         pass->SetSRV(cmd, "gNormal", context.normalTex);
-
-         pass->SetUAV(cmd, "gColorOut", context.specularTex);
+         pass->SetUAV(cmd, "gDiffuseOut", context.diffuseTex);
+         pass->SetUAV(cmd, "gSpecularOut", context.specularTex);
 
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
