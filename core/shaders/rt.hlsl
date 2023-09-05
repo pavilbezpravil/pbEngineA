@@ -268,7 +268,6 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 }
 #endif
 
-Texture2D<float> gDepth;
 Texture2D<float> gViewZ;
 Texture2D<float4> gNormal;
 
@@ -301,8 +300,8 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id.xy] = float4(color, 1);
 }
 
-bool ClipByDepth(float depth) {
-    return depth > 0.9999;
+bool ViewZDiscard(float viewZ) {
+    return viewZ > 1e4; // todo: constant
 }
 
 // from NRD source
@@ -316,15 +315,9 @@ float3 ReconstructViewPosition( float2 uv, float2 cameraFrustumSize, float viewZ
     return p;
 }
 
-// float3 ReconstructViewPosition( float2 uv, float4 cameraFrustum, float viewZ = 1.0, float orthoMode = 0.0 ) {
-//     float3 p;
-//     p.xy = uv * cameraFrustum.zw + cameraFrustum.xy;
-//     p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
-//     p.z = viewZ;
-
-//     return p;
-// }
-
+float3 ReconstructWorldPosition( float3 viewPos ) {
+    return mul(float4(viewPos, 1), GetCamera().invView).xyz;
+}
 
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
@@ -332,18 +325,14 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float2 uv = GetUV(id, gRTConstants.rtSize);
-
-    float depth = gDepth[id];
-    if (ClipByDepth(depth)) {
-        gColorOut[id] = float4(0, 0, 0, 1);
+    float viewZ = gViewZ[id];
+    if (ViewZDiscard(viewZ)) {
         return;
     }
 
-    float viewZ = gViewZ[id]; // todo: clip far
-
+    float2 uv = GetUV(id, gRTConstants.rtSize);
     float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
-    float3 posW = mul(float4(viewPos, 1), GetCamera().invView).xyz;
+    float3 posW = ReconstructWorldPosition(viewPos);
 
     float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
     float3 normal = normalRoughness.xyz;
@@ -409,13 +398,15 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
+    
+    float viewZ = gViewZ[id];
 
-    float depth = gDepth[id];
     float2 uv = GetUV(id, gRTConstants.rtSize);
-    float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
+    float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
+    float3 posW = ReconstructWorldPosition(viewPos);
 
     float3 V = normalize(gCamera.position - posW);
-    if (ClipByDepth(depth)) {
+    if (ViewZDiscard(viewZ)) {
         float3 skyColor = GetSkyColor(-V);
         gColorOut[id] = float4(skyColor, 1);
         return;
