@@ -146,11 +146,9 @@ RayHit Trace(Ray ray) {
 
 #endif
 
-float3 RayColor(Ray ray, int nRayDepth, out float firstHitDistance, inout uint seed) {
+float3 RayColor(Ray ray, int nRayDepth, inout float firstHitDistance, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
-
-    firstHitDistance = 0;
 
     for (int depth = 0; depth < nRayDepth; depth++) {
         RayHit hit = Trace(ray);
@@ -219,8 +217,6 @@ float3 RayColor(Ray ray, int nRayDepth, out float firstHitDistance, inout uint s
             break;
         }
     }
-
-    firstHitDistance /= nRayDepth;
 
     return color;
 }
@@ -354,7 +350,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float3 V = normalize(gCamera.position - posW);
 
-    float firstHitDistance;
+    float firstHitDistance = 0;
 
     for (int i = 0; i < nRays; i++) {
         Ray ray;
@@ -385,6 +381,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         radiance += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
     }
 
+    firstHitDistance /= nRays;
     radiance /= nRays;
 
     // color = normal * 0.5 + 0.5;
