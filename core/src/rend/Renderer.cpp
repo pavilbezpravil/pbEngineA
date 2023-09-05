@@ -53,11 +53,23 @@ namespace pbe {
 
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
       cameraCB.view = glm::transpose(view);
+      cameraCB.invView = glm::inverse(cameraCB.view);
+
       cameraCB.projection = glm::transpose(projection);
+
       cameraCB.viewProjection = glm::transpose(GetViewProjection());
       cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+
       cameraCB.prevViewProjection = glm::transpose(GetPrevViewProjection());
       cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
+
+      auto frustumCornerLeftUp = glm::inverse(projection) * vec4{ 1, 1, 0, 1 };
+      frustumCornerLeftUp /= frustumCornerLeftUp.w;
+      frustumCornerLeftUp /= frustumCornerLeftUp.z; // to 1 z plane
+
+      // todo: remove
+      // cameraCB.frustumCornerLeftUp = vec2{ frustumCornerLeftUp.x, frustumCornerLeftUp.y };
+      cameraCB.frustumSize = vec2{ frustumCornerLeftUp.x, frustumCornerLeftUp.y };
 
       // todo:
       cameraCB.position = position;

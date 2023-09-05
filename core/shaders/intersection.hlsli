@@ -13,7 +13,7 @@ struct RayHit {
 RayHit CreateRayHit() {
     RayHit hit;
     hit.position = 0;
-    hit.tMin = 0.0001; // todo:
+    hit.tMin = 0;
     hit.tMax = INF;
     hit.normal = 0;
     hit.materialID = 0;

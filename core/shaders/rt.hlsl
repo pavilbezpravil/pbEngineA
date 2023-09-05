@@ -307,14 +307,24 @@ bool ClipByDepth(float depth) {
 
 // from NRD source
 // orthoMode = { 0 - perspective, -1 - right handed ortho, 1 - left handed ortho }
-float3 ReconstructViewPosition( float2 uv, float4 cameraFrustum, float viewZ = 1.0, float orthoMode = 0.0 ) {
+float3 ReconstructViewPosition( float2 uv, float2 cameraFrustumSize, float viewZ = 1.0, float orthoMode = 0.0 ) {
     float3 p;
-    p.xy = uv * cameraFrustum.zw + cameraFrustum.xy;
+    p.xy = uv * cameraFrustumSize * float2(2, -2) + cameraFrustumSize * float2(-1, 1);
     p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
     p.z = viewZ;
 
     return p;
 }
+
+// float3 ReconstructViewPosition( float2 uv, float4 cameraFrustum, float viewZ = 1.0, float orthoMode = 0.0 ) {
+//     float3 p;
+//     p.xy = uv * cameraFrustum.zw + cameraFrustum.xy;
+//     p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
+//     p.z = viewZ;
+
+//     return p;
+// }
+
 
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
@@ -331,11 +341,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     }
 
     float viewZ = gViewZ[id]; // todo: clip far
-    float3 direction = GetCameraRayDirection(uv);
-    float projDirOnForward = dot(GetCameraForward(), direction);
-    // float3 posW = GetCameraPosition() + direction * (viewZ / projDirOnForward);
 
-    float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
+    float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
+    float3 posW = mul(float4(viewPos, 1), GetCamera().invView).xyz;
 
     float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
     float3 normal = normalRoughness.xyz;
@@ -354,7 +362,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         Ray ray;
-        ray.origin = posW + normal * 0.00; // todo: bias
+        ray.origin = posW;
 
         #if defined(DIFFUSE)
             float3 L = -gScene.directLight.direction;
@@ -386,7 +394,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
-    // color = frac(posW);
+    // radiance = frac(posW);
 
     float normHitDist = REBLUR_FrontEnd_GetNormHitDist(firstHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
     gColorOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);

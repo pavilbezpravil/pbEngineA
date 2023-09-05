@@ -127,12 +127,19 @@ struct STerrainCB {
 };
 
 struct SCameraCB {
-   float4x4 projection;
    float4x4 view;
+   float4x4 invView;
+
+   float4x4 projection;
+
    float4x4 viewProjection;
    float4x4 invViewProjection;
+
    float4x4 prevViewProjection;
    float4x4 prevInvViewProjection;
+
+   float2 frustumCornerLeftUp;
+   float2 frustumSize;
 
    // todo: take from view
    float3 position;
