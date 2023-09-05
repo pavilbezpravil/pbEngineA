@@ -16,6 +16,9 @@ project "core"
       libsinfo.entt.includepath,
       libsinfo.shaders.includepath, -- todo: remove
       libsinfo.physx.includepath,
+
+      -- todo: not in release
+      libsinfo.winPixEventRuntime.includepath
    }
    libsinfo.core.natvis = os.getcwd().."/natvis/*.natvis"
 
@@ -32,6 +35,7 @@ project "core"
       -- "%{libsinfo.physx.libDir}",
       libsinfo.physx.libDir,
       libsinfo.nrd.libDir,
+      libsinfo.winPixEventRuntime.libDir
    }
 
    links {
@@ -42,11 +46,13 @@ project "core"
        "PhysXFoundation_64",
        "PhysXPvdSDK_static_64",
        "NRD",
+       "WinPixEventRuntime",
    }
 
    postbuildcommands {
       '{COPY} "%{libsinfo.physx.libDir}/*.dll" "%{cfg.targetdir}"',
       '{COPY} "%{libsinfo.nrd.libDir}/*.dll" "%{cfg.targetdir}"',
+      '{COPY} "%{libsinfo.winPixEventRuntime.libDir}/*.dll" "%{cfg.targetdir}"',
    }
 
    defines { "CORE_API_EXPORT" }

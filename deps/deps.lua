@@ -16,3 +16,7 @@ libsinfo.physx.libDir = os.getcwd().."/physx/bin/%{cfg.buildcfg}" -- todo:
 libsinfo.nrd = {}
 libsinfo.nrd.includepath = os.getcwd().."/NRD/include"
 libsinfo.nrd.libDir = os.getcwd().."/NRD/bin/%{cfg.buildcfg}"
+
+libsinfo.winPixEventRuntime = {}
+libsinfo.winPixEventRuntime.includepath = os.getcwd().."/WinPixEventRuntime/include"
+libsinfo.winPixEventRuntime.libDir = os.getcwd().."/WinPixEventRuntime/bin"
