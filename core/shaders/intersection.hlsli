@@ -3,7 +3,7 @@
 
 
 struct RayHit {
-    float3 position;
+    float3 position; // todo: can be restore from tMax
     float tMin;
     float tMax;
     float3 normal;

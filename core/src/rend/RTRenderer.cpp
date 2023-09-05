@@ -363,8 +363,15 @@ namespace pbe {
          CMD_BINDS_GUARD();
 
          pass->SetSRV(cmd, "gDepth", context.depth);
-         pass->SetSRV(cmd, "gViewZ", context.viewz);
-         pass->SetSRV(cmd, "gNormal", context.normalTex);
+
+         // todo: psr
+         // pass->SetSRV(cmd, "gViewZ", context.viewz);
+         // pass->SetSRV(cmd, "gNormal", context.normalTex);
+         pass->SetUAV(cmd, "gViewZOut", context.viewz);
+         pass->SetUAV(cmd, "gNormalOut", context.normalTex);
+         pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
+
+         pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
 
          pass->SetUAV(cmd, "gDiffuseOut", context.diffuseTex);
          pass->SetUAV(cmd, "gSpecularOut", context.specularTex);

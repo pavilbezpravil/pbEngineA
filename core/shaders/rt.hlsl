@@ -319,8 +319,17 @@ float3 ReconstructWorldPosition( float3 viewPos ) {
     return mul(float4(viewPos, 1), GetCamera().invView).xyz;
 }
 
+// todo: read from UAV slower that SRV in ~40% on my laptop
+#define PSR
+
 RWTexture2D<float4> gDiffuseOut;
 RWTexture2D<float4> gSpecularOut;
+
+// #if defined(PSR)
+    RWTexture2D<float> gViewZOut;
+    RWTexture2D<float4> gNormalOut;
+    RWTexture2D<float4> gBaseColorOut;
+// #endif
 
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
@@ -328,7 +337,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float viewZ = gViewZ[id];
+    float viewZ = gViewZOut[id];
     if (ViewZDiscard(viewZ)) {
         return;
     }
@@ -339,11 +348,49 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float3 V = normalize(gCamera.position - posW);
 
-    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormalOut[id]);
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
 
+    float metallic = gBaseColorOut[id].w;
+
     uint seed = GetRandomSeed(id);
+
+    Ray ray;
+    ray.origin = posW;
+
+    #if defined(PSR)
+        // todo: better condition
+        if (roughness < 0.01 && metallic > 0.95) {
+            ray.direction = reflect(-V, normal);
+
+            RayHit hit = Trace(ray);
+            if (hit.tMax < INF) {
+                SRTObject obj = gRtObjects[hit.materialID];
+
+                float3 psrPosW = ray.origin + -V * hit.tMax;
+                gBaseColorOut[id] = float4(obj.baseColor, obj.metallic);
+                gViewZOut[id] = mul(float4(psrPosW, 1), gCamera.view).z;
+                gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(hit.normal, obj.roughness);
+
+                // todo: add emmisive
+                // todo: rewrite baseColor
+                // todo: V
+                // V = ?;
+                // todo: motion
+
+                posW = hit.position;
+                V = -ray.direction;
+                normal = hit.normal;
+                roughness = obj.roughness;
+                metallic = obj.metallic;
+            } else {
+                // todo: skip diffuse rays
+            }
+        }
+    #endif
+
+    ray.origin = posW;
 
     // todo:
     int nRays = gRTConstants.nRays;
@@ -353,9 +400,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float3 diffuseRadiance = 0;
     float3 specularRadiance = 0;
-
-    Ray ray;
-    ray.origin = posW;
 
     for (int i = 0; i < nRays; i++) {
         ray.direction = reflect(-V, normal);

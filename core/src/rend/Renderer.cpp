@@ -144,9 +144,11 @@ namespace pbe {
 
          Texture2D::Desc texDesc {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
-            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
-            .name = "scene albedo",
+            // .format = DXGI_FORMAT_R8G8B8A8_UNORM, // todo:
+            // .format = DXGI_FORMAT_R11G11B10_FLOAT, // todo: mb place metallic to diff rt?
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // todo: too match
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "scene base color",
          };
          context.baseColorTex = Texture2D::Create(texDesc);
 
@@ -160,8 +162,9 @@ namespace pbe {
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R10G10B10A2_UNORM,
-            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            // .format = DXGI_FORMAT_R10G10B10A2_UNORM,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // cant read from UNORM as UAV
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene normal",
          };
          context.normalTex = Texture2D::Create(texDesc);
@@ -169,7 +172,7 @@ namespace pbe {
          texDesc = {
             .size = outTexSize,
             .format = DXGI_FORMAT_R32_FLOAT,
-            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene view z",
          };
          context.viewz = Texture2D::Create(texDesc);
