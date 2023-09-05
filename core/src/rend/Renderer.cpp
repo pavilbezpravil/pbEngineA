@@ -315,6 +315,7 @@ namespace pbe {
 
       GPU_MARKER("Render Scene");
       PROFILE_GPU("Render Scene");
+      PIX_EVENT_SYSTEM(Render, "Render Scene");
 
       static RenderCamera cullCamera = camera;
       if (!cFreezeCullCamera) {

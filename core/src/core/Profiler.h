@@ -8,6 +8,10 @@
 #include "optick.h"
 #include "rend/GpuTimer.h"
 
+#ifdef DEBUG
+   #include "WinPixEventRuntime/pix3.h"
+#endif // DEBUG
+
 
 namespace pbe {
 
@@ -189,9 +193,21 @@ namespace pbe {
       Profiler::GpuEvent& gpuEvent;
    };
 
+   enum class ProfileEventType : uint8 {
+      Frame,
+      Physics,
+      Render,
+      UI,
+      Window,
+   };
+
+#define PIX_EVENT_COLOR(Color, Name) PIXScopedEvent(Color, Name)
+#define PIX_EVENT(Name) PIX_EVENT_COLOR(PIX_COLOR(255, 255, 255), Name)
+#define PIX_EVENT_SYSTEM(System, Name) PIX_EVENT_COLOR(PIX_COLOR_INDEX((BYTE)ProfileEventType::System), Name)
+
    // todo: how macros work? why after a do this marco expand correctly?
 #define __PROFILE_CPU(Name, unique) CpuEventGuard CONCAT(cpuEvent, unique){ Profiler::Get().CreateCpuEvent(Name) }
-#define PROFILE_CPU(Name) __PROFILE_CPU(Name, __COUNTER__)
+#define PROFILE_CPU(Name) __PROFILE_CPU(Name, __COUNTER__); PIX_EVENT(Name)
 
 #define __PROFILE_GPU(Name, unique) GpuEventGuard CONCAT(gpuEvent, unique){ Profiler::Get().CreateGpuEvent(Name) }
 #define PROFILE_GPU(Name) __PROFILE_GPU(Name, __COUNTER__)

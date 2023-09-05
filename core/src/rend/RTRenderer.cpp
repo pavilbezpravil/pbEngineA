@@ -23,11 +23,6 @@
 #include "shared/rt.hlsli"
 
 
-#include "WinPixEventRuntime/pix3.h"
-
-
-
-
 namespace pbe {
 
    CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 32 };
@@ -177,7 +172,7 @@ namespace pbe {
       GPU_MARKER("RT Scene");
       PROFILE_GPU("RT Scene");
 
-      PIXBeginEvent(PIX_COLOR(255, 255, 255), "RT Scene");
+      PIX_EVENT_SYSTEM(Render, "RT Render Scene");
 
       uint importanceSampleObjIdx = -1;
 
@@ -457,8 +452,6 @@ namespace pbe {
 
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
-
-      PIXEndEvent();
    }
 
 }
