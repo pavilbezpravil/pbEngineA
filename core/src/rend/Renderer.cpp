@@ -58,7 +58,10 @@ namespace pbe {
       cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
       cameraCB.prevViewProjection = glm::transpose(GetPrevViewProjection());
       cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
+
+      // todo:
       cameraCB.position = position;
+      cameraCB.forward = Forward();
 
       cameraCB.zNear = zNear;
       cameraCB.zFar = zFar;

@@ -134,8 +134,12 @@ struct SCameraCB {
    float4x4 prevViewProjection;
    float4x4 prevInvViewProjection;
 
+   // todo: take from view
    float3 position;
    int _sdfsdf2;
+
+   float3 forward;
+   int _sdfsdf23;
 
    float zNear;
    float zFar;

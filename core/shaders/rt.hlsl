@@ -20,11 +20,16 @@ StructuredBuffer<SRTObject> gRtObjects : register(t0);
 StructuredBuffer<BVHNode> gBVHNodes : register(t1);
 // StructuredBuffer<SMaterial> gMaterials;
 
-Ray CreateCameraRay(float2 uv) {
+float3 GetCameraRayDirection(float2 uv) {
     float3 origin = gCamera.position;
     // float3 posW = mul(float4(uv, 1, 1), gCamera.invViewProjection).xyz;
     float3 posW = GetWorldPositionFromDepth(uv, 1, gCamera.invViewProjection);
-    float3 direction = normalize(posW - origin);
+    return normalize(posW - origin);
+}
+
+Ray CreateCameraRay(float2 uv) {
+    float3 origin = gCamera.position;
+    float3 direction = GetCameraRayDirection(uv);
     return CreateRay(origin, direction);
 }
 
@@ -304,6 +309,17 @@ bool ClipByDepth(float depth) {
     return depth > 0.9999;
 }
 
+// from NRD source
+// orthoMode = { 0 - perspective, -1 - right handed ortho, 1 - left handed ortho }
+float3 ReconstructViewPosition( float2 uv, float4 cameraFrustum, float viewZ = 1.0, float orthoMode = 0.0 ) {
+    float3 p;
+    p.xy = uv * cameraFrustum.zw + cameraFrustum.xy;
+    p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
+    p.z = viewZ;
+
+    return p;
+}
+
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -318,13 +334,16 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
+    float viewZ = gViewZ[id]; // todo: clip far
+    float3 direction = GetCameraRayDirection(uv);
+    float projDirOnForward = dot(GetCameraForward(), direction);
+    // float3 posW = GetCameraPosition() + direction * (viewZ / projDirOnForward);
+
     float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
 
     float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
-
-    roughness *= roughness; // todo:
 
     uint seed = GetRandomSeed(id);
 
@@ -339,7 +358,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         Ray ray;
-        ray.origin = posW + normal * 0.05; // todo: bias
+        ray.origin = posW + normal * 0.00; // todo: bias
 
         #if defined(DIFFUSE)
             float3 L = -gScene.directLight.direction;
@@ -358,7 +377,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             ray.direction = normalize(RandomInHemisphere(normal, seed));
         #elif defined(SPECULAR)
             ray.direction = reflect(-V, normal);
-            ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness);
+            ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness * roughness);
         #else
             // #error "Define DIFFUSE or SPECULAR"
         #endif
@@ -371,8 +390,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
     // color = frac(posW);
-
-    float viewZ = gViewZ[id];
 
     float normHitDist = REBLUR_FrontEnd_GetNormHitDist(firstHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
     gColorOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(radiance, normHitDist);
