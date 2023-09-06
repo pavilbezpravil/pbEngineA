@@ -8,6 +8,12 @@
 #include "optick.h"
 #include "rend/GpuTimer.h"
 
+// todo:
+#if !defined(RELEASE)
+   #define USE_PROFILE
+   #include "WinPixEventRuntime/pix3.h"
+#endif
+
 
 namespace pbe {
 
@@ -197,9 +203,7 @@ namespace pbe {
       Window,
    };
 
-#if !defined(RELEASE)
-   #include "WinPixEventRuntime/pix3.h"
-
+#ifdef USE_PROFILE
    // PIXSetMarker(PIX_COLOR_INDEX(17), "Some data");
 
    #define PIX_EVENT_COLOR(Color, Name) PIXScopedEvent(Color, Name)

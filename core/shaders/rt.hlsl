@@ -352,20 +352,28 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
 
-    float metallic = gBaseColorOut[id].w;
-
     uint seed = GetRandomSeed(id);
 
     Ray ray;
-    ray.origin = posW;
 
     #if defined(PSR)
+        float4 baseColorMetallic = gBaseColorOut[id];
+        float3 baseColor = baseColorMetallic.xyz;
+        float  metallic = baseColorMetallic.w;
+
+        float3 psrEnergy = 1;
+
         // todo: better condition
         if (roughness < 0.01 && metallic > 0.95) {
+            ray.origin = posW;
             ray.direction = reflect(-V, normal);
 
             RayHit hit = Trace(ray);
             if (hit.tMax < INF) {
+                float3 F0 = lerp(0.04, baseColor, metallic);
+                float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
+                psrEnergy = F;
+
                 SRTObject obj = gRtObjects[hit.materialID];
 
                 float3 psrPosW = ray.origin + -V * hit.tMax;
@@ -386,6 +394,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 metallic = obj.metallic;
             } else {
                 // todo: skip diffuse rays
+                // float3 skyColor = GetSkyColor(-V);
             }
         }
     #endif
@@ -427,6 +436,11 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         ray.direction = normalize(RandomInHemisphere(normal, seed));
         diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed);
     }
+
+    #if defined(PSR)
+        diffuseRadiance *= psrEnergy;
+        specularRadiance *= psrEnergy;
+    #endif
 
     diffuseHitDistance /= nRays;
     diffuseRadiance /= nRays;
