@@ -169,7 +169,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
             float3 F0 = lerp(0.04, obj.baseColor, obj.metallic);
             float3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
 
-            color += obj.emissiveColor * energy; // todo: device by PI_2?
+            color += obj.baseColor * obj.emissivePower * energy; // todo: device by PI_2?
 
             if (1) {
             // if (RandomFloat(seed) > Luminance(F)) { // todo: is it ok?
@@ -390,10 +390,10 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 float3 psrNormal = reflect(hit.normal, normal);
                 gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(psrNormal, obj.roughness);
 
-                // todo: add emmisive
-                // todo: rewrite baseColor
-                // todo: V
-                // V = ?;
+                float3 emissive = (obj.baseColor * obj.emissivePower) * psrEnergy;
+                float4 prevColor = gColorOut[id];
+                gColorOut[id] = float4(prevColor.xyz + emissive, prevColor.w);
+
                 // todo: motion
 
                 posW = hit.position;
@@ -509,5 +509,6 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 albedo = baseColor * (1 - metallic);
     float3 color = (1 - F) * albedo * diffuse / PI + F * specular;
 
-    gColorOut[id] = float4(color, 1);
+    float3 emissive = gColorOut[id].xyz;
+    gColorOut[id] = float4(color + emissive, 1);
 }

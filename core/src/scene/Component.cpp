@@ -113,9 +113,6 @@ namespace pbe {
       STRUCT_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       STRUCT_FIELD(metallic)
 
-      STRUCT_FIELD_UI(UIColorEdit3)
-      STRUCT_FIELD(emissiveColor)
-
       STRUCT_FIELD(emissivePower)
 
       STRUCT_FIELD(opaque)

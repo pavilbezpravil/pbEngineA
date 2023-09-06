@@ -237,8 +237,8 @@ namespace pbe {
       }
 
       void SetRenderTargets(uint nRT, Texture2D** rt = nullptr, Texture2D* depth = nullptr) {
-         ASSERT(nRT <= 4);
-         ID3D11RenderTargetView* rtvs[4];
+         ASSERT(nRT <= 5);
+         ID3D11RenderTargetView* rtvs[5];
          for (uint i = 0; i < nRT; i++) {
             rtvs[i] = rt[i]->rtv.Get();
          }

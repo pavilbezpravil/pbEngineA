@@ -5,13 +5,14 @@ struct SRTObject {
    float3 position;
    uint   id;
 
-   float4 rotation;
+   float4 rotation; // quat
 
    float3 baseColor;
    float  metallic;
 
-   float3 emissiveColor;
-   float  roughness;
+   float emissivePower;
+   float roughness;
+   float2 _pad;
 
    float3 halfSize;
    int    geomType;

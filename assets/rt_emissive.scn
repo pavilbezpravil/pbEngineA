@@ -10,7 +10,6 @@ entities:
       baseColor: [1, 0, 0]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -38,7 +37,6 @@ entities:
       baseColor: [0, 0.759494305, 1]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -55,7 +53,6 @@ entities:
       baseColor: [0.075949192, 0, 1]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -64,7 +61,7 @@ entities:
   - uuid: 5079568519492316975
     tag: emissive cube
     SceneTransformComponent:
-      position: [-0.117909074, 2.55918622, 2.09448457]
+      position: [-0.117909081, 2.55918622, 2.09448457]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 6791511463118186495
@@ -72,11 +69,10 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 5
       opaque: true
     GeometryComponent:
-      type: 0
+      type: 1
       sizeData: [1, 1, 1]
   - uuid: 5149250398784041482
     tag: wall far
@@ -89,7 +85,6 @@ entities:
       baseColor: [0.728764951, 0.818565369, 0.799241245]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -106,7 +101,6 @@ entities:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -123,7 +117,6 @@ entities:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -147,7 +140,6 @@ entities:
       baseColor: [0.200395256, 0.848101258, 0.249587983]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -164,7 +156,6 @@ entities:
       baseColor: [0.839662433, 0.0992006063, 0.0992006063]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:

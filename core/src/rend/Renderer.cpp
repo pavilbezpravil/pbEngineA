@@ -229,6 +229,7 @@ namespace pbe {
          m.baseColor = material.baseColor;
          m.roughness = material.roughness;
          m.metallic = material.metallic;
+         m.emissivePower = material.emissivePower;
 
          SInstance instance;
          instance.material = m;
@@ -339,13 +340,14 @@ namespace pbe {
 
       RenderDataPrepare(cmd, scene, cullCamera);
 
+      // todo: may be skipped
       cmd.ClearRenderTarget(*context.colorLDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.normalTex, vec4{0, 0, 0, 0});
       cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
       cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
 
-      cmd.ClearRenderTarget(*context.viewz, vec4{ 500000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
+      cmd.ClearRenderTarget(*context.viewz, vec4{ 1000000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
 
       cmd.SetRasterizerState(rendres::rasterizerState);
@@ -493,7 +495,7 @@ namespace pbe {
             GPU_MARKER("GBuffer");
             PROFILE_GPU("GBuffer");
 
-            Texture2D* rts[] = { context.baseColorTex,
+            Texture2D* rts[] = { context.colorHDR, context.baseColorTex,
                context.normalTex, context.motionTex, context.viewz };
             uint nRts = _countof(rts);
             cmd.SetRenderTargets(nRts, rts, context.depth);

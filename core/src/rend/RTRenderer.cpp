@@ -198,7 +198,7 @@ namespace pbe {
          obj.baseColor = material.baseColor;
          obj.metallic = material.metallic;
          obj.roughness = material.roughness;
-         obj.emissiveColor = material.emissiveColor * material.emissivePower;
+         obj.emissivePower = material.emissivePower;
          if (material.emissivePower > 0) {
             importanceSampleObjIdx = (uint)objs.size();
          }
@@ -370,6 +370,7 @@ namespace pbe {
          pass->SetUAV(cmd, "gViewZOut", context.viewz);
          pass->SetUAV(cmd, "gNormalOut", context.normalTex);
          pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
+         pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 
          pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
 

@@ -23,7 +23,8 @@ struct SMaterial {
    float roughness;
 
    float metallic;
-   float3 _dymmy;
+   float emissivePower;
+   float2 _dymmy;
 };
 
 struct SInstance {

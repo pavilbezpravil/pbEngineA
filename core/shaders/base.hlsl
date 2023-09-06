@@ -151,11 +151,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 #else
 
 struct PsOut {
-   // float4 emissive  : SV_Target0;
-   float4 baseColor : SV_Target0;
-   float4 normal    : SV_Target1;
-   float2 motion    : SV_Target2;
-   float  viewz     : SV_Target3;
+   float4 emissive  : SV_Target0;
+   float4 baseColor : SV_Target1;
+   float4 normal    : SV_Target2;
+   float2 motion    : SV_Target3;
+   float  viewz     : SV_Target4;
 };
 
 // ps uses UAV writes, it removes early z test
@@ -171,6 +171,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    SMaterial material = instance.material;
 
    PsOut output;
+   output.emissive = float4(material.baseColor * material.emissivePower, 1); // todo: 1?
    output.baseColor = float4(material.baseColor, material.metallic);
    output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW, material.roughness);
    output.motion = 0; // todo:

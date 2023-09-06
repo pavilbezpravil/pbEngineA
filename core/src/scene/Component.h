@@ -73,8 +73,6 @@ namespace pbe {
       vec3 baseColor = vec3_One;
       float roughness = 0.1f;
       float metallic = 0;
-
-      vec3 emissiveColor = vec3_One;
       float emissivePower = 0;
 
       bool opaque = true;
