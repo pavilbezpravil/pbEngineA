@@ -177,7 +177,7 @@ namespace pbe {
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         int2 cursorPixelIdx{ mousePos - cursorPos};
+         int2 cursorPixelIdx{ (mousePos - cursorPos) * renderScale };
          vec2 cursorUV = vec2(cursorPixelIdx) / vec2(size);
 
          cmd.SetCommonSamplers();
