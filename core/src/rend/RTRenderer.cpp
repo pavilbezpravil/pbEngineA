@@ -32,6 +32,7 @@ namespace pbe {
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
+   CVarValue<bool> cvUsePSR{ "render/rt/use psr", true };
 
    CVarValue<bool> cvDenoise{ "render/denoise/enable", false };
    CVarValue<bool> cvNRDValidation{ "render/denoise/nrd validation", false };
@@ -354,7 +355,9 @@ namespace pbe {
          PROFILE_GPU("RT Diffuse&Specular");
 
          auto desc = ProgramDesc::Cs("rt.hlsl", "RTDiffuseSpecularCS");
-         desc.cs.defines.AddDefine("DIFFUSE");
+         if (cvUsePSR) {
+            desc.cs.defines.AddDefine("USE_PSR");
+         }
 
          auto pass = GetGpuProgram(desc);
          cmd.SetCompute(*pass);
@@ -364,15 +367,15 @@ namespace pbe {
 
          pass->SetSRV(cmd, "gDepth", context.depth);
 
-         // todo: psr
-         // pass->SetSRV(cmd, "gViewZ", context.viewz);
-         // pass->SetSRV(cmd, "gNormal", context.normalTex);
-         pass->SetUAV(cmd, "gViewZOut", context.viewz);
-         pass->SetUAV(cmd, "gNormalOut", context.normalTex);
-         pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
-         pass->SetUAV(cmd, "gColorOut", context.colorHDR);
-
-         pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
+         if (cvUsePSR) {
+            pass->SetUAV(cmd, "gViewZOut", context.viewz);
+            pass->SetUAV(cmd, "gNormalOut", context.normalTex);
+            pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
+            pass->SetUAV(cmd, "gColorOut", context.colorHDR);
+         } else {
+            pass->SetSRV(cmd, "gViewZ", context.viewz);
+            pass->SetSRV(cmd, "gNormal", context.normalTex);
+         }
 
          pass->SetUAV(cmd, "gDiffuseOut", context.diffuseTex);
          pass->SetUAV(cmd, "gSpecularOut", context.specularTex);

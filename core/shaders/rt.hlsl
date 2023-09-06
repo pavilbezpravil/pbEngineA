@@ -319,22 +319,35 @@ float3 ReconstructWorldPosition( float3 viewPos ) {
     return mul(float4(viewPos, 1), GetCamera().invView).xyz;
 }
 
-// todo: read from UAV slower that SRV in ~40% on my laptop
-#define PSR
-
 RWTexture2D<float4> gDiffuseOut;
 RWTexture2D<float4> gSpecularOut;
 
-// #if defined(PSR)
+// #if defined(USE_PSR)
     RWTexture2D<float> gViewZOut;
     RWTexture2D<float4> gNormalOut;
     RWTexture2D<float4> gBaseColorOut;
 // #endif
 
-#if defined(PSR)
+#if defined(USE_PSR)
     bool CheckSurfaceForPSR(float roughness, float metallic) {
         // float3 normal, float3 V
         return roughness < 0.01 && metallic > 0.95;
+    }
+
+    float RTDiffuseSpecularCS_ReadViewZ(uint2 pixelPos) {
+        return gViewZOut[pixelPos];
+    }
+
+    float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
+        return gNormalOut[pixelPos];
+    }
+#else
+    float RTDiffuseSpecularCS_ReadViewZ(uint2 pixelPos) {
+        return gViewZ[pixelPos];
+    }
+
+    float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
+        return gNormal[pixelPos];
     }
 #endif
 
@@ -344,7 +357,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float viewZ = gViewZOut[id];
+    float viewZ = RTDiffuseSpecularCS_ReadViewZ(id);
     if (ViewZDiscard(viewZ)) {
         return;
     }
@@ -355,7 +368,8 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float3 V = normalize(gCamera.position - posW);
 
-    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormalOut[id]);
+    float4 normalRoughnessNRD = RTDiffuseSpecularCS_ReadNormal(id);
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(normalRoughnessNRD);
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
 
@@ -363,7 +377,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     Ray ray;
 
-    #if defined(PSR)
+    #if defined(USE_PSR)
         float4 baseColorMetallic = gBaseColorOut[id];
         float3 baseColor = baseColorMetallic.xyz;
         float  metallic = baseColorMetallic.w;
@@ -406,7 +420,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 // float3 skyColor = GetSkyColor(-V);
             }
         }
-    #endif
+    #endif // USE_PSR
 
     ray.origin = posW;
 
@@ -446,7 +460,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed);
     }
 
-    #if defined(PSR)
+    #if defined(USE_PSR)
         diffuseRadiance *= psrEnergy;
         specularRadiance *= psrEnergy;
     #endif
