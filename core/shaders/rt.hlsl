@@ -331,6 +331,13 @@ RWTexture2D<float4> gSpecularOut;
     RWTexture2D<float4> gBaseColorOut;
 // #endif
 
+#if defined(PSR)
+    bool CheckSurfaceForPSR(float roughness, float metallic) {
+        // float3 normal, float3 V
+        return roughness < 0.01 && metallic > 0.95;
+    }
+#endif
+
 [numthreads(8, 8, 1)]
 void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -364,7 +371,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         float3 psrEnergy = 1;
 
         // todo: better condition
-        if (roughness < 0.01 && metallic > 0.95) {
+        if (CheckSurfaceForPSR(roughness, metallic)) {
             ray.origin = posW;
             ray.direction = reflect(-V, normal);
 
@@ -379,7 +386,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 float3 psrPosW = ray.origin + -V * hit.tMax;
                 gBaseColorOut[id] = float4(obj.baseColor, obj.metallic);
                 gViewZOut[id] = mul(float4(psrPosW, 1), gCamera.view).z;
-                gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(hit.normal, obj.roughness);
+
+                float3 psrNormal = reflect(hit.normal, normal);
+                gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(psrNormal, obj.roughness);
 
                 // todo: add emmisive
                 // todo: rewrite baseColor
@@ -484,6 +493,7 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
 
     float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
     float3 normal = normalRoughness.xyz;
+    float  roughness = normalRoughness.w;
 
     float4 baseColorMetallic = gBaseColor[id];
     float3 baseColor = baseColorMetallic.xyz;
