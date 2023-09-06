@@ -40,11 +40,11 @@ void IntersectObj(Ray ray, inout RayHit bestHit, SRTObject obj, uint objIdx) {
     if (geomType == 1) {
         // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
         if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
-            bestHit.materialID = objIdx;
+            bestHit.objID = objIdx;
         }
     } else {
         if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
-            bestHit.materialID = objIdx;
+            bestHit.objID = objIdx;
         }
     }
 }
@@ -160,7 +160,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
         if (hit.tMax < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
             // return hit.normal * 0.5f + 0.5f;
-            SRTObject obj = gRtObjects[hit.materialID];
+            SRTObject obj = gRtObjects[hit.objID];
 
             ray.origin = hit.position + hit.normal * 0.0001;
 
@@ -251,7 +251,7 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 
     RayHit hit = Trace(ray);
     if (hit.tMax < INF) {
-        SRTObject obj = gRtObjects[hit.materialID];
+        SRTObject obj = gRtObjects[hit.objID];
 
         gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
@@ -395,7 +395,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                 float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
                 psrEnergy = F;
 
-                SRTObject obj = gRtObjects[hit.materialID];
+                SRTObject obj = gRtObjects[hit.objID];
 
                 float3 psrPosW = ray.origin + -V * hit.tMax;
                 gBaseColorOut[id] = float4(obj.baseColor, obj.metallic);
