@@ -52,16 +52,16 @@ namespace pbe {
    }
 
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
-      cameraCB.view = glm::transpose(view);
+      cameraCB.view = view;
       cameraCB.invView = glm::inverse(cameraCB.view);
 
-      cameraCB.projection = glm::transpose(projection);
+      cameraCB.projection = projection;
 
-      cameraCB.viewProjection = glm::transpose(GetViewProjection());
-      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
+      cameraCB.viewProjection = GetViewProjection();
+      cameraCB.invViewProjection = cameraCB.viewProjection;
 
-      cameraCB.prevViewProjection = glm::transpose(GetPrevViewProjection());
-      cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
+      cameraCB.prevViewProjection = GetPrevViewProjection();
+      cameraCB.prevInvViewProjection = cameraCB.prevViewProjection;
 
       auto frustumCornerLeftUp = glm::inverse(projection) * vec4{ 1, 1, 0, 1 };
       frustumCornerLeftUp /= frustumCornerLeftUp.w;
@@ -223,8 +223,6 @@ namespace pbe {
       std::vector<SInstance> instances;
       instances.reserve(renderObjs.size());
       for (auto& [trans, material] : renderObjs) {
-         mat4 transform = glm::transpose(trans.GetMatrix());
-
          SMaterial m;
          m.baseColor = material.baseColor;
          m.roughness = material.roughness;
@@ -232,8 +230,8 @@ namespace pbe {
          m.emissivePower = material.emissivePower;
 
          SInstance instance;
-         instance.transform = transform;
-         instance.prevTransform = glm::transpose(trans.GetPrevMatrix());
+         instance.transform = trans.GetMatrix();
+         instance.prevTransform = trans.GetPrevMatrix();
          instance.material = m;
          instance.entityID = (uint)trans.entity.GetID();
 
@@ -365,7 +363,7 @@ namespace pbe {
 
             mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
             mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
-            mat4 viewProjection = glm::transpose(projection * view);
+            mat4 viewProjection = projection * view;
             decals.emplace_back(viewProjection, decal.baseColor, decal.metallic, decal.roughness);
          }
 
@@ -434,7 +432,7 @@ namespace pbe {
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
-         sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
+         sceneCB.toShadowSpace = NDCToTexSpaceMat4() * shadowCamera.GetViewProjection();
       }
 
       if (Entity skyEntity = scene.GetAnyWithComponent<SkyComponent>()) {
@@ -831,7 +829,7 @@ namespace pbe {
       for (const auto& [trans, material] : renderObjs) {
          SDrawCallCB cb;
          cb.instance.transform = glm::translate(mat4(1), trans.position);
-         cb.instance.transform = glm::transpose(cb.instance.transform);
+         cb.instance.transform = cb.instance.transform;
          cb.instance.material.roughness = material.roughness;
          cb.instance.material.baseColor = material.baseColor;
          cb.instance.material.metallic = material.metallic;

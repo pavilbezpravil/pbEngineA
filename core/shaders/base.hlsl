@@ -45,9 +45,9 @@ VsOut vs_main(VsIn input) {
 
    SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
 
-   float3 prevPosW = mul(float4(input.posL, 1), instance.prevTransform).xyz;
-   float3 posW = mul(float4(input.posL, 1), instance.transform).xyz;
-   float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
+   float3 prevPosW = mul(instance.prevTransform, float4(input.posL, 1)).xyz;
+   float3 posW = mul(instance.transform, float4(input.posL, 1)).xyz;
+   float4 posH = mul(gCamera.viewProjection, float4(posW, 1));
 
    output.posW = posW;
    output.motionW = prevPosW - posW;
@@ -92,7 +92,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    for (int iDecal = 0; iDecal < gScene.nDecals; ++iDecal) {
       SDecal decal = gDecals[iDecal];
 
-      float3 posDecalSpace = mul(float4(posW, 1), decal.viewProjection).xyz;
+      float3 posDecalSpace = mul(decal.viewProjection, float4(posW, 1)).xyz;
       if (any(posDecalSpace > float3(1, 1, 1) || posDecalSpace < float3(-1, -1, 0))) {
          continue;
       }
@@ -180,7 +180,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    output.motion = input.motionW;
 
    // todo: do it in vs
-   output.viewz = mul(float4(input.posW, 1), gCamera.view).z;
+   output.viewz = mul(gCamera.view, float4(input.posW, 1)).z;
 
    #if defined(EDITOR)
       SetEntityUnderCursor(pixelIdx, instance.entityID);

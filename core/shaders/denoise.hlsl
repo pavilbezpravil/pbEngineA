@@ -45,7 +45,7 @@ void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
         float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
         float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
 
-        float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
+        float4 prevSample = mul(gCamera.prevViewProjection, float4(posW, 1));
         prevSample /= prevSample.w;
 
         float2 prevUV = NDCToTex(prevSample.xy);

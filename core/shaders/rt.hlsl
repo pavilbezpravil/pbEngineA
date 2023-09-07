@@ -22,7 +22,6 @@ StructuredBuffer<BVHNode> gBVHNodes : register(t1);
 
 float3 GetCameraRayDirection(float2 uv) {
     float3 origin = gCamera.position;
-    // float3 posW = mul(float4(uv, 1, 1), gCamera.invViewProjection).xyz;
     float3 posW = GetWorldPositionFromDepth(uv, 1, gCamera.invViewProjection);
     return normalize(posW - origin);
 }
@@ -255,7 +254,7 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
 
         gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
-        float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
+        float4 posH = mul(gCamera.viewProjection, float4(hit.position, 1));
         gDepthOut[id] = posH.z / posH.w;
 
         #if defined(EDITOR)
@@ -316,7 +315,7 @@ float3 ReconstructViewPosition( float2 uv, float2 cameraFrustumSize, float viewZ
 }
 
 float3 ReconstructWorldPosition( float3 viewPos ) {
-    return mul(float4(viewPos, 1), GetCamera().invView).xyz;
+    return mul(GetCamera().invView, float4(viewPos, 1)).xyz;
 }
 
 RWTexture2D<float4> gDiffuseOut;
@@ -399,7 +398,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
                 float3 psrPosW = ray.origin + -V * hit.tMax;
                 gBaseColorOut[id] = float4(obj.baseColor, obj.metallic);
-                gViewZOut[id] = mul(float4(psrPosW, 1), gCamera.view).z;
+                gViewZOut[id] = mul(gCamera.view, float4(psrPosW, 1)).z;
 
                 float3 psrNormal = reflect(hit.normal, normal);
                 gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(psrNormal, obj.roughness);

@@ -13,7 +13,7 @@ struct VsOut {
 VsOut vs_main(VsIn input) {
   VsOut output = (VsOut)0;
 
-  output.posH = mul(float4(input.posW, 1), gCamera.viewProjection);
+  output.posH = mul(gCamera.viewProjection, float4(input.posW, 1));
   output.color = input.color;
 
   return output;

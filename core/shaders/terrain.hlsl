@@ -132,7 +132,7 @@ PixelInputType waterDS(ConstantOutputType input, float2 bc : SV_DomainLocation, 
 
    output.posW = posW;
    output.normalW = normalize(cross(binormal, tangent));
-   output.posH = mul(float4(posW, 1), gCamera.viewProjection);
+   output.posH = mul(gCamera.viewProjection, float4(posW, 1));
 
    return output;
 }

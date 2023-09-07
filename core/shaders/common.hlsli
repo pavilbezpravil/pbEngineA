@@ -27,7 +27,7 @@ float LinearizeDepth(float d, float zNear, float zFar) {
 
 float3 GetWorldPositionFromDepth(float2 uv, float depth, float4x4 invViewProjection) {
 	float4 ndc = float4(TexToNDC(uv), depth, 1);
-	float4 wp = mul(ndc, invViewProjection);
+	float4 wp = mul(invViewProjection, ndc);
 	return (wp / wp.w).xyz;
 }
 
