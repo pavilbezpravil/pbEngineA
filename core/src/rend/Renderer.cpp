@@ -232,8 +232,9 @@ namespace pbe {
          m.emissivePower = material.emissivePower;
 
          SInstance instance;
-         instance.material = m;
          instance.transform = transform;
+         instance.prevTransform = glm::transpose(trans.GetPrevMatrix());
+         instance.material = m;
          instance.entityID = (uint)trans.entity.GetID();
 
          instances.emplace_back(instance);

@@ -25,7 +25,7 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
    #elif defined(DIFFUSE_SPECULAR)
       colorIn = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(colorIn);
    #elif defined(MOTION)
-      float motionShowScale = 0.1;
+      float motionShowScale = 1;
       colorIn.xyz = colorIn.xyz * motionShowScale * 0.5 + 0.5;
    #endif
 

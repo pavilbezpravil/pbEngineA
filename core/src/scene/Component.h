@@ -34,6 +34,12 @@ namespace pbe {
       quat rotation = quat_Identity;
       vec3 scale{ 1.f };
 
+      // todo:
+      // World Space
+      vec3 prevPosition{};
+      quat prevRotation = quat_Identity;
+      vec3 prevScale{ 1.f };
+
       // todo: return const ref
       // World space
       vec3 Position() const;
@@ -49,7 +55,10 @@ namespace pbe {
       vec3 Forward() const;
 
       mat4 GetMatrix() const;
+      mat4 GetPrevMatrix() const;
       void SetMatrix(const mat4& transform);
+
+      void UpdatePrevTransform(); // todo: call it when first create entity
 
       Entity parent;
       std::vector<Entity> children;

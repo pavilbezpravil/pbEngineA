@@ -219,6 +219,10 @@ namespace pbe {
       DestroyDelayedEntities();
       ProcessDelayedEnable();
 
+      for (auto [entityID, trans] : View<SceneTransformComponent>().each()) {
+         trans.UpdatePrevTransform();
+      }
+
       GetPhysics()->SyncPhysicsWithScene();
    }
 

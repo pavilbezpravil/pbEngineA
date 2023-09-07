@@ -29,6 +29,7 @@ struct SMaterial {
 
 struct SInstance {
    float4x4 transform;
+   float4x4 prevTransform;
    SMaterial material;
 
    uint entityID;
