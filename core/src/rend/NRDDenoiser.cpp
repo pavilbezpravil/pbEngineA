@@ -41,7 +41,8 @@ uint4 TexGather(Texture2D<uint> tex, float2 uv)
 
 namespace pbe {
 
-   pbe::CVarSlider<float>  cvNRDSplitScreen{ "render/denoise/split screen", 0, 0, 1 };
+   CVarSlider<float>  cvNRDSplitScreen{ "render/denoise/split screen", 0, 0, 1 };
+   CVarValue<bool> cvNRDPerfMode{ "render/denoise/perf mode", false };
 
    NrdIntegration NRD = NrdIntegration();
 
@@ -93,6 +94,7 @@ namespace pbe {
       NRD.SetCommonSettings(commonSettings);
 
       nrd::ReblurSettings settings = {};
+      settings.enablePerformanceMode = cvNRDPerfMode;
       NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE_SPECULAR, &settings);
 
       NrdUserPool userPool = {};
