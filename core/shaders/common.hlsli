@@ -27,7 +27,7 @@ float LinearizeDepth(float d, float zNear, float zFar) {
 
 float3 GetWorldPositionFromDepth(float2 uv, float depth, float4x4 invViewProjection) {
 	float4 ndc = float4(TexToNDC(uv), depth, 1);
-	float4 wp = mul(ndc, invViewProjection);
+	float4 wp = mul(invViewProjection, ndc);
 	return (wp / wp.w).xyz;
 }
 
@@ -117,6 +117,12 @@ float3 SafeNormalize(float3 v) {
     } else {
         return 0;
     }
+}
+
+float3 NormalFromTex(float3 normal) {
+    // todo: dont know why, but it produce artifacts
+    // return normal.xyz * 2 - 1;
+    return SafeNormalize(normal.xyz * 2 - 1);
 }
 
 float PlaneDistance(float4 planeEq, float3 pos) {

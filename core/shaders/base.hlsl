@@ -4,6 +4,9 @@
 #include "pbr.hlsli"
 #include "tonemaping.hlsli"
 
+#include "NRDEncoding.hlsli"
+#include "NRD.hlsli"
+
 #ifndef ZPASS
    #define COLOR_PASS
 #endif
@@ -22,6 +25,7 @@ struct VsIn {
 
 struct VsOut {
    float3 posW : POS_W;
+   float3 motionW : MOTION_W;
    float3 normalW : NORMAL_W;
    float4 posH : SV_POSITION;
    uint instanceID : SV_InstanceID;
@@ -39,17 +43,24 @@ Texture2D<float> gSsao;
 VsOut vs_main(VsIn input) {
    VsOut output = (VsOut)0;
 
-   float4x4 transform = gInstances[gDrawCall.instanceStart + input.instanceID].transform;
+   SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
 
-   float3 posW = mul(float4(input.posL, 1), transform).xyz;
-   float4 posH = mul(float4(posW, 1), gCamera.viewProjection);
+   float3 prevPosW = mul(instance.prevTransform, float4(input.posL, 1)).xyz;
+   float3 posW = mul(instance.transform, float4(input.posL, 1)).xyz;
+   float4 posH = mul(gCamera.viewProjection, float4(posW, 1));
 
    output.posW = posW;
+   output.motionW = prevPosW - posW;
    output.posH = posH;
    output.instanceID = input.instanceID;
 
    return output;
 }
+
+// todo:
+// #define GBUFFER
+
+#ifndef GBUFFER
 
 struct PsOut {
    float4 color : SV_Target0;
@@ -81,7 +92,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    for (int iDecal = 0; iDecal < gScene.nDecals; ++iDecal) {
       SDecal decal = gDecals[iDecal];
 
-      float3 posDecalSpace = mul(float4(posW, 1), decal.viewProjection).xyz;
+      float3 posDecalSpace = mul(decal.viewProjection, float4(posW, 1)).xyz;
       if (any(posDecalSpace > float3(1, 1, 1) || posDecalSpace < float3(-1, -1, 0))) {
          continue;
       }
@@ -121,10 +132,6 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    // color = noise(posW * 0.3);
 
-   // color = ACESFilm(color);
-   // color = color / (color + 1);
-   // color = GammaCorrection(color); // todo: use srgb
-
    PsOut output = (PsOut)0;
    output.color.rgb = color;
 
@@ -143,3 +150,43 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    return output;
 }
+
+#else
+
+struct PsOut {
+   float4 emissive  : SV_Target0;
+   float4 baseColor : SV_Target1;
+   float4 normal    : SV_Target2;
+   float3 motion    : SV_Target3;
+   float  viewz     : SV_Target4;
+};
+
+// ps uses UAV writes, it removes early z test
+[earlydepthstencil]
+PsOut ps_main(VsOut input) : SV_TARGET {
+   uint2 pixelIdx = input.posH.xy;
+   float2 screenUV = float2(pixelIdx) / gCamera.rtSize;
+
+   float3 normalW = normalize(cross(ddx(input.posW), ddy(input.posW)));
+   // float3 posW = input.posW;
+
+   SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+   SMaterial material = instance.material;
+
+   PsOut output;
+   output.emissive = float4(material.baseColor * material.emissivePower, 1); // todo: 1?
+   output.baseColor = float4(material.baseColor, material.metallic);
+   output.normal = NRD_FrontEnd_PackNormalAndRoughness(normalW, material.roughness);
+   output.motion = input.motionW;
+
+   // todo: do it in vs
+   output.viewz = mul(gCamera.view, float4(input.posW, 1)).z;
+
+   #if defined(EDITOR)
+      SetEntityUnderCursor(pixelIdx, instance.entityID);
+   #endif
+
+   return output;
+}
+
+#endif

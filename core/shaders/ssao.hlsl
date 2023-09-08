@@ -39,7 +39,7 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
       float3 offset = flip * dir * 0.3;
       float3 samplePosW = posW + offset;
 
-      float4 sample = mul(float4(samplePosW, 1), gCamera.viewProjection);
+      float4 sample = mul(gCamera.viewProjection, float4(samplePosW, 1));
       sample /= sample.w;
       float samplePosDepth = sample.z;
 

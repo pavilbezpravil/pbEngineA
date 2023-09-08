@@ -23,7 +23,7 @@ float SunShadowAttenuation(float3 posW, float2 jitter = 0) {
     jitter = (rand3dTo2d(posW) - 0.5) * 0.001;
   }
 
-  float3 shadowUVZ = mul(float4(posW, 1), gScene.toShadowSpace).xyz;
+  float3 shadowUVZ = mul(gScene.toShadowSpace, float4(posW, 1)).xyz;
   if (shadowUVZ.z >= 1) {
       return 1;
   }

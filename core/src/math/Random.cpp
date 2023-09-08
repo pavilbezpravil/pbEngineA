@@ -9,6 +9,17 @@ namespace pbe {
    static std::random_device sRandomDevice;
    static std::mt19937_64 sEng(sRandomDevice());
 
+   uint pcg_hash(uint input) {
+      uint state = input * 747796405u + 2891336453u;
+      uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+      return (word >> 22u) ^ word;
+   }
+
+   float Random::FloatSeeded(uint seed) {
+      seed = pcg_hash(seed);
+      return (float)seed / (float)uint(-1);
+   }
+
    bool Random::Bool(float trueChance) {
       return Float(0.f, 1.f) < trueChance;
    }
@@ -29,6 +40,13 @@ namespace pbe {
          Float(min.x, max.x),
          Float(min.y, max.y),
          Float(min.z, max.z) };
+   }
+
+   vec3 Random::Color(uint seed) {
+      return {
+        FloatSeeded(seed),
+        FloatSeeded(seed + 111),
+        FloatSeeded(seed + 222) };
    }
 
    vec3 Random::Color() {

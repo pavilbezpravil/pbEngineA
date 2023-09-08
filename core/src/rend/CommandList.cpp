@@ -37,12 +37,12 @@ namespace pbe {
    }
 
    void CommandList::ClearSRV_CS() {
-      ID3D11ShaderResourceView* srvs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      ID3D11ShaderResourceView* srvs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
       pContext->CSSetShaderResources(0, _countof(srvs), srvs);
    }
 
    void CommandList::ClearUAV_CS() {
-      ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+      ID3D11UnorderedAccessView* uavs[] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
       pContext->CSSetUnorderedAccessViews(0, _countof(uavs), uavs, nullptr);
    }
 
@@ -50,6 +50,7 @@ namespace pbe {
       std::pair<int, ID3D11SamplerState**> samplers[] = {
          {SAMPLER_SLOT_WRAP_POINT, &rendres::samplerStateWrapPoint},
          {SAMPLER_SLOT_WRAP_LINEAR, &rendres::samplerStateWrapLinear},
+         {SAMPLER_SLOT_CLAMP_POINT, &rendres::samplerStateClampPoint},
          {SAMPLER_SLOT_SHADOW, &rendres::samplerStateShadow},
       };
 

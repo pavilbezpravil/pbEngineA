@@ -1,14 +1,25 @@
 entities:
+  - uuid: 1286001756316090446
+    tag: Sky
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 7709018462035949994
+    SkyComponent:
+      directLight: 18446744073709551615
+      color: [1, 1, 1]
+      intensity: 1
   - uuid: 4494813099674761447
     tag: green
     SceneTransformComponent:
-      position: [0, 0, 1]
+      position: [0, -0.424458146, 1]
       rotation: [0, -0, 0]
       scale: [39.3040085, 0.999999821, 25.0262299]
       parent: 7709018462035949994
     MaterialComponent:
       baseColor: [1, 1, 1]
-      roughness: 0.100000001
+      roughness: 0
       metallic: 0
       emissiveColor: [1, 1, 1]
       emissivePower: 0
@@ -29,10 +40,10 @@ entities:
   - uuid: 6806257574526974542
     tag: cei
     SceneTransformComponent:
-      position: [0, 4, -0.0493881106]
+      position: [-0.0356888771, 2.29897261, -0.0493881106]
       rotation: [0, -0, 0]
       scale: [6, 1, 4]
-      parent: 7709018462035949994
+      parent: 8155500682261400838
     MaterialComponent:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
@@ -55,14 +66,22 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [16365464828659249094, 12468854452323807279, 8246439013926450448, 6806257574526974542, 5536664833689235849, 4494813099674761447]
+      children: [5536664833689235849, 8155500682261400838, 4494813099674761447, 10854271582006416714, 1286001756316090446]
+  - uuid: 8155500682261400838
+    tag: Empty
+    SceneTransformComponent:
+      position: [0.0356888771, 1.70102727, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 7709018462035949994
+      children: [8246439013926450448, 16365464828659249094, 12468854452323807279, 6806257574526974542]
   - uuid: 8246439013926450448
     tag: blue
     SceneTransformComponent:
-      position: [0, 2.02723646, 2]
+      position: [0, 0.326209188, 2]
       rotation: [0, -0, 0]
       scale: [6, 4, 0.999999642]
-      parent: 7709018462035949994
+      parent: 8155500682261400838
     MaterialComponent:
       baseColor: [0.19758229, 0.409363985, 0.755274296]
       roughness: 0.100000001
@@ -79,13 +98,34 @@ entities:
         intValue: 2
       speed: 1
       doMove: true
+  - uuid: 10854271582006416714
+    tag: Cube
+    SceneTransformComponent:
+      position: [0.667755604, 1.11666989, -2.74346423]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 7709018462035949994
+    MaterialComponent:
+      baseColor: [0.898734152, 0.0758425519, 0.0758425519]
+      roughness: 0.100000001
+      metallic: 0
+      emissiveColor: [1, 1, 1]
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:
-      position: [3, 2, 0]
+      position: [3, 0.298972726, 0]
       rotation: [0, -0, 0]
       scale: [0.999999821, 4, 4]
-      parent: 7709018462035949994
+      parent: 8155500682261400838
     MaterialComponent:
       baseColor: [0.169928446, 0.7763713, 0.137584805]
       roughness: 0.100000001
@@ -99,10 +139,10 @@ entities:
   - uuid: 16365464828659249094
     tag: red
     SceneTransformComponent:
-      position: [-3, 2, 0]
+      position: [-3, 0.298972726, 0]
       rotation: [0, -0, 0]
       scale: [0.999999464, 4, 4]
-      parent: 7709018462035949994
+      parent: 8155500682261400838
     MaterialComponent:
       baseColor: [0.797468364, 0.117769592, 0.117769592]
       roughness: 0.100000001

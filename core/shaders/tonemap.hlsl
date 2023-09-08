@@ -11,9 +11,7 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
    // todo: check border
    float3 colorHDR = gColorHDR[dispatchThreadID.xy];
 
-   // float3 colorLDR = ACESFilm(colorHDR);
-   float3 colorLDR = 1 - exp(-colorHDR * gScene.exposition);
-   // float3 colorLDR = colorHDR / (colorHDR + 1);
+   float3 colorLDR = ACESFilm(colorHDR * gScene.exposition);
    colorLDR = GammaCorrection(colorLDR);
 
    gColorLDR[dispatchThreadID.xy] = float4(colorLDR, 1);

@@ -1,0 +1,277 @@
+entities:
+  - uuid: 2873217284892577056
+    tag: Roughness 3
+    SceneTransformComponent:
+      position: [6, 0, 7.4505806e-09]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.300000012
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 3315499358658657356
+    tag: Roughness 10
+    SceneTransformComponent:
+      position: [20, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 1
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 3611181185276354634
+    tag: Roughness 6
+    SceneTransformComponent:
+      position: [12, 0, -7.4505806e-09]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.600000024
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 3868207312893180434
+    tag: Roughness 0
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 5682158235099175481
+    tag: Roughness 9
+    SceneTransformComponent:
+      position: [18, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.899999976
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 6217054525412911674
+    tag: Roughness 7
+    SceneTransformComponent:
+      position: [14, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.699999988
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 8528456562529227432
+    tag: Direct Light
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [45, 45.0000038, 0]
+      scale: [1, 1, 1]
+      parent: 13344097357974796902
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 10841970678954119452
+    tag: Metallic 0
+    SceneTransformComponent:
+      position: [0, 1.08330131, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 13344097357974796902
+      children: [3868207312893180434, 14521573149620639960, 17954951722055481433, 2873217284892577056, 17854511947397319276, 17299566154429488909, 3611181185276354634, 6217054525412911674, 16107182069876620820, 5682158235099175481, 3315499358658657356]
+  - uuid: 13344097357974796902
+    tag: Scene
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      children: [8528456562529227432, 16496094965237223248, 14720384052388404530, 10841970678954119452]
+  - uuid: 14521573149620639960
+    tag: Roughness 1
+    SceneTransformComponent:
+      position: [2, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 14720384052388404530
+    tag: Ground
+    SceneTransformComponent:
+      position: [0, -0.5, 0]
+      rotation: [0, -0, 0]
+      scale: [100, 1, 100]
+      parent: 13344097357974796902
+    MaterialComponent:
+      baseColor: [0.200000003, 0.600000024, 0.200000003]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 16107182069876620820
+    tag: Roughness 8
+    SceneTransformComponent:
+      position: [16, 0, 7.4505806e-09]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.800000012
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 16496094965237223248
+    tag: Sky
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 13344097357974796902
+    SkyComponent:
+      directLight: 18446744073709551615
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 17299566154429488909
+    tag: Roughness 5
+    SceneTransformComponent:
+      position: [10, 0, 7.4505806e-09]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.5
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 17854511947397319276
+    tag: Roughness 4
+    SceneTransformComponent:
+      position: [8, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1.00999999, 1.00999999, 1.00999999]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.400000006
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+  - uuid: 17954951722055481433
+    tag: Roughness 2
+    SceneTransformComponent:
+      position: [4, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 10841970678954119452
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.200000003
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001

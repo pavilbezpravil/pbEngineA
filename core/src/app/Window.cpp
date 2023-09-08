@@ -55,9 +55,10 @@ namespace pbe {
          return 0;
       }
       case WM_KEYUP: {
-         if (io.WantCaptureKeyboard) {
-            break;
-         }
+         // todo: When edit slider I use Ctrl. Imgui catched press and release event
+         // if (io.WantCaptureKeyboard) {
+         //    break;
+         // }
 
          KeyUpEvent e{ (KeyCode)wParam };
          sWindow->eventCallback(e);

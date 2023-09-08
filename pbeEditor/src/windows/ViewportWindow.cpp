@@ -107,7 +107,18 @@ namespace pbe {
          }
       }
 
-      static int item_current = 0;
+      enum class EditorShowTexture : int {
+         Lit,
+         Unlit,
+         Normal,
+         Roughness,
+         Metallic,
+         Diffuse,
+         Specular,
+         Motion,
+      };
+
+      static EditorShowTexture item_current = EditorShowTexture::Lit;
       static float renderScale = 1;
       // todo:
       static bool textureViewWindow = false;
@@ -129,10 +140,10 @@ namespace pbe {
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
             UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
-            const char* items[] = { "ColorLDR", "ColorHDR", "Normal", "SSAO" };
+            const char* items[] = { "Lit", "Unlit", "Normal", "Roughness", "Metallic", "Diffuse", "Specular",  "Motion" };
 
             ImGui::SetNextItemWidth(90);
-            ImGui::Combo("##Scene RTs", &item_current, items, IM_ARRAYSIZE(items));
+            ImGui::Combo("##Scene RTs", (int*)&item_current, items, IM_ARRAYSIZE(items));
             ImGui::SameLine(0, 0);
 
             ImGui::SetNextItemWidth(100);
@@ -177,7 +188,7 @@ namespace pbe {
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         int2 cursorPixelIdx{ mousePos - cursorPos};
+         int2 cursorPixelIdx{ (mousePos - cursorPos) * renderScale };
          vec2 cursorUV = vec2(cursorPixelIdx) / vec2(size);
 
          cmd.SetCommonSamplers();
@@ -193,11 +204,64 @@ namespace pbe {
 
             renderer->RenderScene(cmd, *scene, camera, renderContext);
          }
+
+         if (item_current != EditorShowTexture::Lit) {
+            GPU_MARKER("EditorTexShow");
+
+            cmd.SetRenderTargets();
+
+            auto passDesc = ProgramDesc::Cs("editorTexShow.hlsl", "main");
+
+            Texture2D* texIn = nullptr;
+            switch (item_current) {
+               case EditorShowTexture::Lit:
+                  ASSERT(false);
+                  break;
+               case EditorShowTexture::Unlit:
+                  texIn = renderContext.baseColorTex;
+                  passDesc.cs.defines.AddDefine("UNLIT");
+                  break;
+               case EditorShowTexture::Normal:
+                  texIn = renderContext.normalTex;
+                  passDesc.cs.defines.AddDefine("NORMAL");
+                  break;
+               case EditorShowTexture::Roughness:
+                  texIn = renderContext.normalTex;
+                  passDesc.cs.defines.AddDefine("ROUGHNESS");
+                  break;
+               case EditorShowTexture::Metallic:
+                  texIn = renderContext.baseColorTex;
+                  passDesc.cs.defines.AddDefine("METALLIC");
+                  break;
+               case EditorShowTexture::Diffuse:
+                  texIn = renderContext.diffuseHistoryTex; // todo: without denoise must be unfiltered
+                  passDesc.cs.defines.AddDefine("DIFFUSE_SPECULAR");
+                  break;
+               case EditorShowTexture::Specular:
+                  texIn = renderContext.specularHistoryTex; // todo: without denoise must be unfiltered
+                  passDesc.cs.defines.AddDefine("DIFFUSE_SPECULAR");
+                  break;
+               case EditorShowTexture::Motion:
+                  texIn = renderContext.motionTex;
+                  passDesc.cs.defines.AddDefine("MOTION");
+                  break;
+               default:
+                  break;
+            }
+
+            auto editorTexShowPass = GetGpuProgram(passDesc);
+
+            editorTexShowPass->Activate(cmd);
+
+            editorTexShowPass->SetSRV(cmd, "gIn", texIn);
+            editorTexShowPass->SetUAV(cmd, "gOut", renderContext.colorLDR);
+
+            cmd.Dispatch2D(renderContext.colorLDR->GetDesc().size, int2{ 8 });
+         }
+
          cmd.pContext->ClearState(); // todo:
 
-         Texture2D* sceneRTs[] = { renderContext.colorLDR, renderContext.colorHDR,renderContext.normalTex, renderContext.ssao};
-
-         Texture2D* image = sceneRTs[item_current];
+         Texture2D* image = renderContext.colorLDR;
          auto srv = image->srv.Get();
          ImGui::Image(srv, imSize);
 

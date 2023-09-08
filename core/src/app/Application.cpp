@@ -128,6 +128,7 @@ namespace pbe {
       // Main loop
       while (running) {
          OPTICK_FRAME("MainThread");
+         PIX_EVENT_SYSTEM(Frame, "Frame");
 
          if (!focused) {
             // OPTICK_EVENT("Sleep On Focused");
@@ -136,6 +137,7 @@ namespace pbe {
 
          {
             OPTICK_EVENT("Window Update");
+            PIX_EVENT_SYSTEM(Window, "Window Update");
             Input::ClearKeys();
             sWindow->Update();
             Input::NextFrame();
@@ -190,6 +192,8 @@ namespace pbe {
          {
             OPTICK_EVENT("ImGui Render");
             GPU_MARKER("ImGui Render");
+
+            PIX_EVENT_SYSTEM(UI, "ImGui Render");
 
             vec4 clearColor = {0.45f, 0.55f, 0.60f, 1.00f};
             cmd.ClearRenderTarget(sDevice->GetBackBuffer(), clearColor);

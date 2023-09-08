@@ -4,224 +4,162 @@
 #include "math.hlsli"
 #include "pbr.hlsli"
 #include "sky.hlsli"
+#include "random.hlsli"
+#include "intersection.hlsli"
 
-RWTexture2D<float4> gColor : register(u0);
+#include "NRDEncoding.hlsli"
+#include "NRD.hlsli"
+
+#define USE_BVH
 
 cbuffer gRTConstantsCB : register(b0) {
   SRTConstants gRTConstants;
 }
 
 StructuredBuffer<SRTObject> gRtObjects : register(t0);
+StructuredBuffer<BVHNode> gBVHNodes : register(t1);
 // StructuredBuffer<SMaterial> gMaterials;
 
-struct Sphere {
-    float3 origin;
-    float radius;
-};
-
-struct Ray {
-    float3 origin;
-    float3 direction;
-};
-
-Ray CreateRay(float3 origin, float3 direction) {
-    Ray ray;
-    ray.origin = origin;
-    ray.direction = direction;
-    return ray;
+float3 GetCameraRayDirection(float2 uv) {
+    float3 origin = gCamera.position;
+    float3 posW = GetWorldPositionFromDepth(uv, 1, gCamera.invViewProjection);
+    return normalize(posW - origin);
 }
 
 Ray CreateCameraRay(float2 uv) {
     float3 origin = gCamera.position;
-    // float3 posW = mul(float4(uv, 1, 1), gCamera.invViewProjection).xyz;
-    float3 posW = GetWorldPositionFromDepth(uv, 1, gCamera.invViewProjection);
-    float3 direction = normalize(posW - origin);
+    float3 direction = GetCameraRayDirection(uv);
     return CreateRay(origin, direction);
 }
 
-#define INF 1000000
+void IntersectObj(Ray ray, inout RayHit bestHit, SRTObject obj, uint objIdx) {
+    int geomType = obj.geomType;
 
-uint pcg_hash(uint input) {
-    uint state = input * 747796405u + 2891336453u;
-    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-    return (word >> 22u) ^ word;
-}
-
-float RandomFloat(inout uint seed) {
-    seed = pcg_hash(seed);
-    return (float)seed / (float)uint(-1);
-}
-
-float2 RandomFloat2(inout uint seed) {
-    return float2(RandomFloat(seed), RandomFloat(seed));
-}
-
-float3 RandomFloat3(inout uint seed) {
-    return float3(RandomFloat(seed), RandomFloat(seed), RandomFloat(seed));
-}
-
-// todo: mb find better way?
-float3 RandomInUnitSphere(inout uint seed) {
-    for (int i = 0; i < 100; i++) {
-        float3 p = RandomFloat3(seed) * 2 - 1;
-        if (length(p) < 1) {
-            return p;
+    // geomType = 0;
+    if (geomType == 1) {
+        // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
+        if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
+            bestHit.objID = objIdx;
+        }
+    } else {
+        if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
+            bestHit.objID = objIdx;
         }
     }
-    return float3(0, 1, 0);
 }
 
-float3 RandomInHemisphere(float3 normal, inout uint seed) {
-    float3 p = RandomInUnitSphere(seed);
-    return p * sign(dot(p, normal));
-}
+#ifdef USE_BVH
 
-// todo: test struct fucntion call
-// struct asdf {
-//     uint seed;
-//     float Rng() {
-//         return RandomFloat(seed);
-//     }
-// };
-
-struct RayHit {
-    float3 position;
-    float tMin;
-    float tMax;
-    float3 normal;
-    int materialID;
-};
-
-RayHit CreateRayHit() {
-    RayHit hit;
-    hit.position = 0;
-    hit.tMin = 0.0001; // todo:
-    hit.tMax = INF;
-    hit.normal = 0;
-    hit.materialID = 0;
-    return hit;
-}
-
-// todo: stop trace if hit from inside
-
-bool IntersectGroundPlane(Ray ray, inout RayHit bestHit) {
-    // Calculate distance along the ray where the ground plane is intersected
-    float t = -ray.origin.y / ray.direction.y;
-    if (t > bestHit.tMin && t < bestHit.tMax) {
-        bestHit.tMax = t;
-        bestHit.position = ray.origin + t * ray.direction;
-        bestHit.normal = float3(0.0f, 1.0f, 0.0f);
-        return true;
-    }
-    return false;
-}
-
-bool IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere) {
-    // Calculate distance along the ray where the sphere is intersected
-    float3 d = ray.origin - sphere.xyz;
-    float p1 = -dot(ray.direction, d);
-    float p2sqr = p1 * p1 - dot(d, d) + sphere.w * sphere.w;
-    if (p2sqr < 0) {
-        return false;
-    }
-
-    float p2 = sqrt(p2sqr);
-    float t = p1 - p2 > 0 ? p1 - p2 : p1 + p2;
-    if (t > bestHit.tMin && t < bestHit.tMax) {
-        bestHit.tMax = t;
-        bestHit.position = ray.origin + t * ray.direction;
-        bestHit.normal = normalize(bestHit.position - sphere.xyz);
-        return true;
-    }
-    return false;
-}
-
-bool IntersectAABB(Ray ray, inout RayHit bestHit, float3 center, float3 halfSize) {
-    float3 boxMin = center - halfSize;
-    float3 boxMax = center + halfSize;
-
-    float3 tMin = (boxMin - ray.origin) / ray.direction;
-    float3 tMax = (boxMax - ray.origin) / ray.direction;
-    float3 t1 = min(tMin, tMax);
-    float3 t2 = max(tMin, tMax);
-    float tNear = max(max(t1.x, t1.y), t1.z);
-    float tFar = min(min(t2.x, t2.y), t2.z);
-
-    if (tFar > tNear && tNear > bestHit.tMin && tNear < bestHit.tMax) {
-        bestHit.tMax = tNear;
-        bestHit.position = ray.origin + tNear * ray.direction; // todo: move from hear
-
-        // tood: find better way
-        float3 localPoint = bestHit.position - center;
-        float3 normal = localPoint / halfSize;
-        float3 s = sign(normal);
-        normal *= s;
-
-        float3 normalXY = normal.x > normal.y ? float3(s.x, 0, 0) : float3(0, s.y, 0);
-        bestHit.normal = normal.z > max(normal.x, normal.y) ? float3(0, 0, s.z) : normalXY;
-
-        return true;
-    }
-    return false;
-}
-
-bool IntersectOBB(Ray ray, inout RayHit bestHit, float3 center, float4 rotation, float3 halfSize) {
-    float4 rotationInv = QuatConjugate(rotation);
-    Ray rayL = CreateRay(QuatMulVec3(rotationInv, ray.origin - center), QuatMulVec3(rotationInv, ray.direction));
-
-    if (IntersectAABB(rayL, bestHit, 0, halfSize)) {
-        bestHit.position = QuatMulVec3(rotation, bestHit.position) + center;
-        bestHit.normal = QuatMulVec3(rotation, bestHit.normal);
-        return true;
-    }
-
-    return false;
-}
+// #define DELAYED_INTERSECT
 
 RayHit Trace(Ray ray) {
     RayHit bestHit = CreateRayHit();
-    // if (IntersectGroundPlane(ray, bestHit)) {
-    //     bestHit.materialID = 0;
-    // }
+
+    if (gRTConstants.bvhNodes == 0) {
+        return bestHit;
+    }
+
+    float tMax = INF;
+
+    #ifdef DELAYED_INTERSECT
+        // todo: group shared?
+        const uint BVH_LEAF_INTERSECTS = 18;
+        uint leafs[BVH_LEAF_INTERSECTS];
+        uint nLeafsIntersects = 0;
+    #endif
+
+    const uint BVH_STACK_SIZE = 12;
+    uint stack[BVH_STACK_SIZE];
+    stack[0] = UINT_MAX;
+    uint stackPtr = 1;
+
+    uint iNode = 0;
+
+    while (iNode != UINT_MAX) {
+        uint objIdx = gBVHNodes[iNode].objIdx;
+        bool isLeaf = objIdx != UINT_MAX;
+
+        // todo: slow
+        if (isLeaf) {
+            #ifdef DELAYED_INTERSECT
+                // todo: message it?
+                if (nLeafsIntersects < BVH_LEAF_INTERSECTS - 1) {
+                    leafs[nLeafsIntersects++] = objIdx;
+                }
+            #else
+                SRTObject obj = gRtObjects[objIdx];
+                IntersectObj(ray, bestHit, obj, objIdx);
+            #endif
+
+            iNode = stack[--stackPtr];
+            continue;
+        }
+
+        uint iNodeLeft = iNode * 2 + 1;
+        uint iNodeRight = iNode * 2 + 2;
+
+        BVHNode nodeLeft = gBVHNodes[iNodeLeft];
+        BVHNode nodeRight = gBVHNodes[iNodeRight];
+
+        bool intersectL = IntersectAABB_Fast(ray, bestHit.tMax, nodeLeft.aabbMin, nodeLeft.aabbMax);
+        bool intersectR = IntersectAABB_Fast(ray, bestHit.tMax, nodeRight.aabbMin, nodeRight.aabbMax);
+
+        if (!intersectL && !intersectR) {
+            iNode = stack[--stackPtr];
+        } else {
+            iNode = intersectL ? iNodeLeft : iNodeRight;
+
+            if (intersectL && intersectR) {
+                // todo: message it?
+                if (stackPtr < BVH_STACK_SIZE - 1) {
+                    stack[stackPtr++] = iNodeRight;
+                }
+            }
+        }
+    }
+
+    #ifdef DELAYED_INTERSECT
+        for (int i = 0; i < nLeafsIntersects; ++i) {
+            uint objIdx = leafs[i];
+
+            SRTObject obj = gRtObjects[objIdx];
+            IntersectObj(ray, bestHit, obj, objIdx);
+        }
+    #endif
+
+    return bestHit;
+}
+
+#else
+
+RayHit Trace(Ray ray) {
+    RayHit bestHit = CreateRayHit();
 
     for (int iObject = 0; iObject < gRTConstants.nObjects; iObject++) {
         SRTObject obj = gRtObjects[iObject];
-        int geomType = obj.geomType;
-
-        // geomType = 0;
-        if (geomType == 1) {
-            // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
-            if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
-                bestHit.materialID = iObject;
-            }
-        } else {
-            if (IntersectSphere(ray, bestHit, float4(obj.position, obj.halfSize.x))) {
-                bestHit.materialID = iObject;
-            }
-        }
+        IntersectObj(ray, bestHit, obj, objIdx);
     }
 
     return bestHit;
 }
 
-// write luminance from rgb
-float Luminance(float3 color) {
-    return dot(color, float3(0.299f, 0.587f, 0.114f));
-}
+#endif
 
-#ifdef IMPORTANCE_SAMPLING
-// todo:
-#else
-float3 RayColor(Ray ray, inout uint seed) {
+float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed) {
     float3 color = 0;
     float3 energy = 1;
 
-    for (int depth = 0; depth < gRTConstants.rayDepth; depth++) {
+    for (int depth = 0; depth < nRayDepth; depth++) {
         RayHit hit = Trace(ray);
+
+        if (depth == 0) {
+            hitDistance += hit.tMax;
+        }
+
         if (hit.tMax < INF) {
             // float3 albedo = hit.normal * 0.5f + 0.5f;
             // return hit.normal * 0.5f + 0.5f;
-            SRTObject obj = gRtObjects[hit.materialID];
+            SRTObject obj = gRtObjects[hit.objID];
 
             ray.origin = hit.position + hit.normal * 0.0001;
 
@@ -230,7 +168,7 @@ float3 RayColor(Ray ray, inout uint seed) {
             float3 F0 = lerp(0.04, obj.baseColor, obj.metallic);
             float3 F = fresnelSchlick(max(dot(N, V), 0.0), F0);
 
-            color += obj.emissiveColor * energy; // todo: device by PI_2?
+            color += obj.baseColor * obj.emissivePower * energy; // todo: device by PI_2?
 
             if (1) {
             // if (RandomFloat(seed) > Luminance(F)) { // todo: is it ok?
@@ -281,11 +219,19 @@ float3 RayColor(Ray ray, inout uint seed) {
 
     return color;
 }
-#endif
 
+
+uint GetRandomSeed(uint2 id) {
+    return id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01);
+}
+
+float2 GetUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
+    return (float2(id) + 0.5 + pixelOffset) / float2(texSize);
+}
+
+#if 0
 RWTexture2D<float> gDepthOut : register(u1);
 RWTexture2D<float4> gNormalOut : register(u2);
-RWTexture2D<uint> gObjIDOut : register(u3);
 
 // todo:
 #define EDITOR
@@ -294,38 +240,37 @@ RWTexture2D<uint> gObjIDOut : register(u3);
 #endif
 
 [numthreads(8, 8, 1)]
-void GBufferCS (uint2 id : SV_DispatchThreadID) { // todo: may i use uint2?
+void GBufferCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
 
-    // todo: jitter
-    float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
+    float2 uv = GetUV(id, gRTConstants.rtSize);
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
     if (hit.tMax < INF) {
-        SRTObject obj = gRtObjects[hit.materialID];
+        SRTObject obj = gRtObjects[hit.objID];
 
-        gObjIDOut[id] = obj.id;
         gNormalOut[id] = float4(hit.normal * 0.5f + 0.5f, 1);
 
-        float4 posH = mul(float4(hit.position, 1), gCamera.viewProjection);
+        float4 posH = mul(gCamera.viewProjection, float4(hit.position, 1));
         gDepthOut[id] = posH.z / posH.w;
 
         #if defined(EDITOR)
             SetEntityUnderCursor(id, obj.id);
         #endif
     } else {
-        gObjIDOut[id] = -1;
         gNormalOut[id] = 0;
         gDepthOut[id] = 1;
     }
 }
+#endif
 
-bool IsNaN(float x) {
-  return !(x < 0.0f || x > 0.0f || x == 0.0f);
-}
+Texture2D<float> gViewZ;
+Texture2D<float4> gNormal;
+
+RWTexture2D<float4> gColorOut : register(u0);
 
 [numthreads(8, 8, 1)]
 void rtCS (uint2 id : SV_DispatchThreadID) {
@@ -333,221 +278,250 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
+    uint seed = GetRandomSeed(id);
 
     int nRays = gRTConstants.nRays;
 
     float3 color = 0;
 
     for (int i = 0; i < nRays; i++) {
-        float2 offset = RandomFloat2(seed); // todo: halton sequence
-        // float2 uv = float2(id.xy + offset) / float2(gRTConstants.rtSize);
-        float2 uv = (float2(id.xy) + 0.5) / float2(gRTConstants.rtSize);
+        float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
+        offset = 0;
+        float2 uv = GetUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
-        color += RayColor(ray, seed);
+        float firstHitDistance;
+        color += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
     }
 
     color /= nRays;
 
-    gColor[id.xy] = float4(color, 1);
+    gColorOut[id.xy] = float4(color, 1);
 }
 
-
-Texture2D<float> gDepthPrev : register(s1);
-Texture2D<float> gDepth : register(s2);
-
-Texture2D<float4> gNormalPrev : register(s3);
-Texture2D<float4> gNormal : register(s4);
-
-Texture2D<float4> gHistory : register(s5); // prev
-Texture2D<uint> gReprojectCount : register(s6); // prev
-
-Texture2D<uint> gObjIDPrev : register(s7);
-Texture2D<uint> gObjID : register(s8);
-
-RWTexture2D<float4> gHistoryOut : register(u4);
-RWTexture2D<uint> gReprojectCountOut : register(u5);
-
-// #define ENABLE_REPROJECTION
-
-float3 NormalFromTex(float4 normal) {
-    // todo: dont know why, but it produce artifacts
-    // return normal.xyz * 2 - 1;
-    return SafeNormalize(normal.xyz * 2 - 1);
+bool ViewZDiscard(float viewZ) {
+    return viewZ > 1e4; // todo: constant
 }
 
-// todo:
-// 1. neight sample
+// from NRD source
+// orthoMode = { 0 - perspective, -1 - right handed ortho, 1 - left handed ortho }
+float3 ReconstructViewPosition( float2 uv, float2 cameraFrustumSize, float viewZ = 1.0, float orthoMode = 0.0 ) {
+    float3 p;
+    p.xy = uv * cameraFrustumSize * float2(2, -2) + cameraFrustumSize * float2(-1, 1);
+    p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
+    p.z = viewZ;
+
+    return p;
+}
+
+float3 ReconstructWorldPosition( float3 viewPos ) {
+    return mul(GetCamera().invView, float4(viewPos, 1)).xyz;
+}
+
+RWTexture2D<float4> gDiffuseOut;
+RWTexture2D<float4> gSpecularOut;
+
+// #if defined(USE_PSR)
+    RWTexture2D<float> gViewZOut;
+    RWTexture2D<float4> gNormalOut;
+    RWTexture2D<float4> gBaseColorOut;
+// #endif
+
+#if defined(USE_PSR)
+    bool CheckSurfaceForPSR(float roughness, float metallic) {
+        // float3 normal, float3 V
+        return roughness < 0.01 && metallic > 0.95;
+    }
+
+    float RTDiffuseSpecularCS_ReadViewZ(uint2 pixelPos) {
+        return gViewZOut[pixelPos];
+    }
+
+    float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
+        return gNormalOut[pixelPos];
+    }
+#else
+    float RTDiffuseSpecularCS_ReadViewZ(uint2 pixelPos) {
+        return gViewZ[pixelPos];
+    }
+
+    float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
+        return gNormal[pixelPos];
+    }
+#endif
+
 [numthreads(8, 8, 1)]
-void HistoryAccCS (uint2 id : SV_DispatchThreadID) {
+void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
 
-    #ifdef ENABLE_REPROJECTION
-        float depth = gDepth[id];
+    float viewZ = RTDiffuseSpecularCS_ReadViewZ(id);
+    if (ViewZDiscard(viewZ)) {
+        return;
+    }
 
-        float2 uv = (float2(id) + 0.5) / float2(gCamera.rtSize);
-        float3 posW = GetWorldPositionFromDepth(uv, depth, gCamera.invViewProjection);
+    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
+    float3 posW = ReconstructWorldPosition(viewPos);
 
-        float4 prevSample = mul(float4(posW, 1), gCamera.prevViewProjection);
-        prevSample /= prevSample.w;
+    float3 V = normalize(gCamera.position - posW);
 
-        float2 prevUV = NDCToTex(prevSample.xy);
-        uint2 prevSampleIdx = prevUV * gCamera.rtSize;
+    float4 normalRoughnessNRD = RTDiffuseSpecularCS_ReadNormal(id);
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(normalRoughnessNRD);
+    float3 normal = normalRoughness.xyz;
+    float roughness = normalRoughness.w;
 
-        bool prevInScreen = all(prevUV > 0 && prevUV < 1); // todo: get info from neigh that are in screen
-        // bool prevInScreen = all(prevUV > 0.02 && prevUV < 0.98); // todo: get info from neigh that are in screen
+    uint seed = GetRandomSeed(id);
 
-        float historyWeight = gRTConstants.historyWeight;
+    Ray ray;
 
-        float3 color = gColor[id].xyz;
+    #if defined(USE_PSR)
+        float4 baseColorMetallic = gBaseColorOut[id];
+        float3 baseColor = baseColorMetallic.xyz;
+        float  metallic = baseColorMetallic.w;
 
-        uint objID = gObjID[id];
-        float3 normal = NormalFromTex(gNormal[id]);
-        // validDepth = depthRaw != 1
-        //            || gDepth[id + int2( 1, 0)] != 1
-        //            || gDepth[id + int2(-1, 0)] != 1
-        //            || gDepth[id + int2( 0, 1)] != 1
-        //            || gDepth[id + int2( 0,-1)] != 1
-        //            ;
+        float3 psrEnergy = 1;
 
-        float3 dbgColor = 0;
+        // todo: better condition
+        if (CheckSurfaceForPSR(roughness, metallic)) {
+            ray.origin = posW;
+            ray.direction = reflect(-V, normal);
 
-        bool successReproject = true;
+            RayHit hit = Trace(ray);
+            if (hit.tMax < INF) {
+                float3 F0 = lerp(0.04, baseColor, metallic);
+                float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
+                psrEnergy = F;
 
-        if (objID != -1 && prevInScreen) {
-            uint objIDPrev = gObjIDPrev[prevSampleIdx];
-            float3 normalPrev = NormalFromTex(gNormalPrev[prevSampleIdx]);
+                SRTObject obj = gRtObjects[hit.objID];
 
-            float normalCoeff = pow(max(dot(normal, normalPrev), 0), 3); // todo:
-            bool normalFail = normalCoeff <= 0;
-            historyWeight *= normalCoeff;
+                float3 psrPosW = ray.origin + -V * hit.tMax;
+                gBaseColorOut[id] = float4(obj.baseColor, obj.metallic);
+                gViewZOut[id] = mul(gCamera.view, float4(psrPosW, 1)).z;
 
-            float prevDepth = gDepthPrev[prevSampleIdx];
-            float3 prevPosW = GetWorldPositionFromDepth(prevUV, prevDepth, gCamera.prevInvViewProjection);
+                float3 psrNormal = reflect(hit.normal, normal);
+                gNormalOut[id] = NRD_FrontEnd_PackNormalAndRoughness(psrNormal, obj.roughness);
 
-            // gRTConstants.historyMaxDistance
-            float depthCoeff = saturate(2 - distance(posW, prevPosW) / 0.1);
-            // depthCoeff = 1;
-            bool depthFail = depthCoeff <= 0;
-            historyWeight *= depthCoeff;
+                float3 emissive = (obj.baseColor * obj.emissivePower) * psrEnergy;
+                float4 prevColor = gColorOut[id];
+                gColorOut[id] = float4(prevColor.xyz + emissive, prevColor.w);
 
-            // dbgColor.r += 1 - depthCoeff;
+                // todo: motion
 
-            if (objIDPrev != objID || normalFail || depthFail) {
-                historyWeight = 0;
-                successReproject = false;
+                posW = hit.position;
+                V = -ray.direction;
+                normal = hit.normal;
+                roughness = obj.roughness;
+                metallic = obj.metallic;
+            } else {
+                // todo: skip diffuse rays
+                // float3 skyColor = GetSkyColor(-V);
+            }
+        }
+    #endif // USE_PSR
 
-                if (gRTConstants.debugFlags & DBG_FLAG_SHOW_NEW_PIXEL) {
-                    dbgColor += float3(1, 0, 0);
+    ray.origin = posW;
+
+    // todo:
+    int nRays = gRTConstants.nRays;
+
+    float diffuseHitDistance = 0;
+    float specularHitDistance = 0;
+
+    float3 diffuseRadiance = 0;
+    float3 specularRadiance = 0;
+
+    for (int i = 0; i < nRays; i++) {
+        ray.direction = reflect(-V, normal);
+        ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness * roughness);
+
+        specularRadiance += RayColor(ray, gRTConstants.rayDepth, specularHitDistance, seed);
+    }
+
+    for (int i = 0; i < nRays; i++) {
+        #if 1
+            float3 L = -gScene.directLight.direction;
+            float NDotL = dot(normal, L);
+
+            if (NDotL > 0) {
+                const float spread = 0.02; // todo:
+                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                RayHit shadowHit = Trace(shadowRay);
+                if (shadowHit.tMax == INF) {
+                    float3 directLightShade = NDotL * gScene.directLight.color;
+                    diffuseRadiance += directLightShade;
                 }
             }
-        } else {
-            successReproject = false;
-            historyWeight = 0;
-        }
+        #endif
 
-        if (successReproject) {
-            int nRays = gRTConstants.nRays;
+        ray.direction = normalize(RandomInHemisphere(normal, seed));
+        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed);
+    }
 
-            uint oldCount = gReprojectCount[prevSampleIdx];
-            uint nextCount = oldCount + nRays;
-            historyWeight *= float(oldCount) / float(nextCount);
-
-            gReprojectCountOut[id] = min(nextCount, 255);
-
-            // float3 historyColor = gHistory.SampleLevel(gSamplerPoint, prevUV, 0);
-            // float3 historyColor = gHistory.SampleLevel(gSamplerLinear, prevUV, 0);
-            float3 historyColor = gHistory[prevSampleIdx].xyz;
-            color = lerp(color, historyColor, historyWeight);
-        } else {
-            gReprojectCountOut[id] = 0;
-        }
-
-        float4 color4 = float4(color, 1);
-
-        gHistoryOut[id] = color4;
-        // dbgColor.r += saturate(float(255 - gReprojectCountOut[id]) / 255);
-        color4.xyz += dbgColor;
-        // color4.xyz = normal;
-        gColor[id] = color4;
-    #else
-        float w = gRTConstants.historyWeight;
-        float3 history = gHistoryOut[id.xy].xyz * w + gColor[id.xy].xyz * (1 - w);
-        float4 color = float4(history, 1);
-
-        gColor[id.xy] = color;
-        gHistoryOut[id.xy] = color;
+    #if defined(USE_PSR)
+        diffuseRadiance *= psrEnergy;
+        specularRadiance *= psrEnergy;
     #endif
+
+    diffuseHitDistance /= nRays;
+    diffuseRadiance /= nRays;
+
+    specularHitDistance /= nRays;
+    specularRadiance /= nRays;
+
+    // color = normal * 0.5 + 0.5;
+    // color = reflect(V, normal) * 0.5 + 0.5;
+    // radiance = frac(posW);
+
+    float diffuseNormHitDist = REBLUR_FrontEnd_GetNormHitDist(diffuseHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    gDiffuseOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(diffuseRadiance, diffuseNormHitDist);
+
+    float specularNormHitDist = REBLUR_FrontEnd_GetNormHitDist(specularHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
+    gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(specularRadiance, specularNormHitDist);
 }
 
-void DenoiseSample() {
-    
-}
+Texture2D<float4> gBaseColor;
+Texture2D<float4> gDiffuse;
+Texture2D<float4> gSpecular;
 
 [numthreads(8, 8, 1)]
-void DenoiseCS (uint2 id : SV_DispatchThreadID) {
+void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
         return;
     }
-
-    uint seed = id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01); // todo: first attempt, dont thing about it
-
-    // uint nSamples = gRTConstants.nSamples;
-    uint nSamples = 20;
-
-    float2 uv = (float2(id) + 0.5) / float2(gRTConstants.rtSize);
-    float2 invSize = 1 / float2(gRTConstants.rtSize);
-
-    uint objID = gObjID[id];
-    float3 posW = GetWorldPositionFromDepth(uv, gDepth[id], gCamera.invViewProjection);
-    float3 normal = NormalFromTex(gNormalPrev[id]);
-    uint reprojectCount = gReprojectCount[id];
     
-    float3 color = 0;
+    float viewZ = gViewZ[id];
 
-    float successSamples = 1;
-    color += gHistory[id].xyz;
+    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
+    float3 posW = ReconstructWorldPosition(viewPos);
 
-    for (int i = 0; i < nSamples; i++) {
-        float2 offset = RandomFloat2(seed) * 2 - 1;
-        float2 kernelSize = 2; // todo:
-        float2 sampleUv = uv + offset * invSize * kernelSize;
-
-        if (any(sampleUv < 0 || sampleUv > 1)) {
-            continue; // todo: return to screen
-        }
-
-        uint2 sampleIdx = sampleUv * gCamera.rtSize;
-
-        uint sampleObjID = gObjID[sampleIdx];
-        float3 samplePosW = GetWorldPositionFromDepth(uv, gDepth[sampleIdx], gCamera.invViewProjection);
-        float3 sampleNormal = NormalFromTex(gNormalPrev[sampleIdx]);
-        // uint sampleReprojectCount = gReprojectCount[sampleIdx];
-
-        if (objID != sampleObjID) {
-            continue;
-        }
-        
-        color += gHistory[sampleIdx].xyz;
-        successSamples += 1;
+    float3 V = normalize(gCamera.position - posW);
+    if (ViewZDiscard(viewZ)) {
+        float3 skyColor = GetSkyColor(-V);
+        gColorOut[id] = float4(skyColor, 1);
+        return;
     }
 
-    color /= successSamples;
+    float4 normalRoughness = NRD_FrontEnd_UnpackNormalAndRoughness(gNormal[id]);
+    float3 normal = normalRoughness.xyz;
+    float  roughness = normalRoughness.w;
 
-    // float4 color = gHistory[id];
+    float4 baseColorMetallic = gBaseColor[id];
+    float3 baseColor = baseColorMetallic.xyz;
+    float  metallic = baseColorMetallic.w;
 
-    // color = gHistory[id] 
-    //       + gHistory[id + int2( 1, 0)]
-    //       + gHistory[id + int2(-1, 0)]
-    //       + gHistory[id + int2( 0, 1)]
-    //       + gHistory[id + int2( 0,-1)];
-    // color /= 5;
+    float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
+    float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
 
+    float3 F0 = lerp(0.04, baseColor, metallic);
+    float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
 
-    // color.r = 0.001;
-    gHistoryOut[id] = float4(color, 1);
-    gColor[id] = float4(color, 1);
+    // todo:
+    float3 albedo = baseColor * (1 - metallic);
+    float3 color = (1 - F) * albedo * diffuse / PI + F * specular;
+
+    float3 emissive = gColorOut[id].xyz;
+    gColorOut[id] = float4(color + emissive, 1);
 }

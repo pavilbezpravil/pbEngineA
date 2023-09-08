@@ -13,6 +13,7 @@ namespace pbe {
       ID3D11RasterizerState1* rasterizerStateWireframe;
       ID3D11SamplerState* samplerStateWrapPoint;
       ID3D11SamplerState* samplerStateWrapLinear;
+      ID3D11SamplerState* samplerStateClampPoint;
       ID3D11SamplerState* samplerStateShadow;
       ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
@@ -68,6 +69,14 @@ namespace pbe {
          samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
          device->CreateSamplerState(&samplerDesc, &samplerStateWrapLinear);
          resourses.push_back(samplerStateWrapLinear);
+
+         samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+         samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+         samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+         samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+         samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+         device->CreateSamplerState(&samplerDesc, &samplerStateClampPoint);
+         resourses.push_back(samplerStateClampPoint);
 
          // samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
          samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;

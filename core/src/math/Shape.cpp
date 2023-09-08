@@ -1,20 +1,34 @@
 #include "pch.h"
 #include "Shape.h"
 
+#include "core/Assert.h"
+
 namespace pbe {
 
    AABB AABB::Empty() {
       return {vec3{FLT_MAX}, vec3{FLT_MIN}};
    }
 
-   AABB AABB::CenterHalfSize(vec3 center, vec3 halfSize) {
+   AABB AABB::MinMax(const vec3& min, const vec3& max) {
+      return { min, max };
+   }
+
+   AABB AABB::Extends(const vec3& center, const vec3& extends) {
       AABB aabb;
-      aabb.min = center - halfSize;
-      aabb.max = center + halfSize;
+      aabb.min = center - extends;
+      aabb.max = center + extends;
       return aabb;
    }
 
-   void AABB::AddPoint(vec3 p) {
+   AABB AABB::FromAABBs(const AABB* aabbs, uint size) {
+      AABB aabb = Empty();
+      for (uint i = 0; i < size; ++i) {
+         aabb.AddAABB(aabbs[i]);
+      }
+      return aabb;
+   }
+
+   void AABB::AddPoint(const vec3& p) {
       min = glm::min(min, p);
       max = glm::max(max, p);
    }
@@ -22,6 +36,11 @@ namespace pbe {
    void AABB::AddAABB(const AABB& aabb) {
       min = glm::min(min, aabb.min);
       max = glm::max(max, aabb.max);
+   }
+
+   void AABB::Translate(const vec3& v) {
+      min += v;
+      max += v;
    }
 
    Frustum::Frustum(const mat4& m) {

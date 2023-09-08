@@ -6,6 +6,7 @@
 // todo:
 SamplerState gSamplerPoint : register(s0);
 SamplerState gSamplerLinear : register(s1);
-SamplerComparisonState gSamplerShadow : register(s2);
+SamplerState gSamplerPointClamp : register(s2);
+SamplerComparisonState gSamplerShadow : register(s3);
 
 #endif

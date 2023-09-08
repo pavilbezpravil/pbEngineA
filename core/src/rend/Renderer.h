@@ -24,7 +24,8 @@ namespace pbe {
       mat4 view{};
       mat4 projection{};
 
-      mat4 prevViewProjection{};
+      mat4 prevView{};
+      mat4 prevProjection{};
 
       float zNear = 0.1f;
       float zFar = 1000.f;
@@ -43,6 +44,10 @@ namespace pbe {
 
       mat4 GetViewProjection() const {
          return projection * view;
+      }
+
+      mat4 GetPrevViewProjection() const {
+         return prevProjection * prevView;
       }
 
       mat4 GetInvViewProjection() const {
@@ -65,30 +70,28 @@ namespace pbe {
    struct RenderContext {
       Ref<Texture2D> colorHDR;
       Ref<Texture2D> colorLDR;
+
       Ref<Texture2D> depth;
+
+      Ref<Texture2D> viewz; // linear view z
+
       Ref<Texture2D> depthWithoutWater;
       Ref<Texture2D> linearDepth;
+
       Ref<Texture2D> waterRefraction;
       Ref<Texture2D> ssao;
 
       Ref<Texture2D> shadowMap;
 
-      // todo: simplify adding new rt
-      // rt
-      Ref<Texture2D> historyTex;
-      Ref<Texture2D> historyTexPrev;
-
-      Ref<Texture2D> depthTex;
-      Ref<Texture2D> depthTexPrev;
-
+      Ref<Texture2D> baseColorTex;
       Ref<Texture2D> normalTex;
-      Ref<Texture2D> normalTexPrev;
+      Ref<Texture2D> motionTex;
 
-      Ref<Texture2D> reprojectCountTex;
-      Ref<Texture2D> reprojectCountTexPrev;
+      Ref<Texture2D> diffuseTex;
+      Ref<Texture2D> diffuseHistoryTex;
 
-      Ref<Texture2D> objIDTex;
-      Ref<Texture2D> objIDTexPrev;
+      Ref<Texture2D> specularTex;
+      Ref<Texture2D> specularHistoryTex;
 
       // todo:
       Ref<Buffer> underCursorBuffer;

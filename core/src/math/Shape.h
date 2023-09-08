@@ -14,11 +14,17 @@ namespace pbe {
       vec3 max;
 
       static AABB Empty();
-      static AABB CenterHalfSize(vec3 center, vec3 halfSize);
+      static AABB MinMax(const vec3& min, const vec3& max);
+      static AABB Extends(const vec3& center, const vec3& extends);
+      static AABB FromAABBs(const AABB* aabbs, uint size);
 
-      void AddPoint(vec3 p);
+      void AddPoint(const vec3& p);
       void AddAABB(const AABB& aabb);
 
+      void Translate(const vec3& v);
+
+      vec3 Size() const { return max - min; }
+      vec3 Extents() const { return Size() * 0.5f; }
    };
 
    struct Plane {

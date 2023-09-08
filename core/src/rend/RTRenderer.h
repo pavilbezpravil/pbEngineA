@@ -14,11 +14,12 @@ namespace pbe {
 
    class CORE_API RTRenderer {
    public:
-      void Init();
+      ~RTRenderer();
 
       void RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context);
 
       Ref<Buffer> rtObjectsBuffer;
+      Ref<Buffer> bvhNodesBuffer;
    };
 
 }

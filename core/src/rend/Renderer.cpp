@@ -31,13 +31,13 @@ namespace pbe {
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", false };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
-   CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", false };
+   CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", true };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
    CVarValue<bool> applyFog{ "render/fog/enable", true };
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
-   CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 1.f };
+   CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 3.f };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
@@ -47,17 +47,33 @@ namespace pbe {
    }
 
    void RenderCamera::NextFrame() {
-      prevViewProjection = GetViewProjection();
+      prevView = view;
+      prevProjection = projection;
    }
 
    void RenderCamera::FillSCameraCB(SCameraCB& cameraCB) const {
-      cameraCB.view = glm::transpose(view);
-      cameraCB.projection = glm::transpose(projection);
-      cameraCB.viewProjection = glm::transpose(GetViewProjection());
-      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
-      cameraCB.prevViewProjection = glm::transpose(prevViewProjection);
-      cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
+      cameraCB.view = view;
+      cameraCB.invView = glm::inverse(cameraCB.view);
+
+      cameraCB.projection = projection;
+
+      cameraCB.viewProjection = GetViewProjection();
+      cameraCB.invViewProjection = cameraCB.viewProjection;
+
+      cameraCB.prevViewProjection = GetPrevViewProjection();
+      cameraCB.prevInvViewProjection = cameraCB.prevViewProjection;
+
+      auto frustumCornerLeftUp = glm::inverse(projection) * vec4{ 1, 1, 0, 1 };
+      frustumCornerLeftUp /= frustumCornerLeftUp.w;
+      frustumCornerLeftUp /= frustumCornerLeftUp.z; // to 1 z plane
+
+      // todo: remove
+      // cameraCB.frustumCornerLeftUp = vec2{ frustumCornerLeftUp.x, frustumCornerLeftUp.y };
+      cameraCB.frustumSize = vec2{ frustumCornerLeftUp.x, frustumCornerLeftUp.y };
+
+      // todo:
       cameraCB.position = position;
+      cameraCB.forward = Forward();
 
       cameraCB.zNear = zNear;
       cameraCB.zFar = zFar;
@@ -90,7 +106,7 @@ namespace pbe {
 
       texDesc.name = "scene depth";
       // texDesc.format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS;
+      texDesc.format = DXGI_FORMAT_R24G8_TYPELESS; // todo: 32 bit
       texDesc.bindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
       context.depth = Texture2D::Create(texDesc);
 
@@ -126,50 +142,58 @@ namespace pbe {
          auto& outTexture = *context.colorHDR;
          auto outTexSize = outTexture.GetDesc().size;
 
-         Texture2D::Desc texDesc{
+         Texture2D::Desc texDesc {
             .size = outTexSize,
-            .format = outTexture.GetDesc().format,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt history",
-         };
-         context.historyTex = Texture2D::Create(texDesc);
-         context.historyTexPrev = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R32_FLOAT, // DXGI_FORMAT_R32_TYPELESS, // todo:
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt depth",
-         };
-         context.depthTex = Texture2D::Create(texDesc);
-         context.depthTexPrev = Texture2D::Create(texDesc);
-
-         texDesc = {
-            .size = outTexSize,
-            .format = DXGI_FORMAT_R8G8B8A8_UNORM,
+            // .format = DXGI_FORMAT_R8G8B8A8_UNORM, // todo:
+            // .format = DXGI_FORMAT_R11G11B10_FLOAT, // todo: mb place metallic to diff rt?
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // todo: too match
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
-            .name = "rt normal",
+            .name = "scene base color",
+         };
+         context.baseColorTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "scene motion",
+         };
+         context.motionTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            // .format = DXGI_FORMAT_R10G10B10A2_UNORM,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // cant read from UNORM as UAV
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "scene normal",
          };
          context.normalTex = Texture2D::Create(texDesc);
-         context.normalTexPrev = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R8_UINT,
-            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt reproject count",
+            .format = DXGI_FORMAT_R32_FLOAT,
+            .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+            .name = "scene view z",
          };
-         context.reprojectCountTex = Texture2D::Create(texDesc);
-         context.reprojectCountTexPrev = Texture2D::Create(texDesc);
+         context.viewz = Texture2D::Create(texDesc);
 
          texDesc = {
             .size = outTexSize,
-            .format = DXGI_FORMAT_R32_UINT,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
             .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-            .name = "rt obj id",
+            .name = "rt diffuse",
          };
-         context.objIDTex = Texture2D::Create(texDesc);
-         context.objIDTexPrev = Texture2D::Create(texDesc);
+         context.diffuseTex = Texture2D::Create(texDesc);
+         context.diffuseHistoryTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = outTexSize,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "rt specular",
+         };
+         context.specularTex = Texture2D::Create(texDesc);
+         context.specularHistoryTex = Texture2D::Create(texDesc);
       }
 
       return context;
@@ -177,7 +201,6 @@ namespace pbe {
 
    void Renderer::Init() {
       rtRenderer.reset(new RTRenderer());
-      rtRenderer->Init();
 
       auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
       baseColorPass = GpuProgram::Create(programDesc);
@@ -200,16 +223,16 @@ namespace pbe {
       std::vector<SInstance> instances;
       instances.reserve(renderObjs.size());
       for (auto& [trans, material] : renderObjs) {
-         mat4 transform = glm::transpose(trans.GetMatrix());
-
          SMaterial m;
          m.baseColor = material.baseColor;
          m.roughness = material.roughness;
          m.metallic = material.metallic;
+         m.emissivePower = material.emissivePower;
 
          SInstance instance;
+         instance.transform = trans.GetMatrix();
+         instance.prevTransform = trans.GetPrevMatrix();
          instance.material = m;
-         instance.transform = transform;
          instance.entityID = (uint)trans.entity.GetID();
 
          instances.emplace_back(instance);
@@ -307,6 +330,7 @@ namespace pbe {
 
       GPU_MARKER("Render Scene");
       PROFILE_GPU("Render Scene");
+      PIX_EVENT_SYSTEM(Render, "Render Scene");
 
       static RenderCamera cullCamera = camera;
       if (!cFreezeCullCamera) {
@@ -315,9 +339,14 @@ namespace pbe {
 
       RenderDataPrepare(cmd, scene, cullCamera);
 
+      // todo: may be skipped
       cmd.ClearRenderTarget(*context.colorLDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.colorHDR, vec4{0, 0, 0, 1});
       cmd.ClearRenderTarget(*context.normalTex, vec4{0, 0, 0, 0});
+      cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
+      cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
+
+      cmd.ClearRenderTarget(*context.viewz, vec4{ 1000000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
 
       cmd.SetRasterizerState(rendres::rasterizerState);
@@ -334,7 +363,7 @@ namespace pbe {
 
             mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
             mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
-            mat4 viewProjection = glm::transpose(projection * view);
+            mat4 viewProjection = projection * view;
             decals.emplace_back(viewProjection, decal.baseColor, decal.metallic, decal.roughness);
          }
 
@@ -403,7 +432,7 @@ namespace pbe {
 
          shadowCamera.projection = glm::ortho<float>(-halfSize, halfSize, -halfSize, halfSize, -halfDepth, halfDepth);
          shadowCamera.view = glm::lookAt(shadowCamera.position, shadowCamera.position + sceneCB.directLight.direction, trans.Up());
-         sceneCB.toShadowSpace = glm::transpose(NDCToTexSpaceMat4() * shadowCamera.GetViewProjection());
+         sceneCB.toShadowSpace = NDCToTexSpaceMat4() * shadowCamera.GetViewProjection();
       }
 
       if (Entity skyEntity = scene.GetAnyWithComponent<SkyComponent>()) {
@@ -461,6 +490,31 @@ namespace pbe {
       cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
       if (rayTracingSceneRender) {
+         {
+            GPU_MARKER("GBuffer");
+            PROFILE_GPU("GBuffer");
+
+            Texture2D* rts[] = { context.colorHDR, context.baseColorTex,
+               context.normalTex, context.motionTex, context.viewz };
+            uint nRts = _countof(rts);
+            cmd.SetRenderTargets(nRts, rts, context.depth);
+            cmd.SetPsUAV(nRts, context.underCursorBuffer);
+
+            cmd.SetViewport({}, context.depth->GetDesc().size);
+
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+            programDesc.vs.defines.AddDefine("GBUFFER");
+            programDesc.ps.defines.AddDefine("GBUFFER");
+
+            auto baseZPass = GetGpuProgram(programDesc);
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
+
+            cmd.SetRenderTargets();
+         }
+
          rtRenderer->RenderScene(cmd, scene, camera, context);
          ResetCS_SRV_UAV();
       } else {
@@ -676,7 +730,6 @@ namespace pbe {
          cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
          DbgRend& dbgRend = *scene.dbgRend;
-         dbgRend.Clear();
 
          // int size = 50;
          //
@@ -750,6 +803,7 @@ namespace pbe {
          }
 
          dbgRend.Render(cmd, camera);
+         dbgRend.Clear();
       }
    }
 
@@ -775,7 +829,7 @@ namespace pbe {
       for (const auto& [trans, material] : renderObjs) {
          SDrawCallCB cb;
          cb.instance.transform = glm::translate(mat4(1), trans.position);
-         cb.instance.transform = glm::transpose(cb.instance.transform);
+         cb.instance.transform = cb.instance.transform;
          cb.instance.material.roughness = material.roughness;
          cb.instance.material.baseColor = material.baseColor;
          cb.instance.material.metallic = material.metallic;

@@ -6,7 +6,8 @@
 
 #define SAMPLER_SLOT_WRAP_POINT 0
 #define SAMPLER_SLOT_WRAP_LINEAR 1
-#define SAMPLER_SLOT_SHADOW 2
+#define SAMPLER_SLOT_CLAMP_POINT 2
+#define SAMPLER_SLOT_SHADOW 3
 
 #define CB_SLOT_SCENE 10
 #define CB_SLOT_CAMERA 11
@@ -22,11 +23,13 @@ struct SMaterial {
    float roughness;
 
    float metallic;
-   float3 _dymmy;
+   float emissivePower;
+   float2 _dymmy;
 };
 
 struct SInstance {
    float4x4 transform;
+   float4x4 prevTransform;
    SMaterial material;
 
    uint entityID;
@@ -126,15 +129,26 @@ struct STerrainCB {
 };
 
 struct SCameraCB {
-   float4x4 projection;
    float4x4 view;
+   float4x4 invView;
+
+   float4x4 projection;
+
    float4x4 viewProjection;
    float4x4 invViewProjection;
+
    float4x4 prevViewProjection;
    float4x4 prevInvViewProjection;
 
+   float2 frustumCornerLeftUp;
+   float2 frustumSize;
+
+   // todo: take from view
    float3 position;
    int _sdfsdf2;
+
+   float3 forward;
+   int _sdfsdf23;
 
    float zNear;
    float zFar;

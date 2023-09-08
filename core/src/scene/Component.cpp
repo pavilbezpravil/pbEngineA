@@ -58,7 +58,7 @@ namespace pbe {
       if (v != vec3{resetVal}) {
          ImGui::SameLine(0, 10);
          if (ImGui::Button("-")) {
-            v = { resetVal };
+            v = vec3{ resetVal };
             edited = true;
          }
       }
@@ -112,9 +112,6 @@ namespace pbe {
 
       STRUCT_FIELD_UI(UISliderFloat{ .min = 0, .max = 1 })
       STRUCT_FIELD(metallic)
-
-      STRUCT_FIELD_UI(UIColorEdit3)
-      STRUCT_FIELD(emissiveColor)
 
       STRUCT_FIELD(emissivePower)
 
@@ -249,6 +246,13 @@ namespace pbe {
       return transform;
    }
 
+   mat4 SceneTransformComponent::GetPrevMatrix() const {
+      mat4 transform = glm::translate(mat4(1), prevPosition);
+      transform *= mat4{ prevRotation };
+      transform *= glm::scale(mat4(1), prevScale);
+      return transform;
+   }
+
    std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform) {
       glm::vec3 scale, translation, skew;
       glm::vec4 perspective;
@@ -272,6 +276,12 @@ namespace pbe {
       SetPosition(position_);
       SetRotation(rotation_);
       SetScale(scale_);
+   }
+
+   void SceneTransformComponent::UpdatePrevTransform() {
+      prevPosition = Position();
+      prevRotation = Rotation();
+      prevScale = Scale();
    }
 
    void SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {

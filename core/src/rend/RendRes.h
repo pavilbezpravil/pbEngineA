@@ -34,6 +34,7 @@ namespace pbe {
       extern ID3D11RasterizerState1* rasterizerStateWireframe;
       extern CORE_API ID3D11SamplerState* samplerStateWrapPoint;
       extern ID3D11SamplerState* samplerStateWrapLinear;
+      extern ID3D11SamplerState* samplerStateClampPoint;
       extern ID3D11SamplerState* samplerStateShadow;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;

@@ -20,4 +20,16 @@ SCameraCB GetCullCamera() {
   return gCullCamera;
 }
 
+SCameraCB GetCamera() {
+  return gCamera;
+}
+
+float3 GetCameraPosition() {
+  return GetCamera().position;
+}
+
+float3 GetCameraForward() {
+  return GetCamera().forward;
+}
+
 #endif
