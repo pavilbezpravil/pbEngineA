@@ -447,7 +447,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             if (NDotL > 0) {
                 const float spread = 0.02; // todo:
                 Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
-                RayHit shadowHit = Trace(shadowRay);
+                RayHit shadowHit = Trace(shadowRay); // todo: any hit
                 if (shadowHit.tMax == INF) {
                     float3 directLightShade = NDotL * gScene.directLight.color;
                     diffuseRadiance += directLightShade;
@@ -524,4 +524,101 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
 
     float3 emissive = gColorOut[id].xyz;
     gColorOut[id] = float4(color + emissive, 1);
+}
+
+[numthreads(8, 8, 1)]
+void RTFogCS (uint2 id : SV_DispatchThreadID) {
+    if (any(id >= gRTConstants.rtSize)) {
+        return;
+    }
+
+    uint seed = GetRandomSeed(id);
+    
+    float viewZ = gViewZ[id];
+
+    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
+    float3 posW = ReconstructWorldPosition(viewPos);
+
+    float3 V = gCamera.position - posW;
+    float dist = length(V);
+
+    const float MAX_DIST = 20;
+    if (dist > MAX_DIST) {
+        dist = MAX_DIST;
+    }
+
+    V = normalize(V);
+
+    const int maxSteps = gScene.fogNSteps;
+    if (maxSteps <= 0) {
+        return;
+    }
+
+    float stepLength = dist / maxSteps; // todo: 
+
+    float initialOffset = RandomFloat(seed) * stepLength;
+    float3 fogPosW = gCamera.position + -V * initialOffset;
+
+    float accTransmittance = 1;
+    float3 accScaterring = 0;
+
+    // accTransmittance *= exp(-stepLength * initialOffset);
+
+    float3 fogColor = float3(1, 1.5, 1) * 0.5;
+
+    for(int i = 0; i < maxSteps; ++i) {
+        // float t = i / float(maxSteps - 1);
+        float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
+        fogDensity *= saturate(-fogPosW.y / 3);
+        fogDensity *= 0.5;
+
+        fogDensity = 0.05;
+
+        float3 scattering = 0;
+
+        // todo: trace to sun
+        float3 radiance = 1; // LightRadiance(gScene.directLight, fogPosW);
+        #if 1
+            float3 L = -gScene.directLight.direction;
+
+            const float spread = 0.02; // todo:
+            Ray shadowRay = CreateRay(fogPosW, normalize(L + RandomInUnitSphere(seed) * spread * 0));
+            RayHit shadowHit = Trace(shadowRay); // todo: any hit
+            if (shadowHit.tMax == INF) {
+                radiance = gScene.directLight.color;
+            } else {
+                radiance = 0;
+            }
+        #endif
+        scattering += fogColor / PI * radiance;
+
+        // for(int i = 0; i < gScene.nLights; ++i) {
+        //     float3 radiance = LightRadiance(gLights[i], fogPosW);
+        //     // float3 radiance = gLights[i].color; // todo
+        //     scattering += fogColor / PI * radiance;
+        // }
+
+        float transmittance = exp(-stepLength * fogDensity);
+        scattering *= accTransmittance * (1 - transmittance);
+
+        accScaterring += scattering;
+        accTransmittance *= transmittance;
+
+        // if (accTransmittance < 0.01) {
+        //     accTransmittance = 0;
+        //     break;
+        // }
+
+        fogPosW = fogPosW + -V * stepLength;
+    }
+
+    float4 color = gColorOut[id];
+
+    color.xyz *= accTransmittance;
+    color.xyz += accScaterring;
+
+    // color.xyz = frac(fogPosW);
+
+    gColorOut[id] = color;
 }

@@ -25,18 +25,22 @@
 
 namespace pbe {
 
+   // todo: n rays -> n samples
    CVarSlider<int> cvNRays{ "render/rt/nRays", 1, 1, 32 };
+   // todo: depth -> bounce
    CVarSlider<int> cvRayDepth{ "render/rt/rayDepth", 2, 1, 8 };
 
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
-   CVarValue<bool> cvUsePSR{ "render/rt/use psr", true };
+   CVarValue<bool> cvUsePSR{ "render/rt/use psr", false }; // todo: on my laptop it takes 50% more time
 
    CVarValue<bool> cvDenoise{ "render/denoise/enable", false };
    CVarValue<bool> cvNRDValidation{ "render/denoise/nrd validation", false };
    CVarTrigger cvClearHistory{ "render/denoise/clear history" };
+
+   CVarValue<bool> cvFog{ "render/rt/fog enable", false };
 
    // todo: move to common
    static int IndexOfLargestValue(const vec3& vector) {
@@ -365,8 +369,6 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         pass->SetSRV(cmd, "gDepth", context.depth);
-
          if (cvUsePSR) {
             pass->SetUAV(cmd, "gViewZOut", context.viewz);
             pass->SetUAV(cmd, "gNormalOut", context.normalTex);
@@ -432,13 +434,32 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         pass->SetSRV(cmd, "gDepth", context.depth); // todo: too match place for sample depth
          pass->SetSRV(cmd, "gViewZ", context.viewz);
          pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
          pass->SetSRV(cmd, "gNormal", context.normalTex);
          pass->SetSRV(cmd, "gDiffuse", diffuse);
          pass->SetSRV(cmd, "gSpecular", specular);
 
+         pass->SetUAV(cmd, "gColorOut", context.colorHDR);
+
+         cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
+      }
+
+      // todo:
+      // if (cvFog)
+      {
+         GPU_MARKER("RT Fog");
+         PROFILE_GPU("RT Fog");
+
+         auto desc = ProgramDesc::Cs("rt.hlsl", "RTFogCS");
+
+         auto pass = GetGpuProgram(desc);
+         cmd.SetCompute(*pass);
+         setSharedResource(*pass);
+
+         CMD_BINDS_GUARD();
+
+         pass->SetSRV(cmd, "gViewZ", context.viewz);
          pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });

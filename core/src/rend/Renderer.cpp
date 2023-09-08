@@ -35,7 +35,7 @@ namespace pbe {
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
    CVarValue<bool> applyFog{ "render/fog/enable", true };
-   CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
+   CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 16 };
 
    CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 3.f };
 

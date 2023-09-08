@@ -35,7 +35,7 @@ struct SRTConstants {
    float historyWeight;
    uint importanceSampleObjIdx; // todo:
 
-   uint _dfsdf;
+   uint _sdff3;
    uint bvhNodes;
    float2 _dymmy23;
 
