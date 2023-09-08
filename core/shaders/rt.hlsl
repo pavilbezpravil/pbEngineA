@@ -563,7 +563,9 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
     float accTransmittance = 1;
     float3 accScaterring = 0;
 
-    // accTransmittance *= exp(-stepLength * initialOffset);
+    // accTransmittance *= exp(-initialOffset * 0.2);
+
+    float prevStepLength = initialOffset;
 
     float3 fogColor = float3(1, 1.5, 1) * 0.5;
 
@@ -573,7 +575,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         fogDensity *= saturate(-fogPosW.y / 3);
         fogDensity *= 0.5;
 
-        fogDensity = 0.05;
+        fogDensity = 0.1;
 
         float3 scattering = 0;
 
@@ -599,7 +601,8 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         //     scattering += fogColor / PI * radiance;
         // }
 
-        float transmittance = exp(-stepLength * fogDensity);
+        // float transmittance = exp(-stepLength * fogDensity);
+        float transmittance = exp(-prevStepLength * fogDensity);
         scattering *= accTransmittance * (1 - transmittance);
 
         accScaterring += scattering;
@@ -611,6 +614,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         // }
 
         fogPosW = fogPosW + -V * stepLength;
+        prevStepLength = stepLength;
     }
 
     float4 color = gColorOut[id];
