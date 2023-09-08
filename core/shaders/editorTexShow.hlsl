@@ -30,11 +30,8 @@ void main( uint3 dispatchThreadID : SV_DispatchThreadID ) {
    #endif
 
    float3 colorOut = colorIn.xyz;
-
    #if defined(DIFFUSE_SPECULAR)
-      // colorOut = ACESFilm(colorHDR);
-      colorOut = 1 - exp(-colorIn.xyz * gScene.exposition);
-      // colorOut = colorHDR / (colorHDR + 1);
+      colorOut = ACESFilm(colorIn.xyz * gScene.exposition);
    #endif
 
    colorOut = GammaCorrection(colorOut);

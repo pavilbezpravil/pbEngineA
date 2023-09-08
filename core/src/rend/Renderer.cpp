@@ -37,7 +37,7 @@ namespace pbe {
    CVarValue<bool> applyFog{ "render/fog/enable", true };
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 128 };
 
-   CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 1.f };
+   CVarSlider<float> tonemapExposition{ "render/tonemap/exposion", 1.f, 0.f, 3.f };
 
    static mat4 NDCToTexSpaceMat4() {
       mat4 scale = glm::scale(mat4{1.f}, {0.5f, -0.5f, 1.f});
