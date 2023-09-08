@@ -526,6 +526,11 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id] = float4(color + emissive, 1);
 }
 
+float4 HeightFogDensity(float3 posW, float fogStart = -10, float fogEnd = 10) {
+    float height = posW.y;
+    return 1 - saturate((height - fogStart) / (fogEnd - fogStart));
+}
+
 [numthreads(8, 8, 1)]
 void RTFogCS (uint2 id : SV_DispatchThreadID) {
     if (any(id >= gRTConstants.rtSize)) {
@@ -543,7 +548,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
     float3 V = gCamera.position - posW;
     float dist = length(V);
 
-    const float MAX_DIST = 20;
+    const float MAX_DIST = 50;
     if (dist > MAX_DIST) {
         dist = MAX_DIST;
     }
@@ -576,6 +581,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         fogDensity *= 0.5;
 
         fogDensity = 0.1;
+        fogDensity = HeightFogDensity(fogPosW) * 0.2;
 
         float3 scattering = 0;
 
