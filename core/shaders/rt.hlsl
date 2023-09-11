@@ -531,8 +531,14 @@ float4 HeightFogDensity(float3 posW, float fogStart = -10, float fogEnd = 15) {
     return 1 - saturate((height - fogStart) / (fogEnd - fogStart));
 }
 
+// https://www.youtube.com/watch?v=Qj_tK_mdRcA&ab_channel=SimonDev
 float HenyeyGreenstein(float g, float costh) {
     return (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * costh, 3.0 / 2.0));
+}
+
+float MiScattering(float g, float VDotL) {
+    // lerp( forward, backward )
+    return lerp(HenyeyGreenstein(g, VDotL), HenyeyGreenstein(g, -VDotL), 0.8);
 }
 
 [numthreads(8, 8, 1)]
@@ -601,7 +607,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
             } else {
                 radiance = 0;
             }
-            float miScattering = HenyeyGreenstein(0.5, -dot(V, L));
+            float miScattering = MiScattering(0.5, dot(V, L));
             radiance *= miScattering;
         #else
             radiance /= PI;
