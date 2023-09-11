@@ -526,9 +526,13 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id] = float4(color + emissive, 1);
 }
 
-float4 HeightFogDensity(float3 posW, float fogStart = -10, float fogEnd = 10) {
+float4 HeightFogDensity(float3 posW, float fogStart = -10, float fogEnd = 15) {
     float height = posW.y;
     return 1 - saturate((height - fogStart) / (fogEnd - fogStart));
+}
+
+float HenyeyGreenstein(float g, float costh) {
+    return (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * costh, 3.0 / 2.0));
 }
 
 [numthreads(8, 8, 1)]
@@ -585,7 +589,6 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
 
         float3 scattering = 0;
 
-        // todo: trace to sun
         float3 radiance = 1; // LightRadiance(gScene.directLight, fogPosW);
         #if 1
             float3 L = -gScene.directLight.direction;
@@ -598,8 +601,12 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
             } else {
                 radiance = 0;
             }
+            float miScattering = HenyeyGreenstein(0.5, -dot(V, L));
+            radiance *= miScattering;
+        #else
+            radiance /= PI;
         #endif
-        scattering += fogColor / PI * radiance;
+        scattering += fogColor * radiance;
 
         // for(int i = 0; i < gScene.nLights; ++i) {
         //     float3 radiance = LightRadiance(gLights[i], fogPosW);
