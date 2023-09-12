@@ -215,13 +215,19 @@ namespace pbe {
             auto redColor = ImVec4{ 0.8f, 0, 0, 1 };
 
             {
-               UI_PUSH_STYLE_COLOR(ImGuiCol_Button, (editorState == State::Edit ? greenColor : redColor));
+               auto color = editorState == State::Edit ? greenColor : redColor;
+               UI_PUSH_STYLE_COLOR(ImGuiCol_Button, color);
+               UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, (color + ImVec4{ 0.1f, 0.1f, 0.1f, 1 }));
+               UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, color);
+
                if (ImGui::Button(editorState == State::Edit ? "Play" : "Stop")) {
                   TogglePlayStop();
                }
             }
 
             if (editorState == State::Play) {
+               // ImGui::BeginDisabled(true);
+               // ImGui::EndDisabled();
                if (ImGui::Button("Pause")) {
                   OnPause();
                }
