@@ -1,12 +1,18 @@
 #pragma once
 
 #include "Types.h"
+#include "core/Core.h"
 
 namespace pbe {
 
+   struct Ray {
+      vec3 origin;
+      vec3 direction;
+   };
+
    struct Sphere {
       vec3 center;
-      float radius;
+      float radius = 0.5f;
    };
 
    struct AABB {
@@ -27,9 +33,25 @@ namespace pbe {
       vec3 Extents() const { return Size() * 0.5f; }
    };
 
-   struct Plane {
+   struct CORE_API Plane {
       vec3 normal;
       float d;
+
+      static Plane FromPointNormal(const vec3& p, const vec3& n);
+      static Plane FromPoints(const vec3& p0, const vec3& p1, const vec3& p2);
+
+      float RayIntersectionT(const Ray& ray) const {
+         return -Distance(ray.origin) / glm::dot(normal, ray.direction);
+      }
+
+      vec3 RayIntersectionAt(const Ray& ray) const {
+         float t = RayIntersectionT(ray);
+         return ray.origin + ray.direction * t;
+      }
+
+      vec3 Project(const vec3& p) const {
+         return p - normal * Distance(p);
+      }
 
       float Distance(vec3 p) const {
          return glm::dot(normal, p) + d;

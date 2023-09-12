@@ -48,6 +48,9 @@ namespace pbe {
       bool zoomEnable = false;
       bool cameraMove = false;
 
+      vec2 manipulatorStartPos;
+      bool manipulatorTranslate = false;
+
       void StartCameraMove();
       void StopCameraMove();
    };

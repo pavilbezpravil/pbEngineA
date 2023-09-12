@@ -19,6 +19,7 @@
 #include "scene/Utils.h"
 #include "utils/TimedAction.h"
 #include "physics/PhysQuery.h"
+#include "rend/DbgRend.h"
 
 
 namespace pbe {
@@ -62,6 +63,7 @@ namespace pbe {
 
    // todo: add hotkey remove cfg
    CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
+   CVarValue<bool> cvGizmo{ "gizmo", false };
 
    struct ViewportSettings {
       vec3 cameraPos{};
@@ -188,12 +190,14 @@ namespace pbe {
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         int2 cursorPixelIdx{ (mousePos - cursorPos) * renderScale };
-         vec2 cursorUV = vec2(cursorPixelIdx) / vec2(size);
+         vec2 cursorPixelPos2{ mousePos - cursorPos };
+
+         int2 cursorPixelPos{ cursorPixelPos2 * renderScale };
+         vec2 cursorUV = vec2(cursorPixelPos) / vec2(size);
 
          cmd.SetCommonSamplers();
          if (scene) {
-            renderContext.cursorPixelIdx = cursorPixelIdx;
+            renderContext.cursorPixelIdx = cursorPixelPos;
 
             Entity e = scene->GetAnyWithComponent<CameraComponent>();
             if (!freeCamera && e) {
@@ -306,10 +310,37 @@ namespace pbe {
             zoomEnable = !zoomEnable;
          }
          if (zoomEnable) {
-            Zoom(*image, cursorPixelIdx);
+            Zoom(*image, cursorPixelPos);
          }
 
-         Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
+         if (cvGizmo) {
+            Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
+         } else {
+            if (!manipulatorTranslate) {
+               if (selection->HasSelection() && Input::IsKeyDown(KeyCode::G)) {
+                  manipulatorStartPos = cursorPixelPos2;
+                  manipulatorTranslate = true;
+               }
+            }
+
+            if (manipulatorTranslate) {
+               Entity entity = selection->FirstSelected();
+               auto pos = entity.GetTransform().Position();
+
+               vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
+
+               Plane plane = Plane::FromPointNormal(pos, camera.Forward());
+               Ray ray = Ray{ camera.position, cameraDir };
+
+               auto intersectPos = plane.RayIntersectionAt(ray);
+
+               entity.GetTransform().SetPosition(intersectPos);
+
+               if (Input::IsKeyDown(KeyCode::RightButton)) {
+                  manipulatorTranslate = false;
+               }
+            }
+         }
 
          if (textureViewWindow) {
             gTextureViewWindow.texture = renderContext.linearDepth;

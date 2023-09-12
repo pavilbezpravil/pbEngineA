@@ -28,6 +28,10 @@ namespace pbe {
          return it != selected.end();
       }
 
+      bool HasSelection() const {
+         return !selected.empty();
+      }
+
       Entity FirstSelected() const {
          return selected.empty() ? Entity{} : selected.front();
       }

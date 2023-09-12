@@ -18,6 +18,11 @@ struct SCameraCB;
 
 namespace pbe {
 
+   // todo: move to utils
+   vec2 UVToNDC(const vec2& uv);
+   vec2 NDCToUV(const vec2& ndc);
+   vec3 GetWorldPosFromUV(const vec2& uv, const mat4& invViewProj);
+
    struct CORE_API RenderCamera {
       vec3 position{};
 
@@ -52,6 +57,11 @@ namespace pbe {
 
       mat4 GetInvViewProjection() const {
          return glm::inverse(GetViewProjection());
+      }
+
+      vec3 GetWorldSpaceRayDirFromUV(const vec2& uv) const {
+         vec3 worldPos = GetWorldPosFromUV(uv, GetInvViewProjection());
+         return glm::normalize(worldPos - position);
       }
 
       void NextFrame();

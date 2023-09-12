@@ -47,6 +47,28 @@ namespace pbe {
       return translate * scale;
    }
 
+   vec2 UVToNDC(const vec2& uv) {
+      vec2 ndc = uv * 2.f - 1.f;
+      ndc.y = -ndc.y;
+      return ndc;
+   }
+
+   vec2 NDCToUV(const vec2& ndc) {
+      vec2 uv = ndc;
+      uv.y = -uv.y;
+      uv = (uv + 1.f) * 0.5f;
+      return uv;
+   }
+
+   vec3 GetWorldPosFromUV(const vec2& uv, const mat4& invViewProj) {
+      vec2 ndc = UVToNDC(uv);
+
+      vec4 worldPos4 = invViewProj * vec4(ndc, 0, 1);
+      vec3 worldPos = worldPos4 / worldPos4.w;
+
+      return worldPos;
+   }
+
    void RenderCamera::NextFrame() {
       prevView = view;
       prevProjection = projection;
@@ -807,6 +829,18 @@ namespace pbe {
 
          // auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
          // dbgRend.DrawViewProjection(shadowInvViewProjection);
+
+         // vec2 uv = {0.5f, 0.5f};
+         vec2 uv = {0.7f, 0.6f};
+
+         vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(uv);
+
+         Plane plane = Plane::FromPointNormal(camera.position + camera.Forward() * 5.f, camera.Forward());
+         Ray ray = Ray{ camera.position, cameraDir };
+
+         auto intersectPos = plane.RayIntersectionAt(ray);
+
+         dbgRend.DrawSphere(Sphere{ intersectPos, 0.5f });
 
          if (cFreezeCullCamera) {
             auto cullCameraInvViewProjection = glm::inverse(cullCamera.GetViewProjection());

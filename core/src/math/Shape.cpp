@@ -43,6 +43,18 @@ namespace pbe {
       max += v;
    }
 
+   Plane Plane::FromPointNormal(const vec3& p, const vec3& n) {
+      Plane plane;
+      plane.normal = n;
+      plane.d = -glm::dot(n, p);
+      return plane;
+   }
+
+   Plane Plane::FromPoints(const vec3& p0, const vec3& p1, const vec3& p2) {
+      auto normal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
+      return FromPointNormal(p0, normal);
+   }
+
    Frustum::Frustum(const mat4& m) {
       planes[RIGHT] = {
          {

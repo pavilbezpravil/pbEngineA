@@ -337,8 +337,8 @@ namespace pbe {
    }
 
    void EditorLayer::SetEditorScene(Own<Scene>&& scene) {
+      SetActiveScene(scene.get());
       editorScene = std::move(scene);
-      SetActiveScene(editorScene.get());
    }
 
    void EditorLayer::SetActiveScene(Scene* scene) {
