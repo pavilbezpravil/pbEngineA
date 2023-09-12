@@ -215,15 +215,21 @@ namespace pbe {
       registry.clear<DelayedDestroyMarker>();
    }
 
-   void Scene::OnTick() {
+   void Scene::OnSync() {
       DestroyDelayedEntities();
       ProcessDelayedEnable();
+   }
+
+   void Scene::OnTick() {
+      OnSync();
+
+      // sync phys scene with changed transforms outside physics
+      GetPhysics()->SyncPhysicsWithScene();
+      ClearComponent<TransformChangedMarker>();
 
       for (auto [entityID, trans] : View<SceneTransformComponent>().each()) {
          trans.UpdatePrevTransform();
       }
-
-      GetPhysics()->SyncPhysicsWithScene();
    }
 
    void Scene::OnStart() {

@@ -42,6 +42,9 @@ namespace pbe {
       Scene* GetActiveScene();
 
       void OnPlay();
+      void OnPause();
+      void OnContinue();
+      void OnSteps(int numSteps);
       void OnStop();
       void TogglePlayStop();
 
@@ -63,7 +66,10 @@ namespace pbe {
       enum class State {
          Edit,
          Play,
+         Pause,
       };
+
+      uint pauseStateNumSteps = UINT_MAX;
 
       State editorState = State::Edit;
 

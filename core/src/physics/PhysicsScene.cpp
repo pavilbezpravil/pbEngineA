@@ -92,9 +92,6 @@ namespace pbe {
          rb.pxRigidActor->setGlobalPose(GetTransform(trans));
          PxWakeUp(rb.pxRigidActor);
       }
-
-      // todo:
-      scene.ClearComponent<TransformChangedMarker>();
    }
 
    void PhysicsScene::Simulate(float dt) {

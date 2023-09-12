@@ -91,8 +91,16 @@ namespace pbe {
          pScene->OnTick();
       }
 
-      if (editorState == State::Play && runtimeScene) {
+      if (editorState == State::Play) {
+         ASSERT(runtimeScene);
          runtimeScene->OnUpdate(dt);
+
+         if (pauseStateNumSteps != UINT_MAX) {
+            --pauseStateNumSteps;
+            if (pauseStateNumSteps == 0) {
+               OnPause();
+            }
+         }
       }
    }
 
@@ -203,24 +211,30 @@ namespace pbe {
          {
             ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f);
 
-            switch (editorState) {
-               case State::Edit:
-                  if (ImGui::Button("Play") && editorScene) {
-                     OnPlay();
-                  }
-                  break;
-               case State::Play:
-                  if (ImGui::Button("Stop")) {
-                     OnStop();
-                  }
-                  break;
-               default: UNIMPLEMENTED();
+            auto greenColor = ImVec4{ 0, 0.8f, 0, 1 };
+            auto redColor = ImVec4{ 0.8f, 0, 0, 1 };
+
+            {
+               UI_PUSH_STYLE_COLOR(ImGuiCol_Button, (editorState == State::Edit ? greenColor : redColor));
+               if (ImGui::Button(editorState == State::Edit ? "Play" : "Stop")) {
+                  TogglePlayStop();
+               }
             }
 
-            // auto color = editorState == State::Edit ? ImVec4{1, 1, 1, 1} : ImVec4{0, 1, 0, 1};
-            // if (ImGui::Button("Play2", color, ImGuiColorEditFlags_NoSmallPreview)) {
-            //    
-            // }
+            if (editorState == State::Play) {
+               if (ImGui::Button("Pause")) {
+                  OnPause();
+               }
+            }
+
+            if (editorState == State::Pause) {
+               if (ImGui::Button("Continue")) {
+                  OnContinue();
+               }
+               if (ImGui::Button("Step")) {
+                  OnSteps(1);
+               }
+            }
 
             if (editorState == State::Edit) {
                ImGui::SameLine();
@@ -330,13 +344,11 @@ namespace pbe {
 
    Scene* EditorLayer::GetActiveScene() {
       switch (editorState) {
-      case State::Edit:
-         return editorScene.get();
-      case State::Play:
-         return runtimeScene.get();
-      default: UNIMPLEMENTED();
+         case State::Edit:
+            return editorScene.get();
+         default:
+            return runtimeScene.get();
       }
-      return nullptr;
    }
 
    void EditorLayer::OnPlay() {
@@ -345,6 +357,27 @@ namespace pbe {
       // viewportWindow->freeCamera = false;
       runtimeScene->OnStart();
       editorState = State::Play;
+   }
+
+   void EditorLayer::OnPause() {
+      ASSERT(editorState == State::Play);
+      pauseStateNumSteps = UINT_MAX;
+      editorState = State::Pause;
+   }
+
+   void EditorLayer::OnContinue() {
+      ASSERT(editorState == State::Pause);
+      editorState = State::Play;
+   }
+
+   void EditorLayer::OnSteps(int numSteps) {
+      ASSERT(editorState == State::Pause);
+      if (numSteps <= 0) {
+         return;
+      }
+
+      pauseStateNumSteps = numSteps;
+      OnContinue();
    }
 
    void EditorLayer::OnStop() {
@@ -357,10 +390,8 @@ namespace pbe {
    void EditorLayer::TogglePlayStop() {
       if (editorState == State::Edit) {
          OnPlay();
-      } else if (editorState == State::Play) {
-         OnStop();
       } else {
-         UNIMPLEMENTED();
+         OnStop();
       }
    }
 

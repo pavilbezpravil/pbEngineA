@@ -103,6 +103,9 @@ namespace pbe {
          registry.clear<Component>();
       }
 
+      // process all pending changes with entities (remove\add entity, remove\add component, etc)
+      void OnSync();
+
       // call this every frame
       void OnTick();
 
