@@ -93,6 +93,9 @@ namespace pbe {
       Ref<Texture2D> specularTex;
       Ref<Texture2D> specularHistoryTex;
 
+      Ref<Texture2D> outlineTex;
+      Ref<Texture2D> outlineBlurredTex;
+
       // todo:
       Ref<Buffer> underCursorBuffer;
       int2 cursorPixelIdx{-1};
@@ -120,6 +123,9 @@ namespace pbe {
       Terrain terrainSystem;
 
       struct RenderObject {
+         // todo: component is overkill )
+         // const SceneTransformComponent& trans;
+         // const MaterialComponent& material;
          SceneTransformComponent trans;
          MaterialComponent material;
       };
@@ -135,6 +141,7 @@ namespace pbe {
 
       void RenderScene(CommandList& cmd, const Scene& scene, const RenderCamera& camera, RenderContext& context);
       void RenderSceneAllObjects(CommandList& cmd, const std::vector<RenderObject>& renderObjs, GpuProgram& program);
+      void RenderOutlines(CommandList& cmd, const Scene& scene);
 
       uint GetEntityIDUnderCursor(CommandList& cmd);
 

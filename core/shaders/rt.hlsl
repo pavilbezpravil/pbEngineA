@@ -531,6 +531,9 @@ float4 HeightFogDensity(float3 posW, float fogStart = -10, float fogEnd = 15) {
     return 1 - saturate((height - fogStart) / (fogEnd - fogStart));
 }
 
+// video about atmospheric scattering
+// https://www.youtube.com/watch?v=DxfEbulyFcY&ab_channel=SebastianLague
+
 // https://www.youtube.com/watch?v=Qj_tK_mdRcA&ab_channel=SimonDev
 float HenyeyGreenstein(float g, float costh) {
     return (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * costh, 3.0 / 2.0));

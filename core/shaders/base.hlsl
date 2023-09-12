@@ -43,7 +43,12 @@ Texture2D<float> gSsao;
 VsOut vs_main(VsIn input) {
    VsOut output = (VsOut)0;
 
-   SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+   // todo:
+   #ifdef OUTLINES
+      SInstance instance = gDrawCall.instance;
+   #else
+      SInstance instance = gInstances[gDrawCall.instanceStart + input.instanceID];
+   #endif
 
    float3 prevPosW = mul(instance.prevTransform, float4(input.posL, 1)).xyz;
    float3 posW = mul(instance.transform, float4(input.posL, 1)).xyz;
@@ -57,9 +62,6 @@ VsOut vs_main(VsIn input) {
    return output;
 }
 
-// todo:
-// #define GBUFFER
-
 #ifndef GBUFFER
 
 struct PsOut {
@@ -69,6 +71,14 @@ struct PsOut {
 // ps uses UAV writes, it removes early z test
 [earlydepthstencil]
 PsOut ps_main(VsOut input) : SV_TARGET {
+#ifdef OUTLINES
+   SMaterial material = gDrawCall.instance.material;
+
+   PsOut output = (PsOut)0;
+   output.color = float4(material.baseColor, 1);
+   output.color = float4(1, 1, 1, 1);
+   return output;
+#else
    uint2 pixelIdx = input.posH.xy;
    float2 screenUV = pixelIdx / gCamera.rtSize;
 
@@ -149,6 +159,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    #endif
 
    return output;
+#endif
 }
 
 #else

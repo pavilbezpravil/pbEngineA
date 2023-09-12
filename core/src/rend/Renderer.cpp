@@ -29,6 +29,7 @@ namespace pbe {
 
    CVarValue<bool> dbgRenderEnable{ "render/debug render", true };
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
+   CVarValue<bool> cvOutlineEnable{ "render/outline", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", false };
    CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", true };
@@ -140,10 +141,9 @@ namespace pbe {
       // rt
       {
          auto& outTexture = *context.colorHDR;
-         auto outTexSize = outTexture.GetDesc().size;
 
          Texture2D::Desc texDesc {
-            .size = outTexSize,
+            .size = size,
             // .format = DXGI_FORMAT_R8G8B8A8_UNORM, // todo:
             // .format = DXGI_FORMAT_R11G11B10_FLOAT, // todo: mb place metallic to diff rt?
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // todo: too match
@@ -153,7 +153,7 @@ namespace pbe {
          context.baseColorTex = Texture2D::Create(texDesc);
 
          texDesc = {
-            .size = outTexSize,
+            .size = size,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene motion",
@@ -161,7 +161,7 @@ namespace pbe {
          context.motionTex = Texture2D::Create(texDesc);
 
          texDesc = {
-            .size = outTexSize,
+            .size = size,
             // .format = DXGI_FORMAT_R10G10B10A2_UNORM,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // cant read from UNORM as UAV
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
@@ -170,7 +170,7 @@ namespace pbe {
          context.normalTex = Texture2D::Create(texDesc);
 
          texDesc = {
-            .size = outTexSize,
+            .size = size,
             .format = DXGI_FORMAT_R32_FLOAT,
             .bindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
             .name = "scene view z",
@@ -178,7 +178,7 @@ namespace pbe {
          context.viewz = Texture2D::Create(texDesc);
 
          texDesc = {
-            .size = outTexSize,
+            .size = size,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
             .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
             .name = "rt diffuse",
@@ -187,7 +187,7 @@ namespace pbe {
          context.diffuseHistoryTex = Texture2D::Create(texDesc);
 
          texDesc = {
-            .size = outTexSize,
+            .size = size,
             .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
             .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
             .name = "rt specular",
@@ -195,6 +195,17 @@ namespace pbe {
          context.specularTex = Texture2D::Create(texDesc);
          context.specularHistoryTex = Texture2D::Create(texDesc);
       }
+
+      texDesc = {
+            .size = size,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT, // todo: rgba8
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET,
+            .name = "outline",
+      };
+      context.outlineTex = Texture2D::Create(texDesc);
+      texDesc.name = "outlines blurred";
+      texDesc.bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+      context.outlineBlurredTex = Texture2D::Create(texDesc);
 
       return context;
    }
@@ -345,6 +356,7 @@ namespace pbe {
       cmd.ClearRenderTarget(*context.normalTex, vec4{0, 0, 0, 0});
       cmd.ClearRenderTarget(*context.baseColorTex, vec4{ 0, 0, 0, 1 });
       cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
+      cmd.ClearRenderTarget(*context.outlineTex, vec4{ 0, 0, 0, 0 });
 
       cmd.ClearRenderTarget(*context.viewz, vec4{ 1000000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
@@ -447,7 +459,7 @@ namespace pbe {
 
       if (cvRenderOpaqueSort) {
          // todo: slow. I assumed
-         std::ranges::sort(opaqueObjs, [&](RenderObject& a, RenderObject& b) {
+         std::ranges::sort(opaqueObjs, [&](const RenderObject& a, const RenderObject& b) {
             float az = glm::dot(camera.Forward(), a.trans.position);
             float bz = glm::dot(camera.Forward(), b.trans.position);
             return az < bz;
@@ -722,6 +734,59 @@ namespace pbe {
          ResetCS_SRV_UAV();
       }
 
+      if (cvOutlineEnable) {
+         {
+            GPU_MARKER("Outline");
+            PROFILE_GPU("Outline");
+
+            cmd.SetRenderTargets(&*context.outlineTex);
+            cmd.SetViewport({}, context.depth->GetDesc().size);
+
+            // cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+            cmd.SetDepthStencilState(nullptr);
+            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+            RenderOutlines(cmd, scene);
+         }
+
+         {
+            GPU_MARKER("Outline Blur");
+            PROFILE_GPU("Outline Blur");
+
+            cmd.SetRenderTargets();
+
+            auto pass = GetGpuProgram(ProgramDesc::Cs("outline.hlsl", "OutlineBlurCS"));
+
+            pass->Activate(cmd);
+
+            pass->SetSRV(cmd, "gOutline", *context.outlineTex);
+            pass->SetUAV(cmd, "gOutlineBlurOut", *context.outlineBlurredTex);
+
+            cmd.Dispatch2D(context.outlineTex->GetDesc().size, int2{ 8 });
+
+            ResetCS_SRV_UAV();
+         }
+
+         {
+            GPU_MARKER("Outline Apply");
+            PROFILE_GPU("Outline Apply");
+
+            cmd.SetRenderTargets();
+
+            auto pass = GetGpuProgram(ProgramDesc::Cs("outline.hlsl", "OutlineApplyCS"));
+
+            pass->Activate(cmd);
+
+            pass->SetSRV(cmd, "gOutline", *context.outlineTex);
+            pass->SetSRV(cmd, "gOutlineBlur", *context.outlineBlurredTex);
+            pass->SetUAV(cmd, "gSceneOut", *context.colorLDR);
+
+            cmd.Dispatch2D(context.outlineTex->GetDesc().size, int2{ 8 });
+
+            ResetCS_SRV_UAV();
+         }
+      }
+
       if (dbgRenderEnable) {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
@@ -869,6 +934,44 @@ namespace pbe {
             // program->DrawInstanced(cmd, mesh.geom.VertexCount());
             program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
          }
+      }
+   }
+
+   void Renderer::RenderOutlines(CommandList& cmd, const Scene& scene) {
+      auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+      programDesc.vs.defines.AddDefine("OUTLINES");
+      programDesc.ps.defines.AddDefine("OUTLINES");
+
+      auto program = *GetGpuProgram(programDesc);
+
+      program.Activate(cmd);
+
+      // set mesh
+      auto* context = cmd.pContext;
+      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+      ID3D11InputLayout* inputLayout = rendres::GetInputLayout(baseColorPass->vs->blob.Get(), VertexPosNormal::inputElementDesc);
+      context->IASetInputLayout(inputLayout);
+
+      ID3D11Buffer* vBuffer = mesh.vertexBuffer->GetBuffer();
+      uint offset = 0;
+      context->IASetVertexBuffers(0, 1, &vBuffer, &mesh.geom.nVertexByteSize, &offset);
+      context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
+      //
+
+      for (auto [_, trans, material]
+         : scene.View<SceneTransformComponent, MaterialComponent>().each()) {
+         SDrawCallCB cb;
+         cb.instance.transform = trans.GetMatrix();
+         cb.instance.material.roughness = material.roughness;
+         cb.instance.material.baseColor = material.baseColor;
+         cb.instance.material.metallic = material.metallic;
+         cb.instance.entityID = (uint)trans.entity.GetID();
+
+         auto dynCB = cmd.AllocDynConstantBuffer(cb);
+         program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
+
+         program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
       }
    }
 
