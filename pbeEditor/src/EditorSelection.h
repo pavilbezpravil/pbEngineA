@@ -4,20 +4,9 @@
 namespace pbe {
 
    struct EditorSelection {
-      void Select(Entity entity, bool clearPrev = true) {
-         if (clearPrev) {
-            ClearSelection();
-         }
+      void Select(Entity entity, bool clearPrev = true);
 
-         selected.emplace_back(entity);
-      }
-
-      void Unselect(Entity entity) {
-         auto it = std::ranges::find(selected, entity);
-         if (it != selected.end()) {
-            selected.erase(it);
-         }
-      }
+      void Unselect(Entity entity);
 
       void ToggleSelect(Entity entity, bool clearPrev) {
          if (clearPrev) {
@@ -43,9 +32,7 @@ namespace pbe {
          return selected.empty() ? Entity{} : selected.front();
       }
 
-      void ClearSelection() {
-         selected.clear();
-      }
+      void ClearSelection();
 
       std::vector<Entity> selected;
    };

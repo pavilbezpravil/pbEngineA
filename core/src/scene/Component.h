@@ -151,6 +151,11 @@ namespace pbe {
       vec3 color = vec3(21, 95, 179) / 256.f;
    };
 
+   // todo:
+   struct OutlineComponent {
+      vec3 color = vec3(209, 188, 50) / 256.f;
+   };
+
    void RegisterBasicComponents(class Typer& typer);
 
 }

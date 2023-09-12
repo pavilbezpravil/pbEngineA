@@ -76,7 +76,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    PsOut output = (PsOut)0;
    output.color = float4(material.baseColor, 1);
-   output.color = float4(1, 1, 1, 1);
+   // output.color = float4(1, 1, 1, 1);
    return output;
 #else
    uint2 pixelIdx = input.posH.xy;

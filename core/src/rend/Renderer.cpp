@@ -742,10 +742,6 @@ namespace pbe {
             cmd.SetRenderTargets(&*context.outlineTex);
             cmd.SetViewport({}, context.depth->GetDesc().size);
 
-            // cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-            cmd.SetDepthStencilState(nullptr);
-            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
-
             RenderOutlines(cmd, scene);
          }
 
@@ -959,13 +955,11 @@ namespace pbe {
       context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
       //
 
-      for (auto [_, trans, material]
-         : scene.View<SceneTransformComponent, MaterialComponent>().each()) {
+      for (auto [_, trans, outline]
+         : scene.View<SceneTransformComponent, OutlineComponent>().each()) {
          SDrawCallCB cb;
          cb.instance.transform = trans.GetMatrix();
-         cb.instance.material.roughness = material.roughness;
-         cb.instance.material.baseColor = material.baseColor;
-         cb.instance.material.metallic = material.metallic;
+         cb.instance.material.baseColor = outline.color;
          cb.instance.entityID = (uint)trans.entity.GetID();
 
          auto dynCB = cmd.AllocDynConstantBuffer(cb);

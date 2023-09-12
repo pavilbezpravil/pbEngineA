@@ -9,12 +9,18 @@ void OutlineBlurCS( uint2 pixelPos : SV_DispatchThreadID ) {
    // todo: check border
 
    float3 x0 = gOutline[pixelPos];
+
    float3 x1 = gOutline[pixelPos + int2( 1, 1)];
    float3 x2 = gOutline[pixelPos + int2( 1,-1)];
    float3 x3 = gOutline[pixelPos + int2(-1, 1)];
    float3 x4 = gOutline[pixelPos + int2(-1,-1)];
 
-   float3 o = x0 + x1 + x2 + x3 + x4;
+   float3 x5 = gOutline[pixelPos + int2( 1, 0)];
+   float3 x6 = gOutline[pixelPos + int2(-1, 0)];
+   float3 x7 = gOutline[pixelPos + int2( 0, 1)];
+   float3 x8 = gOutline[pixelPos + int2( 0,-1)];
+
+   float3 o = x0 + x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8;
 
    gOutlineBlurOut[pixelPos] = float4(saturate(o), 1);
 }
@@ -27,7 +33,10 @@ void OutlineApplyCS( uint2 pixelPos : SV_DispatchThreadID ) {
    // todo: check border
 
    float3 color = gSceneOut[pixelPos].xyz;
-   float3 outline = gOutlineBlur[pixelPos] * saturate(1 - gOutline[pixelPos] * 1000);
+   bool isOutline = all(saturate(1 - gOutlineBlur[pixelPos] * 1000) < 0.5f);
+   isOutline = isOutline & all(saturate(1 - gOutline[pixelPos] * 1000) > 0.5f);
+   // isOutline &= (saturate(1 - gOutlineBlur[pixelPos] * 1000) < 0.5f);
+   float3 outline = gOutlineBlur[pixelPos] * isOutline;
 
-   gSceneOut[pixelPos] = float4(color + outline, 1);
+   gSceneOut[pixelPos] = float4(lerp(color, outline, isOutline), 1);
 }
