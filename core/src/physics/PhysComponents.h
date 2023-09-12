@@ -38,24 +38,6 @@ namespace pbe {
       // Contact
    };
 
-   // todo:
-   struct Transform {
-      vec3 position;
-      quat rotation;
-
-      vec3 Right() const {
-         return rotation * vec3_Right;
-      }
-
-      vec3 Up() const {
-         return rotation * vec3_Up;
-      }
-
-      vec3 Forward() const {
-         return rotation * vec3_Forward;
-      }
-   };
-
    struct JointAnchor {
       vec3 position{};
       quat rotation = quat_Identity;

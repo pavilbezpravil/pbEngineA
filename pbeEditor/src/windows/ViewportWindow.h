@@ -44,15 +44,29 @@ namespace pbe {
 
       GizmoCfg gizmoCfg;
 
+      enum ManipulatorMode {
+         None = 0,
+         Translate = BIT(1),
+         Rotate = BIT(2),
+         Scale = BIT(3),
+         AxisX = BIT(4),
+         AxisY = BIT(5),
+         AxisZ = BIT(6),
+      };
+
    private:
       bool zoomEnable = false;
       bool cameraMove = false;
 
-      vec2 manipulatorStartPos;
-      bool manipulatorTranslate = false;
+      Transform manipulatorRelativeTransform;
+      vec3 manipulatorInitialPos;
+
+      ManipulatorMode manipulatorMode = ManipulatorMode::None;
 
       void StartCameraMove();
       void StopCameraMove();
    };
+
+   DEFINE_ENUM_FLAG_OPERATORS(ViewportWindow::ManipulatorMode)
 
 }

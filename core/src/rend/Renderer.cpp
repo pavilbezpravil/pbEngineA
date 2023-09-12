@@ -830,18 +830,6 @@ namespace pbe {
          // auto shadowInvViewProjection = glm::inverse(shadowCamera.GetViewProjection());
          // dbgRend.DrawViewProjection(shadowInvViewProjection);
 
-         // vec2 uv = {0.5f, 0.5f};
-         vec2 uv = {0.7f, 0.6f};
-
-         vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(uv);
-
-         Plane plane = Plane::FromPointNormal(camera.position + camera.Forward() * 5.f, camera.Forward());
-         Ray ray = Ray{ camera.position, cameraDir };
-
-         auto intersectPos = plane.RayIntersectionAt(ray);
-
-         dbgRend.DrawSphere(Sphere{ intersectPos, 0.5f });
-
          if (cFreezeCullCamera) {
             auto cullCameraInvViewProjection = glm::inverse(cullCamera.GetViewProjection());
             dbgRend.DrawViewProjection(cullCameraInvViewProjection);

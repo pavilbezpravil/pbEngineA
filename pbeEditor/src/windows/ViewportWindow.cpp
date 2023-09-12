@@ -162,7 +162,7 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver()) {
+      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver() && manipulatorMode == None) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
          bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Ctrl);
@@ -316,28 +316,94 @@ namespace pbe {
          if (cvGizmo) {
             Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
          } else {
-            if (!manipulatorTranslate) {
-               if (selection->HasSelection() && Input::IsKeyDown(KeyCode::G)) {
-                  manipulatorStartPos = cursorPixelPos2;
-                  manipulatorTranslate = true;
-               }
-            }
-
-            if (manipulatorTranslate) {
+            if (selection->HasSelection()) {
                Entity entity = selection->FirstSelected();
-               auto pos = entity.GetTransform().Position();
+               auto entityPos = entity.GetTransform().Position();
 
                vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
 
-               Plane plane = Plane::FromPointNormal(pos, camera.Forward());
+               Plane plane = Plane::FromPointNormal(entityPos, camera.Forward());
                Ray ray = Ray{ camera.position, cameraDir };
 
-               auto intersectPos = plane.RayIntersectionAt(ray);
+               auto currentPlanePos = plane.RayIntersectionAt(ray);
 
-               entity.GetTransform().SetPosition(intersectPos);
+               if (manipulatorMode == None) {
+                  manipulatorRelativeTransform = {
+                     entity.GetTransform().Position(),
+                     entity.GetTransform().Rotation(),
+                     entity.GetTransform().Scale(),
+                  };
 
-               if (Input::IsKeyDown(KeyCode::RightButton)) {
-                  manipulatorTranslate = false;
+                  manipulatorInitialPos = currentPlanePos;
+
+                  if (Input::IsKeyDown(KeyCode::G)) {
+                     manipulatorMode = Translate;
+                     manipulatorMode |= AxisX | AxisY | AxisZ;
+                  }
+                  if (Input::IsKeyDown(KeyCode::R)) {
+                     manipulatorMode = Rotate;
+                     manipulatorMode |= AxisX | AxisY | AxisZ;
+                  }
+                  if (Input::IsKeyDown(KeyCode::S)) {
+                     manipulatorMode = Scale;
+                     manipulatorMode |= AxisX | AxisY | AxisZ;
+                  }
+               }
+
+               if (manipulatorMode != None) {
+                  if (Input::IsKeyDown(KeyCode::X)) {
+                     manipulatorMode &= ~(AxisX | AxisY | AxisZ);
+                     manipulatorMode |= AxisX;
+                  }
+                  if (Input::IsKeyDown(KeyCode::Y)) {
+                     manipulatorMode &= ~(AxisX | AxisY | AxisZ);
+                     manipulatorMode |= AxisY;
+                  }
+                  if (Input::IsKeyDown(KeyCode::Z)) {
+                     manipulatorMode &= ~(AxisX | AxisY | AxisZ);
+                     manipulatorMode |= AxisZ;
+                  }
+               }
+
+               auto reset = [&]() {
+                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
+                  entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
+                  entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
+                  manipulatorMode = None;
+                  };
+
+               if (manipulatorMode & Translate) {
+                  vec3 translation = currentPlanePos - manipulatorInitialPos;
+
+                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
+
+                  if (Input::IsKeyDown(KeyCode::LeftButton)) {
+                     manipulatorMode = None;
+                  }
+                  if (Input::IsKeyDown(KeyCode::RightButton)) {
+                     reset();
+                  }
+               }
+
+               if (manipulatorMode & Scale) {
+                  float initialDistance = glm::distance(manipulatorInitialPos, entityPos);
+                  float currentDistance = glm::distance(currentPlanePos, entityPos);
+                  float scale = currentDistance / initialDistance;
+
+                  vec3 scale3 = vec3{
+                     manipulatorMode & AxisX ? scale : 1.f,
+                     manipulatorMode & AxisY ? scale : 1.f,
+                     manipulatorMode & AxisZ ? scale : 1.f,
+                  };
+
+                  entity.GetTransform().SetScale(manipulatorRelativeTransform.scale * scale3);
+
+                  if (Input::IsKeyDown(KeyCode::LeftButton)) {
+                     manipulatorMode = None;
+                  }
+                  if (Input::IsKeyDown(KeyCode::RightButton)) {
+                     reset();
+                  }
                }
             }
          }
