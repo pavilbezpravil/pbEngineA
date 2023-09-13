@@ -318,11 +318,11 @@ namespace pbe {
          } else {
             if (selection->HasSelection()) {
                Entity entity = selection->FirstSelected();
-               auto entityPos = entity.GetTransform().Position();
+               auto relativePos = manipulatorRelativeTransform.position;
 
                vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
 
-               Plane plane = Plane::FromPointNormal(entityPos, camera.Forward());
+               Plane plane = Plane::FromPointNormal(relativePos, camera.Forward());
                Ray ray = Ray{ camera.position, cameraDir };
 
                auto currentPlanePos = plane.RayIntersectionAt(ray);
@@ -365,13 +365,14 @@ namespace pbe {
                   }
                }
 
-               entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
-               entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
-               entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
-
                if (Input::IsKeyDown(KeyCode::LeftButton)) {
                   manipulatorMode = None;
+               } else {
+                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
+                  entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
+                  entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
                }
+
                if (Input::IsKeyDown(KeyCode::RightButton)) {
                   manipulatorMode = None;
                }
@@ -379,12 +380,24 @@ namespace pbe {
                if (manipulatorMode & Translate) {
                   vec3 translation = currentPlanePos - manipulatorInitialPos;
 
-                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
+                  vec3 translationProcessed = vec3{0};
+
+                  if (manipulatorMode & AxisX) {
+                     translationProcessed.x = dot(translation, vec3_X);
+                  }
+                  if (manipulatorMode & AxisY) {
+                     translationProcessed.y = dot(translation, vec3_Y);
+                  }
+                  if (manipulatorMode & AxisZ) {
+                     translationProcessed.z = dot(translation, vec3_Z);
+                  }
+
+                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translationProcessed);
                }
 
                if (manipulatorMode & Scale) {
-                  float initialDistance = glm::distance(manipulatorInitialPos, entityPos);
-                  float currentDistance = glm::distance(currentPlanePos, entityPos);
+                  float initialDistance = glm::distance(manipulatorInitialPos, relativePos);
+                  float currentDistance = glm::distance(currentPlanePos, relativePos);
                   float scale = currentDistance / initialDistance;
 
                   vec3 scale3 = vec3{
