@@ -335,19 +335,19 @@ namespace pbe {
                   };
 
                   manipulatorInitialPos = currentPlanePos;
+               }
 
-                  if (Input::IsKeyDown(KeyCode::G)) {
-                     manipulatorMode = Translate;
-                     manipulatorMode |= AxisX | AxisY | AxisZ;
-                  }
-                  if (Input::IsKeyDown(KeyCode::R)) {
-                     manipulatorMode = Rotate;
-                     manipulatorMode |= AxisX | AxisY | AxisZ;
-                  }
-                  if (Input::IsKeyDown(KeyCode::S)) {
-                     manipulatorMode = Scale;
-                     manipulatorMode |= AxisX | AxisY | AxisZ;
-                  }
+               if (Input::IsKeyDown(KeyCode::G)) {
+                  manipulatorMode = Translate;
+                  manipulatorMode |= AxisX | AxisY | AxisZ;
+               }
+               if (Input::IsKeyDown(KeyCode::R)) {
+                  manipulatorMode = Rotate;
+                  manipulatorMode |= AxisX | AxisY | AxisZ;
+               }
+               if (Input::IsKeyDown(KeyCode::S)) {
+                  manipulatorMode = Scale;
+                  manipulatorMode |= AxisX | AxisY | AxisZ;
                }
 
                if (manipulatorMode != None) {
@@ -365,24 +365,21 @@ namespace pbe {
                   }
                }
 
-               auto reset = [&]() {
-                  entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
-                  entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
-                  entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
+               entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
+               entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
+               entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
+
+               if (Input::IsKeyDown(KeyCode::LeftButton)) {
                   manipulatorMode = None;
-                  };
+               }
+               if (Input::IsKeyDown(KeyCode::RightButton)) {
+                  manipulatorMode = None;
+               }
 
                if (manipulatorMode & Translate) {
                   vec3 translation = currentPlanePos - manipulatorInitialPos;
 
                   entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
-
-                  if (Input::IsKeyDown(KeyCode::LeftButton)) {
-                     manipulatorMode = None;
-                  }
-                  if (Input::IsKeyDown(KeyCode::RightButton)) {
-                     reset();
-                  }
                }
 
                if (manipulatorMode & Scale) {
@@ -397,13 +394,6 @@ namespace pbe {
                   };
 
                   entity.GetTransform().SetScale(manipulatorRelativeTransform.scale * scale3);
-
-                  if (Input::IsKeyDown(KeyCode::LeftButton)) {
-                     manipulatorMode = None;
-                  }
-                  if (Input::IsKeyDown(KeyCode::RightButton)) {
-                     reset();
-                  }
                }
             }
          }
