@@ -395,6 +395,35 @@ namespace pbe {
                   entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translationProcessed);
                }
 
+               if (manipulatorMode & Rotate) {
+                  vec3 initialDir = normalize(manipulatorInitialPos - relativePos);
+                  vec3 currentDir = normalize(currentPlanePos - relativePos);
+
+                  vec3 cross = glm::cross(initialDir, currentDir);
+                  float dot = glm::dot(initialDir, currentDir);
+
+                  float angle = acosf(dot) * glm::sign(glm::dot(camera.Forward(), cross));
+
+                  vec3 axis;
+                  if ((manipulatorMode & AllAxis) == AllAxis) {
+                     axis = camera.Forward();
+                  } else if (manipulatorMode & AxisX) {
+                     axis = vec3_X;
+                     angle *= glm::sign(glm::dot(camera.Forward(), axis));
+                  } else if (manipulatorMode & AxisY) {
+                     axis = vec3_Y;
+                     angle *= glm::sign(glm::dot(camera.Forward(), axis));
+                  } else if (manipulatorMode & AxisZ) {
+                     axis = vec3_Z;
+                     angle *= glm::sign(glm::dot(camera.Forward(), axis));
+                  }
+
+                  INFO("angle {}", glm::degrees(angle));
+
+                  quat rotation = glm::angleAxis(angle, axis);
+                  entity.GetTransform().SetRotation(rotation * manipulatorRelativeTransform.rotation);
+               }
+
                if (manipulatorMode & Scale) {
                   float initialDistance = glm::distance(manipulatorInitialPos, relativePos);
                   float currentDistance = glm::distance(currentPlanePos, relativePos);
@@ -560,7 +589,7 @@ namespace pbe {
    }
 
    void ViewportWindow::StartCameraMove() {
-      if (manipulatorMode != CameraMove && manipulatorMode != ObjManipulation) {
+      if ((manipulatorMode & CameraMove) == 0 && (manipulatorMode & ObjManipulation) == 0) {
          manipulatorMode = CameraMove;
          Input::HideMouse(true);
       }
