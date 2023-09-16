@@ -370,11 +370,11 @@ namespace pbe {
                if ((manipulatorMode & AllAxis) != AllAxis) {
                   const float AXIS_LENGTH = 100000.f;
                   if (manipulatorMode & AxisX) {
-                     dbgRend.DrawLine(relativePos - vec3_X * AXIS_LENGTH, relativePos + vec3_X * AXIS_LENGTH, vec4{ 1, 0, 0, 1 });
+                     dbgRend.DrawLine(relativePos - vec3_X * AXIS_LENGTH, relativePos + vec3_X * AXIS_LENGTH, Color_Red);
                   } else if (manipulatorMode & AxisY) {
-                     dbgRend.DrawLine(relativePos - vec3_Y * AXIS_LENGTH, relativePos + vec3_Y * AXIS_LENGTH, vec4{ 0, 1, 0, 1 });
+                     dbgRend.DrawLine(relativePos - vec3_Y * AXIS_LENGTH, relativePos + vec3_Y * AXIS_LENGTH, Color_Green);
                   } else if (manipulatorMode & AxisZ) {
-                     dbgRend.DrawLine(relativePos - vec3_Z * AXIS_LENGTH, relativePos + vec3_Z * AXIS_LENGTH, vec4{ 0, 0, 1, 1 });
+                     dbgRend.DrawLine(relativePos - vec3_Z * AXIS_LENGTH, relativePos + vec3_Z * AXIS_LENGTH, Color_Blue);
                   }
                }
 

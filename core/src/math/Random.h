@@ -2,8 +2,11 @@
 
 #include "Types.h"
 #include "core/Core.h"
+#include "Color.h"
 
 namespace pbe {
+
+   struct Color;
 
    struct CORE_API Random {
 
@@ -15,8 +18,8 @@ namespace pbe {
       static vec2 Float2(vec2 min = vec2_Zero, vec2 max = vec2_One);
       static vec3 Float3(vec3 min = vec3_Zero, vec3 max = vec3_One);
 
-      static vec3 Color(uint seed);
-      static vec3 Color();
+      static Color Color(uint seed);
+      static pbe::Color Color();
 
       static vec3 UniformInSphere();
       static vec2 UniformInCircle();

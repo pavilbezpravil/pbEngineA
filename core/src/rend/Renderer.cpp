@@ -860,13 +860,13 @@ namespace pbe {
          }
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
-            dbgRend.DrawSphere({ trans.position, light.radius }, vec4{ light.color, 1 });
+            dbgRend.DrawSphere({ trans.position, light.radius }, light.color);
          }
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
             // todo: OBB
             // todo: box, sphere, capsule
-            dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f }, vec4_One);
+            dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f });
          }
 
          for (auto [_, joint] : scene.View<JointComponent>().each()) {
@@ -874,7 +874,7 @@ namespace pbe {
                continue;
             }
 
-            dbgRend.DrawLine(joint.entity0, joint.entity1, vec4{ 1, 1, 1, 1 });
+            dbgRend.DrawLine(joint.entity0, joint.entity1, Color_White);
 
             auto trans0 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor0);
             auto trans1 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor1);
@@ -885,7 +885,7 @@ namespace pbe {
 
             auto sphere = Sphere{ pos0, 0.2f };
 
-            auto defColor = vec4{ 0, 1, 0, 1 };
+            Color defColor = Color_Blue;
             if (joint.type == JointType::Fixed) {
                dbgRend.DrawSphere(sphere, defColor);
             } else if (joint.type == JointType::Distance) {
@@ -893,7 +893,7 @@ namespace pbe {
                auto posMax = pos0 + dir * joint.distance.maxDistance;
                dbgRend.DrawLine(posMin, posMax, defColor);
             } else if (joint.type == JointType::Revolute) {
-               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, vec4{ 1, 0, 0, 1 });
+               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, Color_Red);
                dbgRend.DrawSphere(sphere, defColor);
             } else if (joint.type == JointType::Spherical) {
                dbgRend.DrawSphere(sphere, defColor);

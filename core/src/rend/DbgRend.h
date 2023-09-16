@@ -3,6 +3,7 @@
 #include "core/Common.h"
 #include "math/Types.h"
 #include "core/Ref.h"
+#include "math/Color.h"
 
 namespace pbe {
    class Entity;
@@ -23,14 +24,14 @@ namespace pbe {
       DbgRend();
       ~DbgRend();
 
-      void DrawLine(const vec3& start, const vec3& end, const vec4& color = vec4_One);
-      void DrawSphere(const Sphere& sphere, const vec4& color = vec4_One);
-      void DrawAABB(const AABB& aabb, const vec4& color = vec4_One);
-      void DrawAABBOrderPoints(const vec3 points[8], const vec4& color = vec4_One);
-      void DrawViewProjection(const mat4& invViewProjection, const vec4& color = vec4_One);
-      void DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const vec4& color = vec4_One);
+      void DrawLine(const vec3& start, const vec3& end, const Color& color = Color_White);
+      void DrawSphere(const Sphere& sphere, const Color& color = Color_White);
+      void DrawAABB(const AABB& aabb, const Color& color = Color_White);
+      void DrawAABBOrderPoints(const vec3 points[8], const Color& color = Color_White);
+      void DrawViewProjection(const mat4& invViewProjection, const Color& color = Color_White);
+      void DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const Color& color = Color_White);
 
-      void DrawLine(const Entity& entity0, const Entity& entity1, const vec4& color = vec4_One);
+      void DrawLine(const Entity& entity0, const Entity& entity1, const Color& color = Color_White);
 
       void Clear();
 

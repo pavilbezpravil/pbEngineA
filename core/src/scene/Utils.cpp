@@ -4,6 +4,7 @@
 #include "Component.h"
 #include "../../../pbeEditor/src/EditorSelection.h"
 #include "gui/Gui.h"
+#include "math/Color.h"
 #include "math/Random.h"
 #include "physics/PhysComponents.h"
 #include "physics/PhysicsScene.h"

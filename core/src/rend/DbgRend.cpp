@@ -19,12 +19,12 @@ namespace pbe {
    DbgRend::~DbgRend() {
    }
 
-   void DbgRend::DrawLine(const vec3& start, const vec3& end, const vec4& color) {
+   void DbgRend::DrawLine(const vec3& start, const vec3& end, const Color& color) {
       lines.emplace_back(start, color);
       lines.emplace_back(end, color);
    }
 
-   void DbgRend::DrawSphere(const Sphere& sphere, const vec4& color) {
+   void DbgRend::DrawSphere(const Sphere& sphere, const Color& color) {
       // Icosahedron
       const double t = (1.0 + std::sqrt(5.0)) / 2.0;
 
@@ -78,7 +78,7 @@ namespace pbe {
       draw(9, 8, 1);
    }
 
-   void DbgRend::DrawAABB(const AABB& aabb, const vec4& color) {
+   void DbgRend::DrawAABB(const AABB& aabb, const Color& color) {
       vec3 a = aabb.min;
       vec3 b = aabb.max;
 
@@ -104,7 +104,7 @@ namespace pbe {
       DrawAABBOrderPoints(points, color);
    }
 
-   void DbgRend::DrawAABBOrderPoints(const vec3 points[8], const vec4& color) {
+   void DbgRend::DrawAABBOrderPoints(const vec3 points[8], const Color& color) {
       DrawLine(points[0], points[1], color);
       DrawLine(points[0], points[2], color);
       DrawLine(points[1], points[3], color);
@@ -121,7 +121,7 @@ namespace pbe {
       DrawLine(points[3], points[7], color);
    }
 
-   void DbgRend::DrawViewProjection(const mat4& invViewProjection, const vec4& color) {
+   void DbgRend::DrawViewProjection(const mat4& invViewProjection, const Color& color) {
       vec4 points[8];
 
       points[0] = invViewProjection * vec4{-1, -1, 0, 1};
@@ -143,15 +143,8 @@ namespace pbe {
       DrawAABBOrderPoints(points3, color);
    }
 
-   void DbgRend::DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const vec4& color) {
-      vec4 WHITE = vec4{ 1, 1, 1, 1 };
-      vec4 BLACK = vec4{ 0, 0, 0, 1 };
-      vec4 RED = vec4{ 1, 0, 0, 1 };
-      vec4 GREEN = vec4{ 0, 1, 0, 1 };
-      vec4 BLUE = vec4{ 0, 0, 1, 1 };
-      vec4 YELLOW = vec4{ 1, 1, 0, 1 };
-
-      vec4 colors[6] = { WHITE, BLACK, RED, GREEN, BLUE, YELLOW };
+   void DbgRend::DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const Color& color) {
+      Color colors[6] = { Color_White, Color_Black, Color_Red, Color_Green, Color_Blue, Color_Yellow };
 
       for (int i = 0; i < 6; ++i) {
          const auto& outNormal = -frustum.planes[i].normal;
@@ -160,7 +153,7 @@ namespace pbe {
       }
    }
 
-   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const vec4& color) {
+   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const Color& color) {
       if (!entity0 || !entity1) {
          return;
       }

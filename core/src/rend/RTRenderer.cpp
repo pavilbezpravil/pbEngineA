@@ -111,8 +111,7 @@ namespace pbe {
 
          auto& node = buildedNodes[idx];
 
-         vec3 color = Random::Color(level);
-         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), vec4(color, 1));
+         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
 
          if (node.objIdx == UINT_MAX) {
             Render(dbgRend, LeftIdx(idx), level + 1);

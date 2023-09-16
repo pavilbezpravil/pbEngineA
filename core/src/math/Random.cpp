@@ -42,14 +42,14 @@ namespace pbe {
          Float(min.z, max.z) };
    }
 
-   vec3 Random::Color(uint seed) {
+   Color Random::Color(uint seed) {
       return {
         FloatSeeded(seed),
         FloatSeeded(seed + 111),
         FloatSeeded(seed + 222) };
    }
 
-   vec3 Random::Color() {
+   Color Random::Color() {
       return Float3();
    }
 

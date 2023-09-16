@@ -71,7 +71,7 @@ namespace pbe {
             while (steps-- > 0) {
                Entity e = CreateCube(GetScene(), CubeDesc{
                      .parent = owner,
-                     .color = Random::Color()
+                     .color = Random::Color(),
                   });
 
                e.Get<RigidBodyComponent>().SetLinearVelocity(tran.Forward() * initialSpeed);
