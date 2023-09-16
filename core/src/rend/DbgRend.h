@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Common.h"
 #include "math/Types.h"
 #include "core/Ref.h"
 
@@ -15,12 +16,12 @@ namespace pbe {
 
    class CommandList;
 
-   class DbgRend {
+   class CORE_API DbgRend {
    public:
+      NON_COPYABLE(DbgRend);
+
       DbgRend();
       ~DbgRend();
-
-      DbgRend(const DbgRend&) = delete;
 
       void DrawLine(const vec3& start, const vec3& end, const vec4& color = vec4_One);
       void DrawSphere(const Sphere& sphere, const vec4& color = vec4_One);

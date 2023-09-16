@@ -317,6 +317,8 @@ namespace pbe {
             Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
          } else {
             if (selection->HasSelection() && (manipulatorMode & CameraMove) == 0) {
+               auto& dbgRend = *scene->dbgRend;
+
                Entity entity = selection->FirstSelected();
                auto relativePos = manipulatorRelativeTransform.position;
 
@@ -362,6 +364,17 @@ namespace pbe {
                   if (Input::IsKeyDown(KeyCode::Z)) {
                      manipulatorMode &= ~(AxisX | AxisY | AxisZ);
                      manipulatorMode |= AxisZ;
+                  }
+               }
+
+               if ((manipulatorMode & AllAxis) != AllAxis) {
+                  const float AXIS_LENGTH = 100000.f;
+                  if (manipulatorMode & AxisX) {
+                     dbgRend.DrawLine(relativePos - vec3_X * AXIS_LENGTH, relativePos + vec3_X * AXIS_LENGTH, vec4{ 1, 0, 0, 1 });
+                  } else if (manipulatorMode & AxisY) {
+                     dbgRend.DrawLine(relativePos - vec3_Y * AXIS_LENGTH, relativePos + vec3_Y * AXIS_LENGTH, vec4{ 0, 1, 0, 1 });
+                  } else if (manipulatorMode & AxisZ) {
+                     dbgRend.DrawLine(relativePos - vec3_Z * AXIS_LENGTH, relativePos + vec3_Z * AXIS_LENGTH, vec4{ 0, 0, 1, 1 });
                   }
                }
 
