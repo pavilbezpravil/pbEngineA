@@ -52,12 +52,13 @@ namespace pbe {
          AxisX = BIT(4),
          AxisY = BIT(5),
          AxisZ = BIT(6),
-         AllAxis = AxisX | AxisY | AxisZ,
          ObjManipulation = BIT(7),
          CameraMove = BIT(8),
       };
 
    private:
+      ManipulatorMode AllAxis = ManipulatorMode(AxisX | AxisY | AxisZ);
+
       bool zoomEnable = false;
 
       Transform manipulatorRelativeTransform;

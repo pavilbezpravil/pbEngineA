@@ -365,7 +365,10 @@ namespace pbe {
                   }
 
                   dbgRend.DrawSphere(Sphere{ relativePos, 0.03f }, Color_Yellow, false);
-                  dbgRend.DrawLine(relativePos, currentPlanePos, Color_Black, false);
+
+                  if (manipulatorMode & (Rotate | Scale)) {
+                     dbgRend.DrawLine(relativePos, currentPlanePos, Color_Black, false);
+                  }
                }
 
                if ((manipulatorMode & AllAxis) != AllAxis) {
@@ -449,6 +452,10 @@ namespace pbe {
                   };
 
                   entity.GetTransform().SetScale(manipulatorRelativeTransform.scale * scale3);
+               }
+
+               if (manipulatorMode & ObjManipulation) {
+                  entity.AddOrReplace<TransformChangedMarker>();
                }
             }
          }
