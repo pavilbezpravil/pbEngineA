@@ -52,11 +52,12 @@ namespace pbe {
          AxisX = BIT(4),
          AxisY = BIT(5),
          AxisZ = BIT(6),
+         ObjManipulation = BIT(7),
+         CameraMove = BIT(8),
       };
 
    private:
       bool zoomEnable = false;
-      bool cameraMove = false;
 
       Transform manipulatorRelativeTransform;
       vec3 manipulatorInitialPos;

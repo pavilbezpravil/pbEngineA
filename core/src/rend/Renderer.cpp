@@ -524,6 +524,25 @@ namespace pbe {
       cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
       if (rayTracingSceneRender) {
+         cmd.SetViewport({}, context.colorHDR->GetDesc().size);
+         cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+         {
+            GPU_MARKER("ZPass");
+            PROFILE_GPU("ZPass");
+         
+            // todo: without normal?
+            cmd.SetRenderTargets(context.normalTex, context.depth);
+            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+         
+            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+            programDesc.vs.defines.AddDefine("ZPASS");
+            programDesc.ps.defines.AddDefine("ZPASS");
+            auto baseZPass = GetGpuProgram(programDesc);
+         
+            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
+         }
+
          {
             GPU_MARKER("GBuffer");
             PROFILE_GPU("GBuffer");
@@ -536,8 +555,7 @@ namespace pbe {
 
             cmd.SetViewport({}, context.depth->GetDesc().size);
 
-            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-            cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+            cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
 
             auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
             programDesc.vs.defines.AddDefine("GBUFFER");

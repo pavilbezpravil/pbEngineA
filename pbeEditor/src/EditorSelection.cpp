@@ -18,7 +18,9 @@ namespace pbe {
    void EditorSelection::Unselect(Entity entity) {
       auto it = std::ranges::find(selected, entity);
       if (it != selected.end()) {
-         entity.Remove<OutlineComponent>();
+         if (entity) {
+            entity.Remove<OutlineComponent>();
+         }
          selected.erase(it);
       }
    }

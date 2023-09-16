@@ -270,7 +270,7 @@ namespace pbe {
          ImGui::Image(srv, imSize);
 
          static vec2 spawnCursorUV;
-         if (Input::IsKeyPressing(KeyCode::Shift) && Input::IsKeyDown(KeyCode::A) && !cameraMove) {
+         if (Input::IsKeyPressing(KeyCode::Shift) && Input::IsKeyDown(KeyCode::A) && (manipulatorMode & CameraMove) == 0) {
             ImGui::OpenPopup("Add");
             spawnCursorUV = cursorUV;
          }
@@ -316,7 +316,7 @@ namespace pbe {
          if (cvGizmo) {
             Gizmo(vec2{ imSize.x, imSize.y }, cursorPos);
          } else {
-            if (selection->HasSelection()) {
+            if (selection->HasSelection() && (manipulatorMode & CameraMove) == 0) {
                Entity entity = selection->FirstSelected();
                auto relativePos = manipulatorRelativeTransform.position;
 
@@ -338,15 +338,15 @@ namespace pbe {
                }
 
                if (Input::IsKeyDown(KeyCode::G)) {
-                  manipulatorMode = Translate;
+                  manipulatorMode = Translate | ObjManipulation;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
                if (Input::IsKeyDown(KeyCode::R)) {
-                  manipulatorMode = Rotate;
+                  manipulatorMode = Rotate | ObjManipulation;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
                if (Input::IsKeyDown(KeyCode::S)) {
-                  manipulatorMode = Scale;
+                  manipulatorMode = Scale | ObjManipulation;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
 
@@ -432,7 +432,7 @@ namespace pbe {
 
       camera.NextFrame(); // todo:
 
-      if (cameraMove) {
+      if (manipulatorMode == CameraMove) {
          camera.Update(dt);
       }
 
@@ -560,15 +560,16 @@ namespace pbe {
    }
 
    void ViewportWindow::StartCameraMove() {
-      if (!cameraMove) {
-         cameraMove = true;
+      if (manipulatorMode != CameraMove && manipulatorMode != ObjManipulation) {
+         manipulatorMode = CameraMove;
          Input::HideMouse(true);
       }
    }
 
    void ViewportWindow::StopCameraMove() {
-      if (cameraMove) {
-         cameraMove = false;
+      if (manipulatorMode == CameraMove) {
+         ASSERT((manipulatorMode & ObjManipulation) == 0);
+         manipulatorMode = None;
          Input::ShowMouse(true);
       }
    }
