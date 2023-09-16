@@ -12,19 +12,23 @@
 namespace pbe {
 
    DbgRend::DbgRend() {
-      auto programDesc = ProgramDesc::VsPs("dbgRend.hlsl", "vs_main", "ps_main");
-      program = GpuProgram::Create(programDesc);
+
    }
 
    DbgRend::~DbgRend() {
    }
 
-   void DbgRend::DrawLine(const vec3& start, const vec3& end, const Color& color) {
-      lines.emplace_back(start, color);
-      lines.emplace_back(end, color);
+   void DbgRend::DrawLine(const vec3& start, const vec3& end, const Color& color, bool zTest) {
+      if (zTest) {
+         lines.emplace_back(start, color);
+         lines.emplace_back(end, color);
+      } else {
+         linesNoZ.emplace_back(start, color);
+         linesNoZ.emplace_back(end, color);
+      }
    }
 
-   void DbgRend::DrawSphere(const Sphere& sphere, const Color& color) {
+   void DbgRend::DrawSphere(const Sphere& sphere, const Color& color, bool zTest) {
       // Icosahedron
       const double t = (1.0 + std::sqrt(5.0)) / 2.0;
 
@@ -50,9 +54,9 @@ namespace pbe {
       }
 
       auto draw = [&](int a, int b, int c) {
-         DrawLine(points[a], points[b], color);
-         DrawLine(points[b], points[c], color);
-         DrawLine(points[c], points[a], color);
+         DrawLine(points[a], points[b], color, zTest);
+         DrawLine(points[b], points[c], color, zTest);
+         DrawLine(points[c], points[a], color, zTest);
       };
 
       // Faces
@@ -78,7 +82,7 @@ namespace pbe {
       draw(9, 8, 1);
    }
 
-   void DbgRend::DrawAABB(const AABB& aabb, const Color& color) {
+   void DbgRend::DrawAABB(const AABB& aabb, const Color& color, bool zTest) {
       vec3 a = aabb.min;
       vec3 b = aabb.max;
 
@@ -101,27 +105,27 @@ namespace pbe {
       points[6].y = b.y;
       points[7].y = b.y;
 
-      DrawAABBOrderPoints(points, color);
+      DrawAABBOrderPoints(points, color, zTest);
    }
 
-   void DbgRend::DrawAABBOrderPoints(const vec3 points[8], const Color& color) {
-      DrawLine(points[0], points[1], color);
-      DrawLine(points[0], points[2], color);
-      DrawLine(points[1], points[3], color);
-      DrawLine(points[2], points[3], color);
+   void DbgRend::DrawAABBOrderPoints(const vec3 points[8], const Color& color, bool zTest) {
+      DrawLine(points[0], points[1], color, zTest);
+      DrawLine(points[0], points[2], color, zTest);
+      DrawLine(points[1], points[3], color, zTest);
+      DrawLine(points[2], points[3], color, zTest);
 
-      DrawLine(points[4], points[5], color);
-      DrawLine(points[4], points[6], color);
-      DrawLine(points[5], points[7], color);
-      DrawLine(points[6], points[7], color);
+      DrawLine(points[4], points[5], color, zTest);
+      DrawLine(points[4], points[6], color, zTest);
+      DrawLine(points[5], points[7], color, zTest);
+      DrawLine(points[6], points[7], color, zTest);
 
-      DrawLine(points[0], points[4], color);
-      DrawLine(points[1], points[5], color);
-      DrawLine(points[2], points[6], color);
-      DrawLine(points[3], points[7], color);
+      DrawLine(points[0], points[4], color, zTest);
+      DrawLine(points[1], points[5], color, zTest);
+      DrawLine(points[2], points[6], color, zTest);
+      DrawLine(points[3], points[7], color, zTest);
    }
 
-   void DbgRend::DrawViewProjection(const mat4& invViewProjection, const Color& color) {
+   void DbgRend::DrawViewProjection(const mat4& invViewProjection, const Color& color, bool zTest) {
       vec4 points[8];
 
       points[0] = invViewProjection * vec4{-1, -1, 0, 1};
@@ -140,35 +144,40 @@ namespace pbe {
          points3[i] = points[i];
       }
 
-      DrawAABBOrderPoints(points3, color);
+      DrawAABBOrderPoints(points3, color, zTest);
    }
 
-   void DbgRend::DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const Color& color) {
+   void DbgRend::DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const Color& color, bool zTest) {
       Color colors[6] = { Color_White, Color_Black, Color_Red, Color_Green, Color_Blue, Color_Yellow };
 
       for (int i = 0; i < 6; ++i) {
          const auto& outNormal = -frustum.planes[i].normal;
          auto start = pos + forward * 2.f + outNormal;
-         DrawLine(start, start + outNormal, colors[i]);
+         DrawLine(start, start + outNormal, colors[i], zTest);
       }
    }
 
-   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const Color& color) {
+   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const Color& color, bool zTest) {
       if (!entity0 || !entity1) {
          return;
       }
 
-      DrawLine(entity0.GetTransform().Position(), entity1.GetTransform().Position(), color);
+      DrawLine(entity0.GetTransform().Position(), entity1.GetTransform().Position(), color, zTest);
    }
 
    void DbgRend::Clear() {
       lines.clear();
+      linesNoZ.clear();
    }
 
    void DbgRend::Render(CommandList& cmd, const RenderCamera& camera) {
+      auto programDesc = ProgramDesc::VsPs("dbgRend.hlsl", "vs_main", "ps_main");
+      auto program = GetGpuProgram(programDesc);
+
+      program->Activate(cmd);
+
       auto context = cmd.pContext;
 
-      cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
       cmd.SetBlendState(rendres::blendStateDefaultRGB);
       // cmd.SetBlendState(rendres::blendStateTransparency);
 
@@ -177,14 +186,21 @@ namespace pbe {
       ID3D11InputLayout* inputLayout = rendres::GetInputLayout(program->vs->blob.Get(), VertexPosColor::inputElementDesc);
       context->IASetInputLayout(inputLayout);
 
-      auto stride = (uint)sizeof(VertexPosColor);
-      auto dynVerts = cmd.AllocDynVertBuffer(lines.data(), stride * (uint)lines.size());
+      auto draw = [&cmd, &context, &program](std::vector<VertexPosColor>& lines) {
+         auto stride = (uint)sizeof(VertexPosColor);
+         auto dynVerts = cmd.AllocDynVertBuffer(lines.data(), stride * (uint)lines.size());
 
-      ID3D11Buffer* vBuffer = dynVerts.buffer->GetBuffer();
-      context->IASetVertexBuffers(0, 1, &vBuffer, &stride, &dynVerts.offset);
+         ID3D11Buffer* vBuffer = dynVerts.buffer->GetBuffer();
+         context->IASetVertexBuffers(0, 1, &vBuffer, &stride, &dynVerts.offset);
 
-      program->Activate(cmd);
-      program->DrawInstanced(cmd, (uint)lines.size());
+         program->DrawInstanced(cmd, (uint)lines.size());
+      };
+
+      cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadNoWrite);
+      draw(lines);
+
+      cmd.SetDepthStencilState(rendres::depthStencilStateNo);
+      draw(linesNoZ);
    }
 
 }

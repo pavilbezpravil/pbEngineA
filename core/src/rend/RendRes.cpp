@@ -15,6 +15,7 @@ namespace pbe {
       ID3D11SamplerState* samplerStateWrapLinear;
       ID3D11SamplerState* samplerStateClampPoint;
       ID3D11SamplerState* samplerStateShadow;
+      ID3D11DepthStencilState* depthStencilStateNo;
       ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       ID3D11DepthStencilState* depthStencilStateEqual;
@@ -92,10 +93,14 @@ namespace pbe {
          ///////////////////////////////////////////////////////////////////////////////////////////////
 
          D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-         depthStencilDesc.DepthEnable = true;
          depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
          depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
+         depthStencilDesc.DepthEnable = false;
+         device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateNo);
+         resourses.push_back(depthStencilStateNo);
+
+         depthStencilDesc.DepthEnable = true;
          device->CreateDepthStencilState(&depthStencilDesc, &depthStencilStateDepthReadWrite);
          resourses.push_back(depthStencilStateDepthReadWrite);
 

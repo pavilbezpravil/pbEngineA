@@ -190,9 +190,7 @@ namespace pbe {
          vec2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
          vec2 cursorPos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
 
-         vec2 cursorPixelPos2{ mousePos - cursorPos };
-
-         int2 cursorPixelPos{ cursorPixelPos2 * renderScale };
+         int2 cursorPixelPos{ (mousePos - cursorPos) * renderScale };
          vec2 cursorUV = vec2(cursorPixelPos) / vec2(size);
 
          cmd.SetCommonSamplers();
@@ -352,7 +350,7 @@ namespace pbe {
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
 
-               if (manipulatorMode != None) {
+               if (manipulatorMode & ObjManipulation) {
                   if (Input::IsKeyDown(KeyCode::X)) {
                      manipulatorMode &= ~(AxisX | AxisY | AxisZ);
                      manipulatorMode |= AxisX;
@@ -365,16 +363,19 @@ namespace pbe {
                      manipulatorMode &= ~(AxisX | AxisY | AxisZ);
                      manipulatorMode |= AxisZ;
                   }
+
+                  dbgRend.DrawSphere(Sphere{ relativePos, 0.03f }, Color_Yellow, false);
+                  dbgRend.DrawLine(relativePos, currentPlanePos, Color_Black, false);
                }
 
                if ((manipulatorMode & AllAxis) != AllAxis) {
                   const float AXIS_LENGTH = 100000.f;
                   if (manipulatorMode & AxisX) {
-                     dbgRend.DrawLine(relativePos - vec3_X * AXIS_LENGTH, relativePos + vec3_X * AXIS_LENGTH, Color_Red);
+                     dbgRend.DrawLine(relativePos - vec3_X * AXIS_LENGTH, relativePos + vec3_X * AXIS_LENGTH, Color_Red, false);
                   } else if (manipulatorMode & AxisY) {
-                     dbgRend.DrawLine(relativePos - vec3_Y * AXIS_LENGTH, relativePos + vec3_Y * AXIS_LENGTH, Color_Green);
+                     dbgRend.DrawLine(relativePos - vec3_Y * AXIS_LENGTH, relativePos + vec3_Y * AXIS_LENGTH, Color_Green, false);
                   } else if (manipulatorMode & AxisZ) {
-                     dbgRend.DrawLine(relativePos - vec3_Z * AXIS_LENGTH, relativePos + vec3_Z * AXIS_LENGTH, Color_Blue);
+                     dbgRend.DrawLine(relativePos - vec3_Z * AXIS_LENGTH, relativePos + vec3_Z * AXIS_LENGTH, Color_Blue, false);
                   }
                }
 

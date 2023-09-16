@@ -36,6 +36,7 @@ namespace pbe {
       extern ID3D11SamplerState* samplerStateWrapLinear;
       extern ID3D11SamplerState* samplerStateClampPoint;
       extern ID3D11SamplerState* samplerStateShadow;
+      extern ID3D11DepthStencilState* depthStencilStateNo;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadWrite;
       extern ID3D11DepthStencilState* depthStencilStateDepthReadNoWrite;
       extern ID3D11DepthStencilState* depthStencilStateEqual;
