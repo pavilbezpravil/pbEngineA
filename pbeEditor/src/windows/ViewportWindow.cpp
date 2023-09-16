@@ -338,15 +338,15 @@ namespace pbe {
                }
 
                if (Input::IsKeyDown(KeyCode::G)) {
-                  manipulatorMode = Translate | ObjManipulation;
+                  manipulatorMode = ObjManipulation | Translate;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
                if (Input::IsKeyDown(KeyCode::R)) {
-                  manipulatorMode = Rotate | ObjManipulation;
+                  manipulatorMode = ObjManipulation | Rotate;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
                if (Input::IsKeyDown(KeyCode::S)) {
-                  manipulatorMode = Scale | ObjManipulation;
+                  manipulatorMode = ObjManipulation | Scale;
                   manipulatorMode |= AxisX | AxisY | AxisZ;
                }
 
@@ -407,18 +407,17 @@ namespace pbe {
                   vec3 axis;
                   if ((manipulatorMode & AllAxis) == AllAxis) {
                      axis = camera.Forward();
-                  } else if (manipulatorMode & AxisX) {
-                     axis = vec3_X;
-                     angle *= glm::sign(glm::dot(camera.Forward(), axis));
-                  } else if (manipulatorMode & AxisY) {
-                     axis = vec3_Y;
-                     angle *= glm::sign(glm::dot(camera.Forward(), axis));
-                  } else if (manipulatorMode & AxisZ) {
-                     axis = vec3_Z;
+                  } else {
+                     if (manipulatorMode & AxisX) {
+                        axis = vec3_X;
+                     } else if (manipulatorMode & AxisY) {
+                        axis = vec3_Y;
+                     } else if (manipulatorMode & AxisZ) {
+                        axis = vec3_Z;
+                     }
+
                      angle *= glm::sign(glm::dot(camera.Forward(), axis));
                   }
-
-                  INFO("angle {}", glm::degrees(angle));
 
                   quat rotation = glm::angleAxis(angle, axis);
                   entity.GetTransform().SetRotation(rotation * manipulatorRelativeTransform.rotation);
