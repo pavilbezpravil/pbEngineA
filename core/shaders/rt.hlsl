@@ -456,7 +456,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         #endif
 
         ray.direction = normalize(RandomInHemisphere(normal, seed));
-        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed);
+
+        float Diffuse_NDotL = max(dot(normal, ray.direction), 0);
+        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed) * Diffuse_NDotL;
     }
 
     #if defined(USE_PSR)

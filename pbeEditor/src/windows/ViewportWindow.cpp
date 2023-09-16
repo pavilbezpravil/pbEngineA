@@ -165,7 +165,7 @@ namespace pbe {
       if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver() && manipulatorMode == None) {
          auto entityID = renderer->GetEntityIDUnderCursor(cmd);
 
-         bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Ctrl);
+         bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Shift);
          if (entityID != (uint)-1) {
             Entity e{ entt::entity(entityID), scene };
             selection->ToggleSelect(e, clearPrevSelection);
@@ -483,6 +483,22 @@ namespace pbe {
 
       if (manipulatorMode == CameraMove) {
          camera.Update(dt);
+      }
+
+      if (manipulatorMode == None) {
+         if (Input::IsKeyPressing(KeyCode::Shift)) {
+            if (Input::IsKeyDown(KeyCode::D)) {
+               auto prevSelected = selection->selected;
+               selection->ClearSelection();
+
+               for (auto entity : prevSelected) {
+                  auto duplicatedEntity = scene->Duplicate(entity);
+                  selection->Select(duplicatedEntity, false);
+               }
+
+               manipulatorMode = ObjManipulation | Translate | AllAxis;
+            }
+         }
       }
 
       if (!Input::IsKeyPressing(KeyCode::RightButton)) {

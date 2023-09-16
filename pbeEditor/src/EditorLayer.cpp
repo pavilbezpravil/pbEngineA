@@ -308,16 +308,6 @@ namespace pbe {
                TogglePlayStop();
             }
 
-            if (e->keyCode == KeyCode::D) {
-               auto prevSelected = editorSelection.selected;
-               editorSelection.ClearSelection();
-
-               for (auto entity : prevSelected) {
-                  auto duplicatedEntity = GetActiveScene()->Duplicate(entity);
-                  editorSelection.Select(duplicatedEntity, false);
-               }
-            }
-
             if (e->keyCode == KeyCode::Z) {
                // todo: dont work
                // Undo::Get().PopAction();

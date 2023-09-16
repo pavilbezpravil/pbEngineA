@@ -96,7 +96,7 @@ namespace pbe {
 
          bool opened = true;
          if (hasName) {
-            opened = ImGui::TreeNodeEx(name.data(), DefaultTreeNodeFlags());
+            opened = ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_AllowOverlap);
          }
 
          if (opened) {
