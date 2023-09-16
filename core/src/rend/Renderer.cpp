@@ -380,9 +380,10 @@ namespace pbe {
       cmd.ClearRenderTarget(*context.motionTex, vec4{ 0, 0, 0, 0 });
       cmd.ClearRenderTarget(*context.outlineTex, vec4{ 0, 0, 0, 0 });
 
+      // todo: NRD dont work with black textures
       // todo: only in editor
-      cmd.ClearUAVFloat(*context.diffuseHistoryTex, vec4{ 0, 0, 0, 0 });
-      cmd.ClearUAVFloat(*context.specularHistoryTex, vec4{ 0, 0, 0, 0 });
+      // cmd.ClearUAVFloat(*context.diffuseHistoryTex, vec4{ 0, 0, 0, 0 });
+      // cmd.ClearUAVFloat(*context.specularHistoryTex, vec4{ 0, 0, 0, 0 });
 
       cmd.ClearRenderTarget(*context.viewz, vec4{ 1000000.0f, 0, 0, 0 }); // todo: why it defaults for NRD?
       cmd.ClearDepthTarget(*context.depth, 1);
