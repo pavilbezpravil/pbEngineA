@@ -43,6 +43,7 @@ namespace pbe {
                   // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
 
                   auto parentTrans = entity->GetTransform();
+                  auto destruct = entity->Get<DestructComponent>();
 
                   auto pScene = entity->GetScene();
 
@@ -66,6 +67,8 @@ namespace pbe {
                         CreateCube(*pScene, CubeDesc{
                            .parent = parentTrans.parent,
                            .pos = parentTrans.Position() + offset,
+                           .rotation =  parentTrans.Rotation(),
+                           .scale = destruct.chunkSizes[chunkIndex],
                         });
                      }
                   }
@@ -74,6 +77,7 @@ namespace pbe {
 
                case TkJointUpdateEvent::EVENT_TYPE:
                   INFO("TkJointUpdateEvent");
+                  UNIMPLEMENTED();
                // {
                //    const TkJointUpdateEvent* jointEvent = event.getPayload<TkJointUpdateEvent>();  // Joint update event payload
                //
@@ -397,33 +401,26 @@ namespace pbe {
    void PhysicsScene::AddDestructActor(Entity entity) {
       // todo: pass as function argument
       auto [trans, geom, destruct] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
-      // PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
-      //
-      // ASSERT(!rb.pxRigidActor);
-      // rb.pxRigidActor = actor;
-      //
-      // rb.SetData();
 
-      // myFunctionToFillInLowLevelAssetFields(desc);    // Fill in the low-level (NvBlastAssetDesc) fields as usual
+      ASSERT(geom.type == GeomType::Box);
 
+#if 0
       uint chunkCount = 3;
       uint bondCount = 1;
 
-      // Create chunk descriptors
       std::vector<NvBlastChunkDesc> chunkDescs;
-      chunkDescs.resize(chunkCount);    // chunkCount > 0
+      chunkDescs.resize(chunkCount);
 
-      chunkDescs[0].parentChunkDescIndex = UINT32_MAX;    // invalid index denotes a chunk hierarchy root
-      chunkDescs[0].centroid[0] = 0.0f;   // centroid position in asset-local space
+      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
+      chunkDescs[0].centroid[0] = 0.0f;
       chunkDescs[0].centroid[1] = 0.0f;
       chunkDescs[0].centroid[2] = 0.0f;
-      chunkDescs[0].volume = 1.0f;    // Unit volume
+      chunkDescs[0].volume = 1.0f;
       chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-      chunkDescs[0].userData = 0; // User-supplied ID.  For example, this can be the index of the chunkDesc.
-      // The userData can be left undefined.
+      chunkDescs[0].userData = 0;
 
       chunkDescs[1].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
-      chunkDescs[1].centroid[0] = -0.5f;   // centroid position in asset-local space
+      chunkDescs[1].centroid[0] = -0.25f;   // centroid position in asset-local space
       chunkDescs[1].centroid[1] = 0.0f;
       chunkDescs[1].centroid[2] = 0.0f;
       chunkDescs[1].volume = 0.5f;    // Unit volume
@@ -431,18 +428,20 @@ namespace pbe {
       chunkDescs[1].userData = 1;
 
       chunkDescs[2].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
-      chunkDescs[2].centroid[0] = 0.5f;   // centroid position in asset-local space
+      chunkDescs[2].centroid[0] = 0.25f;   // centroid position in asset-local space
       chunkDescs[2].centroid[1] = 0.0f;
       chunkDescs[2].centroid[2] = 0.0f;
       chunkDescs[2].volume = 0.5f;    // Unit volume
       chunkDescs[2].flags = NvBlastChunkDesc::SupportFlag; // This chunk should be represented in the support graph
       chunkDescs[2].userData = 2;
 
-      // ... etc. for all chunks
+      destruct.chunkSizes.resize(chunkCount);
+      destruct.chunkSizes[0] = vec3{ 1.f, 1.f, 1.f };
+      destruct.chunkSizes[1] = vec3{ 0.5f, 1.f, 1.f };
+      destruct.chunkSizes[2] = vec3{ 0.5f, 1.f, 1.f };
 
-      // Create bond descriptors
       std::vector<NvBlastBondDesc> bondDescs;
-      bondDescs.resize(bondCount);  // bondCount > 0
+      bondDescs.resize(bondCount);
 
       bondDescs[0].chunkIndices[0] = 1;   // chunkIndices refer to chunk descriptor indices for support chunks
       bondDescs[0].chunkIndices[1] = 2;
@@ -459,10 +458,74 @@ namespace pbe {
       // bondDescs[1].chunkIndices[0] = 1;
       // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
       // ... etc. for bondDescs[1], all other fields are filled in as usual
+#else
 
-      // ... etc. for all bonds
+      uint slices = 2;
+      uint chunkCount = 1 + slices + 1;
+      uint bondCount = slices;
 
-      // Set the fields of the descriptor
+      std::vector<NvBlastChunkDesc> chunkDescs;
+      chunkDescs.resize(chunkCount);
+      destruct.chunkSizes.resize(chunkCount);
+
+      // parent
+      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
+      chunkDescs[0].centroid[0] = 0.0f;
+      chunkDescs[0].centroid[1] = 0.0f;
+      chunkDescs[0].centroid[2] = 0.0f;
+      chunkDescs[0].volume = 1.0f;
+      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
+      chunkDescs[0].userData = 0;
+
+      destruct.chunkSizes[0] = vec3{ 1.f, 1.f, 1.f };
+
+      std::vector<NvBlastBondDesc> bondDescs;
+      bondDescs.resize(bondCount);
+
+      uint boundIdx = 0;
+
+      float chunkParentVolume = 1.f;
+      float chunkParentSliceAxisSize = 1.f;
+      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
+      float chunkVolume = chunkParentVolume / (slices + 1);
+      uint parentChunkIdx = 0;
+      uint chunkIdx = 1;
+      for (int i = 0; i <= slices; ++i) {
+         auto& chunkDesc = chunkDescs[chunkIdx];
+         chunkDesc.parentChunkDescIndex = parentChunkIdx;
+         chunkDesc.centroid[0] = -0.5f + chunkSliceAxisSize * (0.5f + i);
+         chunkDesc.centroid[1] = 0.0f;
+         chunkDesc.centroid[2] = 0.0f;
+         chunkDesc.volume = chunkVolume;
+         chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
+         chunkDesc.userData = chunkIdx;
+
+         destruct.chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, 1.f, 1.f };
+
+         ++chunkIdx;
+
+         if (i < slices) {
+            auto& boundDesc = bondDescs[boundIdx++];
+
+            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
+            boundDesc.chunkIndices[1] = chunkIdx;
+            boundDesc.bond.normal[0] = 1.0f;
+            boundDesc.bond.normal[1] = 0.0f;
+            boundDesc.bond.normal[2] = 0.0f;
+            boundDesc.bond.area = 1.0f;
+            boundDesc.bond.centroid[0] = -0.5f + chunkSliceAxisSize * (i + 1); // todo:
+            boundDesc.bond.centroid[1] = 0.0f;
+            boundDesc.bond.centroid[2] = 0.0f;
+         }
+      }
+
+      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
+      // bond for example to create a joint when this bond breaks
+
+      // bondDescs[1].chunkIndices[0] = 1;
+      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
+      // ... etc. for bondDescs[1], all other fields are filled in as usual
+#endif
 
       TkAssetDesc assetDesc;
       assetDesc.chunkCount = chunkCount;

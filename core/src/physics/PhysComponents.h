@@ -38,6 +38,8 @@ namespace pbe {
 
       Nv::Blast::TkAsset* tkAsset = nullptr;
       Nv::Blast::TkActor* tkActor = nullptr;
+
+      std::vector<vec3> chunkSizes; // todo:
    };
 
    struct TriggerComponent {

@@ -11,9 +11,9 @@ namespace pbe {
    struct CubeDesc {
       Entity parent = {};
       string_view namePrefix = "Cube";
-      vec3 pos{};
-      vec3 scale = vec3_One;
+      vec3 pos = vec3_Zero;
       quat rotation = quat_Identity;
+      vec3 scale = vec3_One;
       bool dynamic = true;
       vec3 color = vec3_One * 0.7f;
    };

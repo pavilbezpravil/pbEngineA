@@ -89,7 +89,7 @@ namespace pbe {
 
    enum class GeomType {
       Sphere,
-      Box,
+      Box, // todo: cube
       Cylinder,
       Cone,
       Capsule,

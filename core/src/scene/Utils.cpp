@@ -133,8 +133,8 @@ namespace pbe {
                CreateCube(scene, CubeDesc{
                   .parent = root,
                   .pos = Random::Float3(-cubeSize, cubeSize),
-                  .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
                   .rotation = Random::Float3(vec3{ 0 }, vec3{ 30.f }), // todo: PI?
+                  .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
                   .color = Random::Color() });
             }
 
