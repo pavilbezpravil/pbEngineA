@@ -167,6 +167,9 @@ namespace pbe {
    STRUCT_BEGIN(TriggerComponent)
    STRUCT_END()
 
+   STRUCT_BEGIN(DestructComponent)
+   STRUCT_END()
+
    ENUM_BEGIN(JointType)
       ENUM_VALUE(Fixed)
       ENUM_VALUE(Distance)
@@ -238,6 +241,7 @@ namespace pbe {
    STRUCT_END()
 
    TYPER_REGISTER_COMPONENT(RigidBodyComponent);
+   TYPER_REGISTER_COMPONENT(DestructComponent);
    TYPER_REGISTER_COMPONENT(TriggerComponent);
    TYPER_REGISTER_COMPONENT(JointComponent);
 

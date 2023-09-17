@@ -10,6 +10,10 @@
 #include "scene/Entity.h"
 #include "PhysQuery.h"
 
+#include "NvBlastTk.h"
+
+
+using namespace Nv::Blast;
 
 namespace pbe {
 
@@ -135,6 +139,10 @@ namespace pbe {
       registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
       registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
       registry.on_update<RigidBodyComponent>().connect<&PhysicsScene::OnUpdateRigidBody>(this);
+
+      registry.on_construct<DestructComponent>().connect<&PhysicsScene::OnConstructDestruct>(this);
+      registry.on_destroy<DestructComponent>().connect<&PhysicsScene::OnDestroyDestruct>(this);
+      // registry.on_update<DestructComponent>().connect<&PhysicsScene::OnUpdateDestruct>(this);
 
       registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
       registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
@@ -271,6 +279,43 @@ namespace pbe {
       rb.SetData();
    }
 
+   void PhysicsScene::AddDestructActor(Entity entity) {
+      // todo: pass as function argument
+      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
+      // PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
+      //
+      // ASSERT(!rb.pxRigidActor);
+      // rb.pxRigidActor = actor;
+      //
+      // rb.SetData();
+
+      // TkAssetDesc desc;
+      //
+      // myFunctionToFillInLowLevelAssetFields(desc);    // Fill in the low-level (NvBlastAssetDesc) fields as usual
+      //
+      // std::vector<uint8_t*> bondFlags(desc.bondCount, 0); // Clear all flags
+      //
+      // // Set BondJointed flags corresponding to joints selected by the user (assumes a myBondIsJointedFunction to make this selection)
+      // for (uint32_t i = 0; i < desc.bondCount; ++i)
+      // {
+      //    if (myBondIsJointedFunction(i)) // User-authored
+      //    {
+      //       bondFlags[i] |= TkAssetDesc::BondJointed;
+      //    }
+      // }
+      //
+      // TkAsset* asset = NvBlastTkFrameworkGet()->createAsset(desc);
+   }
+
+   void PhysicsScene::RemoveDestructActor(Entity entity) {
+      auto& rb = entity.Get<DestructComponent>();
+      // if (!rb.pxRigidActor) {
+      //    return;
+      // }
+      // RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
+      // rb.pxRigidActor = nullptr;
+   }
+
    void PhysicsScene::AddTrigger(Entity entity) {
       auto [trans, geom, trigger] = entity.Get<SceneTransformComponent, GeometryComponent, TriggerComponent>();
 
@@ -345,6 +390,29 @@ namespace pbe {
       if (entity.Enabled()) {
          UpdateRigidActor(entity);
       }
+   }
+
+   void PhysicsScene::OnConstructDestruct(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      // todo: when copy component copy ptr to
+      // entity.Get<DestructComponent>().pxRigidActor = nullptr;
+
+      // todo: on each func has this check
+      if (entity.Enabled()) {
+         AddDestructActor(entity);
+      }
+   }
+
+   void PhysicsScene::OnDestroyDestruct(entt::registry& registry, entt::entity _entity) {
+      Entity entity{ _entity, &scene };
+      RemoveDestructActor(entity);
+   }
+
+   void PhysicsScene::OnUpdateDestruct(entt::registry& registry, entt::entity _entity) {
+      // Entity entity{ _entity, &scene };
+      // if (entity.Enabled()) {
+      //    UpdateRigidActor(entity);
+      // }
    }
 
    void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {

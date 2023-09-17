@@ -22,6 +22,11 @@ namespace pbe {
       void SetData();
    };
 
+   // todo: name
+   struct DestructComponent {
+      float hardness = 1.f; // todo:
+   };
+
    struct TriggerComponent {
       physx::PxRigidActor* pxRigidActor = nullptr;
    };

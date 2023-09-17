@@ -27,13 +27,16 @@ project "core"
 
    includedirs {
       libsinfo.core.includedirs,
+      "%{libsinfo.blast.includepath}/shared/NvFoundation",
+      "%{libsinfo.blast.includepath}/lowlevel",
+      "%{libsinfo.blast.includepath}/toolkit",
       -- todo: compile option. It must be easyly disabled
       libsinfo.nrd.includepath,
    }
 
    libdirs {
-      -- "%{libsinfo.physx.libDir}",
       libsinfo.physx.libDir,
+      libsinfo.blast.libDir,
       libsinfo.nrd.libDir,
       libsinfo.winPixEventRuntime.libDir
    }
@@ -45,12 +48,14 @@ project "core"
        "PhysXExtensions_static_64",
        "PhysXFoundation_64",
        "PhysXPvdSDK_static_64",
+       "NvBlastTk",
        "NRD",
        "WinPixEventRuntime",
    }
 
    postbuildcommands {
       '{COPY} "%{libsinfo.physx.libDir}/*.dll" "%{cfg.targetdir}"',
+      '{COPY} "%{libsinfo.blast.libDir}/*.dll" "%{cfg.targetdir}"',
       '{COPY} "%{libsinfo.nrd.libDir}/*.dll" "%{cfg.targetdir}"',
       '{COPY} "%{libsinfo.winPixEventRuntime.libDir}/*.dll" "%{cfg.targetdir}"',
    }

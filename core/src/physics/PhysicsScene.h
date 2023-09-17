@@ -42,6 +42,10 @@ namespace pbe {
       void RemoveRigidActor(Entity entity);
       void UpdateRigidActor(Entity entity);
 
+      void AddDestructActor(Entity entity);
+      void RemoveDestructActor(Entity entity);
+      void UpdateDestructActor(Entity entity);
+
       void AddTrigger(Entity entity);
       void RemoveTrigger(Entity entity);
 
@@ -52,6 +56,10 @@ namespace pbe {
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
       void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);
       void OnUpdateRigidBody(entt::registry& registry, entt::entity entity);
+
+      void OnConstructDestruct(entt::registry& registry, entt::entity entity);
+      void OnDestroyDestruct(entt::registry& registry, entt::entity entity);
+      void OnUpdateDestruct(entt::registry& registry, entt::entity entity);
 
       void OnConstructTrigger(entt::registry& registry, entt::entity entity);
       void OnDestroyTrigger(entt::registry& registry, entt::entity entity);

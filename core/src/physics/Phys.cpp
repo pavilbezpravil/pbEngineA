@@ -5,6 +5,10 @@
 #include "PhysUtils.h"
 #include "core/Log.h"
 
+#include "NvBlastTk.h"
+
+
+using namespace Nv::Blast;
 
 namespace pbe {
 
@@ -18,6 +22,8 @@ namespace pbe {
    static PxMaterial* gMaterial = NULL;
    static PxPvd* gPvd = NULL;
 
+   TkFramework* framework = NULL;
+
    void InitPhysics() {
       gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 
@@ -28,9 +34,13 @@ namespace pbe {
       gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
       gDispatcher = PxDefaultCpuDispatcherCreate(2);
       gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.25f);
+
+      framework = NvBlastTkFrameworkCreate();
    }
 
    void TermPhysics() {
+      framework->release();
+
       PX_RELEASE(gDispatcher);
       PX_RELEASE(gPhysics);
       if (gPvd) {

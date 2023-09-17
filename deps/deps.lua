@@ -13,6 +13,10 @@ libsinfo.physx = {}
 libsinfo.physx.includepath = os.getcwd().."/physx/include"
 libsinfo.physx.libDir = os.getcwd().."/physx/bin/%{cfg.buildcfg}" -- todo:
 
+libsinfo.blast = {}
+libsinfo.blast.includepath = os.getcwd().."/blast/include"
+libsinfo.blast.libDir = os.getcwd().."/blast/bin/%{cfg.buildcfg}" -- todo:
+
 libsinfo.nrd = {}
 libsinfo.nrd.includepath = os.getcwd().."/NRD/include"
 libsinfo.nrd.libDir = os.getcwd().."/NRD/bin/%{cfg.buildcfg}"
