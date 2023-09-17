@@ -100,6 +100,9 @@ namespace pbe {
    }
 
    void ViewportWindow::OnWindowUI() {
+      // todo:
+      selection->SyncWithScene();
+
       if (focused) {
          if (Input::IsKeyDown(KeyCode::RightButton)) {
             StartCameraMove();
@@ -497,6 +500,17 @@ namespace pbe {
                }
 
                manipulatorMode = ObjManipulation | Translate | AllAxis;
+            }
+         }
+
+         // apply damage
+         if (Input::IsKeyPressing(KeyCode::Ctrl)) {
+            if (Input::IsKeyDown(KeyCode::D)) {
+               for (auto entity : selection->selected) {
+                  if (auto destruct = entity.TryGet<DestructComponent>()) {
+                     destruct->ApplyDamage(1000.f);
+                  }
+               }
             }
          }
       }

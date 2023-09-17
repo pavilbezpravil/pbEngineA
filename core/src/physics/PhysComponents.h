@@ -3,6 +3,13 @@
 #include "scene/Entity.h"
 
 
+namespace Nv {
+   namespace Blast {
+      class TkActor;
+      class TkAsset;
+   }
+}
+
 namespace pbe { 
 
    // todo: while have two way for handle change in component data
@@ -23,8 +30,14 @@ namespace pbe {
    };
 
    // todo: name
-   struct DestructComponent {
+   struct CORE_API DestructComponent {
       float hardness = 1.f; // todo:
+
+      // todo:
+      void ApplyDamage(float damage);
+
+      Nv::Blast::TkAsset* tkAsset = nullptr;
+      Nv::Blast::TkActor* tkActor = nullptr;
    };
 
    struct TriggerComponent {

@@ -36,6 +36,9 @@ namespace pbe {
          return selected.empty() ? Entity{} : selected.front();
       }
 
+      // handle entity destroy
+      void SyncWithScene();
+
       void ClearSelection();
 
       std::vector<Entity> selected;

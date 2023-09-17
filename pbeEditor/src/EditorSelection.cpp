@@ -30,6 +30,28 @@ namespace pbe {
       ToggleSelect(entity, clearPrevSelection);
    }
 
+   void EditorSelection::SyncWithScene() {
+      // bool unselected = true;
+      // while (!unselected) {
+      //    unselected = false;
+      //    for (auto entity : selected) {
+      //       if (!entity) {
+      //          Unselect(entity);
+      //          unselected = true;
+      //          break;
+      //       }
+      //    }
+      // }
+
+      for (auto entity : selected) {
+         if (!entity) {
+            selected.clear();
+            return; // todo:
+            Unselect(entity);
+         }
+      }
+   }
+
    void EditorSelection::ClearSelection() {
       while (!selected.empty()) {
          Unselect(selected.front());

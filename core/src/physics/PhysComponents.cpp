@@ -9,6 +9,9 @@
 #include "typer/Registration.h"
 #include "typer/Serialize.h"
 
+#include <NvBlastTk.h>
+#include <NvBlastExtDamageShaders.h>
+
 
 namespace pbe {
 
@@ -26,6 +29,24 @@ namespace pbe {
       auto dynamic = GetPxRigidDynamic(pxRigidActor);
       dynamic->setLinearDamping(linearDamping);
       dynamic->setAngularDamping(angularDamping);
+   }
+
+   void DestructComponent::ApplyDamage(float damage) {
+      // todo:
+      static NvBlastExtMaterial material;
+      material.health = 10.0f;
+      material.minDamageThreshold = 0.0f;
+      material.maxDamageThreshold = 1.0f;
+
+      // todo:
+      static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
+      damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
+      damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
+
+      static NvBlastExtRadialDamageDesc damageDesc = { damage, {0, 0, 0}, 3.f, 10.f };
+      static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
+
+      tkActor->damage(damageProgram, &params);
    }
 
    JointComponent::JointComponent(JointType type) : type(type) { }

@@ -10,13 +10,94 @@
 #include "scene/Entity.h"
 #include "PhysQuery.h"
 
-#include "NvBlastTk.h"
-#include "NvBlastExtDamageShaders.h"
+#include <NvBlastTk.h>
+#include <NvBlastExtDamageShaders.h>
 
 
 using namespace Nv::Blast;
 
 namespace pbe {
+
+   class DestructEventListener : public TkEventListener {
+   public:
+      void receive(const TkEvent* events, uint32_t eventCount) override {
+         // Events are batched into an event buffer.  Loop over all events:
+         for (uint32_t i = 0; i < eventCount; ++i) {
+            const TkEvent& event = events[i];
+
+            // See TkEvent documentation for event types
+            switch (event.type) {
+               case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
+               {
+                  INFO("TkSplitEvent");
+                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();  // Split event payload
+
+                  // The parent actor may no longer be valid.  Instead, we receive the information it held
+                  // which we need to update our app's representation (e.g. removal of the corresponding physics actor)
+
+                  auto entity = (Entity*)splitEvent->parentData.userData;
+                  entity->DestroyDelayed();
+                  INFO("Destruct: Destroid entity index {}", splitEvent->parentData.index);
+                  // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
+
+                  auto pScene = entity->GetScene();
+
+                  // The split event contains an array of "child" actors that came from the parent.  These are valid
+                  // TkActor pointers and may be used to create physics and graphics representations in our application
+                  for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
+                     auto child = splitEvent->children[j];
+                     INFO("Child index {}", child->getIndex());
+                     // myCreateActorFunction(splitEvent->children[j]);
+
+                     // pScene->Create()
+                     //    .Add<SceneTransformComponent>()
+                     //    .Add<GeometryComponent>()
+                     //    .Add<RigidBodyComponent>()
+                     //    .Add<DestructComponent>()
+                     //    .Add<DelayedEnableMarker>()
+                     //    .Add<DelayedDisableMarker>();
+                  }
+               }
+               break;
+
+               case TkJointUpdateEvent::EVENT_TYPE:
+                  INFO("TkJointUpdateEvent");
+               // {
+               //    const TkJointUpdateEvent* jointEvent = event.getPayload<TkJointUpdateEvent>();  // Joint update event payload
+               //
+               //    // Joint events have three subtypes, see which one we have
+               //    switch (jointEvent->subtype)
+               //    {
+               //    case TkJointUpdateEvent::External:
+               //       myCreateJointFunction(jointEvent->joint);   // An internal joint has been "exposed" (now joins two different actors).  Create a physics joint.
+               //       break;
+               //    case TkJointUpdateEvent::Changed:
+               //       myUpdatejointFunction(jointEvent->joint);   // A joint's actors have changed, so we need to update its corresponding physics joint.
+               //       break;
+               //    case TkJointUpdateEvent::Unreferenced:
+               //       myDestroyJointFunction(jointEvent->joint);  // This joint is no longer referenced, so we may delete the corresponding physics joint.
+               //       break;
+               //    }
+               // }
+                  break;
+
+               // Unhandled:
+               case TkFractureCommands::EVENT_TYPE:
+                  INFO("TkFractureCommands");
+                  break;
+               case TkFractureEvents::EVENT_TYPE:
+                  INFO("TkFractureEvents");
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+
+      PhysicsScene& scene;
+
+      DestructEventListener(PhysicsScene& scene) : scene(scene) {}
+   };
 
    PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
       PxSceneDesc sceneDesc(GetPxPhysics()->getTolerancesScale());
@@ -38,9 +119,14 @@ namespace pbe {
       TkGroupDesc groupDesc;
       groupDesc.workerCount = 1;
       tkGroup = NvBlastTkFrameworkGet()->createGroup(groupDesc);
+
+      destructEventListener = std::make_unique<DestructEventListener>(*this);
    }
 
    PhysicsScene::~PhysicsScene() {
+      ASSERT(tkGroup->getActorCount() == 0);
+      PX_RELEASE(tkGroup);
+
       ASSERT(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
       delete pxScene->getSimulationEventCallback();
       PX_RELEASE(pxScene);
@@ -115,8 +201,10 @@ namespace pbe {
       for (int i = 0; i < steps; ++i) {
          pxScene->simulate(stepTimer.GetActTime());
          pxScene->fetchResults(true);
-
          UpdateSceneAfterPhysics();
+
+         // todo: or before simulate?
+         tkGroup->process();
 
          scene.DestroyDelayedEntities();
       }
@@ -163,6 +251,11 @@ namespace pbe {
          AddRigidActor(entity);
       }
 
+      for (auto e : pScene->ViewAll<DestructComponent, DelayedEnableMarker>()) {
+         Entity entity{ e, &scene };
+         AddDestructActor(entity);
+      }
+
       for (auto e : pScene->ViewAll<GeometryComponent, TriggerComponent, DelayedEnableMarker>()) {
          Entity entity{ e, &scene };
          AddTrigger(entity);
@@ -178,6 +271,11 @@ namespace pbe {
       for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedDisableMarker>()) {
          Entity entity{ e, &scene };
          RemoveRigidActor(entity);
+      }
+
+      for (auto e : pScene->ViewAll<DestructComponent, DelayedDisableMarker>()) {
+         Entity entity{ e, &scene };
+         RemoveDestructActor(entity);
       }
 
       for (auto e : pScene->ViewAll<TriggerComponent, DelayedDisableMarker>()) {
@@ -284,70 +382,9 @@ namespace pbe {
       rb.SetData();
    }
 
-   class MyActorAndJointListener : public TkEventListener {
-      void receive(const TkEvent* events, uint32_t eventCount) override {
-         // Events are batched into an event buffer.  Loop over all events:
-         for (uint32_t i = 0; i < eventCount; ++i) {
-            const TkEvent& event = events[i];
-
-            // See TkEvent documentation for event types
-            switch (event.type) {
-               case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
-               {
-                  INFO("TkSplitEvent");
-                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();  // Split event payload
-
-                  // The parent actor may no longer be valid.  Instead, we receive the information it held
-                  // which we need to update our app's representation (e.g. removal of the corresponding physics actor)
-                  // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
-
-                  // The split event contains an array of "child" actors that came from the parent.  These are valid
-                  // TkActor pointers and may be used to create physics and graphics representations in our application
-                  for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
-                     // myCreateActorFunction(splitEvent->children[j]);
-                  }
-               }
-               break;
-
-               case TkJointUpdateEvent::EVENT_TYPE:
-                  INFO("TkJointUpdateEvent");
-               // {
-               //    const TkJointUpdateEvent* jointEvent = event.getPayload<TkJointUpdateEvent>();  // Joint update event payload
-               //
-               //    // Joint events have three subtypes, see which one we have
-               //    switch (jointEvent->subtype)
-               //    {
-               //    case TkJointUpdateEvent::External:
-               //       myCreateJointFunction(jointEvent->joint);   // An internal joint has been "exposed" (now joins two different actors).  Create a physics joint.
-               //       break;
-               //    case TkJointUpdateEvent::Changed:
-               //       myUpdatejointFunction(jointEvent->joint);   // A joint's actors have changed, so we need to update its corresponding physics joint.
-               //       break;
-               //    case TkJointUpdateEvent::Unreferenced:
-               //       myDestroyJointFunction(jointEvent->joint);  // This joint is no longer referenced, so we may delete the corresponding physics joint.
-               //       break;
-               //    }
-               // }
-
-               // Unhandled:
-               case TkFractureCommands::EVENT_TYPE:
-                  INFO("TkFractureCommands");
-                  break;
-               case TkFractureEvents::EVENT_TYPE:
-                  INFO("TkFractureEvents");
-                  break;
-               default:
-                  break;
-            }
-         }
-      }
-   };
-
-   MyActorAndJointListener myListener;
-
    void PhysicsScene::AddDestructActor(Entity entity) {
       // todo: pass as function argument
-      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
+      auto [trans, geom, destruct] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
       // PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
       //
       // ASSERT(!rb.pxRigidActor);
@@ -432,52 +469,31 @@ namespace pbe {
       bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
       INFO("Require reordering {}", requireReordering);
 
-      // std::vector<uint8_t*> bondFlags(desc.bondCount, 0); // Clear all flags
-      //
-      // // Set BondJointed flags corresponding to joints selected by the user (assumes a myBondIsJointedFunction to make this selection)
-      // for (uint32_t i = 0; i < desc.bondCount; ++i)
-      // {
-      //    if (myBondIsJointedFunction(i)) // User-authored
-      //    {
-      //       bondFlags[i] |= TkAssetDesc::BondJointed;
-      //    }
-      // }
-      
-      TkAsset* asset = tkFramework->createAsset(assetDesc);
 
-      TkActorDesc actorDesc;   // The TkActorDesc constructor sets sane default values for the base (NvBlastActorDesc) fields, giving uniform chunk and bond healths of 1.0.
-      actorDesc.asset = asset;
+      TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
+
+      TkActorDesc actorDesc;
+      actorDesc.asset = tkAsset;
       actorDesc.uniformInitialBondHealth = 1;
       actorDesc.uniformInitialLowerSupportChunkHealth = 1;
       
       TkActor* tkActor = tkFramework->createActor(actorDesc);
-      INFO("Success {}", tkActor != nullptr);
-
-      tkActor->getFamily().addListener(myListener); //  myListener is an object which implements TkEventListener (see MyActorAndJointListener above, for example)
+      tkActor->userData = new Entity{ entity }; // todo: use fixed allocator
+      tkActor->getFamily().addListener(*destructEventListener);
 
       tkGroup->addActor(*tkActor);
 
-      NvBlastExtMaterial material;
-      material.health = 10.0f;
-      material.minDamageThreshold = 0.0f;
-      material.maxDamageThreshold = 1.0f;
-
-      NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
-
-      NvBlastExtRadialDamageDesc damageDesc = { 100.f, {0, 0, 0}, 3.f, 10.f };
-      NvBlastExtProgramParams params { &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr}; // todo: accelerator
-
-      tkActor->damage(damageProgram, &params);
-      tkGroup->process();
+      destruct.tkAsset = tkAsset;
+      destruct.tkActor = tkActor;
    }
 
    void PhysicsScene::RemoveDestructActor(Entity entity) {
-      auto& rb = entity.Get<DestructComponent>();
-      // if (!rb.pxRigidActor) {
-      //    return;
-      // }
-      // RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
-      // rb.pxRigidActor = nullptr;
+      auto& destruct = entity.Get<DestructComponent>();
+
+      INFO("Destuct actors before release TkActor {}", tkGroup->getActorCount());
+      PX_RELEASE(destruct.tkActor);
+      PX_RELEASE(destruct.tkAsset);
+      INFO("Destuct actors after release TkActor {}", tkGroup->getActorCount());
    }
 
    void PhysicsScene::AddTrigger(Entity entity) {

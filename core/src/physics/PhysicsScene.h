@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Core.h"
+#include "core/Ref.h"
 #include "scene/System.h"
 #include "utils/TimedAction.h"
 #include "math/Types.h"
@@ -12,6 +13,7 @@ namespace Nv {
 }
 
 namespace pbe {
+   class DestructEventListener;
 
    class Entity;
    class Scene;
@@ -41,6 +43,7 @@ namespace pbe {
    private:
       physx::PxScene* pxScene = nullptr;
       Nv::Blast::TkGroup* tkGroup = nullptr;
+      Own<DestructEventListener> destructEventListener;
       Scene& scene;
 
       TimedAction stepTimer{60.f};
