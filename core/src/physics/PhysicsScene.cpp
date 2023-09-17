@@ -64,7 +64,7 @@ namespace pbe {
                         vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
 
                         INFO("Chunk index {}", chunkIndex);
-                        CreateCube(*pScene, CubeDesc{
+                        Entity childEntity = CreateCube(*pScene, CubeDesc{
                            .parent = parentTrans.parent,
                            .pos = parentTrans.Position() + offset,
                            .rotation =  parentTrans.Rotation(),
@@ -460,7 +460,9 @@ namespace pbe {
       // ... etc. for bondDescs[1], all other fields are filled in as usual
 #else
 
-      uint slices = 2;
+      vec3 chunkSize = trans.Scale();
+
+      uint slices = std::max(1, (int)chunkSize.x);
       uint chunkCount = 1 + slices + 1;
       uint bondCount = slices;
 
@@ -477,15 +479,16 @@ namespace pbe {
       chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
       chunkDescs[0].userData = 0;
 
-      destruct.chunkSizes[0] = vec3{ 1.f, 1.f, 1.f };
+      destruct.chunkSizes[0] = chunkSize;
 
       std::vector<NvBlastBondDesc> bondDescs;
       bondDescs.resize(bondCount);
 
       uint boundIdx = 0;
 
-      float chunkParentVolume = 1.f;
-      float chunkParentSliceAxisSize = 1.f;
+      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+      float chunkParentSliceAxisSize = chunkSize.x;
+      float sliceAxisStart = -chunkSize.x * 0.5f; // todo:
       float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
       float chunkVolume = chunkParentVolume / (slices + 1);
       uint parentChunkIdx = 0;
@@ -493,14 +496,14 @@ namespace pbe {
       for (int i = 0; i <= slices; ++i) {
          auto& chunkDesc = chunkDescs[chunkIdx];
          chunkDesc.parentChunkDescIndex = parentChunkIdx;
-         chunkDesc.centroid[0] = -0.5f + chunkSliceAxisSize * (0.5f + i);
+         chunkDesc.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
          chunkDesc.centroid[1] = 0.0f;
          chunkDesc.centroid[2] = 0.0f;
          chunkDesc.volume = chunkVolume;
          chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
          chunkDesc.userData = chunkIdx;
 
-         destruct.chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, 1.f, 1.f };
+         destruct.chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
 
          ++chunkIdx;
 
@@ -512,8 +515,8 @@ namespace pbe {
             boundDesc.bond.normal[0] = 1.0f;
             boundDesc.bond.normal[1] = 0.0f;
             boundDesc.bond.normal[2] = 0.0f;
-            boundDesc.bond.area = 1.0f;
-            boundDesc.bond.centroid[0] = -0.5f + chunkSliceAxisSize * (i + 1); // todo:
+            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
+            boundDesc.bond.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
             boundDesc.bond.centroid[1] = 0.0f;
             boundDesc.bond.centroid[2] = 0.0f;
          }
@@ -565,10 +568,10 @@ namespace pbe {
    void PhysicsScene::RemoveDestructActor(Entity entity) {
       auto& destruct = entity.Get<DestructComponent>();
 
-      INFO("Destuct actors before release TkActor {}", tkGroup->getActorCount());
+      INFO("Destuct actors before release TkActor {}", destruct.tkActor->getFamily().getActorCount());
       PX_RELEASE(destruct.tkActor);
+      // todo: do not release tkAsset if other actors are exist
       PX_RELEASE(destruct.tkAsset);
-      INFO("Destuct actors after release TkActor {}", tkGroup->getActorCount());
    }
 
    void PhysicsScene::AddTrigger(Entity entity) {

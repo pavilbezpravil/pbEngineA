@@ -43,7 +43,7 @@ namespace pbe {
       damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
       damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
 
-      static NvBlastExtRadialDamageDesc damageDesc = { damage, {0, 0, 0}, 3.f, 10.f };
+      static NvBlastExtRadialDamageDesc damageDesc = { damage, {0, 0, 0}, 0.5f, 1.f };
       static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
 
       tkActor->damage(damageProgram, &params);
