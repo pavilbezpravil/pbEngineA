@@ -13,6 +13,8 @@
 #include <NvBlastTk.h>
 #include <NvBlastExtDamageShaders.h>
 
+#include "scene/Utils.h"
+
 
 using namespace Nv::Blast;
 
@@ -40,6 +42,8 @@ namespace pbe {
                   INFO("Destruct: Destroid entity index {}", splitEvent->parentData.index);
                   // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
 
+                  auto parentTrans = entity->GetTransform();
+
                   auto pScene = entity->GetScene();
 
                   // The split event contains an array of "child" actors that came from the parent.  These are valid
@@ -49,13 +53,21 @@ namespace pbe {
                      INFO("Child index {}", child->getIndex());
                      // myCreateActorFunction(splitEvent->children[j]);
 
-                     // pScene->Create()
-                     //    .Add<SceneTransformComponent>()
-                     //    .Add<GeometryComponent>()
-                     //    .Add<RigidBodyComponent>()
-                     //    .Add<DestructComponent>()
-                     //    .Add<DelayedEnableMarker>()
-                     //    .Add<DelayedDisableMarker>();
+                     uint32_t visibleChunkIndex = child->getVisibleChunkCount();
+                     std::vector<uint> visibleChunkIndices(visibleChunkIndex);
+                     child->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkIndex);
+
+                     for (auto chunkIndex : visibleChunkIndices) {
+                        NvBlastChunk chunk = child->getAsset()->getChunks()[chunkIndex];
+
+                        vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
+
+                        INFO("Chunk index {}", chunkIndex);
+                        CreateCube(*pScene, CubeDesc{
+                           .parent = parentTrans.parent,
+                           .pos = parentTrans.Position() + offset,
+                        });
+                     }
                   }
                }
                break;
