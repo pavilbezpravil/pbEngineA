@@ -28,8 +28,10 @@ project "core"
    includedirs {
       libsinfo.core.includedirs,
       "%{libsinfo.blast.includepath}/shared/NvFoundation",
+      "%{libsinfo.blast.includepath}/globals",
       "%{libsinfo.blast.includepath}/lowlevel",
       "%{libsinfo.blast.includepath}/toolkit",
+      "%{libsinfo.blast.includepath}/extensions/shaders",
       -- todo: compile option. It must be easyly disabled
       libsinfo.nrd.includepath,
    }
@@ -49,6 +51,7 @@ project "core"
        "PhysXFoundation_64",
        "PhysXPvdSDK_static_64",
        "NvBlastTk",
+       "NvBlastExtShaders",
        "NRD",
        "WinPixEventRuntime",
    }

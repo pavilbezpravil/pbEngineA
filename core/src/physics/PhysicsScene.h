@@ -5,6 +5,12 @@
 #include "math/Types.h"
 
 
+namespace Nv {
+   namespace Blast {
+      class TkGroup;
+   }
+}
+
 namespace pbe {
 
    class Entity;
@@ -34,6 +40,7 @@ namespace pbe {
 
    private:
       physx::PxScene* pxScene = nullptr;
+      Nv::Blast::TkGroup* tkGroup = nullptr;
       Scene& scene;
 
       TimedAction stepTimer{60.f};

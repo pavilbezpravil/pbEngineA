@@ -11,6 +11,7 @@
 #include "PhysQuery.h"
 
 #include "NvBlastTk.h"
+#include "NvBlastExtDamageShaders.h"
 
 
 using namespace Nv::Blast;
@@ -33,6 +34,10 @@ namespace pbe {
          pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
          pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
       }
+
+      TkGroupDesc groupDesc;
+      groupDesc.workerCount = 1;
+      tkGroup = NvBlastTkFrameworkGet()->createGroup(groupDesc);
    }
 
    PhysicsScene::~PhysicsScene() {
@@ -279,6 +284,67 @@ namespace pbe {
       rb.SetData();
    }
 
+   class MyActorAndJointListener : public TkEventListener {
+      void receive(const TkEvent* events, uint32_t eventCount) override {
+         // Events are batched into an event buffer.  Loop over all events:
+         for (uint32_t i = 0; i < eventCount; ++i) {
+            const TkEvent& event = events[i];
+
+            // See TkEvent documentation for event types
+            switch (event.type) {
+               case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
+               {
+                  INFO("TkSplitEvent");
+                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();  // Split event payload
+
+                  // The parent actor may no longer be valid.  Instead, we receive the information it held
+                  // which we need to update our app's representation (e.g. removal of the corresponding physics actor)
+                  // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
+
+                  // The split event contains an array of "child" actors that came from the parent.  These are valid
+                  // TkActor pointers and may be used to create physics and graphics representations in our application
+                  for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
+                     // myCreateActorFunction(splitEvent->children[j]);
+                  }
+               }
+               break;
+
+               case TkJointUpdateEvent::EVENT_TYPE:
+                  INFO("TkJointUpdateEvent");
+               // {
+               //    const TkJointUpdateEvent* jointEvent = event.getPayload<TkJointUpdateEvent>();  // Joint update event payload
+               //
+               //    // Joint events have three subtypes, see which one we have
+               //    switch (jointEvent->subtype)
+               //    {
+               //    case TkJointUpdateEvent::External:
+               //       myCreateJointFunction(jointEvent->joint);   // An internal joint has been "exposed" (now joins two different actors).  Create a physics joint.
+               //       break;
+               //    case TkJointUpdateEvent::Changed:
+               //       myUpdatejointFunction(jointEvent->joint);   // A joint's actors have changed, so we need to update its corresponding physics joint.
+               //       break;
+               //    case TkJointUpdateEvent::Unreferenced:
+               //       myDestroyJointFunction(jointEvent->joint);  // This joint is no longer referenced, so we may delete the corresponding physics joint.
+               //       break;
+               //    }
+               // }
+
+               // Unhandled:
+               case TkFractureCommands::EVENT_TYPE:
+                  INFO("TkFractureCommands");
+                  break;
+               case TkFractureEvents::EVENT_TYPE:
+                  INFO("TkFractureEvents");
+                  break;
+               default:
+                  break;
+            }
+         }
+      }
+   };
+
+   MyActorAndJointListener myListener;
+
    void PhysicsScene::AddDestructActor(Entity entity) {
       // todo: pass as function argument
       auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
@@ -289,10 +355,83 @@ namespace pbe {
       //
       // rb.SetData();
 
-      // TkAssetDesc desc;
-      //
       // myFunctionToFillInLowLevelAssetFields(desc);    // Fill in the low-level (NvBlastAssetDesc) fields as usual
-      //
+
+      uint chunkCount = 3;
+      uint bondCount = 1;
+
+      // Create chunk descriptors
+      std::vector<NvBlastChunkDesc> chunkDescs;
+      chunkDescs.resize(chunkCount);    // chunkCount > 0
+
+      chunkDescs[0].parentChunkDescIndex = UINT32_MAX;    // invalid index denotes a chunk hierarchy root
+      chunkDescs[0].centroid[0] = 0.0f;   // centroid position in asset-local space
+      chunkDescs[0].centroid[1] = 0.0f;
+      chunkDescs[0].centroid[2] = 0.0f;
+      chunkDescs[0].volume = 1.0f;    // Unit volume
+      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
+      chunkDescs[0].userData = 0; // User-supplied ID.  For example, this can be the index of the chunkDesc.
+      // The userData can be left undefined.
+
+      chunkDescs[1].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
+      chunkDescs[1].centroid[0] = -0.5f;   // centroid position in asset-local space
+      chunkDescs[1].centroid[1] = 0.0f;
+      chunkDescs[1].centroid[2] = 0.0f;
+      chunkDescs[1].volume = 0.5f;    // Unit volume
+      chunkDescs[1].flags = NvBlastChunkDesc::SupportFlag; // This chunk should be represented in the support graph
+      chunkDescs[1].userData = 1;
+
+      chunkDescs[2].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
+      chunkDescs[2].centroid[0] = 0.5f;   // centroid position in asset-local space
+      chunkDescs[2].centroid[1] = 0.0f;
+      chunkDescs[2].centroid[2] = 0.0f;
+      chunkDescs[2].volume = 0.5f;    // Unit volume
+      chunkDescs[2].flags = NvBlastChunkDesc::SupportFlag; // This chunk should be represented in the support graph
+      chunkDescs[2].userData = 2;
+
+      // ... etc. for all chunks
+
+      // Create bond descriptors
+      std::vector<NvBlastBondDesc> bondDescs;
+      bondDescs.resize(bondCount);  // bondCount > 0
+
+      bondDescs[0].chunkIndices[0] = 1;   // chunkIndices refer to chunk descriptor indices for support chunks
+      bondDescs[0].chunkIndices[1] = 2;
+      bondDescs[0].bond.normal[0] = 1.0f; // normal in the +x direction
+      bondDescs[0].bond.normal[1] = 0.0f;
+      bondDescs[0].bond.normal[2] = 0.0f;
+      bondDescs[0].bond.area = 1.0f;  // unit area
+      bondDescs[0].bond.centroid[0] = 0.0f;   // centroid position in asset-local space
+      bondDescs[0].bond.centroid[1] = 0.0f;
+      bondDescs[0].bond.centroid[2] = 0.0f;
+      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
+      // bond for example to create a joint when this bond breaks
+
+      // bondDescs[1].chunkIndices[0] = 1;
+      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
+      // ... etc. for bondDescs[1], all other fields are filled in as usual
+
+      // ... etc. for all bonds
+
+      // Set the fields of the descriptor
+
+      TkAssetDesc assetDesc;
+      assetDesc.chunkCount = chunkCount;
+      assetDesc.chunkDescs = chunkDescs.data();
+      assetDesc.bondCount = bondCount;
+      assetDesc.bondDescs = bondDescs.data();
+      assetDesc.bondFlags = nullptr;
+
+      auto tkFramework = NvBlastTkFrameworkGet();
+
+      bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), assetDesc.chunkCount);
+      INFO("Was coverage {}", wasCoverage);
+
+      // todo: 'chunkReorderMap' may be skipped
+      std::vector<uint32_t> chunkReorderMap(chunkCount);  // Will be filled with a map from the original chunk descriptor order to the new one
+      bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
+      INFO("Require reordering {}", requireReordering);
+
       // std::vector<uint8_t*> bondFlags(desc.bondCount, 0); // Clear all flags
       //
       // // Set BondJointed flags corresponding to joints selected by the user (assumes a myBondIsJointedFunction to make this selection)
@@ -303,8 +442,33 @@ namespace pbe {
       //       bondFlags[i] |= TkAssetDesc::BondJointed;
       //    }
       // }
-      //
-      // TkAsset* asset = NvBlastTkFrameworkGet()->createAsset(desc);
+      
+      TkAsset* asset = tkFramework->createAsset(assetDesc);
+
+      TkActorDesc actorDesc;   // The TkActorDesc constructor sets sane default values for the base (NvBlastActorDesc) fields, giving uniform chunk and bond healths of 1.0.
+      actorDesc.asset = asset;
+      actorDesc.uniformInitialBondHealth = 1;
+      actorDesc.uniformInitialLowerSupportChunkHealth = 1;
+      
+      TkActor* tkActor = tkFramework->createActor(actorDesc);
+      INFO("Success {}", tkActor != nullptr);
+
+      tkActor->getFamily().addListener(myListener); //  myListener is an object which implements TkEventListener (see MyActorAndJointListener above, for example)
+
+      tkGroup->addActor(*tkActor);
+
+      NvBlastExtMaterial material;
+      material.health = 10.0f;
+      material.minDamageThreshold = 0.0f;
+      material.maxDamageThreshold = 1.0f;
+
+      NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
+
+      NvBlastExtRadialDamageDesc damageDesc = { 100.f, {0, 0, 0}, 3.f, 10.f };
+      NvBlastExtProgramParams params { &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr}; // todo: accelerator
+
+      tkActor->damage(damageProgram, &params);
+      tkGroup->process();
    }
 
    void PhysicsScene::RemoveDestructActor(Entity entity) {
