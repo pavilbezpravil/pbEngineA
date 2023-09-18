@@ -165,18 +165,6 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver() && manipulatorMode == None) {
-         auto entityID = renderer->GetEntityIDUnderCursor(cmd);
-
-         bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Shift);
-         if (entityID != (uint)-1) {
-            Entity e{ entt::entity(entityID), scene };
-            selection->ToggleSelect(e, clearPrevSelection);
-         } else if (clearPrevSelection) {
-            selection->ClearSelection();
-         }
-      }
-
       auto imSize = ImGui::GetContentRegionAvail();
       int2 size = { imSize.x, imSize.y };
       if (renderScale != 1.f) {
@@ -195,6 +183,27 @@ namespace pbe {
 
          int2 cursorPixelPos{ (mousePos - cursorPos) * renderScale };
          vec2 cursorUV = vec2(cursorPixelPos) / vec2(size);
+
+         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver() && manipulatorMode == None) {
+            if (Input::IsKeyPressing(KeyCode::Ctrl)) {
+               if (auto hitResult = scene->GetPhysics()->RayCast(camera.position, camera.GetWorldSpaceRayDirFromUV(cursorUV), 10000.f)) {
+                  if (auto destruct = hitResult.physActor.TryGet<DestructComponent>()) {
+                     destruct->ApplyDamage(1000.f);
+                  }
+               }
+            } else {
+               auto entityID = renderer->GetEntityIDUnderCursor(cmd);
+
+               bool clearPrevSelection = !Input::IsKeyPressing(KeyCode::Shift);
+               if (entityID != (uint)-1) {
+                  Entity e{ entt::entity(entityID), scene };
+                  selection->ToggleSelect(e, clearPrevSelection);
+               }
+               else if (clearPrevSelection) {
+                  selection->ClearSelection();
+               }
+            }
+         }
 
          cmd.SetCommonSamplers();
          if (scene) {
@@ -502,17 +511,6 @@ namespace pbe {
                manipulatorMode = ObjManipulation | Translate | AllAxis;
             }
          }
-
-         // apply damage
-         if (Input::IsKeyPressing(KeyCode::Ctrl)) {
-            if (Input::IsKeyDown(KeyCode::D)) {
-               for (auto entity : selection->selected) {
-                  if (auto destruct = entity.TryGet<DestructComponent>()) {
-                     destruct->ApplyDamage(1000.f);
-                  }
-               }
-            }
-         }
       }
 
       if (!Input::IsKeyPressing(KeyCode::RightButton)) {
@@ -561,7 +559,7 @@ namespace pbe {
                .parent = shootRoot,
                .namePrefix = "Shoot cube",
                .pos = camera.position,
-               .scale = vec3_One * 0.5f,
+               .scale = vec3_One,
             });
 
          auto& rb = shoot.Get<RigidBodyComponent>();
