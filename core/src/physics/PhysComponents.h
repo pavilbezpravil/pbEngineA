@@ -29,6 +29,11 @@ namespace pbe {
       void SetData();
    };
 
+   struct CORE_API RigidBodyShapeComponent {
+      // todo:
+      float friction = 0.7f;
+   };
+
    // todo: name
    struct CORE_API DestructComponent {
       float hardness = 1.f; // todo:

@@ -318,10 +318,19 @@ namespace pbe {
 
       PxRigidActor* actor = nullptr;
       if (rb.dynamic) {
-         // todo: density, damping
-         actor = PxCreateDynamic(*GetPxPhysics(), physTrans, physGeom.any(), *GetPxMaterial(), 10.0f);
+         actor = GetPxPhysics()->createRigidDynamic(physTrans);
       } else {
-         actor = PxCreateStatic(*GetPxPhysics(), physTrans, physGeom.any(), *GetPxMaterial());
+         actor = GetPxPhysics()->createRigidStatic(physTrans);
+      }
+
+      PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true);
+      // shape->setLocalPose(shapeOffset);
+      actor->attachShape(*shape);
+      shape->release();
+
+      if (rb.dynamic) {
+         float density = 10.f; // todo:
+         PxRigidBodyExt::updateMassAndInertia(*GetPxRigidDynamic(actor), density);
       }
 
       actor->userData = new Entity{ entity }; // todo: use fixed allocator
