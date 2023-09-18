@@ -28,6 +28,8 @@ namespace pbe {
       entity.Add<GeometryComponent>();
       entity.Add<MaterialComponent>().baseColor = desc.color;
 
+      entity.Add<RigidBodyShapeComponent>();
+
       // todo:
       RigidBodyComponent _rb{};
       _rb.dynamic = desc.dynamic;

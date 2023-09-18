@@ -309,11 +309,37 @@ namespace pbe {
       Simulate(dt);
    }
 
+   static void AddShapes(Entity& entity, PxRigidActor* actor) {
+      auto& trans = entity.Get<SceneTransformComponent>();
+
+      if (entity.Has<RigidBodyShapeComponent>()) {
+         const auto& geom = entity.Get<GeometryComponent>();
+
+         PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
+
+         PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true);
+
+         // todo: do it by pbe::Transform
+         PxTransform shapeTrans = GetTransform(trans);
+         PxTransform actorTrans = actor->getGlobalPose();
+         PxTransform shapeOffset = actorTrans.transformInv(shapeTrans);
+
+         shape->setLocalPose(shapeOffset);
+
+         actor->attachShape(*shape);
+         shape->release();
+      }
+
+      for (auto& child : trans.children) {
+         ASSERT(!child.Has<RigidBodyComponent>());
+         AddShapes(child, actor);
+      }
+   }
+
    static PxRigidActor* CreateSceneRigidActor(PxScene* pxScene, Entity entity) {
       // todo: pass as function argument
       auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
 
-      PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
       PxTransform physTrans = GetTransform(trans);
 
       PxRigidActor* actor = nullptr;
@@ -323,10 +349,10 @@ namespace pbe {
          actor = GetPxPhysics()->createRigidStatic(physTrans);
       }
 
-      PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true);
-      // shape->setLocalPose(shapeOffset);
-      actor->attachShape(*shape);
-      shape->release();
+      // todo: tmp, remove after reconvert all scenes
+      entity.AddOrReplace<RigidBodyShapeComponent>();
+
+      AddShapes(entity, actor);
 
       if (rb.dynamic) {
          float density = 10.f; // todo:

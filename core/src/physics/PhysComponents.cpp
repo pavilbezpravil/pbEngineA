@@ -185,6 +185,9 @@ namespace pbe {
       STRUCT_FIELD(angularDamping)
    STRUCT_END()
 
+   STRUCT_BEGIN(RigidBodyShapeComponent)
+   STRUCT_END()
+
    STRUCT_BEGIN(TriggerComponent)
    STRUCT_END()
 
@@ -262,6 +265,7 @@ namespace pbe {
    STRUCT_END()
 
    TYPER_REGISTER_COMPONENT(RigidBodyComponent);
+   TYPER_REGISTER_COMPONENT(RigidBodyShapeComponent);
    TYPER_REGISTER_COMPONENT(DestructComponent);
    TYPER_REGISTER_COMPONENT(TriggerComponent);
    TYPER_REGISTER_COMPONENT(JointComponent);
