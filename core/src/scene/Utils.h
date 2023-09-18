@@ -11,12 +11,30 @@ namespace pbe {
    struct CubeDesc {
       Entity parent = {};
       string_view namePrefix = "Cube";
+
       vec3 pos = vec3_Zero;
       quat rotation = quat_Identity;
       vec3 scale = vec3_One;
-      bool dynamic = true;
+
       vec3 color = vec3_One * 0.7f;
+
+      enum Type {
+         Geom = BIT(1),
+         Material = BIT(2),
+         RigidBodyShape = BIT(3),
+         RigidBodyStatic = BIT(4),
+         RigidBodyDynamic = BIT(5),
+      };
+
+      constexpr static Type GeomMaterial = Type(Geom | Material);
+      constexpr static Type PhysShape = Type(GeomMaterial | RigidBodyShape);
+      constexpr static Type PhysStatic = Type(PhysShape | RigidBodyStatic);
+      constexpr static Type PhysDynamic = Type(PhysShape | RigidBodyDynamic);
+
+      Type type = PhysDynamic;
    };
+
+   DEFINE_ENUM_FLAG_OPERATORS(CubeDesc::Type)
 
    Entity CORE_API CreateCube(Scene& scene, const CubeDesc& desc = {});
 

@@ -22,7 +22,7 @@ namespace pbe {
    static PxMaterial* gMaterial = NULL;
    static PxPvd* gPvd = NULL;
 
-   TkFramework* framework = NULL;
+   TkFramework* tkFramework = NULL;
 
    void InitPhysics() {
       gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -35,11 +35,11 @@ namespace pbe {
       gDispatcher = PxDefaultCpuDispatcherCreate(2);
       gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.25f);
 
-      framework = NvBlastTkFrameworkCreate();
+      tkFramework = NvBlastTkFrameworkCreate();
    }
 
    void TermPhysics() {
-      framework->release();
+      tkFramework->release();
 
       PX_RELEASE(gDispatcher);
       PX_RELEASE(gPhysics);

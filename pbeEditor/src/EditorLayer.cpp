@@ -165,11 +165,20 @@ namespace pbe {
                editorSettings.scenePath = {};
 
                Own<Scene> scene = std::make_unique<Scene>();
+
                CreateDirectLight(*scene);
                CreateSky(*scene);
-               CreateCube(*scene, CubeDesc{ .namePrefix = "Ground", .pos = vec3{0, -0.5, 0},
-                  .scale = vec3{100, 1, 100}, .dynamic = false, .color = vec3{0.2, 0.6, 0.2} });
-               CreateCube(*scene, CubeDesc{ .namePrefix = "Cube", .pos = vec3{0, 3, 0} });
+
+               CreateCube(*scene, CubeDesc {
+                  .namePrefix = "Ground",
+                  .pos = vec3{0, -0.5, 0},
+                  .scale = vec3{100, 1, 100},
+                  .color = vec3{0.2, 0.6, 0.2},
+                  .type = CubeDesc::PhysStatic });
+               CreateCube(*scene, CubeDesc {
+                  .namePrefix = "Cube",
+                  .pos = vec3{0, 3, 0},
+                  .type = CubeDesc::PhysDynamic });
 
                SetEditorScene(std::move(scene));
             }

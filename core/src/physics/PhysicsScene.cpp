@@ -47,7 +47,7 @@ namespace pbe {
                      ASSERT(visibleChunkCount < visibleChunkIndices.size());
                      child->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
-                     Entity childEntity = pScene->Create(parentTrans.parent);
+                     Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
                      for (int iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
                         auto chunkIndex =  visibleChunkIndices[iChunk];
@@ -57,12 +57,11 @@ namespace pbe {
 
                         Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
                            .parent = childEntity,
+                           .namePrefix = "Chunk Shape",
                            .pos = offset,
                            .scale = destruct.chunkSizes[chunkIndex],
+                           .type = CubeDesc::PhysShape,
                         });
-
-                        // todo:
-                        visibleChunkEntity.Remove<RigidBodyComponent>();
                      }
 
                      childEntity.GetTransform().SetPosition(parentTrans.Position());

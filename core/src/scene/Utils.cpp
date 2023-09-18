@@ -26,14 +26,21 @@ namespace pbe {
       trans.rotation = desc.rotation;
 
       entity.Add<GeometryComponent>();
-      entity.Add<MaterialComponent>().baseColor = desc.color;
 
-      entity.Add<RigidBodyShapeComponent>();
+      if (desc.type & CubeDesc::Material) {
+         entity.Add<MaterialComponent>().baseColor = desc.color;
+      }
 
-      // todo:
-      RigidBodyComponent _rb{};
-      _rb.dynamic = desc.dynamic;
-      entity.Add<RigidBodyComponent>(_rb);
+      if (desc.type & CubeDesc::RigidBodyShape) {
+         entity.Add<RigidBodyShapeComponent>();
+      }
+
+      if (desc.type & (CubeDesc::RigidBodyStatic | CubeDesc::RigidBodyDynamic)) {
+         // todo:
+         RigidBodyComponent _rb{};
+         _rb.dynamic = (desc.type & CubeDesc::RigidBodyDynamic) != 0;
+         entity.Add<RigidBodyComponent>(_rb);
+      }
 
       return entity;
    }
@@ -63,17 +70,23 @@ namespace pbe {
          return CreateEmpty(scene);
       }
 
-      // if (UI_MENU("Geometry")) {
-      //    // todo: add just geom without physics
-      // }
+      if (UI_MENU("Geometry")) {
+         if (ImGui::MenuItem("Cube")) {
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::GeomMaterial });
+         }
+      }
 
       if (UI_MENU("Physics")) {
          if (ImGui::MenuItem("Dynamic Cube")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .dynamic = true });
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysDynamic });
          }
          if (ImGui::MenuItem("Static Cube")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .dynamic = false });
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysStatic });
          }
+         if (ImGui::MenuItem("Shape")) {
+            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysShape });
+         }
+
          if (ImGui::MenuItem("Trigger")) {
             return CreateTrigger(scene, spawnPosHint);
          }
@@ -222,8 +235,9 @@ namespace pbe {
             Entity root = CreateCube(scene, CubeDesc{
                .namePrefix = "Chain",
                .pos = spawnPosHint,
-               .dynamic = false,
-               .color = Random::Color() });
+               .color = Random::Color(),
+               .type = CubeDesc::PhysStatic,
+            });
 
             Entity prev = root;
             int size = 10;
