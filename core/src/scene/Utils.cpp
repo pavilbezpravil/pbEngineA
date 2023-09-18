@@ -14,7 +14,7 @@ namespace pbe {
    Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos) {
       // todo: find appropriate name
       auto entity = scene.Create(parent, namePrefix);
-      entity.Get<SceneTransformComponent>().position = pos;
+      entity.Get<SceneTransformComponent>().Local().position = pos;
       return entity;
    }
 
@@ -22,8 +22,8 @@ namespace pbe {
       auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos);
 
       auto& trans = entity.Get<SceneTransformComponent>();
-      trans.scale = desc.scale;
-      trans.rotation = desc.rotation;
+      trans.Local().scale = desc.scale;
+      trans.Local().rotation = desc.rotation;
 
       entity.Add<GeometryComponent>();
 
@@ -47,7 +47,7 @@ namespace pbe {
 
    Entity CreateDirectLight(Scene& scene, string_view namePrefix, const vec3& pos) {
       auto entity = CreateEmpty(scene, namePrefix, {}, pos);
-      entity.Get<SceneTransformComponent>().rotation = quat{ vec3{PIHalf * 0.5, PIHalf * 0.5, 0 } };
+      entity.Get<SceneTransformComponent>().Local().rotation = quat{ vec3{PIHalf * 0.5, PIHalf * 0.5, 0 } };
       entity.Add<DirectLightComponent>();
       return entity;
    }
@@ -183,7 +183,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create wall")) {
             Entity root = scene.Create("Wall");
-            root.GetTransform().position = spawnPosHint;
+            root.GetTransform().Local().position = spawnPosHint;
 
             int size = 10;
             for (int y = 0; y < size; ++y) {
@@ -200,7 +200,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create stack tri")) {
             Entity root = scene.Create("Stack tri");
-            root.GetTransform().position = spawnPosHint;
+            root.GetTransform().Local().position = spawnPosHint;
 
             int size = 10;
             for (int y = 0; y < size; ++y) {
@@ -218,7 +218,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Create stack")) {
             Entity root = scene.Create("Stack");
-            root.GetTransform().position = spawnPosHint;
+            root.GetTransform().Local().position = spawnPosHint;
 
             int size = 10;
             for (int i = 0; i < size; ++i) {

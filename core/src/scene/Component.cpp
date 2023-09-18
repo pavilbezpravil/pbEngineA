@@ -98,9 +98,10 @@ namespace pbe {
    STRUCT_END()
 
    STRUCT_BEGIN(SceneTransformComponent)
-      STRUCT_FIELD(position)
-      STRUCT_FIELD(rotation)
-      STRUCT_FIELD(scale)
+      // todo:
+      // STRUCT_FIELD(position)
+      // STRUCT_FIELD(rotation)
+      // STRUCT_FIELD(scale)
    STRUCT_END()
 
    STRUCT_BEGIN(MaterialComponent)
@@ -173,8 +174,25 @@ namespace pbe {
       STRUCT_FIELD(color)
    STRUCT_END()
 
+   const Transform& SceneTransformComponent::Local() const {
+      return local;
+   }
+
+   Transform& SceneTransformComponent::Local() {
+      return local;
+   }
+
+   Transform SceneTransformComponent::World() const {
+      Transform transform = local;
+      if (parent) {
+         auto& pTrans = parent.Get<SceneTransformComponent>();
+         transform = pTrans.World() * transform;
+      }
+      return transform;
+   }
+
    vec3 SceneTransformComponent::Position() const {
-      vec3 pos = position;
+      vec3 pos = local.position;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          pos = pTrans.Position() + pTrans.Rotation() * (pos * pTrans.Scale());
@@ -183,7 +201,7 @@ namespace pbe {
    }
 
    quat SceneTransformComponent::Rotation() const {
-      quat rot = rotation;
+      quat rot = local.rotation;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          rot = pTrans.Rotation() * rot;
@@ -192,7 +210,7 @@ namespace pbe {
    }
 
    vec3 SceneTransformComponent::Scale() const {
-      vec3 s = scale;
+      vec3 s = local.scale;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          s *= pTrans.Scale();
@@ -203,27 +221,27 @@ namespace pbe {
    void SceneTransformComponent::SetPosition(const vec3& pos) {
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-         position = glm::inverse(pTrans.Rotation()) * (pos - pTrans.Position()) / pTrans.Scale();
+         local.position = glm::inverse(pTrans.Rotation()) * (pos - pTrans.Position()) / pTrans.Scale();
       } else {
-         position = pos;
+         local.position = pos;
       }
    }
 
    void SceneTransformComponent::SetRotation(const quat& rot) {
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-         rotation = glm::inverse(pTrans.Rotation()) * rot;
+         local.rotation = glm::inverse(pTrans.Rotation()) * rot;
       } else {
-         rotation = rot;
+         local.rotation = rot;
       }
    }
 
    void SceneTransformComponent::SetScale(const vec3& s) {
       if (HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
-         scale = s / pTrans.Scale();
+         local.scale = s / pTrans.Scale();
       } else {
-         scale = s;
+         local.scale = s;
       }
    }
 
@@ -239,18 +257,12 @@ namespace pbe {
       return Rotation() * vec3_Forward;
    }
 
-   mat4 SceneTransformComponent::GetMatrix() const {
-      mat4 transform = glm::translate(mat4(1), Position());
-      transform *= mat4{ Rotation() };
-      transform *= glm::scale(mat4(1), Scale());
-      return transform;
+   mat4 SceneTransformComponent::GetWorldMatrix() const {
+      return World().GetMatrix();
    }
 
    mat4 SceneTransformComponent::GetPrevMatrix() const {
-      mat4 transform = glm::translate(mat4(1), prevPosition);
-      transform *= mat4{ prevRotation };
-      transform *= glm::scale(mat4(1), prevScale);
-      return transform;
+      return prevWorld.GetMatrix();
    }
 
    std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform) {
@@ -279,9 +291,7 @@ namespace pbe {
    }
 
    void SceneTransformComponent::UpdatePrevTransform() {
-      prevPosition = Position();
-      prevRotation = Rotation();
-      prevScale = Scale();
+      prevWorld = World();
    }
 
    void SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {
@@ -358,9 +368,9 @@ namespace pbe {
    void SceneTransformComponent::Serialize(Serializer& ser) const {
       SERIALIZER_MAP(ser);
 
-      ser.Ser("position", position);
-      ser.Ser("rotation", rotation);
-      ser.Ser("scale", scale);
+      ser.Ser("position", local.position);
+      ser.Ser("rotation", local.rotation);
+      ser.Ser("scale", local.scale);
 
       if (HasParent()) {
          ser.KeyValue("parent", parent.Get<UUIDComponent>().uuid);
@@ -385,9 +395,9 @@ namespace pbe {
 
       bool success = true;
 
-      success &= deser.Deser("position", position);
-      success &= deser.Deser("rotation", rotation);
-      success &= deser.Deser("scale", scale);
+      success &= deser.Deser("position", local.position);
+      success &= deser.Deser("rotation", local.rotation);
+      success &= deser.Deser("scale", local.scale);
 
       // note: we will be added by our parent
       // auto parent = deser.Deser<uint64>("parent");
@@ -407,15 +417,15 @@ namespace pbe {
    bool SceneTransformComponent::UI() {
       bool editted = false;
 
-      editted |= Vec3UI("Position", position, 0, 70);
+      editted |= Vec3UI("Position", local.position, 0, 70);
 
-      auto degrees = glm::degrees(glm::eulerAngles(rotation));
+      auto degrees = glm::degrees(glm::eulerAngles(local.rotation));
       if (Vec3UI("Rotation", degrees, 0, 70)) {
-         rotation = glm::radians(degrees);
+         local.rotation = glm::radians(degrees);
          editted = true;
       }
 
-      editted |= Vec3UI("Scale", scale, 1, 70);
+      editted |= Vec3UI("Scale", local.scale, 1, 70);
 
       return editted;
    }

@@ -263,7 +263,7 @@ namespace pbe {
          m.emissivePower = material.emissivePower;
 
          SInstance instance;
-         instance.transform = trans.GetMatrix();
+         instance.transform = trans.GetWorldMatrix();
          instance.prevTransform = trans.GetPrevMatrix();
          instance.material = m;
          instance.entityID = (uint)trans.entity.GetID();
@@ -292,10 +292,11 @@ namespace pbe {
          // drawDescs.push_back(desc);
 
          if (cUseFrustumCulling) {
+            vec3 scale = sceneTrans.Scale();
             // todo:
-            float sphereRadius = glm::max(sceneTrans.scale.x, sceneTrans.scale.y);
-            sphereRadius = glm::max(sphereRadius, sceneTrans.scale.z) * 2;
-            if (!frustum.SphereTest({ sceneTrans.position, })) {
+            float sphereRadius = glm::max(scale.x, scale.y);
+            sphereRadius = glm::max(sphereRadius, scale.z) * 2;
+            if (!frustum.SphereTest({ sceneTrans.Position(), })) {
                continue;
             }
          }
@@ -324,7 +325,7 @@ namespace pbe {
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
             SLight l;
-            l.position = trans.position;
+            l.position = trans.Position();
             l.color = light.color;
             l.radius = light.radius;
             l.type = SLIGHT_TYPE_POINT;
@@ -398,9 +399,9 @@ namespace pbe {
          for (auto [e, trans, decal] : scene.View<SceneTransformComponent, DecalComponent>().each()) {
             decalObjs.emplace_back(trans, decalDefault);
 
-            vec3 size = trans.scale * 0.5f;
+            vec3 size = trans.Scale() * 0.5f;
 
-            mat4 view = glm::lookAt(trans.position, trans.position + trans.Forward(), trans.Up());
+            mat4 view = glm::lookAt(trans.Position(), trans.Position() + trans.Forward(), trans.Up());
             mat4 projection = glm::ortho(-size.x, size.x, -size.y, size.y, -size.z, size.z);
             mat4 viewProjection = projection * view;
             decals.emplace_back(viewProjection, decal.baseColor, decal.metallic, decal.roughness);
@@ -487,8 +488,8 @@ namespace pbe {
       if (cvRenderOpaqueSort) {
          // todo: slow. I assumed
          std::ranges::sort(opaqueObjs, [&](const RenderObject& a, const RenderObject& b) {
-            float az = glm::dot(camera.Forward(), a.trans.position);
-            float bz = glm::dot(camera.Forward(), b.trans.position);
+            float az = glm::dot(camera.Forward(), a.trans.Position());
+            float bz = glm::dot(camera.Forward(), b.trans.Position());
             return az < bz;
          });
       }
@@ -688,8 +689,8 @@ namespace pbe {
             if (cvRenderTransparencySort) {
                // todo: slow. I assumed
                std::ranges::sort(transparentObjs, [&](RenderObject& a, RenderObject& b) {
-                  float az = glm::dot(camera.Forward(), a.trans.position);
-                  float bz = glm::dot(camera.Forward(), b.trans.position);
+                  float az = glm::dot(camera.Forward(), a.trans.Position());
+                  float bz = glm::dot(camera.Forward(), b.trans.Position());
                   return az > bz;
                   });
             }
@@ -861,7 +862,7 @@ namespace pbe {
          }
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
-            dbgRend.DrawSphere({ trans.position, light.radius }, light.color);
+            dbgRend.DrawSphere({ trans.Position(), light.radius }, light.color);
          }
 
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
@@ -934,7 +935,7 @@ namespace pbe {
 
       for (const auto& [trans, material] : renderObjs) {
          SDrawCallCB cb;
-         cb.instance.transform = glm::translate(mat4(1), trans.position);
+         cb.instance.transform = glm::translate(mat4(1), trans.Position());
          cb.instance.transform = cb.instance.transform;
          cb.instance.material.roughness = material.roughness;
          cb.instance.material.baseColor = material.baseColor;
@@ -1003,7 +1004,7 @@ namespace pbe {
       for (auto [_, trans, outline]
          : scene.View<SceneTransformComponent, OutlineComponent>().each()) {
          SDrawCallCB cb;
-         cb.instance.transform = trans.GetMatrix();
+         cb.instance.transform = trans.GetWorldMatrix();
          cb.instance.material.baseColor = outline.color;
          cb.instance.entityID = (uint)trans.entity.GetID();
 

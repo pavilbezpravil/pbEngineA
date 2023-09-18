@@ -2,6 +2,7 @@
 
 #include "Entity.h"
 #include "core/UUID.h"
+#include "math/Transform.h"
 #include "math/Types.h"
 
 namespace pbe {
@@ -29,16 +30,22 @@ namespace pbe {
 
       Entity entity;
 
-      // local space
-      vec3 position{};
-      quat rotation = quat_Identity;
-      vec3 scale{ 1.f };
+      Transform local {
+         .position = vec3_Zero,
+         .rotation = quat_Identity,
+         .scale = vec3_One,
+      };
 
       // todo:
-      // World Space
-      vec3 prevPosition{};
-      quat prevRotation = quat_Identity;
-      vec3 prevScale{ 1.f };
+      Transform prevWorld {
+         .position = vec3_Zero,
+         .rotation = quat_Identity,
+         .scale = vec3_One,
+      };
+
+      const Transform& Local() const;
+      Transform& Local();
+      Transform World() const;
 
       // todo: return const ref
       // World space
@@ -54,7 +61,7 @@ namespace pbe {
       vec3 Up() const;
       vec3 Forward() const;
 
-      mat4 GetMatrix() const;
+      mat4 GetWorldMatrix() const;
       mat4 GetPrevMatrix() const;
       void SetMatrix(const mat4& transform);
 

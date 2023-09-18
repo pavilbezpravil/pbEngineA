@@ -329,9 +329,7 @@ namespace pbe {
 
       // todo: move after loop?
       auto& dstTrans = dst.GetTransform();
-      dstTrans.position = srcTrans.position;
-      dstTrans.rotation = srcTrans.rotation;
-      dstTrans.scale = srcTrans.scale;
+      dstTrans.Local() = srcTrans.Local();
 
       for (auto child : srcTrans.children) {
          Entity duplicatedChild = { hierEntitiesMap[child.GetUUID()].enttEntity, dst.GetScene()};

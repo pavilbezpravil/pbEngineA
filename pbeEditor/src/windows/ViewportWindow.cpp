@@ -607,7 +607,7 @@ namespace pbe {
       bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
 
       auto& trans = selectedEntity.Get<SceneTransformComponent>();
-      mat4 entityTransform = trans.GetMatrix();
+      mat4 entityTransform = trans.GetWorldMatrix();
 
       float snapValue = 1;
       float snapValues[3] = { snapValue, snapValue, snapValue };

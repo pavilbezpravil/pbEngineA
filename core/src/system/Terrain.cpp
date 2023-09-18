@@ -56,7 +56,7 @@ namespace pbe {
       terrainCB.waterPixelNormals = cTerrainPixelNormal;
 
       for (auto [e, trans, terrain] : scene.View<SceneTransformComponent, TerrainComponent>().each()) {
-         terrainCB.center = trans.position;
+         terrainCB.center = trans.Position();
          terrainCB.color = terrain.color;
          terrainCB.entityID = (uint)e;
 
