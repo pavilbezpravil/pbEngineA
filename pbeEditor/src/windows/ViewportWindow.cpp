@@ -188,9 +188,11 @@ namespace pbe {
             if (Input::IsKeyPressing(KeyCode::Ctrl)) {
                if (auto hitResult = scene->GetPhysics()->RayCast(camera.position, camera.GetWorldSpaceRayDirFromUV(cursorUV), 10000.f)) {
                   if (auto destruct = hitResult.physActor.TryGet<DestructComponent>()) {
-                     // hitResult.physActor.GetTransform();
+                     const auto& worldTrans = hitResult.physActor.GetTransform().World();
+                     auto localPos = worldTrans.TransformInvPosition(hitResult.position) * worldTrans.scale;
+                     INFO("Apply damage local pos {}", localPos);
 
-                     destruct->ApplyDamageAtLocal(vec3{0, 0, 0}, 1000.f);
+                     destruct->ApplyDamageAtLocal(localPos, 1000.f);
                   }
                }
             } else {

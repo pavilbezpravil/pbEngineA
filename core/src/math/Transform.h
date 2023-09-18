@@ -1,10 +1,11 @@
 #pragma once
 #include "Types.h"
+#include "core/Core.h"
 
 
 namespace pbe {
 
-   struct Transform {
+   struct CORE_API Transform {
       vec3 position;
       quat rotation;
       vec3 scale;

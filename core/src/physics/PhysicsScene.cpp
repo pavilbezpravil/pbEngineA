@@ -99,10 +99,10 @@ namespace pbe {
 
                // Unhandled:
                case TkFractureCommands::EVENT_TYPE:
-                  INFO("TkFractureCommands");
+                  // INFO("TkFractureCommands");
                   break;
                case TkFractureEvents::EVENT_TYPE:
-                  INFO("TkFractureEvents");
+                  // INFO("TkFractureEvents");
                   break;
                default:
                   break;
@@ -605,7 +605,7 @@ namespace pbe {
    void PhysicsScene::RemoveDestructActor(Entity entity) {
       auto& destruct = entity.Get<DestructComponent>();
 
-      INFO("Destuct actors before release TkActor {}", destruct.tkActor->getFamily().getActorCount());
+      // INFO("Destuct actors before release TkActor {}", destruct.tkActor->getFamily().getActorCount());
       PX_RELEASE(destruct.tkActor);
       // todo: do not release tkAsset if other actors are exist
       PX_RELEASE(destruct.tkAsset);
