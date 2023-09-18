@@ -49,7 +49,7 @@ namespace pbe {
 
                      Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
-                     for (int iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
+                     for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
                         auto chunkIndex =  visibleChunkIndices[iChunk];
                         NvBlastChunk chunk = child->getAsset()->getChunks()[chunkIndex];
 

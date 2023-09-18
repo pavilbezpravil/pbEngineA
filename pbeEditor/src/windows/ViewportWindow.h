@@ -3,6 +3,7 @@
 #include "EditorCamera.h"
 #include "EditorSelection.h"
 #include "EditorWindow.h"
+#include "math/Transform.h"
 #include "rend/Renderer.h"
 
 namespace pbe {

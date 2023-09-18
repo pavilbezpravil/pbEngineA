@@ -31,7 +31,7 @@ namespace pbe {
       dynamic->setAngularDamping(angularDamping);
    }
 
-   void DestructComponent::ApplyDamage(float damage) {
+   void DestructComponent::ApplyDamageAtLocal(const vec3& posL, float damage) {
       // todo:
       static NvBlastExtMaterial material;
       material.health = 10.0f;
@@ -43,7 +43,7 @@ namespace pbe {
       damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
       damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
 
-      static NvBlastExtRadialDamageDesc damageDesc = { damage, {0, 0, 0}, 0.5f, 1.f };
+      static NvBlastExtRadialDamageDesc damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
       static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
 
       tkActor->damage(damageProgram, &params);

@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Core.h"
+#include "math/Transform.h"
 #include "scene/Entity.h"
 
 
@@ -39,7 +40,7 @@ namespace pbe {
       float hardness = 1.f; // todo:
 
       // todo:
-      void ApplyDamage(float damage);
+      void ApplyDamageAtLocal(const vec3& posL, float damage);
 
       Nv::Blast::TkAsset* tkAsset = nullptr;
       Nv::Blast::TkActor* tkActor = nullptr;

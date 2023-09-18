@@ -83,25 +83,6 @@ namespace pbe {
 
    constexpr quat quat_Identity = quat(1, 0, 0, 0);
 
-   // todo:
-   struct Transform {
-      vec3 position;
-      quat rotation;
-      vec3 scale;
-
-      vec3 Right() const {
-         return rotation * vec3_Right;
-      }
-
-      vec3 Up() const {
-         return rotation * vec3_Up;
-      }
-
-      vec3 Forward() const {
-         return rotation * vec3_Forward;
-      }
-   };
-
    GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool2 operator<(const glm::ivec2& lhs, const glm::ivec2& rhs) {
       return glm::lessThan(lhs, rhs);
    }
