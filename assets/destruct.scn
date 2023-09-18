@@ -1,11 +1,33 @@
 entities:
+  - uuid: 3025266316102579978
+    tag: Cube
+    SceneTransformComponent:
+      position: [-3.65689731, 1.03440809, 2.67515349]
+      rotation: [0, -0, 0]
+      scale: [1, 1.67462075, 1]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3459374828559402514
     tag: Scene
     SceneTransformComponent:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 8890436197300190957, 3025266316102579978, 9889813764843162685]
   - uuid: 5358771780476770984
     tag: Cube
     SceneTransformComponent:
@@ -30,6 +52,52 @@ entities:
     RigidBodyShapeComponent:
       {}
     DestructComponent:
+      {}
+  - uuid: 8890436197300190957
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [0, 3, 2.36982203]
+      rotation: [0, -0, 0]
+      scale: [9.671772, 1, 1]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+    DestructComponent:
+      {}
+  - uuid: 9889813764843162685
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [4.4285183, 1.03440809, 2.67515349]
+      rotation: [0, -0, 0]
+      scale: [1, 1.67462075, 1]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
       {}
   - uuid: 11807877512905403012
     tag: Ground

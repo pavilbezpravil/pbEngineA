@@ -23,54 +23,55 @@ namespace pbe {
    class DestructEventListener : public TkEventListener {
    public:
       void receive(const TkEvent* events, uint32_t eventCount) override {
-         // Events are batched into an event buffer.  Loop over all events:
          for (uint32_t i = 0; i < eventCount; ++i) {
             const TkEvent& event = events[i];
 
-            // See TkEvent documentation for event types
             switch (event.type) {
-               case TkSplitEvent::EVENT_TYPE:  // A TkActor has split into smaller actors
+               case TkSplitEvent::EVENT_TYPE:
                {
-                  INFO("TkSplitEvent");
-                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();  // Split event payload
-
-                  // The parent actor may no longer be valid.  Instead, we receive the information it held
-                  // which we need to update our app's representation (e.g. removal of the corresponding physics actor)
+                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();
 
                   auto entity = (Entity*)splitEvent->parentData.userData;
                   entity->DestroyDelayed();
-                  INFO("Destruct: Destroid entity index {}", splitEvent->parentData.index);
-                  // myRemoveActorFunction(splitEvent->parentData.family, splitEvent->parentData.index, splitEvent->parentData.userData);
 
                   auto parentTrans = entity->GetTransform();
                   auto destruct = entity->Get<DestructComponent>();
 
                   auto pScene = entity->GetScene();
 
-                  // The split event contains an array of "child" actors that came from the parent.  These are valid
-                  // TkActor pointers and may be used to create physics and graphics representations in our application
                   for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
                      auto child = splitEvent->children[j];
-                     INFO("Child index {}", child->getIndex());
-                     // myCreateActorFunction(splitEvent->children[j]);
 
-                     uint32_t visibleChunkIndex = child->getVisibleChunkCount();
-                     std::vector<uint> visibleChunkIndices(visibleChunkIndex);
-                     child->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkIndex);
+                     uint32_t visibleChunkCount = child->getVisibleChunkCount();
+                     std::array<uint, 32> visibleChunkIndices;
+                     ASSERT(visibleChunkCount < visibleChunkIndices.size());
+                     child->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
-                     for (auto chunkIndex : visibleChunkIndices) {
+                     Entity childEntity = pScene->Create(parentTrans.parent);
+
+                     for (int iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
+                        auto chunkIndex =  visibleChunkIndices[iChunk];
                         NvBlastChunk chunk = child->getAsset()->getChunks()[chunkIndex];
 
                         vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
 
-                        INFO("Chunk index {}", chunkIndex);
-                        Entity childEntity = CreateCube(*pScene, CubeDesc{
-                           .parent = parentTrans.parent,
-                           .pos = parentTrans.Position() + offset,
-                           .rotation =  parentTrans.Rotation(),
+                        Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
+                           .parent = childEntity,
+                           .pos = offset,
                            .scale = destruct.chunkSizes[chunkIndex],
                         });
+
+                        // todo:
+                        visibleChunkEntity.Remove<RigidBodyComponent>();
                      }
+
+                     childEntity.GetTransform().SetPosition(parentTrans.Position());
+                     childEntity.GetTransform().SetRotation(parentTrans.Rotation());
+
+                     // todo:
+                     RigidBodyComponent _rb{};
+                     _rb.dynamic = true;
+                     childEntity.Add<RigidBodyComponent>(_rb);
                   }
                }
                break;
@@ -338,7 +339,7 @@ namespace pbe {
 
    static PxRigidActor* CreateSceneRigidActor(PxScene* pxScene, Entity entity) {
       // todo: pass as function argument
-      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
+      auto [trans, rb] = entity.Get<SceneTransformComponent, RigidBodyComponent>();
 
       PxTransform physTrans = GetTransform(trans);
 
@@ -350,7 +351,9 @@ namespace pbe {
       }
 
       // todo: tmp, remove after reconvert all scenes
-      entity.AddOrReplace<RigidBodyShapeComponent>();
+      if (entity.Has<GeometryComponent>()) {
+         entity.AddOrReplace<RigidBodyShapeComponent>();
+      }
 
       AddShapes(entity, actor);
 
@@ -373,7 +376,7 @@ namespace pbe {
 
    void PhysicsScene::AddRigidActor(Entity entity) {
       // todo: pass as function argument
-      auto [trans, geom, rb] = entity.Get<SceneTransformComponent, GeometryComponent, RigidBodyComponent>();
+      auto& rb = entity.Get<RigidBodyComponent>();
       PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
 
       ASSERT(!rb.pxRigidActor);
