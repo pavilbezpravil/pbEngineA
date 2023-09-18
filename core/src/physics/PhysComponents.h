@@ -36,16 +36,24 @@ namespace pbe {
    };
 
    // todo: name
+   struct DestructData {
+      Nv::Blast::TkAsset* tkAsset = nullptr;
+      std::vector<vec3> chunkSizes; // todo:
+   };
+
+   // todo: name
    struct CORE_API DestructComponent {
       float hardness = 1.f; // todo:
 
       // todo:
       void ApplyDamageAtLocal(const vec3& posL, float damage);
 
-      Nv::Blast::TkAsset* tkAsset = nullptr;
-      Nv::Blast::TkActor* tkActor = nullptr;
+      bool root = true; // todo:
+      bool releaseTkActor = true; // todo:
 
-      std::vector<vec3> chunkSizes; // todo:
+      DestructData* destructData = nullptr;
+
+      Nv::Blast::TkActor* tkActor = nullptr;
    };
 
    struct TriggerComponent {

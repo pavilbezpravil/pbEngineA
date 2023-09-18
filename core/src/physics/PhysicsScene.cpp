@@ -31,16 +31,23 @@ namespace pbe {
                {
                   const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();
 
+                  ASSERT(splitEvent->parentData.userData);
                   auto entity = (Entity*)splitEvent->parentData.userData;
                   entity->DestroyDelayed();
 
                   auto parentTrans = entity->GetTransform();
-                  auto destruct = entity->Get<DestructComponent>();
+                  auto& destruct = entity->Get<DestructComponent>();
+                  destruct.releaseTkActor = false; // todo:
 
                   auto pScene = entity->GetScene();
 
                   for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
                      auto child = splitEvent->children[j];
+                     // todo:
+                     if (child->userData) {
+                        child->userData = nullptr;
+                     }
+                     ASSERT(child->userData == nullptr);
 
                      uint32_t visibleChunkCount = child->getVisibleChunkCount();
                      std::array<uint, 32> visibleChunkIndices;
@@ -59,7 +66,7 @@ namespace pbe {
                            .parent = childEntity,
                            .namePrefix = "Chunk Shape",
                            .pos = offset,
-                           .scale = destruct.chunkSizes[chunkIndex],
+                           .scale = destruct.destructData->chunkSizes[chunkIndex],
                            .type = CubeDesc::PhysShape,
                         });
                      }
@@ -71,7 +78,17 @@ namespace pbe {
                      RigidBodyComponent _rb{};
                      _rb.dynamic = true;
                      childEntity.Add<RigidBodyComponent>(_rb);
+
+                     {
+                        DestructComponent childDestruct{};
+                        childDestruct.root = false;
+                        childDestruct.destructData = destruct.destructData;
+                        childDestruct.tkActor = child;
+                        childEntity.Add<DestructComponent>(childDestruct);
+                     }
                   }
+
+                  delete (Entity*)splitEvent->parentData.userData;
                }
                break;
 
@@ -435,68 +452,7 @@ namespace pbe {
       rb.SetData();
    }
 
-   void PhysicsScene::AddDestructActor(Entity entity) {
-      // todo: pass as function argument
-      auto [trans, geom, destruct] = entity.Get<SceneTransformComponent, GeometryComponent, DestructComponent>();
-
-      ASSERT(geom.type == GeomType::Box);
-
-#if 0
-      uint chunkCount = 3;
-      uint bondCount = 1;
-
-      std::vector<NvBlastChunkDesc> chunkDescs;
-      chunkDescs.resize(chunkCount);
-
-      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
-      chunkDescs[0].centroid[0] = 0.0f;
-      chunkDescs[0].centroid[1] = 0.0f;
-      chunkDescs[0].centroid[2] = 0.0f;
-      chunkDescs[0].volume = 1.0f;
-      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-      chunkDescs[0].userData = 0;
-
-      chunkDescs[1].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
-      chunkDescs[1].centroid[0] = -0.25f;   // centroid position in asset-local space
-      chunkDescs[1].centroid[1] = 0.0f;
-      chunkDescs[1].centroid[2] = 0.0f;
-      chunkDescs[1].volume = 0.5f;    // Unit volume
-      chunkDescs[1].flags = NvBlastChunkDesc::SupportFlag; // This chunk should be represented in the support graph
-      chunkDescs[1].userData = 1;
-
-      chunkDescs[2].parentChunkDescIndex = 0; // child of chunk described by chunkDescs[0]
-      chunkDescs[2].centroid[0] = 0.25f;   // centroid position in asset-local space
-      chunkDescs[2].centroid[1] = 0.0f;
-      chunkDescs[2].centroid[2] = 0.0f;
-      chunkDescs[2].volume = 0.5f;    // Unit volume
-      chunkDescs[2].flags = NvBlastChunkDesc::SupportFlag; // This chunk should be represented in the support graph
-      chunkDescs[2].userData = 2;
-
-      destruct.chunkSizes.resize(chunkCount);
-      destruct.chunkSizes[0] = vec3{ 1.f, 1.f, 1.f };
-      destruct.chunkSizes[1] = vec3{ 0.5f, 1.f, 1.f };
-      destruct.chunkSizes[2] = vec3{ 0.5f, 1.f, 1.f };
-
-      std::vector<NvBlastBondDesc> bondDescs;
-      bondDescs.resize(bondCount);
-
-      bondDescs[0].chunkIndices[0] = 1;   // chunkIndices refer to chunk descriptor indices for support chunks
-      bondDescs[0].chunkIndices[1] = 2;
-      bondDescs[0].bond.normal[0] = 1.0f; // normal in the +x direction
-      bondDescs[0].bond.normal[1] = 0.0f;
-      bondDescs[0].bond.normal[2] = 0.0f;
-      bondDescs[0].bond.area = 1.0f;  // unit area
-      bondDescs[0].bond.centroid[0] = 0.0f;   // centroid position in asset-local space
-      bondDescs[0].bond.centroid[1] = 0.0f;
-      bondDescs[0].bond.centroid[2] = 0.0f;
-      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
-      // bond for example to create a joint when this bond breaks
-
-      // bondDescs[1].chunkIndices[0] = 1;
-      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
-      // ... etc. for bondDescs[1], all other fields are filled in as usual
-#else
-
+   static DestructData* GetDestructData(const SceneTransformComponent& trans, const DestructComponent& destruct) {
       vec3 chunkSize = trans.Scale();
 
       uint slices = std::max(1, (int)chunkSize.x);
@@ -505,7 +461,9 @@ namespace pbe {
 
       std::vector<NvBlastChunkDesc> chunkDescs;
       chunkDescs.resize(chunkCount);
-      destruct.chunkSizes.resize(chunkCount);
+
+      std::vector<vec3> chunkSizes;
+      chunkSizes.resize(chunkCount);
 
       // parent
       chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
@@ -516,7 +474,7 @@ namespace pbe {
       chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
       chunkDescs[0].userData = 0;
 
-      destruct.chunkSizes[0] = chunkSize;
+      chunkSizes[0] = chunkSize;
 
       std::vector<NvBlastBondDesc> bondDescs;
       bondDescs.resize(bondCount);
@@ -540,7 +498,7 @@ namespace pbe {
          chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
          chunkDesc.userData = chunkIdx;
 
-         destruct.chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
+         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
 
          ++chunkIdx;
 
@@ -565,7 +523,6 @@ namespace pbe {
       // bondDescs[1].chunkIndices[0] = 1;
       // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
       // ... etc. for bondDescs[1], all other fields are filled in as usual
-#endif
 
       TkAssetDesc assetDesc;
       assetDesc.chunkCount = chunkCount;
@@ -584,31 +541,67 @@ namespace pbe {
       bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
       INFO("Require reordering {}", requireReordering);
 
-
       TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
 
-      TkActorDesc actorDesc;
-      actorDesc.asset = tkAsset;
-      actorDesc.uniformInitialBondHealth = 1;
-      actorDesc.uniformInitialLowerSupportChunkHealth = 1;
-      
-      TkActor* tkActor = tkFramework->createActor(actorDesc);
-      tkActor->userData = new Entity{ entity }; // todo: use fixed allocator
-      tkActor->getFamily().addListener(*destructEventListener);
+      // todo:
+      DestructData* destructData = new DestructData{};
+      destructData->tkAsset = tkAsset;
+      destructData->chunkSizes = std::move(chunkSizes);
+      return destructData;
+   }
 
-      tkGroup->addActor(*tkActor);
+   void PhysicsScene::AddDestructActor(Entity entity) {
+      // todo: pass as function argument
+      auto [trans, destruct] = entity.Get<SceneTransformComponent, DestructComponent>();
 
-      destruct.tkAsset = tkAsset;
-      destruct.tkActor = tkActor;
+      if (destruct.root) {
+         auto& geom = entity.Get<GeometryComponent>();
+         ASSERT(geom.type == GeomType::Box);
+
+         auto destructData = GetDestructData(trans, destruct);
+         destruct.destructData = destructData;
+
+         auto tkFramework = NvBlastTkFrameworkGet();
+
+         TkActorDesc actorDesc;
+         actorDesc.asset = destruct.destructData->tkAsset;
+         actorDesc.uniformInitialBondHealth = 1;
+         actorDesc.uniformInitialLowerSupportChunkHealth = 1;
+
+         TkActor* tkActor = tkFramework->createActor(actorDesc);
+         tkActor->getFamily().addListener(*destructEventListener);
+         tkGroup->addActor(*tkActor);
+
+         destruct.tkActor = tkActor;
+      } else {
+         ASSERT(destruct.destructData);
+         ASSERT(destruct.tkActor);
+      }
+
+      ASSERT(destruct.tkActor->userData == nullptr);
+      destruct.tkActor->userData = new Entity{ entity }; // todo: use fixed allocator
    }
 
    void PhysicsScene::RemoveDestructActor(Entity entity) {
       auto& destruct = entity.Get<DestructComponent>();
 
+      auto& tkFamily = destruct.tkActor->getFamily();
+      // auto actorsCount = destruct.tkActor->getFamily().getActorCount();
       // INFO("Destuct actors before release TkActor {}", destruct.tkActor->getFamily().getActorCount());
-      PX_RELEASE(destruct.tkActor);
+
+      if (destruct.releaseTkActor) {
+         delete (Entity*)destruct.tkActor->userData;
+         destruct.tkActor->userData = nullptr;
+         PX_RELEASE(destruct.tkActor);
+      }
+
       // todo: do not release tkAsset if other actors are exist
-      PX_RELEASE(destruct.tkAsset);
+      if (tkFamily.getActorCount() == 0) {
+         INFO("Destrcut actors count ZERO. Delete tkAsset");
+         PX_RELEASE(destruct.destructData->tkAsset);
+         delete destruct.destructData;
+         destruct.destructData = nullptr;
+      }
    }
 
    void PhysicsScene::AddTrigger(Entity entity) {
