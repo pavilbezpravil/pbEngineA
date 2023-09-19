@@ -187,12 +187,8 @@ namespace pbe {
          if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver() && manipulatorMode == None) {
             if (Input::IsKeyPressing(KeyCode::Ctrl)) {
                if (auto hitResult = scene->GetPhysics()->RayCast(camera.position, camera.GetWorldSpaceRayDirFromUV(cursorUV), 10000.f)) {
-                  if (auto destruct = hitResult.physActor.TryGet<DestructComponent>()) {
-                     const auto& worldTrans = hitResult.physActor.GetTransform().World();
-                     auto localPos = worldTrans.TransformInvPosition(hitResult.position) * worldTrans.scale;
-                     INFO("Apply damage local pos {}", localPos);
-
-                     destruct->ApplyDamageAtLocal(localPos, 1000.f);
+                  if (auto rb = hitResult.physActor.TryGet<RigidBodyComponent>()) {
+                     rb->ApplyDamage(hitResult.position, 1000.f);
                   }
                }
             } else {

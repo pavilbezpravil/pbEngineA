@@ -28,10 +28,6 @@ namespace pbe {
 
       void SetLinearVelocity(const vec3& v, bool autowake = true);
 
-      bool IsStatic() const { return !IsDynamic(); }
-      bool IsDynamic() const { return dynamic; }
-      bool IsDestructible() const { return tkActor != nullptr; }
-
       physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
 
       bool dynamic = false;
@@ -40,9 +36,17 @@ namespace pbe {
       float linearDamping = 0.1f;
       float angularDamping = 0.1f;
 
+
+      // todo: private:
+      physx::PxRigidActor* pxRigidActor = nullptr;
+      Nv::Blast::TkActor* tkActor = nullptr;
+
+      DestructData* destructData = nullptr;  // todo:
+
    private:
       void CreateOrUpdate(physx::PxScene& pxScene, Entity& entity);
       void Remove();
+      void RemoveDestruct();
 
       void AddShapesHier(const Entity& entity);
 
@@ -50,32 +54,12 @@ namespace pbe {
          return *(PhysicsScene*)pxRigidActor->getScene()->userData;
       }
 
-      physx::PxRigidActor* pxRigidActor = nullptr;
-      Nv::Blast::TkActor* tkActor = nullptr;
-
-      DestructData* destructData = nullptr;  // todo:
-
       friend class PhysicsScene;
    };
 
    struct CORE_API RigidBodyShapeComponent {
       // todo:
       float friction = 0.7f;
-   };
-
-   // todo: name
-   struct CORE_API DestructComponent {
-      float hardness = 1.f; // todo:
-
-      // todo:
-      void ApplyDamageAtLocal(const vec3& posL, float damage);
-
-      bool root = true; // todo:
-      bool releaseTkActor = true; // todo:
-
-      DestructData* destructData = nullptr;
-
-      Nv::Blast::TkActor* tkActor = nullptr;
    };
 
    struct TriggerComponent {

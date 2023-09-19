@@ -5,6 +5,7 @@
 #include "PhysComponents.h"
 #include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
+#include "DestructEventListener.h"
 #include "core/Profiler.h"
 #include "scene/Component.h"
 #include "scene/Entity.h"
@@ -13,122 +14,10 @@
 #include <NvBlastTk.h>
 #include <NvBlastExtDamageShaders.h>
 
-#include "scene/Utils.h"
-
 
 using namespace Nv::Blast;
 
 namespace pbe {
-
-   class DestructEventListener : public TkEventListener {
-   public:
-      void receive(const TkEvent* events, uint32_t eventCount) override {
-         for (uint32_t i = 0; i < eventCount; ++i) {
-            const TkEvent& event = events[i];
-
-            switch (event.type) {
-               case TkSplitEvent::EVENT_TYPE:
-               {
-                  const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();
-
-                  auto parentEntity = *(Entity*)splitEvent->parentData.userData;
-                  delete (Entity*)splitEvent->parentData.userData;
-
-                  parentEntity.DestroyDelayed();
-
-                  auto parentTrans = parentEntity.GetTransform();
-                  auto& destruct = parentEntity.Get<DestructComponent>();
-                  destruct.releaseTkActor = false; // todo:
-
-                  auto pScene = parentEntity.GetScene();
-
-                  for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
-                     auto tkChild = splitEvent->children[j];
-
-                     // it may be destroyed TkActor with already delete userData
-                     tkChild->userData = nullptr;
-
-                     std::array<uint, 32> visibleChunkIndices;
-
-                     uint32_t visibleChunkCount = tkChild->getVisibleChunkCount();
-                     ASSERT(visibleChunkCount < visibleChunkIndices.size());
-                     tkChild->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
-
-                     Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
-
-                     for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
-                        auto chunkIndex =  visibleChunkIndices[iChunk];
-                        NvBlastChunk chunk = tkChild->getAsset()->getChunks()[chunkIndex];
-
-                        vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
-
-                        Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
-                           .parent = childEntity,
-                           .namePrefix = "Chunk Shape",
-                           .pos = offset,
-                           .scale = destruct.destructData->chunkSizes[chunkIndex],
-                           .type = CubeDesc::PhysShape,
-                        });
-                     }
-
-                     childEntity.GetTransform().SetPosition(parentTrans.Position());
-                     childEntity.GetTransform().SetRotation(parentTrans.Rotation());
-
-                     // todo:
-                     RigidBodyComponent _rb{};
-                     _rb.dynamic = true;
-                     childEntity.Add<RigidBodyComponent>(_rb);
-
-                     {
-                        DestructComponent childDestruct{};
-                        childDestruct.root = false;
-                        childDestruct.destructData = destruct.destructData;
-                        childDestruct.tkActor = tkChild;
-                        childEntity.Add<DestructComponent>(childDestruct);
-                     }
-                  }
-               }
-               break;
-
-               case TkJointUpdateEvent::EVENT_TYPE:
-                  INFO("TkJointUpdateEvent");
-                  UNIMPLEMENTED();
-               // {
-               //    const TkJointUpdateEvent* jointEvent = event.getPayload<TkJointUpdateEvent>();  // Joint update event payload
-               //
-               //    // Joint events have three subtypes, see which one we have
-               //    switch (jointEvent->subtype)
-               //    {
-               //    case TkJointUpdateEvent::External:
-               //       myCreateJointFunction(jointEvent->joint);   // An internal joint has been "exposed" (now joins two different actors).  Create a physics joint.
-               //       break;
-               //    case TkJointUpdateEvent::Changed:
-               //       myUpdatejointFunction(jointEvent->joint);   // A joint's actors have changed, so we need to update its corresponding physics joint.
-               //       break;
-               //    case TkJointUpdateEvent::Unreferenced:
-               //       myDestroyJointFunction(jointEvent->joint);  // This joint is no longer referenced, so we may delete the corresponding physics joint.
-               //       break;
-               //    }
-               // }
-                  break;
-
-               // Unhandled:
-               case TkFractureCommands::EVENT_TYPE:
-                  // INFO("TkFractureCommands");
-                  break;
-               case TkFractureEvents::EVENT_TYPE:
-                  // INFO("TkFractureEvents");
-                  break;
-               default:
-                  break;
-            }
-         }
-      }
-
-      PhysicsScene& scene;
-
-      DestructEventListener(PhysicsScene& scene) : scene(scene) {}
-   };
 
    PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
       PxSceneDesc sceneDesc(GetPxPhysics()->getTolerancesScale());
@@ -266,10 +155,6 @@ namespace pbe {
       registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
       registry.on_update<RigidBodyComponent>().connect<&PhysicsScene::OnUpdateRigidBody>(this);
 
-      registry.on_construct<DestructComponent>().connect<&PhysicsScene::OnConstructDestruct>(this);
-      registry.on_destroy<DestructComponent>().connect<&PhysicsScene::OnDestroyDestruct>(this);
-      // registry.on_update<DestructComponent>().connect<&PhysicsScene::OnUpdateDestruct>(this);
-
       registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
       registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
 
@@ -282,11 +167,6 @@ namespace pbe {
       for (auto e : pScene->ViewAll<GeometryComponent, RigidBodyComponent, DelayedEnableMarker>()) {
          Entity entity{ e, &scene };
          AddRigidActor(entity);
-      }
-
-      for (auto e : pScene->ViewAll<DestructComponent, DelayedEnableMarker>()) {
-         Entity entity{ e, &scene };
-         AddDestructActor(entity);
       }
 
       for (auto e : pScene->ViewAll<GeometryComponent, TriggerComponent, DelayedEnableMarker>()) {
@@ -306,11 +186,6 @@ namespace pbe {
          RemoveRigidActor(entity);
       }
 
-      for (auto e : pScene->ViewAll<DestructComponent, DelayedDisableMarker>()) {
-         Entity entity{ e, &scene };
-         RemoveDestructActor(entity);
-      }
-
       for (auto e : pScene->ViewAll<TriggerComponent, DelayedDisableMarker>()) {
          Entity entity{ e, &scene };
          RemoveTrigger(entity);
@@ -324,33 +199,6 @@ namespace pbe {
 
    void PhysicsScene::OnUpdate(float dt) {
       Simulate(dt);
-   }
-
-   static void AddShapes(Entity& entity, PxRigidActor* actor) {
-      auto& trans = entity.Get<SceneTransformComponent>();
-
-      if (entity.Has<RigidBodyShapeComponent>()) {
-         const auto& geom = entity.Get<GeometryComponent>();
-
-         PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
-
-         PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true);
-
-         // todo: do it by pbe::Transform
-         PxTransform shapeTrans = GetTransform(trans);
-         PxTransform actorTrans = actor->getGlobalPose();
-         PxTransform shapeOffset = actorTrans.transformInv(shapeTrans);
-
-         shape->setLocalPose(shapeOffset);
-
-         actor->attachShape(*shape);
-         shape->release();
-      }
-
-      for (auto& child : trans.children) {
-         ASSERT(!child.Has<RigidBodyComponent>());
-         AddShapes(child, actor);
-      }
    }
 
    void PhysicsScene::AddRigidActor(Entity entity) {
@@ -457,60 +305,6 @@ namespace pbe {
       return destructData;
    }
 
-   void PhysicsScene::AddDestructActor(Entity entity) {
-      // todo: pass as function argument
-      auto [trans, destruct] = entity.Get<SceneTransformComponent, DestructComponent>();
-
-      if (destruct.root) {
-         auto& geom = entity.Get<GeometryComponent>();
-         ASSERT(geom.type == GeomType::Box);
-
-         auto destructData = GetDestructData(trans.Scale());
-         destruct.destructData = destructData;
-
-         auto tkFramework = NvBlastTkFrameworkGet();
-
-         TkActorDesc actorDesc;
-         actorDesc.asset = destruct.destructData->tkAsset;
-         actorDesc.uniformInitialBondHealth = 1;
-         actorDesc.uniformInitialLowerSupportChunkHealth = 1;
-
-         TkActor* tkActor = tkFramework->createActor(actorDesc);
-         tkActor->getFamily().addListener(*destructEventListener);
-         tkGroup->addActor(*tkActor);
-
-         destruct.tkActor = tkActor;
-      } else {
-         ASSERT(destruct.destructData);
-         ASSERT(destruct.tkActor);
-      }
-
-      ASSERT(destruct.tkActor->userData == nullptr);
-      destruct.tkActor->userData = new Entity{ entity }; // todo: use fixed allocator
-   }
-
-   void PhysicsScene::RemoveDestructActor(Entity entity) {
-      auto& destruct = entity.Get<DestructComponent>();
-
-      auto& tkFamily = destruct.tkActor->getFamily();
-      // auto actorsCount = destruct.tkActor->getFamily().getActorCount();
-      // INFO("Destuct actors before release TkActor {}", destruct.tkActor->getFamily().getActorCount());
-
-      if (destruct.releaseTkActor) {
-         delete (Entity*)destruct.tkActor->userData;
-         destruct.tkActor->userData = nullptr;
-         PX_RELEASE(destruct.tkActor);
-      }
-
-      // todo: do not release tkAsset if other actors are exist
-      if (tkFamily.getActorCount() == 0) {
-         INFO("Destrcut actors count ZERO. Delete tkAsset");
-         PX_RELEASE(destruct.destructData->tkAsset);
-         delete destruct.destructData;
-         destruct.destructData = nullptr;
-      }
-   }
-
    void PhysicsScene::AddTrigger(Entity entity) {
       auto [trans, geom, trigger] = entity.Get<SceneTransformComponent, GeometryComponent, TriggerComponent>();
 
@@ -567,7 +361,10 @@ namespace pbe {
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
       // todo: when copy component copy ptr to
-      entity.Get<RigidBodyComponent>().pxRigidActor = nullptr;
+      auto& rb = entity.Get<RigidBodyComponent>();
+      rb.pxRigidActor = nullptr;
+      rb.destructData = nullptr;
+      rb.tkActor = nullptr;
 
       // todo: on each func has this check
       if (entity.Enabled()) {
@@ -585,29 +382,6 @@ namespace pbe {
       if (entity.Enabled()) {
          AddRigidActor(entity);
       }
-   }
-
-   void PhysicsScene::OnConstructDestruct(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      // todo: when copy component copy ptr to
-      // entity.Get<DestructComponent>().pxRigidActor = nullptr;
-
-      // todo: on each func has this check
-      if (entity.Enabled()) {
-         AddDestructActor(entity);
-      }
-   }
-
-   void PhysicsScene::OnDestroyDestruct(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      RemoveDestructActor(entity);
-   }
-
-   void PhysicsScene::OnUpdateDestruct(entt::registry& registry, entt::entity _entity) {
-      // Entity entity{ _entity, &scene };
-      // if (entity.Enabled()) {
-      //    UpdateRigidActor(entity);
-      // }
    }
 
    void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {

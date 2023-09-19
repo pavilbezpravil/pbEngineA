@@ -4,6 +4,7 @@
 #include "Phys.h"
 #include "PhysUtils.h"
 #include "PhysXTypeConvet.h"
+#include "DestructEventListener.h"
 #include "core/Profiler.h"
 #include "gui/Gui.h"
 #include "typer/Registration.h"
@@ -117,11 +118,28 @@ namespace pbe {
    }
 
    void RigidBodyComponent::ApplyDamage(const vec3& posW, float damage) {
-      if (!IsDestructible()) {
+      if (!tkActor) {
          return;
       }
 
-      UNIMPLEMENTED();
+      auto posL = PxVec3ToPBE(pxRigidActor->getGlobalPose().transformInv(Vec3ToPx(posW)));
+
+      // todo:
+      static NvBlastExtMaterial material;
+      material.health = 10.0f;
+      material.minDamageThreshold = 0.0f;
+      material.maxDamageThreshold = 1.0f;
+
+      // todo:
+      static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
+      damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
+      damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
+
+      static NvBlastExtRadialDamageDesc damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
+      damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
+      static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
+
+      tkActor->damage(damageProgram, &params);
    }
 
    void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
@@ -200,11 +218,56 @@ namespace pbe {
          dynamic->setLinearDamping(linearDamping);
          dynamic->setAngularDamping(angularDamping);
       }
+
+      // todo: handle change
+      if (destructible && tkActor == nullptr) {
+         auto [trans, geom]  = entity.Get<SceneTransformComponent, GeometryComponent>();
+         ASSERT(geom.type == GeomType::Box);
+
+         ASSERT(!destructData);
+         destructData = GetDestructData(trans.Scale());
+
+         auto tkFramework = NvBlastTkFrameworkGet();
+
+         TkActorDesc actorDesc;
+         actorDesc.asset = destructData->tkAsset;
+         actorDesc.uniformInitialBondHealth = 1;
+         actorDesc.uniformInitialLowerSupportChunkHealth = 1;
+
+         auto& physScene = GetPhysScene();
+         tkActor = tkFramework->createActor(actorDesc);
+         tkActor->getFamily().addListener(*physScene.destructEventListener);
+         physScene.tkGroup->addActor(*tkActor);
+
+         ASSERT(tkActor->userData == nullptr);
+         tkActor->userData = new Entity{ entity }; // todo: use fixed allocator
+      } else if (!destructible && tkActor != nullptr) {
+         RemoveDestruct();
+      }
    }
 
    void RigidBodyComponent::Remove() {
       RemoveSceneRigidActor(*GetPhysScene().pxScene, *pxRigidActor);
       pxRigidActor = nullptr;
+   }
+
+   void RigidBodyComponent::RemoveDestruct() {
+      if (!tkActor) {
+         return;
+      }
+
+      auto& tkFamily = tkActor->getFamily();
+
+      delete (Entity*)tkActor->userData;
+      tkActor->userData = nullptr;
+      PX_RELEASE(tkActor);
+
+      if (tkFamily.getActorCount() == 0) {
+         INFO("Destrcut actors count ZERO. Delete tkAsset");
+         PX_RELEASE(destructData->tkAsset);
+         delete destructData;
+         destructData = nullptr;
+      }
    }
 
    void RigidBodyComponent::AddShapesHier(const Entity& entity) {
@@ -233,26 +296,6 @@ namespace pbe {
          AddShapesHier(child);
       }
    }
-
-   void DestructComponent::ApplyDamageAtLocal(const vec3& posL, float damage) {
-      // todo:
-      static NvBlastExtMaterial material;
-      material.health = 10.0f;
-      material.minDamageThreshold = 0.0f;
-      material.maxDamageThreshold = 1.0f;
-
-      // todo:
-      static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
-      damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
-      damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
-
-      static NvBlastExtRadialDamageDesc damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
-      damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
-      static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
-
-      tkActor->damage(damageProgram, &params);
-   }
-
 
    JointComponent::JointComponent(JointType type) : type(type) { }
 
@@ -386,6 +429,7 @@ namespace pbe {
 
    STRUCT_BEGIN(RigidBodyComponent)
       STRUCT_FIELD(dynamic)
+      STRUCT_FIELD(destructible)
       STRUCT_FIELD(linearDamping)
       STRUCT_FIELD(angularDamping)
    STRUCT_END()
@@ -394,9 +438,6 @@ namespace pbe {
    STRUCT_END()
 
    STRUCT_BEGIN(TriggerComponent)
-   STRUCT_END()
-
-   STRUCT_BEGIN(DestructComponent)
    STRUCT_END()
 
    ENUM_BEGIN(JointType)
@@ -471,7 +512,6 @@ namespace pbe {
 
    TYPER_REGISTER_COMPONENT(RigidBodyComponent);
    TYPER_REGISTER_COMPONENT(RigidBodyShapeComponent);
-   TYPER_REGISTER_COMPONENT(DestructComponent);
    TYPER_REGISTER_COMPONENT(TriggerComponent);
    TYPER_REGISTER_COMPONENT(JointComponent);
 
