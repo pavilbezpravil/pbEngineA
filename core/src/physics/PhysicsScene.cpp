@@ -166,6 +166,13 @@ namespace pbe {
    void PhysicsScene::OnEntityEnable() {
       for (auto e : pScene->ViewAll<GeometryComponent, RigidBodyComponent, DelayedEnableMarker>()) {
          Entity entity{ e, &scene };
+
+         // todo: when copy component copy ptr to
+         auto& rb = entity.Get<RigidBodyComponent>();
+         rb.pxRigidActor = nullptr;
+         rb.destructData = nullptr;
+         rb.tkActor = nullptr;
+
          AddRigidActor(entity);
       }
 
@@ -360,14 +367,15 @@ namespace pbe {
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
-      // todo: when copy component copy ptr to
-      auto& rb = entity.Get<RigidBodyComponent>();
-      rb.pxRigidActor = nullptr;
-      rb.destructData = nullptr;
-      rb.tkActor = nullptr;
 
       // todo: on each func has this check
       if (entity.Enabled()) {
+         // todo: when copy component copy ptr to
+         auto& rb = entity.Get<RigidBodyComponent>();
+         ASSERT(!rb.pxRigidActor);
+         ASSERT(!rb.destructData);
+         ASSERT(!rb.tkActor);
+
          AddRigidActor(entity);
       }
    }
