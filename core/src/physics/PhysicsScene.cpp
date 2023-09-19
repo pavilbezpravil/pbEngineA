@@ -31,34 +31,34 @@ namespace pbe {
                {
                   const TkSplitEvent* splitEvent = event.getPayload<TkSplitEvent>();
 
-                  ASSERT(splitEvent->parentData.userData);
-                  auto entity = (Entity*)splitEvent->parentData.userData;
-                  entity->DestroyDelayed();
+                  auto parentEntity = *(Entity*)splitEvent->parentData.userData;
+                  delete (Entity*)splitEvent->parentData.userData;
 
-                  auto parentTrans = entity->GetTransform();
-                  auto& destruct = entity->Get<DestructComponent>();
+                  parentEntity.DestroyDelayed();
+
+                  auto parentTrans = parentEntity.GetTransform();
+                  auto& destruct = parentEntity.Get<DestructComponent>();
                   destruct.releaseTkActor = false; // todo:
 
-                  auto pScene = entity->GetScene();
+                  auto pScene = parentEntity.GetScene();
 
                   for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
-                     auto child = splitEvent->children[j];
-                     // todo:
-                     if (child->userData) {
-                        child->userData = nullptr;
-                     }
-                     ASSERT(child->userData == nullptr);
+                     auto tkChild = splitEvent->children[j];
 
-                     uint32_t visibleChunkCount = child->getVisibleChunkCount();
+                     // it may be destroyed TkActor with already delete userData
+                     tkChild->userData = nullptr;
+
                      std::array<uint, 32> visibleChunkIndices;
+
+                     uint32_t visibleChunkCount = tkChild->getVisibleChunkCount();
                      ASSERT(visibleChunkCount < visibleChunkIndices.size());
-                     child->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
+                     tkChild->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
                      Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
                      for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
                         auto chunkIndex =  visibleChunkIndices[iChunk];
-                        NvBlastChunk chunk = child->getAsset()->getChunks()[chunkIndex];
+                        NvBlastChunk chunk = tkChild->getAsset()->getChunks()[chunkIndex];
 
                         vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
 
@@ -83,12 +83,10 @@ namespace pbe {
                         DestructComponent childDestruct{};
                         childDestruct.root = false;
                         childDestruct.destructData = destruct.destructData;
-                        childDestruct.tkActor = child;
+                        childDestruct.tkActor = tkChild;
                         childEntity.Add<DestructComponent>(childDestruct);
                      }
                   }
-
-                  delete (Entity*)splitEvent->parentData.userData;
                }
                break;
 
