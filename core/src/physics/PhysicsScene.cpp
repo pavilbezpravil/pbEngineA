@@ -139,6 +139,7 @@ namespace pbe {
       sceneDesc.simulationEventCallback = new SimulationEventCallback(this);
       sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
       pxScene = GetPxPhysics()->createScene(sceneDesc);
+      pxScene->userData = this;
 
       PxPvdSceneClient* pvdClient = pxScene->getScenePvdClient();
       if (pvdClient) {
@@ -160,6 +161,7 @@ namespace pbe {
 
       ASSERT(pxScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC) == 0);
       delete pxScene->getSimulationEventCallback();
+      pxScene->userData = nullptr;
       PX_RELEASE(pxScene);
    }
 
@@ -351,108 +353,15 @@ namespace pbe {
       }
    }
 
-   static PxRigidActor* CreateSceneRigidActor(PxScene* pxScene, Entity entity) {
-      // todo: pass as function argument
-      auto [trans, rb] = entity.Get<SceneTransformComponent, RigidBodyComponent>();
-
-      PxTransform physTrans = GetTransform(trans);
-
-      PxRigidActor* actor = nullptr;
-      if (rb.dynamic) {
-         actor = GetPxPhysics()->createRigidDynamic(physTrans);
-      } else {
-         actor = GetPxPhysics()->createRigidStatic(physTrans);
-      }
-
-      // todo: tmp, remove after reconvert all scenes
-      if (entity.Has<GeometryComponent>()) {
-         entity.AddOrReplace<RigidBodyShapeComponent>();
-      }
-
-      AddShapes(entity, actor);
-
-      if (rb.dynamic) {
-         float density = 10.f; // todo:
-         PxRigidBodyExt::updateMassAndInertia(*GetPxRigidDynamic(actor), density);
-      }
-
-      actor->userData = new Entity{ entity }; // todo: use fixed allocator
-      pxScene->addActor(*actor);
-
-      return actor;
-   }
-
-   void RemoveSceneRigidActor(PxScene* pxScene, PxRigidActor* pxRigidActor) {
-      pxScene->removeActor(*pxRigidActor);
-      delete (Entity*)pxRigidActor->userData;
-      pxRigidActor->userData = nullptr;
-   }
-
    void PhysicsScene::AddRigidActor(Entity entity) {
-      // todo: pass as function argument
-      auto& rb = entity.Get<RigidBodyComponent>();
-      PxRigidActor* actor = CreateSceneRigidActor(pxScene, entity);
-
-      ASSERT(!rb.pxRigidActor);
-      rb.pxRigidActor = actor;
-
-      rb.SetData();
+      entity.Get<RigidBodyComponent>().CreateOrUpdate(*pxScene, entity);
    }
 
    void PhysicsScene::RemoveRigidActor(Entity entity) {
-      auto& rb = entity.Get<RigidBodyComponent>();
-      if (!rb.pxRigidActor) {
-         return;
-      }
-      RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
-      rb.pxRigidActor = nullptr;
+      entity.Get<RigidBodyComponent>().Remove();
    }
 
-   void PhysicsScene::UpdateRigidActor(Entity entity) {
-      auto& rb = entity.Get<RigidBodyComponent>();
-      ASSERT(rb.pxRigidActor);
-
-      bool isDynamic = rb.pxRigidActor->is<PxRigidDynamic>();
-      bool isDynamicChanged = isDynamic != rb.dynamic;
-      if (isDynamicChanged) {
-         PxRigidActor* newActor = CreateSceneRigidActor(pxScene, entity);
-
-         PxU32 nbConstrains = rb.pxRigidActor->getNbConstraints();
-
-         if (nbConstrains) {
-            PxConstraint* constrains[8];
-            ASSERT(nbConstrains <= _countof(constrains));
-            nbConstrains = std::min(nbConstrains, (uint)_countof(constrains));
-            rb.pxRigidActor->getConstraints(constrains, nbConstrains);
-
-            for (PxU32 i = 0; i < nbConstrains; i++) {
-               auto pxConstrain = constrains[i];
-               auto pEntity = (Entity*)pxConstrain->userData;
-               // todo: mb PxConstraint::userData should be PxJoint?
-               auto pxJoint = pEntity->Get<JointComponent>().pxJoint;
-
-               PxRigidActor* actor0, * actor1;
-               pxJoint->getActors(actor0, actor1);
-
-               if (actor0 == rb.pxRigidActor) {
-                  pxJoint->setActors(newActor, actor1);
-               } else {
-                  ASSERT(actor1 == rb.pxRigidActor);
-                  pxJoint->setActors(actor0, newActor);
-               }
-            }
-         }
-
-         RemoveSceneRigidActor(pxScene, rb.pxRigidActor);
-         rb.pxRigidActor = newActor;
-      }
-
-      rb.SetData();
-   }
-
-   static DestructData* GetDestructData(const SceneTransformComponent& trans, const DestructComponent& destruct) {
-      vec3 chunkSize = trans.Scale();
-
+   static DestructData* GetDestructData(const vec3& chunkSize) {
       uint slices = std::max(1, (int)chunkSize.x);
       uint chunkCount = 1 + slices + 1;
       uint bondCount = slices;
@@ -486,7 +395,7 @@ namespace pbe {
       float chunkVolume = chunkParentVolume / (slices + 1);
       uint parentChunkIdx = 0;
       uint chunkIdx = 1;
-      for (int i = 0; i <= slices; ++i) {
+      for (uint i = 0; i <= slices; ++i) {
          auto& chunkDesc = chunkDescs[chunkIdx];
          chunkDesc.parentChunkDescIndex = parentChunkIdx;
          chunkDesc.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
@@ -556,7 +465,7 @@ namespace pbe {
          auto& geom = entity.Get<GeometryComponent>();
          ASSERT(geom.type == GeomType::Box);
 
-         auto destructData = GetDestructData(trans, destruct);
+         auto destructData = GetDestructData(trans.Scale());
          destruct.destructData = destructData;
 
          auto tkFramework = NvBlastTkFrameworkGet();
@@ -674,7 +583,7 @@ namespace pbe {
    void PhysicsScene::OnUpdateRigidBody(entt::registry& registry, entt::entity _entity) {
       Entity entity{ _entity, &scene };
       if (entity.Enabled()) {
-         UpdateRigidActor(entity);
+         AddRigidActor(entity);
       }
    }
 

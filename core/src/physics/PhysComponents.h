@@ -11,34 +11,56 @@ namespace Nv {
    }
 }
 
-namespace pbe { 
+namespace pbe {
 
    // todo: while have two way for handle change in component data
    // in future choose one
-
-   struct CORE_API RigidBodyComponent {
-      // todo: mb have different components for static and dynamic rigid bodies
-      bool dynamic = false;
-
-      float linearDamping = 0.1f;
-      float angularDamping = 0.1f;
-
-      physx::PxRigidActor* pxRigidActor = nullptr;
-
-      void SetLinearVelocity(const vec3& v, bool autowake = true);
-
-      void SetData();
-   };
-
-   struct CORE_API RigidBodyShapeComponent {
-      // todo:
-      float friction = 0.7f;
-   };
 
    // todo: name
    struct DestructData {
       Nv::Blast::TkAsset* tkAsset = nullptr;
       std::vector<vec3> chunkSizes; // todo:
+   };
+
+   struct CORE_API RigidBodyComponent {
+
+      void ApplyDamage(const vec3& posW, float damage);
+
+      void SetLinearVelocity(const vec3& v, bool autowake = true);
+
+      bool IsStatic() const { return !IsDynamic(); }
+      bool IsDynamic() const { return dynamic; }
+      bool IsDestructible() const { return tkActor != nullptr; }
+
+      physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
+
+      bool dynamic = false;
+      bool destructible = false;
+
+      float linearDamping = 0.1f;
+      float angularDamping = 0.1f;
+
+   private:
+      void CreateOrUpdate(physx::PxScene& pxScene, Entity& entity);
+      void Remove();
+
+      void AddShapesHier(const Entity& entity);
+
+      PhysicsScene& GetPhysScene() {
+         return *(PhysicsScene*)pxRigidActor->getScene()->userData;
+      }
+
+      physx::PxRigidActor* pxRigidActor = nullptr;
+      Nv::Blast::TkActor* tkActor = nullptr;
+
+      DestructData* destructData = nullptr;  // todo:
+
+      friend class PhysicsScene;
+   };
+
+   struct CORE_API RigidBodyShapeComponent {
+      // todo:
+      float friction = 0.7f;
    };
 
    // todo: name

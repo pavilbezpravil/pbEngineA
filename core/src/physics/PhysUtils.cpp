@@ -33,7 +33,7 @@ namespace pbe {
       if (!e) return nullptr;
 
       auto rb = e.TryGet<RigidBodyComponent>();
-      return rb ? rb->pxRigidActor : nullptr;
+      return rb ? rb->GetPxRigidActor() : nullptr;
    }
 
    PxRigidDynamic* GetPxRigidDynamic(PxRigidActor* actor) {

@@ -41,6 +41,8 @@ namespace pbe {
       void OnUpdate(float dt) override;
 
    private:
+      friend struct RigidBodyComponent;
+
       physx::PxScene* pxScene = nullptr;
       Nv::Blast::TkGroup* tkGroup = nullptr;
       Own<DestructEventListener> destructEventListener;
@@ -50,7 +52,6 @@ namespace pbe {
 
       void AddRigidActor(Entity entity);
       void RemoveRigidActor(Entity entity);
-      void UpdateRigidActor(Entity entity);
 
       void AddDestructActor(Entity entity);
       void RemoveDestructActor(Entity entity);

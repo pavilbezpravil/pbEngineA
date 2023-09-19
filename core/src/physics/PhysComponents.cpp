@@ -8,12 +8,121 @@
 #include "gui/Gui.h"
 #include "typer/Registration.h"
 #include "typer/Serialize.h"
+#include "scene/Component.h"
 
 #include <NvBlastTk.h>
 #include <NvBlastExtDamageShaders.h>
 
+#include "PhysicsScene.h"
+
+
+using namespace Nv::Blast;
 
 namespace pbe {
+
+   static DestructData* GetDestructData(const vec3& chunkSize) {
+      uint slices = std::max(1, (int)chunkSize.x);
+      uint chunkCount = 1 + slices + 1;
+      uint bondCount = slices;
+
+      std::vector<NvBlastChunkDesc> chunkDescs;
+      chunkDescs.resize(chunkCount);
+
+      std::vector<vec3> chunkSizes;
+      chunkSizes.resize(chunkCount);
+
+      // parent
+      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
+      chunkDescs[0].centroid[0] = 0.0f;
+      chunkDescs[0].centroid[1] = 0.0f;
+      chunkDescs[0].centroid[2] = 0.0f;
+      chunkDescs[0].volume = 1.0f;
+      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
+      chunkDescs[0].userData = 0;
+
+      chunkSizes[0] = chunkSize;
+
+      std::vector<NvBlastBondDesc> bondDescs;
+      bondDescs.resize(bondCount);
+
+      uint boundIdx = 0;
+
+      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+      float chunkParentSliceAxisSize = chunkSize.x;
+      float sliceAxisStart = -chunkSize.x * 0.5f; // todo:
+      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
+      float chunkVolume = chunkParentVolume / (slices + 1);
+      uint parentChunkIdx = 0;
+      uint chunkIdx = 1;
+      for (uint i = 0; i <= slices; ++i) {
+         auto& chunkDesc = chunkDescs[chunkIdx];
+         chunkDesc.parentChunkDescIndex = parentChunkIdx;
+         chunkDesc.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+         chunkDesc.centroid[1] = 0.0f;
+         chunkDesc.centroid[2] = 0.0f;
+         chunkDesc.volume = chunkVolume;
+         chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
+         chunkDesc.userData = chunkIdx;
+
+         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
+
+         ++chunkIdx;
+
+         if (i < slices) {
+            auto& boundDesc = bondDescs[boundIdx++];
+
+            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
+            boundDesc.chunkIndices[1] = chunkIdx;
+            boundDesc.bond.normal[0] = 1.0f;
+            boundDesc.bond.normal[1] = 0.0f;
+            boundDesc.bond.normal[2] = 0.0f;
+            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
+            boundDesc.bond.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
+            boundDesc.bond.centroid[1] = 0.0f;
+            boundDesc.bond.centroid[2] = 0.0f;
+         }
+      }
+
+      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
+      // bond for example to create a joint when this bond breaks
+
+      // bondDescs[1].chunkIndices[0] = 1;
+      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
+      // ... etc. for bondDescs[1], all other fields are filled in as usual
+
+      TkAssetDesc assetDesc;
+      assetDesc.chunkCount = chunkCount;
+      assetDesc.chunkDescs = chunkDescs.data();
+      assetDesc.bondCount = bondCount;
+      assetDesc.bondDescs = bondDescs.data();
+      assetDesc.bondFlags = nullptr;
+
+      auto tkFramework = NvBlastTkFrameworkGet();
+
+      bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), assetDesc.chunkCount);
+      INFO("Was coverage {}", wasCoverage);
+
+      // todo: 'chunkReorderMap' may be skipped
+      std::vector<uint32_t> chunkReorderMap(chunkCount);  // Will be filled with a map from the original chunk descriptor order to the new one
+      bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
+      INFO("Require reordering {}", requireReordering);
+
+      TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
+
+      // todo:
+      DestructData* destructData = new DestructData{};
+      destructData->tkAsset = tkAsset;
+      destructData->chunkSizes = std::move(chunkSizes);
+      return destructData;
+   }
+
+   void RigidBodyComponent::ApplyDamage(const vec3& posW, float damage) {
+      if (!IsDestructible()) {
+         return;
+      }
+
+      UNIMPLEMENTED();
+   }
 
    void RigidBodyComponent::SetLinearVelocity(const vec3& v, bool autowake) {
       ASSERT(dynamic);
@@ -21,14 +130,108 @@ namespace pbe {
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
-   void RigidBodyComponent::SetData() {
-      if (!dynamic) {
-         return;
+   static void RemoveSceneRigidActor(PxScene& pxScene, PxRigidActor& pxRigidActor) {
+      pxScene.removeActor(pxRigidActor);
+      delete (Entity*)pxRigidActor.userData;
+      pxRigidActor.userData = nullptr;
+      pxRigidActor.release();
+   }
+
+   void RigidBodyComponent::CreateOrUpdate(PxScene& pxScene, Entity& entity) {
+      if (!pxRigidActor || (bool)pxRigidActor->is<PxRigidDynamic>() != dynamic) {
+         auto& trans = entity.Get<SceneTransformComponent>();
+         PxTransform physTrans = GetTransform(trans);
+
+         auto oldPxRigidActor = pxRigidActor;
+         if (dynamic) {
+            pxRigidActor = GetPxPhysics()->createRigidDynamic(physTrans);
+         } else {
+            pxRigidActor = GetPxPhysics()->createRigidStatic(physTrans);
+         }
+         pxRigidActor->userData = new Entity{ entity }; // todo: use fixed allocator
+
+         // todo: tmp, remove after reconvert all scenes
+         if (entity.Has<GeometryComponent>()) {
+            entity.AddOrReplace<RigidBodyShapeComponent>();
+         }
+
+         AddShapesHier(entity);
+
+         if (dynamic) {
+            float density = 10.f; // todo:
+            PxRigidBodyExt::updateMassAndInertia(*GetPxRigidDynamic(pxRigidActor), density);
+         }
+
+         pxScene.addActor(*pxRigidActor);
+
+         if (oldPxRigidActor) {
+            PxU32 nbConstrains = oldPxRigidActor->getNbConstraints();
+
+            if (nbConstrains > 0) {
+               std::array<PxConstraint*, 8> constrains;
+               ASSERT(nbConstrains <= constrains.size());
+               nbConstrains = std::min(nbConstrains, (uint)constrains.size());
+               oldPxRigidActor->getConstraints(constrains.data(), nbConstrains);
+
+               for (PxU32 i = 0; i < nbConstrains; i++) {
+                  auto pxConstrain = constrains[i];
+                  auto pEntity = (Entity*)pxConstrain->userData;
+                  // todo: mb PxConstraint::userData should be PxJoint?
+                  auto pxJoint = pEntity->Get<JointComponent>().pxJoint;
+
+                  PxRigidActor *actor0, *actor1;
+                  pxJoint->getActors(actor0, actor1);
+
+                  if (actor0 == oldPxRigidActor) {
+                     pxJoint->setActors(pxRigidActor, actor1);
+                  } else {
+                     ASSERT(actor1 == oldPxRigidActor);
+                     pxJoint->setActors(actor0, pxRigidActor);
+                  }
+               }
+            }
+
+            RemoveSceneRigidActor(pxScene, *oldPxRigidActor);
+         }
       }
-      
-      auto dynamic = GetPxRigidDynamic(pxRigidActor);
-      dynamic->setLinearDamping(linearDamping);
-      dynamic->setAngularDamping(angularDamping);
+
+      if (dynamic) {
+         auto dynamic = GetPxRigidDynamic(pxRigidActor);
+         dynamic->setLinearDamping(linearDamping);
+         dynamic->setAngularDamping(angularDamping);
+      }
+   }
+
+   void RigidBodyComponent::Remove() {
+      RemoveSceneRigidActor(*GetPhysScene().pxScene, *pxRigidActor);
+      pxRigidActor = nullptr;
+   }
+
+   void RigidBodyComponent::AddShapesHier(const Entity& entity) {
+      auto& trans = entity.Get<SceneTransformComponent>();
+
+      if (entity.Has<RigidBodyShapeComponent>()) {
+         const auto& geom = entity.Get<GeometryComponent>();
+
+         PxGeometryHolder physGeom = GetPhysGeom(trans, geom);
+
+         PxShape* shape = GetPxPhysics()->createShape(physGeom.any(), *GetPxMaterial(), true);
+
+         // todo: do it by pbe::Transform
+         PxTransform shapeTrans = GetTransform(trans);
+         PxTransform actorTrans = pxRigidActor->getGlobalPose();
+         PxTransform shapeOffset = actorTrans.transformInv(shapeTrans);
+
+         shape->setLocalPose(shapeOffset);
+
+         pxRigidActor->attachShape(*shape);
+         shape->release();
+      }
+
+      for (auto& child : trans.children) {
+         ASSERT(!child.Has<RigidBodyComponent>());
+         AddShapesHier(child);
+      }
    }
 
    void DestructComponent::ApplyDamageAtLocal(const vec3& posL, float damage) {
@@ -49,6 +252,7 @@ namespace pbe {
 
       tkActor->damage(damageProgram, &params);
    }
+
 
    JointComponent::JointComponent(JointType type) : type(type) { }
 
