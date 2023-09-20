@@ -256,6 +256,8 @@ namespace pbe {
    }
 
    void RigidBodyComponent::Remove() {
+      RemoveDestruct();
+
       RemoveSceneRigidActor(*GetPhysScene().pxScene, *pxRigidActor);
       pxRigidActor = nullptr;
    }
