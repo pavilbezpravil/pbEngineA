@@ -9,10 +9,11 @@
 #include "rend/GpuTimer.h"
 
 // todo:
-#if !defined(RELEASE)
+// #if !defined(RELEASE)
    #define USE_PROFILE
+   #define USE_PIX_RETAIL
    #include "WinPixEventRuntime/pix3.h"
-#endif
+// #endif
 
 
 namespace pbe {

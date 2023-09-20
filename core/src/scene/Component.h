@@ -29,19 +29,8 @@ namespace pbe {
       SceneTransformComponent(Entity entity, Entity parent = {});
 
       Entity entity;
-
-      Transform local {
-         .position = vec3_Zero,
-         .rotation = quat_Identity,
-         .scale = vec3_One,
-      };
-
-      // todo:
-      Transform prevWorld {
-         .position = vec3_Zero,
-         .rotation = quat_Identity,
-         .scale = vec3_One,
-      };
+      Entity parent;
+      std::vector<Entity> children;
 
       const Transform& Local() const;
       Transform& Local();
@@ -67,8 +56,6 @@ namespace pbe {
 
       void UpdatePrevTransform(); // todo: call it when first create entity
 
-      Entity parent;
-      std::vector<Entity> children;
       bool HasParent() const { return (bool)parent; }
       bool HasChilds() const { return !children.empty(); }
 
@@ -83,6 +70,20 @@ namespace pbe {
       void Serialize(Serializer& ser) const;
       bool Deserialize(const Deserializer& deser);
       bool UI();
+
+   private:
+      Transform local{
+         .position = vec3_Zero,
+         .rotation = quat_Identity,
+         .scale = vec3_One,
+      };
+
+      // todo:
+      Transform prevWorld{
+         .position = vec3_Zero,
+         .rotation = quat_Identity,
+         .scale = vec3_One,
+      };
    };
 
    struct MaterialComponent {

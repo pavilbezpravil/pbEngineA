@@ -16,6 +16,7 @@ namespace pbe {
       }
    }
 
+   // todo: remove
    template<typename T>
    concept Entity_HasOwner = requires(T a) {
       { a.owner };
@@ -23,10 +24,13 @@ namespace pbe {
 
    struct SceneTransformComponent;
 
+   using EntityID = entt::entity;
+   constexpr EntityID NullEntityID = entt::null;
+
    class CORE_API Entity {
    public:
       Entity() = default;
-      Entity(entt::entity id, Scene* scene);
+      Entity(EntityID id, Scene* scene);
 
       template<typename T, typename...Cs>
       decltype(auto) Add(Cs&&... cs) {
@@ -116,13 +120,13 @@ namespace pbe {
       void EnableToggle();
 
       bool Valid() const {
-         return id != entt::null && scene->registry.valid(id);
+         return id != NullEntityID && scene->registry.valid(id);
       }
 
       operator bool() const { return Valid(); } // todo: include Enabled?
       bool operator==(const Entity&) const = default;
 
-      entt::entity GetID() const { return id; }
+      EntityID GetID() const { return id; }
       Scene* GetScene() const { return scene; }
 
       SceneTransformComponent& GetTransform();
@@ -132,8 +136,8 @@ namespace pbe {
       UUID GetUUID() const;
 
    private:
-      entt::entity id{ entt::null };
-      Scene* scene{};
+      EntityID id = NullEntityID;
+      Scene* scene = nullptr;
    };
 
 }

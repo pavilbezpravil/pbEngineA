@@ -70,6 +70,8 @@ namespace pbe {
          };
 
          childSort2(root);
+
+         cvarsChanged = false;
       }
 
       for (auto* cvar : configVars) {
