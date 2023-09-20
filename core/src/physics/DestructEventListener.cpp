@@ -68,13 +68,28 @@ namespace pbe {
                   childEntity.GetTransform().SetPosition(parentTrans.Position());
                   childEntity.GetTransform().SetRotation(parentTrans.Rotation());
 
-                  RigidBodyComponent childRb{};
-                  childRb.dynamic = true;
-
                   // it may be destroyed TkActor with already delete userData
                   tkChild->userData = nullptr;
 
-                  childEntity.Add<RigidBodyComponent>(std::move(childRb)).SetDestructible(*tkChild, *destructData);
+                  RigidBodyComponent childRb{};
+                  childRb.dynamic = true;
+
+                  auto& childRb2 = childEntity.Add<RigidBodyComponent>(std::move(childRb));
+                  childRb2.SetDestructible(*tkChild, *destructData);
+
+                  auto childDynamic = childRb2.pxRigidActor->is<PxRigidDynamic>();
+
+                  auto parentDynamic = parentRb.pxRigidActor->is<PxRigidDynamic>();
+
+                  auto m_parentCOM = parentDynamic->getGlobalPose().transform(parentDynamic->getCMassLocalPose().p);
+                  auto m_parentLinearVelocity = parentDynamic->getLinearVelocity();
+                  auto m_parentAngularVelocity = parentDynamic->getAngularVelocity();
+
+                  const PxVec3 COM = childDynamic->getGlobalPose().transform(childDynamic->getCMassLocalPose().p);
+                  const PxVec3 linearVelocity = m_parentLinearVelocity + m_parentAngularVelocity.cross(COM - m_parentCOM);
+                  const PxVec3 angularVelocity = m_parentAngularVelocity;
+                  childDynamic->setLinearVelocity(linearVelocity);
+                  childDynamic->setAngularVelocity(angularVelocity);
                }
             }
             break;

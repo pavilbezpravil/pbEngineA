@@ -125,7 +125,7 @@ namespace pbe {
       auto posL = PxVec3ToPBE(pxRigidActor->getGlobalPose().transformInv(Vec3ToPx(posW)));
 
       // todo:
-      float hardness = 300.f; // todo:
+      float hardness = 500.f; // todo:
       static NvBlastExtMaterial material;
       material.health = hardness;
       material.minDamageThreshold = 0.2f;
