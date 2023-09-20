@@ -28,6 +28,8 @@ namespace pbe {
 
       void SetLinearVelocity(const vec3& v, bool autowake = true);
 
+      void SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData);
+
       physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
 
       bool dynamic = false;

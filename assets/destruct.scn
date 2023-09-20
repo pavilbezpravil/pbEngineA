@@ -17,6 +17,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -47,11 +48,10 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
-      {}
-    DestructComponent:
       {}
   - uuid: 8890436197300190957
     tag: Cube 1
@@ -71,11 +71,10 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: true
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
-      {}
-    DestructComponent:
       {}
   - uuid: 9889813764843162685
     tag: Cube 1
@@ -95,6 +94,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -117,6 +117,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: false
+      destructible: false
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:

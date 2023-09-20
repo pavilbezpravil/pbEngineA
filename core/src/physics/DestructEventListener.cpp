@@ -34,14 +34,13 @@ namespace pbe {
                auto parentTrans = parentEntity.GetTransform();
                auto& parentRb = parentEntity.Get<RigidBodyComponent>();
                parentRb.tkActor = nullptr; // parent was broken and now don't own tkActor
+               auto destructData = parentRb.destructData;
+               parentRb.destructData = nullptr;
 
                auto pScene = parentEntity.GetScene();
 
                for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
                   auto tkChild = splitEvent->children[j];
-
-                  // it may be destroyed TkActor with already delete userData
-                  tkChild->userData = nullptr;
 
                   std::array<uint, 32> visibleChunkIndices;
 
@@ -61,7 +60,7 @@ namespace pbe {
                         .parent = childEntity,
                         .namePrefix = "Chunk Shape",
                         .pos = offset,
-                        .scale = parentRb.destructData->chunkSizes[chunkIndex],
+                        .scale = destructData->chunkSizes[chunkIndex],
                         .type = CubeDesc::PhysShape,
                      });
                   }
@@ -71,11 +70,11 @@ namespace pbe {
 
                   RigidBodyComponent childRb{};
                   childRb.dynamic = true;
-                  childRb.tkActor = tkChild;
-                  childRb.destructData = parentRb.destructData;
-                  parentRb.destructData = nullptr;
 
-                  childEntity.Add<RigidBodyComponent>(std::move(childRb));
+                  // it may be destroyed TkActor with already delete userData
+                  tkChild->userData = nullptr;
+
+                  childEntity.Add<RigidBodyComponent>(std::move(childRb)).SetDestructible(*tkChild, *destructData);
                }
             }
             break;

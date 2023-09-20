@@ -148,6 +148,15 @@ namespace pbe {
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
    }
 
+   void RigidBodyComponent::SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData) {
+      ASSERT(!destructible);
+
+      destructible = true;
+      this->tkActor = &tkActor;
+      this->destructData = &destructData;
+      this->tkActor->userData = new Entity{ *(Entity*)pxRigidActor->userData }; // todo: use fixed allocator
+   }
+
    static void RemoveSceneRigidActor(PxScene& pxScene, PxRigidActor& pxRigidActor) {
       pxScene.removeActor(pxRigidActor);
       delete (Entity*)pxRigidActor.userData;
