@@ -6,6 +6,8 @@
 #include "core/Log.h"
 
 #include "NvBlastTk.h"
+#include "PhysComponents.h"
+#include "PhysXTypeConvet.h"
 
 
 using namespace Nv::Blast;
@@ -63,8 +65,8 @@ namespace pbe {
       return gMaterial;
    }
 
-   // todo: delete?
-   PxFilterFlags contactReportFilterShader(
+   // todo: look on default filter shader
+   PxFilterFlags PxSimulationFilterShader(
          PxFilterObjectAttributes attributes0, PxFilterData filterData0,
          PxFilterObjectAttributes attributes1, PxFilterData filterData1,
          PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
@@ -105,18 +107,63 @@ namespace pbe {
       }
    }
 
+   std::vector<PxContactPairPoint> m_pairPointBuffer;
+
    void SimulationEventCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) {
+      if (pairHeader.flags & physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_0 ||
+         pairHeader.flags & physx::PxContactPairHeaderFlag::eREMOVED_ACTOR_1 ||
+         pairHeader.actors[0] == nullptr ||
+         pairHeader.actors[1] == nullptr) {
+         return;
+      }
+
+      Entity& e0 = *GetEntity(pairHeader.actors[0]);
+      Entity& e1 = *GetEntity(pairHeader.actors[1]);
+
+      if (!e0.TryGet<RigidBodyComponent>()->IsDestructible() && !e1.TryGet<RigidBodyComponent>()->IsDestructible()) {
+         return;
+      }
+
       for (PxU32 i = 0; i < nbPairs; i++) {
          const PxContactPair& cp = pairs[i];
 
-         Entity& e0 = *GetEntity(pairHeader.actors[0]);
-         Entity& e1 = *GetEntity(pairHeader.actors[1]);
+         m_pairPointBuffer.resize(cp.contactCount);
+         uint32_t numContactsInStream = cp.contactCount > 0 ? cp.extractContacts(m_pairPointBuffer.data(), cp.contactCount) : 0;
+
+         PxVec3 avgContactPosition = PxVec3{0, 0, 0};
+         uint numContacts = 0;
+
+         float totalImpulse = 0.0f;
+
+         for (uint32_t contactIdx = 0; contactIdx < numContactsInStream; contactIdx++) {
+            PxContactPairPoint& currentPoint = m_pairPointBuffer[contactIdx];
+
+            totalImpulse += currentPoint.impulse.magnitude();
+
+            const PxVec3& patchNormal = currentPoint.normal;
+            const PxVec3& position = currentPoint.position;
+
+            avgContactPosition += position;
+            // avgContactNormal += patchNormal;
+            numContacts++;
+         }
+
+         avgContactPosition /= (float)numContacts;
+         // INFO("Total impulse {}", totalImpulse);
+
+         // todo:
+         if (auto rb = e0.TryGet<RigidBodyComponent>()) {
+            rb->ApplyDamage(PxVec3ToPBE(avgContactPosition), totalImpulse);
+         }
+         if (auto rb = e1.TryGet<RigidBodyComponent>()) {
+            rb->ApplyDamage(PxVec3ToPBE(avgContactPosition), totalImpulse);
+         }
 
          if (cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-            INFO("onContact eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
+            // INFO("onContact eNOTIFY_TOUCH_FOUND {} {}", e0.GetName(), e1.GetName());
             // physScene->scene.DispatchEvent<ContactEnterEvent>(e0, e1);
          } else if (cp.events & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-            INFO("onContact eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
+            // INFO("onContact eNOTIFY_TOUCH_LOST {} {}", e0.GetName(), e1.GetName());
             // physScene->scene.DispatchEvent<ContactExitEvent>(e0, e1);
          }
       }

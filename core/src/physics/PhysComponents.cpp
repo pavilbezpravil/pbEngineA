@@ -125,19 +125,27 @@ namespace pbe {
       auto posL = PxVec3ToPBE(pxRigidActor->getGlobalPose().transformInv(Vec3ToPx(posW)));
 
       // todo:
+      float hardness = 300.f; // todo:
       static NvBlastExtMaterial material;
-      material.health = 10.0f;
-      material.minDamageThreshold = 0.0f;
+      material.health = hardness;
+      material.minDamageThreshold = 0.2f;
       material.maxDamageThreshold = 1.0f;
 
-      // todo:
-      static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
-      damageProgram.graphShaderFunction = NvBlastExtFalloffGraphShader;
-      damageProgram.subgraphShaderFunction = NvBlastExtFalloffSubgraphShader;
+      float normalizedDamage = material.getNormalizedDamage(damage);
 
-      static NvBlastExtRadialDamageDesc damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
-      damageDesc = { damage, {posL.x, posL.y, posL.z}, 0.5f, 1.f };
-      static NvBlastExtProgramParams params{ &damageDesc, &material, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
+      if (normalizedDamage == 0.f) {
+         return;
+      }
+
+      INFO("Normalized damage: {}", normalizedDamage);
+
+      static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
+
+      auto& damageDesc = GetPhysScene().GetDamageParamsPlace<NvBlastExtRadialDamageDesc>();
+      auto& params = GetPhysScene().GetDamageParamsPlace<NvBlastExtProgramParams>();
+
+      damageDesc = { normalizedDamage, {posL.x, posL.y, posL.z}, 1.0f, 2.f };
+      params = { &damageDesc, nullptr, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
 
       tkActor->damage(damageProgram, &params);
    }

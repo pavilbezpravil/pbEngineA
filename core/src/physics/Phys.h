@@ -16,6 +16,11 @@ namespace pbe {
    PxCpuDispatcher* GetPxCpuDispatcher();
    PxMaterial* GetPxMaterial();
 
+   PxFilterFlags PxSimulationFilterShader(
+      PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+      PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+      PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize);
+
    struct SimulationEventCallback : PxSimulationEventCallback {
       PhysicsScene* physScene{};
       SimulationEventCallback(PhysicsScene* physScene);

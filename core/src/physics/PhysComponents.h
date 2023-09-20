@@ -30,13 +30,15 @@ namespace pbe {
 
       void SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData);
 
+      bool IsDestructible() const { return destructible; }
+
       physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
 
       bool dynamic = false;
       bool destructible = false;
 
-      float linearDamping = 0.1f;
-      float angularDamping = 0.1f;
+      float linearDamping = 0.03f;
+      float angularDamping = 0.03f;
 
 
       // todo: private:

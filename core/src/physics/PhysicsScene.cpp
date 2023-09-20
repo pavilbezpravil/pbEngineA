@@ -12,7 +12,6 @@
 #include "PhysQuery.h"
 
 #include <NvBlastTk.h>
-#include <NvBlastExtDamageShaders.h>
 
 
 using namespace Nv::Blast;
@@ -23,8 +22,8 @@ namespace pbe {
       PxSceneDesc sceneDesc(GetPxPhysics()->getTolerancesScale());
       sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
       sceneDesc.cpuDispatcher = GetPxCpuDispatcher();
-      sceneDesc.filterShader = PxDefaultSimulationFilterShader;
-      // sceneDesc.filterShader = contactReportFilterShader;
+      // sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+      sceneDesc.filterShader = PxSimulationFilterShader;
       sceneDesc.simulationEventCallback = new SimulationEventCallback(this);
       sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
       pxScene = GetPxPhysics()->createScene(sceneDesc);
@@ -42,6 +41,9 @@ namespace pbe {
       tkGroup = NvBlastTkFrameworkGet()->createGroup(groupDesc);
 
       destructEventListener = std::make_unique<DestructEventListener>(*this);
+
+      // todo:
+      damageParamsBuffer.reserve(1024 * 4);
    }
 
    PhysicsScene::~PhysicsScene() {
@@ -127,6 +129,7 @@ namespace pbe {
 
          // todo: or before simulate?
          tkGroup->process();
+         damageParamsBuffer.clear();
 
          scene.DestroyDelayedEntities();
       }
@@ -216,102 +219,6 @@ namespace pbe {
       entity.Get<RigidBodyComponent>().Remove();
    }
 
-   static DestructData* GetDestructData(const vec3& chunkSize) {
-      uint slices = std::max(1, (int)chunkSize.x);
-      uint chunkCount = 1 + slices + 1;
-      uint bondCount = slices;
-
-      std::vector<NvBlastChunkDesc> chunkDescs;
-      chunkDescs.resize(chunkCount);
-
-      std::vector<vec3> chunkSizes;
-      chunkSizes.resize(chunkCount);
-
-      // parent
-      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
-      chunkDescs[0].centroid[0] = 0.0f;
-      chunkDescs[0].centroid[1] = 0.0f;
-      chunkDescs[0].centroid[2] = 0.0f;
-      chunkDescs[0].volume = 1.0f;
-      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-      chunkDescs[0].userData = 0;
-
-      chunkSizes[0] = chunkSize;
-
-      std::vector<NvBlastBondDesc> bondDescs;
-      bondDescs.resize(bondCount);
-
-      uint boundIdx = 0;
-
-      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
-      float chunkParentSliceAxisSize = chunkSize.x;
-      float sliceAxisStart = -chunkSize.x * 0.5f; // todo:
-      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
-      float chunkVolume = chunkParentVolume / (slices + 1);
-      uint parentChunkIdx = 0;
-      uint chunkIdx = 1;
-      for (uint i = 0; i <= slices; ++i) {
-         auto& chunkDesc = chunkDescs[chunkIdx];
-         chunkDesc.parentChunkDescIndex = parentChunkIdx;
-         chunkDesc.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
-         chunkDesc.centroid[1] = 0.0f;
-         chunkDesc.centroid[2] = 0.0f;
-         chunkDesc.volume = chunkVolume;
-         chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
-         chunkDesc.userData = chunkIdx;
-
-         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
-
-         ++chunkIdx;
-
-         if (i < slices) {
-            auto& boundDesc = bondDescs[boundIdx++];
-
-            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
-            boundDesc.chunkIndices[1] = chunkIdx;
-            boundDesc.bond.normal[0] = 1.0f;
-            boundDesc.bond.normal[1] = 0.0f;
-            boundDesc.bond.normal[2] = 0.0f;
-            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
-            boundDesc.bond.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
-            boundDesc.bond.centroid[1] = 0.0f;
-            boundDesc.bond.centroid[2] = 0.0f;
-         }
-      }
-
-      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
-      // bond for example to create a joint when this bond breaks
-
-      // bondDescs[1].chunkIndices[0] = 1;
-      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
-      // ... etc. for bondDescs[1], all other fields are filled in as usual
-
-      TkAssetDesc assetDesc;
-      assetDesc.chunkCount = chunkCount;
-      assetDesc.chunkDescs = chunkDescs.data();
-      assetDesc.bondCount = bondCount;
-      assetDesc.bondDescs = bondDescs.data();
-      assetDesc.bondFlags = nullptr;
-
-      auto tkFramework = NvBlastTkFrameworkGet();
-
-      bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), assetDesc.chunkCount);
-      INFO("Was coverage {}", wasCoverage);
-
-      // todo: 'chunkReorderMap' may be skipped
-      std::vector<uint32_t> chunkReorderMap(chunkCount);  // Will be filled with a map from the original chunk descriptor order to the new one
-      bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
-      INFO("Require reordering {}", requireReordering);
-
-      TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
-
-      // todo:
-      DestructData* destructData = new DestructData{};
-      destructData->tkAsset = tkAsset;
-      destructData->chunkSizes = std::move(chunkSizes);
-      return destructData;
-   }
-
    void PhysicsScene::AddTrigger(Entity entity) {
       auto [trans, geom, trigger] = entity.Get<SceneTransformComponent, GeometryComponent, TriggerComponent>();
 
@@ -363,6 +270,13 @@ namespace pbe {
       joint.pxJoint->release();
       joint.pxJoint = nullptr;
       
+   }
+
+   void* PhysicsScene::GetDamageParamsPlace(uint paramSize) {
+      uint curSize = (uint)damageParamsBuffer.size();
+      uint reqSize = curSize + paramSize;
+      damageParamsBuffer.resize(reqSize);
+      return damageParamsBuffer.data() + curSize;
    }
 
    void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {

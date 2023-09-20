@@ -60,6 +60,14 @@ namespace pbe {
       void AddJoint(Entity entity);
       void RemoveJoint(Entity entity);
 
+      // todo:
+      std::vector<uint8> damageParamsBuffer;
+      void* GetDamageParamsPlace(uint paramSize);
+      template<typename T>
+      T& GetDamageParamsPlace() {
+         return *(T*)GetDamageParamsPlace(sizeof(T));
+      }
+
       friend class Scene;
       void OnConstructRigidBody(entt::registry& registry, entt::entity entity);
       void OnDestroyRigidBody(entt::registry& registry, entt::entity entity);

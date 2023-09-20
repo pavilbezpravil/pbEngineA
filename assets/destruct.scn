@@ -48,7 +48,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
-      destructible: false
+      destructible: true
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
