@@ -31,8 +31,9 @@ namespace pbe {
       void SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData);
 
       bool IsDestructible() const { return destructible; }
-
       physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
+
+      void DbgRender(DbgRend& dbgRend) const;
 
       bool dynamic = false;
       bool destructible = false;
@@ -56,6 +57,10 @@ namespace pbe {
 
       PhysicsScene& GetPhysScene() {
          return *(PhysicsScene*)pxRigidActor->getScene()->userData;
+      }
+
+      Entity& GetEntity() const {
+         return *(Entity*)pxRigidActor->userData;
       }
 
       friend class PhysicsScene;

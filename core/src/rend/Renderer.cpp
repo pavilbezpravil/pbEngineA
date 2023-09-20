@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Renderer.h"
 
+#include <NvBlastTkActor.h>
+
 #include "DbgRend.h"
 #include "RendRes.h"
 #include "RTRenderer.h"
@@ -907,6 +909,10 @@ namespace pbe {
             } else {
                UNIMPLEMENTED();
             }
+         }
+
+         for (auto [_, rb] : scene.View<RigidBodyComponent>().each()) {
+            rb.DbgRender(dbgRend);
          }
 
          dbgRend.Render(cmd, camera);

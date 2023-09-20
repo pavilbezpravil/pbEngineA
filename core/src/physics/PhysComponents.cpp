@@ -15,6 +15,9 @@
 #include <NvBlastExtDamageShaders.h>
 
 #include "PhysicsScene.h"
+#include "math/Color.h"
+#include "math/Shape.h"
+#include "rend/DbgRend.h"
 
 
 using namespace Nv::Blast;
@@ -48,9 +51,11 @@ namespace pbe {
 
       uint boundIdx = 0;
 
+      vec3 chunkCenter = vec3{ 0.0f, 0.0f, 0.0f };
+
       float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
       float chunkParentSliceAxisSize = chunkSize.x;
-      float sliceAxisStart = -chunkSize.x * 0.5f; // todo:
+      float sliceAxisStart = -chunkSize.x * 0.5f;
       float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
       float chunkVolume = chunkParentVolume / (slices + 1);
       uint parentChunkIdx = 0;
@@ -58,9 +63,9 @@ namespace pbe {
       for (uint i = 0; i <= slices; ++i) {
          auto& chunkDesc = chunkDescs[chunkIdx];
          chunkDesc.parentChunkDescIndex = parentChunkIdx;
-         chunkDesc.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
-         chunkDesc.centroid[1] = 0.0f;
-         chunkDesc.centroid[2] = 0.0f;
+         chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+         chunkDesc.centroid[1] = chunkCenter[1];
+         chunkDesc.centroid[2] = chunkCenter[2];
          chunkDesc.volume = chunkVolume;
          chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
          chunkDesc.userData = chunkIdx;
@@ -163,6 +168,52 @@ namespace pbe {
       this->tkActor = &tkActor;
       this->destructData = &destructData;
       this->tkActor->userData = new Entity{ *(Entity*)pxRigidActor->userData }; // todo: use fixed allocator
+   }
+
+   void RigidBodyComponent::DbgRender(DbgRend& dbgRend) const {
+      if (!tkActor) {
+         return;
+      }
+
+      auto trans = GetEntity().GetTransform();
+
+      auto tkAsset = tkActor->getAsset();
+      auto tkChunks = tkAsset->getChunks();
+
+      if (1) {
+         std::array<uint, 32> visibleChunkIndices;
+
+         uint32_t visibleChunkCount = tkActor->getVisibleChunkCount();
+         ASSERT(visibleChunkCount < visibleChunkIndices.size());
+         tkActor->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
+
+         for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
+            auto chunkIndex = visibleChunkIndices[iChunk];
+            NvBlastChunk chunk = tkChunks[chunkIndex];
+
+            vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
+            vec3 chunkCentroidW = trans.World().TransformPosition(chunkCentroidL);
+            // destructData->chunkSizes[chunkIndex]
+
+            dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
+         }
+      }
+
+      if (0) {
+         for (uint iChunk = 0; iChunk < tkAsset->getChunkCount(); ++iChunk) {
+            NvBlastChunk chunk = tkChunks[iChunk];
+
+            vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
+            vec3 chunkCentroidW = trans.World().TransformPosition(chunkCentroidL);
+
+            dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
+         }
+      }
+
+      // for (uint i = 0; i < tkActor->getAsset()->getBondCount(); ++i) {
+      //    tkActor->getBondHealths();
+      //    tkActor->getAsset()->getBonds()[i].;
+      // }
    }
 
    static void RemoveSceneRigidActor(PxScene& pxScene, PxRigidActor& pxRigidActor) {
