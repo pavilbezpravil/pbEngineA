@@ -1,11 +1,11 @@
 entities:
   - uuid: 3025266316102579978
-    tag: Cube
+    tag: oporya 0
     SceneTransformComponent:
-      position: [-3.65689731, 1.03440809, 2.67515349]
+      position: [-3, 1, 0]
       rotation: [0, -0, 0]
-      scale: [1, 1.67462075, 1]
-      parent: 3459374828559402514
+      scale: [1, 2, 1]
+      parent: 5383591570267271630
     MaterialComponent:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
@@ -17,7 +17,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
-      destructible: false
+      destructible: true
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -28,11 +28,11 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 8890436197300190957, 3025266316102579978, 9889813764843162685]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630]
   - uuid: 5358771780476770984
-    tag: Cube
+    tag: Cube with child
     SceneTransformComponent:
-      position: [0, 3, 0]
+      position: [-19.313961, 1.56058121, 4.75219536]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 3459374828559402514
@@ -53,13 +53,21 @@ entities:
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
       {}
-  - uuid: 8890436197300190957
-    tag: Cube 1
+  - uuid: 5383591570267271630
+    tag: Balka 2 opori
     SceneTransformComponent:
-      position: [0, 3, 2.36982203]
+      position: [0, 0, 11.6727247]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [3025266316102579978, 9889813764843162685, 8890436197300190957]
+  - uuid: 8890436197300190957
+    tag: Balka
+    SceneTransformComponent:
+      position: [0, 2.5, 0]
       rotation: [0, -0, 0]
       scale: [9.671772, 1, 1]
-      parent: 3459374828559402514
+      parent: 5383591570267271630
     MaterialComponent:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
@@ -77,12 +85,12 @@ entities:
     RigidBodyShapeComponent:
       {}
   - uuid: 9889813764843162685
-    tag: Cube 1
+    tag: oporay 1
     SceneTransformComponent:
-      position: [4.4285183, 1.03440809, 2.67515349]
+      position: [3, 1, 0]
       rotation: [0, -0, 0]
-      scale: [1, 1.67462075, 1]
-      parent: 3459374828559402514
+      scale: [1, 2, 1]
+      parent: 5383591570267271630
     MaterialComponent:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
@@ -94,7 +102,7 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
-      destructible: false
+      destructible: true
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:

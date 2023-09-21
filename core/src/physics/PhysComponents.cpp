@@ -108,13 +108,21 @@ namespace pbe {
 
       chunkSizes[0] = chunkSize;
 
+      uint startChunkIdx = (uint)chunkDescs.size();
       Slice(chunkDescs, chunkSizes, bondDescs, 0, NvBlastChunkDesc::SupportFlag);
 
       // Slice(chunkDescs, chunkSizes, bondDescs, 1, NvBlastChunkDesc::NoFlags);
       if (1) {
-         uint nNewChunks = (uint)chunkDescs.size() - 1;
+         uint startChunkIdx2 = (uint)chunkDescs.size();
+
+         uint nNewChunks = (uint)chunkDescs.size() - startChunkIdx;
          for (uint i = 0; i < nNewChunks; ++i) {
-            Slice(chunkDescs, chunkSizes, bondDescs, 1 + i, NvBlastChunkDesc::NoFlags);
+            Slice(chunkDescs, chunkSizes, bondDescs, startChunkIdx + i, NvBlastChunkDesc::NoFlags);
+         }
+
+         uint nNewChunks2 = (uint)chunkDescs.size() - startChunkIdx2;
+         for (uint i = 0; i < nNewChunks2; ++i) {
+            Slice(chunkDescs, chunkSizes, bondDescs, startChunkIdx2 + i, NvBlastChunkDesc::NoFlags);
          }
       }
 
