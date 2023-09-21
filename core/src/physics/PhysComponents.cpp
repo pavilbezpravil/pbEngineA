@@ -24,16 +24,78 @@ using namespace Nv::Blast;
 
 namespace pbe {
 
-   static DestructData* GetDestructData(const vec3& chunkSize) {
+   static void Slice(std::vector<NvBlastChunkDesc>& chunkDescs,
+      std::vector<vec3>& chunkSizes,
+      std::vector<NvBlastBondDesc>& bondDescs,
+      uint parentChunkIdx,
+      NvBlastChunkDesc::Flags flags) {
+
+      vec3 chunkCenter = {
+         chunkDescs[parentChunkIdx].centroid[0],
+         chunkDescs[parentChunkIdx].centroid[1],
+         chunkDescs[parentChunkIdx].centroid[2],
+      };
+      vec3 chunkSize = chunkSizes[parentChunkIdx];
+
       uint slices = std::max(1, (int)chunkSize.x);
-      uint chunkCount = 1 + slices + 1;
-      uint bondCount = slices;
+
+      uint chunkIdx = (uint)chunkDescs.size();
+      uint boundIdx = (uint)bondDescs.size();
+
+      chunkDescs.resize(chunkIdx + slices + 1);
+      chunkSizes.resize(chunkIdx + slices + 1);
+
+      if (flags & NvBlastChunkDesc::SupportFlag) {
+         bondDescs.resize(boundIdx + slices);
+      }
+
+      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+      float chunkParentSliceAxisSize = chunkSize.x;
+      float sliceAxisStart = -chunkSize.x * 0.5f;
+      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
+      float chunkVolume = chunkParentVolume / (slices + 1);
+
+      for (uint i = 0; i <= slices; ++i) {
+         auto& chunkDesc = chunkDescs[chunkIdx];
+         chunkDesc.parentChunkDescIndex = parentChunkIdx;
+         chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+         chunkDesc.centroid[1] = chunkCenter[1];
+         chunkDesc.centroid[2] = chunkCenter[2];
+         chunkDesc.volume = chunkVolume;
+         // chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
+         // chunkDesc.flags = NvBlastChunkDesc::NoFlags;
+         chunkDesc.flags = flags;
+         chunkDesc.userData = chunkIdx;
+
+         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
+
+         ++chunkIdx;
+
+         if (i < slices && flags & NvBlastChunkDesc::SupportFlag) {
+            auto& boundDesc = bondDescs[boundIdx++];
+
+            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
+            boundDesc.chunkIndices[1] = chunkIdx;
+            boundDesc.bond.normal[0] = 1.0f;
+            boundDesc.bond.normal[1] = 0.0f;
+            boundDesc.bond.normal[2] = 0.0f;
+            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
+            boundDesc.bond.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
+            boundDesc.bond.centroid[1] = chunkCenter[1];
+            boundDesc.bond.centroid[2] = chunkCenter[2];
+         }
+      }
+   }
+
+   static DestructData* GetDestructData(const vec3& chunkSize) {
+      // uint slices = std::max(1, (int)chunkSize.x);
 
       std::vector<NvBlastChunkDesc> chunkDescs;
-      chunkDescs.resize(chunkCount);
-
+      std::vector<NvBlastBondDesc> bondDescs;
       std::vector<vec3> chunkSizes;
-      chunkSizes.resize(chunkCount);
+
+      chunkDescs.resize(1);
+      chunkSizes.resize(1);
 
       // parent
       chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
@@ -46,46 +108,13 @@ namespace pbe {
 
       chunkSizes[0] = chunkSize;
 
-      std::vector<NvBlastBondDesc> bondDescs;
-      bondDescs.resize(bondCount);
+      Slice(chunkDescs, chunkSizes, bondDescs, 0, NvBlastChunkDesc::SupportFlag);
 
-      uint boundIdx = 0;
-
-      vec3 chunkCenter = vec3{ 0.0f, 0.0f, 0.0f };
-
-      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
-      float chunkParentSliceAxisSize = chunkSize.x;
-      float sliceAxisStart = -chunkSize.x * 0.5f;
-      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
-      float chunkVolume = chunkParentVolume / (slices + 1);
-      uint parentChunkIdx = 0;
-      uint chunkIdx = 1;
-      for (uint i = 0; i <= slices; ++i) {
-         auto& chunkDesc = chunkDescs[chunkIdx];
-         chunkDesc.parentChunkDescIndex = parentChunkIdx;
-         chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
-         chunkDesc.centroid[1] = chunkCenter[1];
-         chunkDesc.centroid[2] = chunkCenter[2];
-         chunkDesc.volume = chunkVolume;
-         chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
-         chunkDesc.userData = chunkIdx;
-
-         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
-
-         ++chunkIdx;
-
-         if (i < slices) {
-            auto& boundDesc = bondDescs[boundIdx++];
-
-            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
-            boundDesc.chunkIndices[1] = chunkIdx;
-            boundDesc.bond.normal[0] = 1.0f;
-            boundDesc.bond.normal[1] = 0.0f;
-            boundDesc.bond.normal[2] = 0.0f;
-            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
-            boundDesc.bond.centroid[0] = sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
-            boundDesc.bond.centroid[1] = 0.0f;
-            boundDesc.bond.centroid[2] = 0.0f;
+      // Slice(chunkDescs, chunkSizes, bondDescs, 1, NvBlastChunkDesc::NoFlags);
+      if (1) {
+         uint nNewChunks = (uint)chunkDescs.size() - 1;
+         for (uint i = 0; i < nNewChunks; ++i) {
+            Slice(chunkDescs, chunkSizes, bondDescs, 1 + i, NvBlastChunkDesc::NoFlags);
          }
       }
 
@@ -97,9 +126,9 @@ namespace pbe {
       // ... etc. for bondDescs[1], all other fields are filled in as usual
 
       TkAssetDesc assetDesc;
-      assetDesc.chunkCount = chunkCount;
+      assetDesc.chunkCount = (uint)chunkDescs.size();
       assetDesc.chunkDescs = chunkDescs.data();
-      assetDesc.bondCount = bondCount;
+      assetDesc.bondCount = (uint)bondDescs.size();
       assetDesc.bondDescs = bondDescs.data();
       assetDesc.bondFlags = nullptr;
 
@@ -109,7 +138,7 @@ namespace pbe {
       INFO("Was coverage {}", wasCoverage);
 
       // todo: 'chunkReorderMap' may be skipped
-      std::vector<uint32_t> chunkReorderMap(chunkCount);  // Will be filled with a map from the original chunk descriptor order to the new one
+      std::vector<uint32_t> chunkReorderMap(chunkDescs.size());  // Will be filled with a map from the original chunk descriptor order to the new one
       bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
       INFO("Require reordering {}", requireReordering);
 
