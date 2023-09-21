@@ -24,11 +24,10 @@ using namespace Nv::Blast;
 
 namespace pbe {
 
-   static void Slice(std::vector<NvBlastChunkDesc>& chunkDescs,
+   static void Slice(
+      std::vector<NvBlastChunkDesc>& chunkDescs,
       std::vector<vec3>& chunkSizes,
-      std::vector<NvBlastBondDesc>& bondDescs,
-      uint parentChunkIdx,
-      NvBlastChunkDesc::Flags flags) {
+      uint parentChunkIdx) {
 
       vec3 chunkCenter = {
          chunkDescs[parentChunkIdx].centroid[0],
@@ -40,14 +39,9 @@ namespace pbe {
       uint slices = std::max(1, (int)chunkSize.x);
 
       uint chunkIdx = (uint)chunkDescs.size();
-      uint boundIdx = (uint)bondDescs.size();
 
       chunkDescs.resize(chunkIdx + slices + 1);
       chunkSizes.resize(chunkIdx + slices + 1);
-
-      if (flags & NvBlastChunkDesc::SupportFlag) {
-         bondDescs.resize(boundIdx + slices);
-      }
 
       float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
       float chunkParentSliceAxisSize = chunkSize.x;
@@ -62,28 +56,12 @@ namespace pbe {
          chunkDesc.centroid[1] = chunkCenter[1];
          chunkDesc.centroid[2] = chunkCenter[2];
          chunkDesc.volume = chunkVolume;
-         // chunkDesc.flags = NvBlastChunkDesc::SupportFlag;
-         // chunkDesc.flags = NvBlastChunkDesc::NoFlags;
-         chunkDesc.flags = flags;
+         chunkDesc.flags = NvBlastChunkDesc::NoFlags; // will be set after
          chunkDesc.userData = chunkIdx;
 
          chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
 
          ++chunkIdx;
-
-         if (i < slices && flags & NvBlastChunkDesc::SupportFlag) {
-            auto& boundDesc = bondDescs[boundIdx++];
-
-            boundDesc.chunkIndices[0] = chunkIdx - 1; // chunkIndices refer to chunk descriptor indices for support chunks
-            boundDesc.chunkIndices[1] = chunkIdx;
-            boundDesc.bond.normal[0] = 1.0f;
-            boundDesc.bond.normal[1] = 0.0f;
-            boundDesc.bond.normal[2] = 0.0f;
-            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
-            boundDesc.bond.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (i + 1); // todo:
-            boundDesc.bond.centroid[1] = chunkCenter[1];
-            boundDesc.bond.centroid[2] = chunkCenter[2];
-         }
       }
    }
 
@@ -108,21 +86,70 @@ namespace pbe {
 
       chunkSizes[0] = chunkSize;
 
-      uint startChunkIdx = (uint)chunkDescs.size();
-      Slice(chunkDescs, chunkSizes, bondDescs, 0, NvBlastChunkDesc::SupportFlag);
+      uint bondLevel = 3;
 
-      // Slice(chunkDescs, chunkSizes, bondDescs, 1, NvBlastChunkDesc::NoFlags);
-      if (1) {
-         uint startChunkIdx2 = (uint)chunkDescs.size();
+      uint level1StartChunkIdx = (uint)chunkDescs.size();
+      Slice(chunkDescs, chunkSizes, 0);
 
-         uint nNewChunks = (uint)chunkDescs.size() - startChunkIdx;
-         for (uint i = 0; i < nNewChunks; ++i) {
-            Slice(chunkDescs, chunkSizes, bondDescs, startChunkIdx + i, NvBlastChunkDesc::NoFlags);
+      uint level2StartChunkIdx = (uint)chunkDescs.size();
+      uint level1ChunksCount = level2StartChunkIdx - level1StartChunkIdx;
+
+      for (uint i = 0; i < level1ChunksCount; ++i) {
+         Slice(chunkDescs, chunkSizes, level1StartChunkIdx + i);
+      }
+
+      uint level3StartChunkIdx = (uint)chunkDescs.size();
+      uint level2ChunksCount = level3StartChunkIdx - level2StartChunkIdx;
+
+      for (uint i = 0; i < level2ChunksCount; ++i) {
+         Slice(chunkDescs, chunkSizes, level2StartChunkIdx + i);
+      }
+
+      uint level4StartChunkIdx = (uint)chunkDescs.size();
+      uint level3ChunksCount = level4StartChunkIdx - level3StartChunkIdx;
+
+      {
+         uint levelChunkStartIdx = -1;
+         uint levelChunksCount = -1;
+
+         if (bondLevel == 1) {
+            levelChunkStartIdx = level1StartChunkIdx;
+            levelChunksCount = level1ChunksCount;
+         } else if (bondLevel == 2) {
+            levelChunkStartIdx = level2StartChunkIdx;
+            levelChunksCount = level2ChunksCount;
+         } else if (bondLevel == 3) {
+            levelChunkStartIdx = level3StartChunkIdx;
+            levelChunksCount = level3ChunksCount;
+         } else {
+            UNIMPLEMENTED();
          }
 
-         uint nNewChunks2 = (uint)chunkDescs.size() - startChunkIdx2;
-         for (uint i = 0; i < nNewChunks2; ++i) {
-            Slice(chunkDescs, chunkSizes, bondDescs, startChunkIdx2 + i, NvBlastChunkDesc::NoFlags);
+         for (uint i = 0; i < levelChunksCount; ++i) {
+            chunkDescs[levelChunkStartIdx + i].flags = NvBlastChunkDesc::SupportFlag;
+         }
+
+         uint boundIdx = 0;
+
+         bondDescs.resize(levelChunksCount - 1);
+
+         for (uint i = 0; i < levelChunksCount - 1; ++i) {
+            auto& boundDesc = bondDescs[boundIdx++];
+
+            uint startChunkIdx = levelChunkStartIdx + i;
+            boundDesc.chunkIndices[0] = startChunkIdx;
+            boundDesc.chunkIndices[1] = startChunkIdx + 1;
+            boundDesc.bond.normal[0] = 1.0f; // todo:
+            boundDesc.bond.normal[1] = 0.0f;
+            boundDesc.bond.normal[2] = 0.0f;
+            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
+
+            auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
+            auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
+
+            boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
+            boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
+            boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
          }
       }
 
@@ -144,11 +171,13 @@ namespace pbe {
 
       bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), assetDesc.chunkCount);
       INFO("Was coverage {}", wasCoverage);
+      ASSERT(wasCoverage);
 
       // todo: 'chunkReorderMap' may be skipped
       std::vector<uint32_t> chunkReorderMap(chunkDescs.size());  // Will be filled with a map from the original chunk descriptor order to the new one
       bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
       INFO("Require reordering {}", requireReordering);
+      ASSERT(!requireReordering);
 
       TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
 
