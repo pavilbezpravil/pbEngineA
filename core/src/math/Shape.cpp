@@ -43,6 +43,30 @@ namespace pbe {
       max += v;
    }
 
+   void AABB::Expand(float expand) {
+      min -= expand;
+      max += expand;
+   }
+
+   bool AABB::Contains(const vec3& p) const {
+      return
+         p.x >= min.x && p.x <= max.x &&
+         p.y >= min.y && p.y <= max.y &&
+         p.z >= min.z && p.z <= max.z;
+   }
+
+   bool AABB::Intersects(const AABB& aabb) const {
+      return
+         min.x <= aabb.max.x && max.x >= aabb.min.x &&
+         min.y <= aabb.max.y && max.y >= aabb.min.y &&
+         min.z <= aabb.max.z && max.z >= aabb.min.z;
+   }
+
+   float AABB::Volume() const {
+      vec3 s = Size();
+      return s.x * s.y * s.z;
+   }
+
    Plane Plane::FromPointNormal(const vec3& p, const vec3& n) {
       Plane plane;
       plane.normal = n;

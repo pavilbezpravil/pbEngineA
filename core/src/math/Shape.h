@@ -28,9 +28,15 @@ namespace pbe {
       void AddAABB(const AABB& aabb);
 
       void Translate(const vec3& v);
+      void Expand(float expand); // increase size by expand in all directions
 
       vec3 Size() const { return max - min; }
       vec3 Extents() const { return Size() * 0.5f; }
+
+      bool Contains(const vec3& p) const;
+      bool Intersects(const AABB& aabb) const;
+
+      float Volume() const;
    };
 
    struct CORE_API Plane {
