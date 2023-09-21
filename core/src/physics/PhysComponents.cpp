@@ -24,47 +24,6 @@ using namespace Nv::Blast;
 
 namespace pbe {
 
-   static void Slice(
-      std::vector<NvBlastChunkDesc>& chunkDescs,
-      std::vector<vec3>& chunkSizes,
-      uint parentChunkIdx) {
-
-      vec3 chunkCenter = {
-         chunkDescs[parentChunkIdx].centroid[0],
-         chunkDescs[parentChunkIdx].centroid[1],
-         chunkDescs[parentChunkIdx].centroid[2],
-      };
-      vec3 chunkSize = chunkSizes[parentChunkIdx];
-
-      uint slices = std::max(1, (int)chunkSize.x);
-
-      uint chunkIdx = (uint)chunkDescs.size();
-
-      chunkDescs.resize(chunkIdx + slices + 1);
-      chunkSizes.resize(chunkIdx + slices + 1);
-
-      float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
-      float chunkParentSliceAxisSize = chunkSize.x;
-      float sliceAxisStart = -chunkSize.x * 0.5f;
-      float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
-      float chunkVolume = chunkParentVolume / (slices + 1);
-
-      for (uint i = 0; i <= slices; ++i) {
-         auto& chunkDesc = chunkDescs[chunkIdx];
-         chunkDesc.parentChunkDescIndex = parentChunkIdx;
-         chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
-         chunkDesc.centroid[1] = chunkCenter[1];
-         chunkDesc.centroid[2] = chunkCenter[2];
-         chunkDesc.volume = chunkVolume;
-         chunkDesc.flags = NvBlastChunkDesc::NoFlags; // will be set after
-         chunkDesc.userData = chunkIdx;
-
-         chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
-
-         ++chunkIdx;
-      }
-   }
-
    static vec3 Float3ToVec3(const float fs[3]) {
       return vec3(fs[0], fs[1], fs[2]);
    }
@@ -73,74 +32,6 @@ namespace pbe {
       fs[0] = v.x;
       fs[1] = v.y;
       fs[2] = v.z;
-   }
-
-   static std::vector<NvBlastBondDesc> BondGen(
-      const std::vector<NvBlastChunkDesc>& chunkDescs,
-      const std::vector<vec3>& chunkSizes,
-      const std::vector<uint>& supportChunkIdxs) {
-
-      uint nSupportChunks = (uint)supportChunkIdxs.size();
-
-      std::vector<AABB> aabbs(nSupportChunks);
-      for (uint i = 0; i < nSupportChunks; ++i) {
-         uint chunkIdx = supportChunkIdxs[i];
-         aabbs[i] = AABB::Extends(
-            Float3ToVec3(chunkDescs[chunkIdx].centroid),
-            chunkSizes[chunkIdx] / 2.f);
-         aabbs[i].Expand(0.0001f); // for future intersection test
-      }
-
-      std::vector<NvBlastBondDesc> bondDescs;
-      bondDescs.reserve(nSupportChunks * 6); // assume average 6 bonds per chunk
-
-      for (uint i = 0; i < nSupportChunks; ++i) {
-         uint chunkIdx = supportChunkIdxs[i];
-         const auto& chunkAABB = aabbs[i];
-
-         const auto& chunkDesc = chunkDescs[chunkIdx];
-         const vec3& chunkSize = chunkSizes[chunkIdx];
-         vec3 chunkCenter = Float3ToVec3(chunkDesc.centroid);
-
-         float chunkVolume = chunkSize.x * chunkSize.y * chunkSize.z;
-
-         // todo: slow. accelerate with spatial partitioning
-         for (uint iTested = i + 1; iTested < nSupportChunks; ++iTested) {
-            uint testedChunkIdx = supportChunkIdxs[iTested];
-            const auto& testedChunkAABB = aabbs[iTested];
-            if (chunkAABB.Intersects(testedChunkAABB)) {
-               const auto& testedChunkDesc = chunkDescs[testedChunkIdx];
-               const vec3& testedChunkSize = chunkSizes[testedChunkIdx];
-               vec3 testedChunkCenter = Float3ToVec3(testedChunkDesc.centroid);
-
-               NvBlastBondDesc boundDesc;
-
-               boundDesc.chunkIndices[0] = chunkIdx;
-               boundDesc.chunkIndices[1] = testedChunkIdx;
-
-               vec3 normal = testedChunkCenter - chunkCenter;
-               normal = glm::normalize(normal);
-
-               Vec3ToFloat3(boundDesc.bond.normal, normal);
-
-               float testedChunkVolume = testedChunkSize.x * testedChunkSize.y * testedChunkSize.z;
-
-               // todo:
-               boundDesc.bond.area = (pow(chunkVolume, 2.f / 3.f) + pow(testedChunkVolume, 2.f / 3.f)) / 2.f;
-
-               auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
-               auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
-
-               boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
-               boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
-               boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
-
-               bondDescs.push_back(boundDesc);
-            }
-         }
-      }
-
-      return bondDescs;
    }
 
    class FructureGenerator {
@@ -163,8 +54,42 @@ namespace pbe {
          chunkSizes[0] = parentSize;
       }
 
-      void Slice(uint chunkIdx) {
-         ::pbe::Slice(chunkDescs, chunkSizes, chunkIdx);
+      void Slice(uint parentChunkIdx, uint3 slices3) {
+         vec3 chunkCenter = {
+            chunkDescs[parentChunkIdx].centroid[0],
+            chunkDescs[parentChunkIdx].centroid[1],
+            chunkDescs[parentChunkIdx].centroid[2],
+         };
+         vec3 chunkSize = chunkSizes[parentChunkIdx];
+
+         // uint slices = std::max(1, (int)chunkSize.x);
+         uint slices = slices3.x;
+
+         uint chunkIdx = (uint)chunkDescs.size();
+
+         chunkDescs.resize(chunkIdx + slices + 1);
+         chunkSizes.resize(chunkIdx + slices + 1);
+
+         float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+         float chunkParentSliceAxisSize = chunkSize.x;
+         float sliceAxisStart = -chunkSize.x * 0.5f;
+         float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
+         float chunkVolume = chunkParentVolume / (slices + 1);
+
+         for (uint i = 0; i <= slices; ++i) {
+            auto& chunkDesc = chunkDescs[chunkIdx];
+            chunkDesc.parentChunkDescIndex = parentChunkIdx;
+            chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+            chunkDesc.centroid[1] = chunkCenter[1];
+            chunkDesc.centroid[2] = chunkCenter[2];
+            chunkDesc.volume = chunkVolume;
+            chunkDesc.flags = NvBlastChunkDesc::NoFlags; // will be set after
+            chunkDesc.userData = chunkIdx;
+
+            chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
+
+            ++chunkIdx;
+         }
       }
 
       uint ChunkDepth(uint chunkIdx) {
@@ -195,7 +120,64 @@ namespace pbe {
             }
          }
 
-         bondDescs = BondGen(chunkDescs, chunkSizes, supportChunkIdxs);
+         uint nSupportChunks = (uint)supportChunkIdxs.size();
+
+         std::vector<AABB> aabbs(nSupportChunks);
+         for (uint i = 0; i < nSupportChunks; ++i) {
+            uint chunkIdx = supportChunkIdxs[i];
+            aabbs[i] = AABB::Extends(
+               Float3ToVec3(chunkDescs[chunkIdx].centroid),
+               chunkSizes[chunkIdx] / 2.f);
+            aabbs[i].Expand(0.0001f); // for future intersection test
+         }
+
+         bondDescs.reserve(nSupportChunks * 3); // assume min 3 bonds per chunk in general case
+
+         for (uint i = 0; i < nSupportChunks; ++i) {
+            uint chunkIdx = supportChunkIdxs[i];
+            const auto& chunkAABB = aabbs[i];
+
+            const auto& chunkDesc = chunkDescs[chunkIdx];
+            const vec3& chunkSize = chunkSizes[chunkIdx];
+            vec3 chunkCenter = Float3ToVec3(chunkDesc.centroid);
+
+            float chunkVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+
+            // todo: slow. accelerate with spatial partitioning
+            for (uint iTested = i + 1; iTested < nSupportChunks; ++iTested) {
+               uint testedChunkIdx = supportChunkIdxs[iTested];
+               const auto& testedChunkAABB = aabbs[iTested];
+               if (chunkAABB.Intersects(testedChunkAABB)) {
+                  const auto& testedChunkDesc = chunkDescs[testedChunkIdx];
+                  const vec3& testedChunkSize = chunkSizes[testedChunkIdx];
+                  vec3 testedChunkCenter = Float3ToVec3(testedChunkDesc.centroid);
+
+                  NvBlastBondDesc boundDesc;
+
+                  boundDesc.chunkIndices[0] = chunkIdx;
+                  boundDesc.chunkIndices[1] = testedChunkIdx;
+
+                  vec3 normal = testedChunkCenter - chunkCenter;
+                  normal = glm::normalize(normal);
+
+                  Vec3ToFloat3(boundDesc.bond.normal, normal);
+
+                  float testedChunkVolume = testedChunkSize.x * testedChunkSize.y * testedChunkSize.z;
+
+                  // todo:
+                  boundDesc.bond.area = (pow(chunkVolume, 2.f / 3.f) + pow(testedChunkVolume, 2.f / 3.f)) / 2.f;
+
+                  auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
+                  auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
+
+                  boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
+                  boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
+                  boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
+
+                  bondDescs.push_back(boundDesc);
+               }
+            }
+         }
 
          // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
          // bond for example to create a joint when this bond breaks
@@ -241,7 +223,7 @@ namespace pbe {
 
       FructureGenerator fructureGenerator{ chunkSize };
 
-      fructureGenerator.Slice(0);
+      fructureGenerator.Slice(0, uint3{3, 1, 1});
       fructureGenerator.MarkSupportChunkAtDepth(1);
       fructureGenerator.BondGeneration();
 
