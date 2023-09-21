@@ -83,7 +83,7 @@ namespace pbe {
       uint nSupportChunks = (uint)supportChunkIdxs.size();
 
       std::vector<AABB> aabbs(nSupportChunks);
-      for (int i = 0; i < nSupportChunks; ++i) {
+      for (uint i = 0; i < nSupportChunks; ++i) {
          uint chunkIdx = supportChunkIdxs[i];
          aabbs[i] = AABB::Extends(
             Float3ToVec3(chunkDescs[chunkIdx].centroid),
@@ -94,7 +94,7 @@ namespace pbe {
       std::vector<NvBlastBondDesc> bondDescs;
       bondDescs.reserve(nSupportChunks * 6); // assume average 6 bonds per chunk
 
-      for (int i = 0; i < nSupportChunks; ++i) {
+      for (uint i = 0; i < nSupportChunks; ++i) {
          uint chunkIdx = supportChunkIdxs[i];
          const auto& chunkAABB = aabbs[i];
 
@@ -105,7 +105,7 @@ namespace pbe {
          float chunkVolume = chunkSize.x * chunkSize.y * chunkSize.z;
 
          // todo: slow. accelerate with spatial partitioning
-         for (int iTested = i + 1; iTested < nSupportChunks; ++iTested) {
+         for (uint iTested = i + 1; iTested < nSupportChunks; ++iTested) {
             uint testedChunkIdx = supportChunkIdxs[iTested];
             const auto& testedChunkAABB = aabbs[iTested];
             if (chunkAABB.Intersects(testedChunkAABB)) {
@@ -143,143 +143,117 @@ namespace pbe {
       return bondDescs;
    }
 
-   class BondGenerator {
+   class FructureGenerator {
    public:
+      FructureGenerator(const vec3& parentSize) { // todo:
+         chunkDescs.resize(1);
+         chunkSizes.resize(1);
 
+         // parent
 
+         // invalid index denotes a chunk hierarchy root
+         chunkDescs[0].parentChunkDescIndex = UINT32_MAX;
+         chunkDescs[0].centroid[0] = 0.0f;
+         chunkDescs[0].centroid[1] = 0.0f;
+         chunkDescs[0].centroid[2] = 0.0f;
+         chunkDescs[0].volume = parentSize.x * parentSize.y * parentSize.z;
+         chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
+         chunkDescs[0].userData = 0;
+
+         chunkSizes[0] = parentSize;
+      }
+
+      void Slice(uint chunkIdx) {
+         ::pbe::Slice(chunkDescs, chunkSizes, chunkIdx);
+      }
+
+      uint ChunkDepth(uint chunkIdx) {
+         uint depth = 0;
+         while (chunkIdx != 0) {
+            chunkIdx = chunkDescs[chunkIdx].parentChunkDescIndex;
+            ++depth;
+         }
+         return depth;
+      }
+
+      void MarkSupportChunkAtDepth(uint depth = 1) {
+         for (uint chunkIdx = 0; chunkIdx < (uint)chunkDescs.size(); ++chunkIdx) {
+            // todo: or leafs
+            if (ChunkDepth(chunkIdx) == depth) {
+               chunkDescs[chunkIdx].flags = NvBlastChunkDesc::SupportFlag;
+            }
+         }
+      }
+
+      void BondGeneration() {
+         std::vector<uint> supportChunkIdxs;
+         supportChunkIdxs.reserve(chunkDescs.size());
+
+         for (uint i = 0; i < chunkDescs.size(); ++i) {
+            if (chunkDescs[i].flags & NvBlastChunkDesc::SupportFlag) {
+               supportChunkIdxs.push_back(i);
+            }
+         }
+
+         bondDescs = BondGen(chunkDescs, chunkSizes, supportChunkIdxs);
+
+         // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
+         // bond for example to create a joint when this bond breaks
+
+         // bondDescs[1].chunkIndices[0] = 1;
+         // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
+         // ... etc. for bondDescs[1], all other fields are filled in as usual
+      }  
+
+      TkAssetDesc GetTkAssetDesc() {
+         auto tkFramework = NvBlastTkFrameworkGet();
+
+         bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), (uint)chunkDescs.size());
+         INFO("Was coverage {}", wasCoverage);
+         ASSERT(wasCoverage);
+
+         // todo: 'chunkReorderMap' may be skipped
+         std::vector<uint32_t> chunkReorderMap(chunkDescs.size());  // Will be filled with a map from the original chunk descriptor order to the new one
+         bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), (uint)chunkDescs.size(),
+            bondDescs.data(), (uint)bondDescs.size(), chunkReorderMap.data());
+         INFO("Require reordering {}", requireReordering);
+         ASSERT(!requireReordering);
+
+         TkAssetDesc assetDesc;
+         assetDesc.chunkCount = (uint)chunkDescs.size();
+         assetDesc.chunkDescs = chunkDescs.data();
+         assetDesc.bondCount = (uint)bondDescs.size();
+         assetDesc.bondDescs = bondDescs.data();
+         assetDesc.bondFlags = nullptr;
+
+         return assetDesc;
+      }
+
+      // todo:
+      std::vector<vec3> chunkSizes;
    private:
+      std::vector<NvBlastChunkDesc> chunkDescs;
+      std::vector<NvBlastBondDesc> bondDescs;
    };
 
    static DestructData* GetDestructData(const vec3& chunkSize) {
       // uint slices = std::max(1, (int)chunkSize.x);
 
-      std::vector<NvBlastChunkDesc> chunkDescs;
-      std::vector<NvBlastBondDesc> bondDescs;
-      std::vector<vec3> chunkSizes;
+      FructureGenerator fructureGenerator{ chunkSize };
 
-      chunkDescs.resize(1);
-      chunkSizes.resize(1);
+      fructureGenerator.Slice(0);
+      fructureGenerator.MarkSupportChunkAtDepth(1);
+      fructureGenerator.BondGeneration();
 
-      // parent
-      chunkDescs[0].parentChunkDescIndex = UINT32_MAX; // invalid index denotes a chunk hierarchy root
-      chunkDescs[0].centroid[0] = 0.0f;
-      chunkDescs[0].centroid[1] = 0.0f;
-      chunkDescs[0].centroid[2] = 0.0f;
-      chunkDescs[0].volume = 1.0f;
-      chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-      chunkDescs[0].userData = 0;
-
-      chunkSizes[0] = chunkSize;
-
-      uint bondLevel = 2;
-
-      uint level1StartChunkIdx = (uint)chunkDescs.size();
-      Slice(chunkDescs, chunkSizes, 0);
-
-      uint level2StartChunkIdx = (uint)chunkDescs.size();
-      uint level1ChunksCount = level2StartChunkIdx - level1StartChunkIdx;
-
-      for (uint i = 0; i < level1ChunksCount; ++i) {
-         Slice(chunkDescs, chunkSizes, level1StartChunkIdx + i);
-      }
-
-      uint level3StartChunkIdx = (uint)chunkDescs.size();
-      uint level2ChunksCount = level3StartChunkIdx - level2StartChunkIdx;
-
-      for (uint i = 0; i < level2ChunksCount; ++i) {
-         Slice(chunkDescs, chunkSizes, level2StartChunkIdx + i);
-      }
-
-      uint level4StartChunkIdx = (uint)chunkDescs.size();
-      uint level3ChunksCount = level4StartChunkIdx - level3StartChunkIdx;
-
-      {
-         uint levelChunkStartIdx = -1;
-         uint levelChunksCount = -1;
-
-         if (bondLevel == 1) {
-            levelChunkStartIdx = level1StartChunkIdx;
-            levelChunksCount = level1ChunksCount;
-         } else if (bondLevel == 2) {
-            levelChunkStartIdx = level2StartChunkIdx;
-            levelChunksCount = level2ChunksCount;
-         } else if (bondLevel == 3) {
-            levelChunkStartIdx = level3StartChunkIdx;
-            levelChunksCount = level3ChunksCount;
-         } else {
-            UNIMPLEMENTED();
-         }
-
-         std::vector<uint> supportChunkIdxs;
-         supportChunkIdxs.reserve(levelChunksCount);
-
-         for (uint i = 0; i < levelChunksCount; ++i) {
-            supportChunkIdxs.push_back(levelChunkStartIdx + i);
-            chunkDescs[levelChunkStartIdx + i].flags = NvBlastChunkDesc::SupportFlag;
-         }
-
-
-         if (1) {
-            bondDescs = BondGen(chunkDescs, chunkSizes, supportChunkIdxs);
-            
-         } else {
-            uint boundIdx = 0;
-
-            bondDescs.resize(levelChunksCount - 1);
-
-            for (uint i = 0; i < levelChunksCount - 1; ++i) {
-               auto& boundDesc = bondDescs[boundIdx++];
-
-               uint startChunkIdx = levelChunkStartIdx + i;
-               boundDesc.chunkIndices[0] = startChunkIdx;
-               boundDesc.chunkIndices[1] = startChunkIdx + 1;
-               boundDesc.bond.normal[0] = 1.0f; // todo:
-               boundDesc.bond.normal[1] = 0.0f;
-               boundDesc.bond.normal[2] = 0.0f;
-               boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
-
-               auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
-               auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
-
-               boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
-               boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
-               boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
-            }
-         }
-      }
-
-      // bondDescs[0].userData = 0;  // this can be used to tell the user more information about this
-      // bond for example to create a joint when this bond breaks
-
-      // bondDescs[1].chunkIndices[0] = 1;
-      // bondDescs[1].chunkIndices[1] = ~0;  // ~0 (UINT32_MAX) is the "invalid index."  This creates a world bond
-      // ... etc. for bondDescs[1], all other fields are filled in as usual
-
-      TkAssetDesc assetDesc;
-      assetDesc.chunkCount = (uint)chunkDescs.size();
-      assetDesc.chunkDescs = chunkDescs.data();
-      assetDesc.bondCount = (uint)bondDescs.size();
-      assetDesc.bondDescs = bondDescs.data();
-      assetDesc.bondFlags = nullptr;
+      TkAssetDesc assetDesc = fructureGenerator.GetTkAssetDesc();
 
       auto tkFramework = NvBlastTkFrameworkGet();
-
-      bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), assetDesc.chunkCount);
-      INFO("Was coverage {}", wasCoverage);
-      ASSERT(wasCoverage);
-
-      // todo: 'chunkReorderMap' may be skipped
-      std::vector<uint32_t> chunkReorderMap(chunkDescs.size());  // Will be filled with a map from the original chunk descriptor order to the new one
-      bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), assetDesc.chunkCount, bondDescs.data(), assetDesc.bondCount, chunkReorderMap.data());
-      INFO("Require reordering {}", requireReordering);
-      ASSERT(!requireReordering);
-
       TkAsset* tkAsset = tkFramework->createAsset(assetDesc);
 
       // todo:
       DestructData* destructData = new DestructData{};
       destructData->tkAsset = tkAsset;
-      destructData->chunkSizes = std::move(chunkSizes);
+      destructData->chunkSizes = std::move(fructureGenerator.chunkSizes);
       return destructData;
    }
 
