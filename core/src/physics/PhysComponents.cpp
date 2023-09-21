@@ -87,7 +87,7 @@ namespace pbe {
          uint chunkIdx = supportChunkIdxs[i];
          aabbs[i] = AABB::Extends(
             Float3ToVec3(chunkDescs[chunkIdx].centroid),
-            chunkSizes[chunkIdx]);
+            chunkSizes[chunkIdx] / 2.f);
          aabbs[i].Expand(0.0001f); // for future intersection test
       }
 
@@ -105,13 +105,9 @@ namespace pbe {
          float chunkVolume = chunkSize.x * chunkSize.y * chunkSize.z;
 
          // todo: slow. accelerate with spatial partitioning
-         for (int iTested = 0; iTested < nSupportChunks; ++iTested) {
-            if (i == iTested) {
-               continue;
-            }
-
+         for (int iTested = i + 1; iTested < nSupportChunks; ++iTested) {
             uint testedChunkIdx = supportChunkIdxs[iTested];
-            const auto& testedChunkAABB = aabbs[testedChunkIdx];
+            const auto& testedChunkAABB = aabbs[iTested];
             if (chunkAABB.Intersects(testedChunkAABB)) {
                const auto& testedChunkDesc = chunkDescs[testedChunkIdx];
                const vec3& testedChunkSize = chunkSizes[testedChunkIdx];
@@ -175,7 +171,7 @@ namespace pbe {
 
       chunkSizes[0] = chunkSize;
 
-      uint bondLevel = 3;
+      uint bondLevel = 2;
 
       uint level1StartChunkIdx = (uint)chunkDescs.size();
       Slice(chunkDescs, chunkSizes, 0);
@@ -214,31 +210,41 @@ namespace pbe {
             UNIMPLEMENTED();
          }
 
+         std::vector<uint> supportChunkIdxs;
+         supportChunkIdxs.reserve(levelChunksCount);
+
          for (uint i = 0; i < levelChunksCount; ++i) {
+            supportChunkIdxs.push_back(levelChunkStartIdx + i);
             chunkDescs[levelChunkStartIdx + i].flags = NvBlastChunkDesc::SupportFlag;
          }
 
-         uint boundIdx = 0;
 
-         bondDescs.resize(levelChunksCount - 1);
+         if (1) {
+            bondDescs = BondGen(chunkDescs, chunkSizes, supportChunkIdxs);
+            
+         } else {
+            uint boundIdx = 0;
 
-         for (uint i = 0; i < levelChunksCount - 1; ++i) {
-            auto& boundDesc = bondDescs[boundIdx++];
+            bondDescs.resize(levelChunksCount - 1);
 
-            uint startChunkIdx = levelChunkStartIdx + i;
-            boundDesc.chunkIndices[0] = startChunkIdx;
-            boundDesc.chunkIndices[1] = startChunkIdx + 1;
-            boundDesc.bond.normal[0] = 1.0f; // todo:
-            boundDesc.bond.normal[1] = 0.0f;
-            boundDesc.bond.normal[2] = 0.0f;
-            boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
+            for (uint i = 0; i < levelChunksCount - 1; ++i) {
+               auto& boundDesc = bondDescs[boundIdx++];
 
-            auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
-            auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
+               uint startChunkIdx = levelChunkStartIdx + i;
+               boundDesc.chunkIndices[0] = startChunkIdx;
+               boundDesc.chunkIndices[1] = startChunkIdx + 1;
+               boundDesc.bond.normal[0] = 1.0f; // todo:
+               boundDesc.bond.normal[1] = 0.0f;
+               boundDesc.bond.normal[2] = 0.0f;
+               boundDesc.bond.area = chunkSize.y * chunkSize.z; // todo:
 
-            boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
-            boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
-            boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
+               auto chunk0Center = chunkDescs[boundDesc.chunkIndices[0]].centroid;
+               auto chunk1Center = chunkDescs[boundDesc.chunkIndices[1]].centroid;
+
+               boundDesc.bond.centroid[0] = (chunk0Center[0] + chunk1Center[0]) / 2.f;
+               boundDesc.bond.centroid[1] = (chunk0Center[1] + chunk1Center[1]) / 2.f;
+               boundDesc.bond.centroid[2] = (chunk0Center[2] + chunk1Center[2]) / 2.f;
+            }
          }
       }
 

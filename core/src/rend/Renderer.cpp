@@ -22,7 +22,7 @@ namespace pbe {
    CVarValue<bool> cUseFrustumCulling{ "render/use frustum culling", false };
 
    CVarValue<bool> cvRenderDecals{ "render/decals", true };
-   CVarValue<bool> cvRenderOpaqueSort{ "render/opaque sort", true };
+   CVarValue<bool> cvRenderOpaqueSort{ "render/opaque sort", false };
    CVarValue<bool> cvRenderShadowMap{ "render/shadow map", true };
    CVarValue<bool> cvRenderZPass{ "render/z pass", true };
    CVarValue<bool> cvRenderSsao{ "render/ssao", false };
