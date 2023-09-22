@@ -54,7 +54,16 @@ namespace pbe {
          chunkSizes[0] = parentSize;
       }
 
-      void Slice(uint parentChunkIdx, uint3 slices3) {
+      // next chunk will be added to the next indexies
+      uint GetChunkCount() const {
+         return (uint)chunkDescs.size();
+      }
+
+      void SliceAxis(uint parentChunkIdx, uint axis, uint slices, bool replace = false) {
+         if (slices == 0) {
+            return;
+         }
+
          vec3 chunkCenter = {
             chunkDescs[parentChunkIdx].centroid[0],
             chunkDescs[parentChunkIdx].centroid[1],
@@ -62,33 +71,79 @@ namespace pbe {
          };
          vec3 chunkSize = chunkSizes[parentChunkIdx];
 
-         // uint slices = std::max(1, (int)chunkSize.x);
-         uint slices = slices3.x;
-
          uint chunkIdx = (uint)chunkDescs.size();
 
-         chunkDescs.resize(chunkIdx + slices + 1);
-         chunkSizes.resize(chunkIdx + slices + 1);
+         uint reqSize = chunkIdx + slices;
+         if (!replace) {
+            ++reqSize;
+         }
+         chunkDescs.resize(reqSize);
+         chunkSizes.resize(reqSize);
 
          float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
-         float chunkParentSliceAxisSize = chunkSize.x;
-         float sliceAxisStart = -chunkSize.x * 0.5f;
+
+         float chunkParentSliceAxisSize = chunkSize[axis];
+         float sliceAxisStart = -chunkParentSliceAxisSize * 0.5f;
+
          float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
          float chunkVolume = chunkParentVolume / (slices + 1);
 
+         uint nextParentChunkIdx = replace ? chunkDescs[parentChunkIdx].parentChunkDescIndex : parentChunkIdx;
+
          for (uint i = 0; i <= slices; ++i) {
-            auto& chunkDesc = chunkDescs[chunkIdx];
-            chunkDesc.parentChunkDescIndex = parentChunkIdx;
-            chunkDesc.centroid[0] = chunkCenter[0] + sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+            uint nextChunkIdx = (replace && i == 0) ? parentChunkIdx : chunkIdx;
+            auto& chunkDesc = chunkDescs[nextChunkIdx];
+
+            chunkDesc.parentChunkDescIndex = nextParentChunkIdx;
+
+            chunkDesc.centroid[0] = chunkCenter[0];
             chunkDesc.centroid[1] = chunkCenter[1];
             chunkDesc.centroid[2] = chunkCenter[2];
+            chunkDesc.centroid[axis] += sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
+
             chunkDesc.volume = chunkVolume;
-            chunkDesc.flags = NvBlastChunkDesc::NoFlags; // will be set after
-            chunkDesc.userData = chunkIdx;
+            chunkDesc.flags = NvBlastChunkDesc::NoFlags;
+            chunkDesc.userData = nextChunkIdx;
 
-            chunkSizes[chunkIdx] = vec3{ chunkSliceAxisSize, chunkSize.y, chunkSize.z };
+            chunkSizes[nextChunkIdx] = chunkSize;
+            chunkSizes[nextChunkIdx][axis] = chunkSliceAxisSize;
 
-            ++chunkIdx;
+            if (!replace || i != 0) {
+               ++chunkIdx;
+            }
+         }
+      }
+
+      void Slice(uint parentChunkIdx, uint3 slices) {
+         uint startIdx = GetChunkCount();
+
+         // SliceAxis(parentChunkIdx, 0, slices.x);
+         //
+         // for (uint i = 0; i < slices.x + 1; ++i) {
+         //    SliceAxis(startIdx + i, 1, slices.y, slices.x != 0);
+         // }
+         //
+         // for (uint i = 0; i < (slices.x + 1) * (slices.y + 1); ++i) {
+         //    SliceAxis(startIdx + i, 2, slices.z, slices.x != 0 || slices.y != 0);
+         // }
+
+         bool wasSliced = false;
+         uint nSliced = 1;
+         for (uint iAxis = 0; iAxis < 3; ++iAxis) {
+            if (slices[iAxis] == 0) {
+               continue;
+            }
+
+            if (!wasSliced) {
+               SliceAxis(parentChunkIdx, iAxis, slices[iAxis], false);
+               wasSliced = true;
+            } else {
+               for (uint i = 0; i < nSliced; ++i) {
+                  SliceAxis(startIdx + i, iAxis, slices[iAxis], true);
+               }
+            }
+
+            nSliced *= slices[iAxis] + 1;
          }
       }
 
@@ -199,7 +254,19 @@ namespace pbe {
          bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), (uint)chunkDescs.size(),
             bondDescs.data(), (uint)bondDescs.size(), chunkReorderMap.data());
          INFO("Require reordering {}", requireReordering);
-         ASSERT(!requireReordering);
+
+         if (requireReordering) {
+            std::vector<vec3> newChunkSizes;
+            newChunkSizes.resize(chunkSizes.size());
+
+            for (uint i = 0; i < (uint)chunkReorderMap.size(); ++i) {
+               newChunkSizes[i] = chunkSizes[chunkReorderMap[i]];
+            }
+
+            std::swap(chunkSizes, newChunkSizes);
+         }
+
+         // ASSERT(!requireReordering);
 
          TkAssetDesc assetDesc;
          assetDesc.chunkCount = (uint)chunkDescs.size();
@@ -223,7 +290,18 @@ namespace pbe {
 
       FructureGenerator fructureGenerator{ chunkSize };
 
-      fructureGenerator.Slice(0, uint3{3, 1, 1});
+      // fructureGenerator.Slice(0, uint3{3, 2, 1});
+      // fructureGenerator.Slice(0, uint3{4, 3, 2});
+
+      uint3 slices = uint3(chunkSize / 1.0f);
+      fructureGenerator.Slice(0, slices);
+
+      // fructureGenerator.SliceAxis(0, 1, 3);
+      // fructureGenerator.SliceAxis(1, 0, 3, true);
+      // fructureGenerator.SliceAxis(2, 0, 3, true);
+      // fructureGenerator.SliceAxis(3, 0, 3, true);
+      // fructureGenerator.SliceAxis(4, 0, 3, true);
+
       fructureGenerator.MarkSupportChunkAtDepth(1);
       fructureGenerator.BondGeneration();
 
@@ -298,7 +376,7 @@ namespace pbe {
       auto tkChunks = tkAsset->getChunks();
 
       if (1) {
-         std::array<uint, 32> visibleChunkIndices;
+         std::array<uint, 64> visibleChunkIndices; // todo:
 
          uint32_t visibleChunkCount = tkActor->getVisibleChunkCount();
          ASSERT(visibleChunkCount < visibleChunkIndices.size());

@@ -42,7 +42,7 @@ namespace pbe {
                for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
                   auto tkChild = splitEvent->children[j];
 
-                  std::array<uint, 32> visibleChunkIndices;
+                  std::array<uint, 64> visibleChunkIndices; // todo:
 
                   uint32_t visibleChunkCount = tkChild->getVisibleChunkCount();
                   ASSERT(visibleChunkCount < visibleChunkIndices.size());
