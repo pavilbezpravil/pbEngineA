@@ -30,6 +30,7 @@ namespace pbe {
       void Translate(const vec3& v);
       void Expand(float expand); // increase size by expand in all directions
 
+      vec3 Center() const { return (min + max) * 0.5f; }
       vec3 Size() const { return max - min; }
       vec3 Extents() const { return Size() * 0.5f; }
 

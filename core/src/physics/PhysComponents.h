@@ -16,10 +16,18 @@ namespace pbe {
    // todo: while have two way for handle change in component data
    // in future choose one
 
+
+   // todo:
+   struct ChunkInfo {
+      vec3 size;
+      // uint depth; // todo:
+      bool isLeaf;
+   };
+
    // todo: name
    struct DestructData {
       Nv::Blast::TkAsset* tkAsset = nullptr;
-      std::vector<vec3> chunkSizes; // todo:
+      std::vector<ChunkInfo> chunkInfos;
    };
 
    struct CORE_API RigidBodyComponent {

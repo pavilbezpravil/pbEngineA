@@ -17,6 +17,7 @@
 #include "PhysicsScene.h"
 #include "math/Color.h"
 #include "math/Common.h"
+#include "math/Random.h"
 #include "math/Shape.h"
 #include "rend/DbgRend.h"
 
@@ -39,7 +40,7 @@ namespace pbe {
    public:
       FructureGenerator(const vec3& parentSize) { // todo:
          chunkDescs.resize(1);
-         chunkSizes.resize(1);
+         chunkInfos.resize(1);
 
          // parent
 
@@ -52,7 +53,10 @@ namespace pbe {
          chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
          chunkDescs[0].userData = 0;
 
-         chunkSizes[0] = parentSize;
+         chunkInfos[0] = {
+            .size = parentSize,
+            .isLeaf = true,
+         };
       }
 
       // next chunk will be added to the next indexies
@@ -65,13 +69,6 @@ namespace pbe {
             return;
          }
 
-         vec3 chunkCenter = {
-            chunkDescs[parentChunkIdx].centroid[0],
-            chunkDescs[parentChunkIdx].centroid[1],
-            chunkDescs[parentChunkIdx].centroid[2],
-         };
-         vec3 chunkSize = chunkSizes[parentChunkIdx];
-
          uint chunkIdx = (uint)chunkDescs.size();
 
          uint reqSize = chunkIdx + slices;
@@ -79,15 +76,27 @@ namespace pbe {
             ++reqSize;
          }
          chunkDescs.resize(reqSize);
-         chunkSizes.resize(reqSize);
+         chunkInfos.resize(reqSize);
 
-         float chunkParentVolume = chunkSize.x * chunkSize.y * chunkSize.z;
+         vec3 chunkCenter = {
+         chunkDescs[parentChunkIdx].centroid[0],
+         chunkDescs[parentChunkIdx].centroid[1],
+         chunkDescs[parentChunkIdx].centroid[2],
+         };
 
-         float chunkParentSliceAxisSize = chunkSize[axis];
-         float sliceAxisStart = -chunkParentSliceAxisSize * 0.5f;
+         auto& chunkInfo = chunkInfos[parentChunkIdx];
+         if (!replace) {
+            chunkInfo.isLeaf = false;
+         }
+         vec3 chunkSize = chunkInfo.size;
 
-         float chunkSliceAxisSize = chunkParentSliceAxisSize / (slices + 1);
-         float chunkVolume = chunkParentVolume / (slices + 1);
+         float sliceAxisStart = -chunkSize[axis] * 0.5f;
+
+         float chunkSliceAxisSize = chunkSize[axis] / (slices + 1);
+
+         float perpendicularArea = chunkSize.x * chunkSize.y * chunkSize.z / chunkSize[axis];
+
+         float slicePos = sliceAxisStart;
 
          uint nextParentChunkIdx = replace ? chunkDescs[parentChunkIdx].parentChunkDescIndex : parentChunkIdx;
 
@@ -100,14 +109,25 @@ namespace pbe {
             chunkDesc.centroid[0] = chunkCenter[0];
             chunkDesc.centroid[1] = chunkCenter[1];
             chunkDesc.centroid[2] = chunkCenter[2];
-            chunkDesc.centroid[axis] += sliceAxisStart + chunkSliceAxisSize * (0.5f + i);
 
-            chunkDesc.volume = chunkVolume;
+            float nextSlicePos = sliceAxisStart + chunkSliceAxisSize * (i + 1 + Random::Float(-0.5f, 0.5f) * 1.f);
+            if (i == slices) {
+               nextSlicePos = -sliceAxisStart;
+            }
+
+            chunkDesc.centroid[axis] += (slicePos + nextSlicePos) * 0.5f;
+
+            float sliceSize = nextSlicePos - slicePos;
+            slicePos = nextSlicePos;
+
+            chunkDesc.volume = perpendicularArea * sliceSize;
             chunkDesc.flags = NvBlastChunkDesc::NoFlags;
             chunkDesc.userData = nextChunkIdx;
 
-            chunkSizes[nextChunkIdx] = chunkSize;
-            chunkSizes[nextChunkIdx][axis] = chunkSliceAxisSize;
+            auto& chunkInfo = chunkInfos[nextChunkIdx];
+            chunkInfo.size = chunkSize;
+            chunkInfo.size[axis] = sliceSize;
+            chunkInfo.isLeaf = true;
 
             if (!replace || i != 0) {
                ++chunkIdx;
@@ -117,16 +137,6 @@ namespace pbe {
 
       void Slice(uint parentChunkIdx, uint3 slices) {
          uint startIdx = GetChunkCount();
-
-         // SliceAxis(parentChunkIdx, 0, slices.x);
-         //
-         // for (uint i = 0; i < slices.x + 1; ++i) {
-         //    SliceAxis(startIdx + i, 1, slices.y, slices.x != 0);
-         // }
-         //
-         // for (uint i = 0; i < (slices.x + 1) * (slices.y + 1); ++i) {
-         //    SliceAxis(startIdx + i, 2, slices.z, slices.x != 0 || slices.y != 0);
-         // }
 
          bool wasSliced = false;
          uint nSliced = 1;
@@ -148,8 +158,9 @@ namespace pbe {
          }
       }
 
-      vec3 ChunkSize(uint chunkIdx) {
-         return chunkSizes[chunkIdx];
+      // get chunk info func
+      const ChunkInfo& GetChunkInfo(uint chunkIdx) const {
+         return chunkInfos[chunkIdx];
       }
 
       uint ChunkDepth(uint chunkIdx) {
@@ -161,10 +172,13 @@ namespace pbe {
          return depth;
       }
 
-      void MarkSupportChunkAtDepth(uint depth = 1) {
+      void MarkSupportChunkAtDepth(uint depth) {
+         ASSERT(depth > 0);
+         depth = std::max(depth, 1u);
+
          for (uint chunkIdx = 0; chunkIdx < (uint)chunkDescs.size(); ++chunkIdx) {
-            // todo: or leafs
-            if (ChunkDepth(chunkIdx) == depth) {
+            auto chunkDepth = ChunkDepth(chunkIdx);
+            if (chunkDepth == depth || (chunkDepth < depth && GetChunkInfo(chunkIdx).isLeaf)) {
                chunkDescs[chunkIdx].flags = NvBlastChunkDesc::SupportFlag;
             }
          }
@@ -187,7 +201,7 @@ namespace pbe {
             uint chunkIdx = supportChunkIdxs[i];
             aabbs[i] = AABB::Extends(
                Float3ToVec3(chunkDescs[chunkIdx].centroid),
-               chunkSizes[chunkIdx] / 2.f);
+               GetChunkInfo(chunkIdx).size / 2.f);
             aabbs[i].Expand(0.0001f); // for future intersection test
          }
 
@@ -197,9 +211,8 @@ namespace pbe {
             uint chunkIdx = supportChunkIdxs[i];
             const auto& chunkAABB = aabbs[i];
 
-            const auto& chunkDesc = chunkDescs[chunkIdx];
-            const vec3& chunkSize = chunkSizes[chunkIdx];
-            vec3 chunkCenter = Float3ToVec3(chunkDesc.centroid);
+            vec3 chunkCenter = chunkAABB.Center();
+            vec3 chunkSize = chunkAABB.Size();
 
             float chunkVolume = chunkSize.x * chunkSize.y * chunkSize.z;
 
@@ -208,9 +221,8 @@ namespace pbe {
                uint testedChunkIdx = supportChunkIdxs[iTested];
                const auto& testedChunkAABB = aabbs[iTested];
                if (chunkAABB.Intersects(testedChunkAABB)) {
-                  const auto& testedChunkDesc = chunkDescs[testedChunkIdx];
-                  const vec3& testedChunkSize = chunkSizes[testedChunkIdx];
-                  vec3 testedChunkCenter = Float3ToVec3(testedChunkDesc.centroid);
+                  vec3 testedChunkCenter = testedChunkAABB.Center();
+                  vec3 testedChunkSize = testedChunkAABB.Size();
 
                   NvBlastBondDesc boundDesc;
 
@@ -261,14 +273,14 @@ namespace pbe {
          INFO("Require reordering {}", requireReordering);
 
          if (requireReordering) {
-            std::vector<vec3> newChunkSizes;
-            newChunkSizes.resize(chunkSizes.size());
+            std::vector<ChunkInfo> newChunkInfos;
+            newChunkInfos.resize(chunkInfos.size());
 
             for (uint i = 0; i < (uint)chunkReorderMap.size(); ++i) {
-               newChunkSizes[i] = chunkSizes[chunkReorderMap[i]];
+               newChunkInfos[i] = chunkInfos[chunkReorderMap[i]];
             }
 
-            std::swap(chunkSizes, newChunkSizes);
+            std::swap(chunkInfos, newChunkInfos);
          }
 
          // ASSERT(!requireReordering);
@@ -284,7 +296,7 @@ namespace pbe {
       }
 
       // todo:
-      std::vector<vec3> chunkSizes;
+      std::vector<ChunkInfo> chunkInfos;
    private:
       std::vector<NvBlastChunkDesc> chunkDescs;
       std::vector<NvBlastBondDesc> bondDescs;
@@ -301,27 +313,39 @@ namespace pbe {
          fructureGenerator.MarkSupportChunkAtDepth(1);
       } else {
          // todo: not optimal
-         for (size_t depth = 0; depth < 4; depth++) {
+         for (size_t depth = 0; depth < 6; depth++) {
+            bool wasSliced = false;
+
             uint chunkCount = fructureGenerator.GetChunkCount();
             for (int iChunk = 0; iChunk < chunkCount; ++iChunk) {
                if (fructureGenerator.ChunkDepth(iChunk) == depth) {
-                  auto curChunkSize = fructureGenerator.ChunkSize(iChunk);
+                  auto curChunkSize = fructureGenerator.GetChunkInfo(iChunk).size;
 
                   auto axisIdx = VectorUtils::LargestAxisIdx(curChunkSize);
+
+                  if (curChunkSize[axisIdx] < 1.f) {
+                     continue;
+                  }
 
                   vec3 normalizedChunkSize = curChunkSize / curChunkSize[axisIdx];
 
                   uint3 slices = uint3(
-                     normalizedChunkSize.x > 0.5f ? 1 : 0,
-                     normalizedChunkSize.y > 0.5f ? 1 : 0,
-                     normalizedChunkSize.z > 0.5f ? 1 : 0
+                     normalizedChunkSize.x > 0.75f ? 1 : 0,
+                     normalizedChunkSize.y > 0.75f ? 1 : 0,
+                     normalizedChunkSize.z > 0.75f ? 1 : 0
                   );
                   fructureGenerator.Slice(iChunk, slices);
+
+                  wasSliced = true;
                }
+            }
+
+            if (!wasSliced) {
+               break;
             }
          }
 
-         fructureGenerator.MarkSupportChunkAtDepth(4);
+         fructureGenerator.MarkSupportChunkAtDepth(3);
       }
 
       fructureGenerator.BondGeneration();
@@ -334,7 +358,7 @@ namespace pbe {
       // todo:
       DestructData* destructData = new DestructData{};
       destructData->tkAsset = tkAsset;
-      destructData->chunkSizes = std::move(fructureGenerator.chunkSizes);
+      destructData->chunkInfos = std::move(fructureGenerator.chunkInfos);
       return destructData;
    }
 
@@ -531,6 +555,11 @@ namespace pbe {
    }
 
    void RigidBodyComponent::Remove() {
+      // todo: for already Disabled components dont call Remove funcs
+      if (!pxRigidActor) {
+         return;
+      }
+
       RemoveDestruct();
 
       RemoveSceneRigidActor(*GetPhysScene().pxScene, *pxRigidActor);

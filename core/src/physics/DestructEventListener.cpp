@@ -60,7 +60,7 @@ namespace pbe {
                         .parent = childEntity,
                         .namePrefix = "Chunk Shape",
                         .pos = offset,
-                        .scale = destructData->chunkSizes[chunkIndex],
+                        .scale = destructData->chunkInfos[chunkIndex].size,
                         .type = CubeDesc::PhysShape,
                      });
                   }
