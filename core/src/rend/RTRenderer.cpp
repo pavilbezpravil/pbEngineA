@@ -14,6 +14,7 @@
 #include "Texture2D.h"
 #include "core/CVar.h"
 #include "core/Profiler.h"
+#include "math/Common.h"
 #include "math/Random.h"
 
 #include "scene/Component.h"
@@ -41,21 +42,6 @@ namespace pbe {
    CVarTrigger cvClearHistory{ "render/denoise/clear history" };
 
    CVarValue<bool> cvFog{ "render/rt/fog enable", false };
-
-   // todo: move to common
-   static int IndexOfLargestValue(const vec3& vector) {
-      int index = 0;
-      float maxValue = vector[0];
-
-      for (int i = 1; i < 3; ++i) {
-         if (vector[i] > maxValue) {
-            index = i;
-            maxValue = vector[i];
-         }
-      }
-
-      return index;
-   }
 
    RTRenderer::~RTRenderer() {
       // todo: not here
@@ -135,9 +121,9 @@ namespace pbe {
          int mid = start + (count + 1) / 2;
 
          if (count > 2) {
-            int axis = IndexOfLargestValue(combinedAABB.Size());
+            auto axisIdx = VectorUtils::LargestAxisIdx(combinedAABB.Size());
             std::sort(nodes.begin() + start, nodes.begin() + end,
-               [axis](const Node& a, const Node& b) { return a.aabbMin[axis] < b.aabbMin[axis]; });
+               [axisIdx](const Node& a, const Node& b) { return a.aabbMin[axisIdx] < b.aabbMin[axisIdx]; });
          } else {
             mid = start + 1;
          }

@@ -16,6 +16,7 @@
 
 #include "PhysicsScene.h"
 #include "math/Color.h"
+#include "math/Common.h"
 #include "math/Shape.h"
 #include "rend/DbgRend.h"
 
@@ -145,6 +146,10 @@ namespace pbe {
 
             nSliced *= slices[iAxis] + 1;
          }
+      }
+
+      vec3 ChunkSize(uint chunkIdx) {
+         return chunkSizes[chunkIdx];
       }
 
       uint ChunkDepth(uint chunkIdx) {
@@ -290,19 +295,35 @@ namespace pbe {
 
       FructureGenerator fructureGenerator{ chunkSize };
 
-      // fructureGenerator.Slice(0, uint3{3, 2, 1});
-      // fructureGenerator.Slice(0, uint3{4, 3, 2});
+      if (0) {
+         uint3 slices = uint3(chunkSize / 1.0f);
+         fructureGenerator.Slice(0, slices);
+         fructureGenerator.MarkSupportChunkAtDepth(1);
+      } else {
+         // todo: not optimal
+         for (size_t depth = 0; depth < 4; depth++) {
+            uint chunkCount = fructureGenerator.GetChunkCount();
+            for (int iChunk = 0; iChunk < chunkCount; ++iChunk) {
+               if (fructureGenerator.ChunkDepth(iChunk) == depth) {
+                  auto curChunkSize = fructureGenerator.ChunkSize(iChunk);
 
-      uint3 slices = uint3(chunkSize / 1.0f);
-      fructureGenerator.Slice(0, slices);
+                  auto axisIdx = VectorUtils::LargestAxisIdx(curChunkSize);
 
-      // fructureGenerator.SliceAxis(0, 1, 3);
-      // fructureGenerator.SliceAxis(1, 0, 3, true);
-      // fructureGenerator.SliceAxis(2, 0, 3, true);
-      // fructureGenerator.SliceAxis(3, 0, 3, true);
-      // fructureGenerator.SliceAxis(4, 0, 3, true);
+                  vec3 normalizedChunkSize = curChunkSize / curChunkSize[axisIdx];
 
-      fructureGenerator.MarkSupportChunkAtDepth(1);
+                  uint3 slices = uint3(
+                     normalizedChunkSize.x > 0.5f ? 1 : 0,
+                     normalizedChunkSize.y > 0.5f ? 1 : 0,
+                     normalizedChunkSize.z > 0.5f ? 1 : 0
+                  );
+                  fructureGenerator.Slice(iChunk, slices);
+               }
+            }
+         }
+
+         fructureGenerator.MarkSupportChunkAtDepth(4);
+      }
+
       fructureGenerator.BondGeneration();
 
       TkAssetDesc assetDesc = fructureGenerator.GetTkAssetDesc();
