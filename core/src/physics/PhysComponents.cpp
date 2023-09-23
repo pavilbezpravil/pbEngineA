@@ -507,6 +507,9 @@ namespace pbe {
                   // health
                   uint32_t bondIndex = graph.adjacentBondIndices[adjacencyIndex];
                   float healthVal = PxClamp(bondHealths[bondIndex] / bondHealthMax, 0.0f, 1.0f);
+                  if (healthVal == 0.f) {
+                     continue;
+                  }
 
                   vec4 color4 = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);
                   // Color color = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);

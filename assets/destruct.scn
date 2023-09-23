@@ -28,7 +28,7 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630, 12559405180262518403, 13179862857265151497, 5713263649892606456, 6679029739715552203, 12552372105178138956, 14955456196593180312]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630, 12559405180262518403, 13179862857265151497, 5713263649892606456, 6679029739715552203, 12552372105178138956, 14955456196593180312, 18295377334111360543, 17440179670422797107]
   - uuid: 5358771780476770984
     tag: Cube with child
     SceneTransformComponent:
@@ -331,7 +331,7 @@ entities:
   - uuid: 14955456196593180312
     tag: Wall 1
     SceneTransformComponent:
-      position: [-21.9346561, 3, -6.1709156]
+      position: [-21, 3, -6]
       rotation: [0, -0, 0]
       scale: [10, 6, 0.5]
       parent: 3459374828559402514
@@ -369,6 +369,29 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyShapeComponent:
       {}
+  - uuid: 17440179670422797107
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [-16.5229168, 3, -5.25242662]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17772976089333309317
     tag: Direct Light
     SceneTransformComponent:
@@ -379,3 +402,26 @@ entities:
     DirectLightComponent:
       color: [1, 1, 1]
       intensity: 1
+  - uuid: 18295377334111360543
+    tag: Cube
+    SceneTransformComponent:
+      position: [-25.5304089, 3, -5.1624465]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
