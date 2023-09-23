@@ -5,7 +5,7 @@ namespace pbe {
 
    Transform Transform::operator*(const Transform& other) const {
       Transform result;
-      result.position = TransformPosition(other.position);
+      result.position = TransformPoint(other.position);
       result.rotation = TransformRotation(other.rotation);
       result.scale = TransformScale(other.scale);
       return result;
@@ -13,13 +13,13 @@ namespace pbe {
 
    Transform Transform::TransformInv(const Transform& other) const {
       Transform result;
-      result.position = TransformInvPosition(other.position);
+      result.position = TransformInvPoint(other.position);
       result.rotation = TransformInvRotation(other.rotation);
       result.scale = TransformInvScale(other.scale);
       return result;
    }
 
-   vec3 Transform::TransformPosition(const vec3& point) const {
+   vec3 Transform::TransformPoint(const vec3& point) const {
       return position + rotation * (scale * point);
    }
 
@@ -31,7 +31,7 @@ namespace pbe {
       return scale * s;
    }
 
-   vec3 Transform::TransformInvPosition(const vec3& point) const {
+   vec3 Transform::TransformInvPoint(const vec3& point) const {
       return glm::inverse(rotation) * (point - position) / scale;
    }
 
@@ -43,20 +43,20 @@ namespace pbe {
       return s / scale;
    }
 
-   vec3 Transform::TransformDirection(const vec3& dir) const {
+   vec3 Transform::Rotate(const vec3& dir) const {
       return rotation * dir;
    }
 
    vec3 Transform::Right() const {
-      return TransformDirection(vec3_Right);
+      return Rotate(vec3_Right);
    }
 
    vec3 Transform::Up() const {
-      return TransformDirection(vec3_Up);
+      return Rotate(vec3_Up);
    }
 
    vec3 Transform::Forward() const {
-      return TransformDirection(vec3_Forward);
+      return Rotate(vec3_Forward);
    }
 
    mat4 Transform::GetMatrix() const {

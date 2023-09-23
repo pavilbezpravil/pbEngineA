@@ -61,15 +61,15 @@ namespace pbe {
 
       std::vector<Node> buildedNodes;
 
-      int Nodes() const {
-         return (int)buildedNodes.size();
+      uint Nodes() const {
+         return (uint)buildedNodes.size();
       }
 
       void Build(const std::vector<AABB>& aabbs) {
          nodes.clear();
          buildedNodes.clear();
 
-         int size = (int)aabbs.size();
+         uint size = (uint)aabbs.size();
          if (size == 0) {
             return;
          }
@@ -77,7 +77,7 @@ namespace pbe {
          // todo: do it thought generator
          nodes.resize(size);
 
-         for (int i = 0; i < size; ++i) {
+         for (uint i = 0; i < size; ++i) {
             nodes[i] = Node {
                .aabbMin = aabbs[i].min,
                .objIdx = (uint)i,
@@ -90,14 +90,14 @@ namespace pbe {
          BuildRecursive(0, 0, size);
       }
 
-      void Render(DbgRend& dbgRend, int idx = 0, int level = 0) {
+      void Render(DbgRend& dbgRend, uint idx = 0, uint level = 0) {
          if (idx >= buildedNodes.size()) {
             return;
          }
 
          auto& node = buildedNodes[idx];
 
-         dbgRend.DrawAABB(AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
+         dbgRend.DrawAABB(nullptr, AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
 
          if (node.objIdx == UINT_MAX) {
             Render(dbgRend, LeftIdx(idx), level + 1);
@@ -145,15 +145,15 @@ namespace pbe {
          }
       }
 
-      int ParentIdx(int idx) const {
+      int ParentIdx(uint idx) const {
          return idx == 0 ? 0 : (idx - 1) / 2;
       }
 
-      int LeftIdx(int idx) const {
+      int LeftIdx(uint idx) const {
          return idx * 2 + 1;
       }
 
-      int RightIdx(int idx) const {
+      int RightIdx(uint idx) const {
          return idx * 2 + 2;
       }
    };
@@ -233,7 +233,7 @@ namespace pbe {
       }
 
       // todo: make it dynamic
-      int bvhNodes = bvh.Nodes();
+      uint bvhNodes = bvh.Nodes();
       if (!bvhNodesBuffer || bvhNodesBuffer->ElementsCount() < bvhNodes) {
          auto bufferDesc = Buffer::Desc::Structured("BVHNodes", bvhNodes, sizeof(BVHNode));
          bvhNodesBuffer = Buffer::Create(bufferDesc);

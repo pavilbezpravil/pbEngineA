@@ -6,6 +6,7 @@
 #include "math/Color.h"
 
 namespace pbe {
+   struct Transform;
    class Entity;
 
    struct AABB;
@@ -26,8 +27,11 @@ namespace pbe {
 
       void DrawLine(const vec3& start, const vec3& end, const Color& color = Color_White, bool zTest = true);
       void DrawSphere(const Sphere& sphere, const Color& color = Color_White, bool zTest = true);
-      void DrawAABB(const AABB& aabb, const Color& color = Color_White, bool zTest = true);
+
+      // trans - optional
+      void DrawAABB(const Transform* trans, const AABB& aabb, const Color& color = Color_White, bool zTest = true);
       void DrawAABBOrderPoints(const vec3 points[8], const Color& color = Color_White, bool zTest = true);
+
       void DrawViewProjection(const mat4& invViewProjection, const Color& color = Color_White, bool zTest = true);
       void DrawFrustum(const Frustum& frustum, const vec3& pos, const vec3& forward, const Color& color = Color_White, bool zTest = true);
 

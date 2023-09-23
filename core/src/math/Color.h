@@ -14,6 +14,7 @@ namespace pbe {
 
       constexpr vec3 Rgb() const { return {r, g, b}; }
       constexpr operator vec3() const { return Rgb(); }
+      constexpr operator vec4() const { return { r, g, b, a }; }
    };
 
    constexpr Color Color_Black = Color(0, 0, 0);

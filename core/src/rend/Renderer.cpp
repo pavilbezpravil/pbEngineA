@@ -870,7 +870,7 @@ namespace pbe {
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
             // todo: OBB
             // todo: box, sphere, capsule
-            dbgRend.DrawAABB({ trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f });
+            dbgRend.DrawAABB(nullptr, { trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f });
          }
 
          for (auto [_, joint] : scene.View<JointComponent>().each()) {

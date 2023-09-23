@@ -345,7 +345,7 @@ namespace pbe {
             }
          }
 
-         fructureGenerator.MarkSupportChunkAtDepth(3);
+         fructureGenerator.MarkSupportChunkAtDepth(6);
       }
 
       fructureGenerator.BondGeneration();
@@ -415,7 +415,10 @@ namespace pbe {
          return;
       }
 
-      auto trans = GetEntity().GetTransform();
+      auto transWorld = GetEntity().GetTransform().World();
+
+      // todo: first destruct actor has size != 1, next has size == 1
+      transWorld.scale = vec3{ 1.f };
 
       auto tkAsset = tkActor->getAsset();
       auto tkChunks = tkAsset->getChunks();
@@ -432,10 +435,13 @@ namespace pbe {
             NvBlastChunk chunk = tkChunks[chunkIndex];
 
             vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
-            vec3 chunkCentroidW = trans.World().TransformPosition(chunkCentroidL);
+            vec3 chunkCentroidW = transWorld.TransformPoint(chunkCentroidL);
             // destructData->chunkSizes[chunkIndex]
 
             dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
+
+            AABB chunkAABB = AABB::Extends(chunkCentroidL, destructData->chunkInfos[chunkIndex].size / 2.f);
+            dbgRend.DrawAABB(&transWorld, chunkAABB, Color_White, false);
          }
       }
 
@@ -444,7 +450,7 @@ namespace pbe {
             NvBlastChunk chunk = tkChunks[iChunk];
 
             vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
-            vec3 chunkCentroidW = trans.World().TransformPosition(chunkCentroidL);
+            vec3 chunkCentroidW = transWorld.TransformPoint(chunkCentroidL);
 
             dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
          }
@@ -454,6 +460,86 @@ namespace pbe {
       //    tkActor->getBondHealths();
       //    tkActor->getAsset()->getBonds()[i].;
       // }
+
+      {
+         auto m_tkFamily = &tkActor->getFamily();
+
+         const NvBlastChunk* chunks = m_tkFamily->getAsset()->getChunks();
+         const NvBlastBond* bonds = m_tkFamily->getAsset()->getBonds();
+         const NvBlastSupportGraph graph = m_tkFamily->getAsset()->getGraph();
+         // const float bondHealthMax = m_blastAsset.getBondHealthMax();
+         const float bondHealthMax = 1.f;
+         const uint32_t chunkCount = m_tkFamily->getAsset()->getChunkCount();
+
+         TkActor& actor = *tkActor;
+         // uint32_t lineStartIndex = (uint32_t)debugRenderBuffer.m_lines.size();
+
+         uint32_t nodeCount = actor.getGraphNodeCount();
+         if (nodeCount == 0) // subsupport chunks don't have graph nodes
+            return;;
+
+         std::vector<uint32_t> nodes(nodeCount);
+         actor.getGraphNodeIndices(nodes.data(), static_cast<uint32_t>(nodes.size()));
+
+         // if (DEBUG_RENDER_HEALTH_GRAPH <= mode && mode <= DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS)
+         if (true) {
+            const float* bondHealths = actor.getBondHealths();
+
+            // const ExtPxChunk* pxChunks = m_blastAsset.getPxAsset()->getChunks();
+
+            for (uint32_t node0 : nodes) {
+               const uint32_t chunkIndex0 = graph.chunkIndices[node0];
+               const NvBlastChunk& blastChunk0 = chunks[chunkIndex0];
+               // const ExtPxChunk& assetChunk0 = pxChunks[chunkIndex0];
+
+               for (uint32_t adjacencyIndex = graph.adjacencyPartition[node0]; adjacencyIndex < graph.adjacencyPartition[node0 + 1]; adjacencyIndex++)
+               {
+                  uint32_t node1 = graph.adjacentNodeIndices[adjacencyIndex];
+                  const uint32_t chunkIndex1 = graph.chunkIndices[node1];
+                  const NvBlastChunk& blastChunk1 = chunks[chunkIndex1];
+                  // const ExtPxChunk& assetChunk1 = pxChunks[chunkIndex1];
+                  if (node0 > node1)
+                     continue;
+
+                  bool invisibleBond = chunkIndex0 >= chunkCount || chunkIndex1 >= chunkCount;// || assetChunk0.subchunkCount == 0 || assetChunk1.subchunkCount == 0;
+                  // bool invisibleBond = chunkIndex0 >= chunkCount || chunkIndex1 >= chunkCount || assetChunk0.subchunkCount == 0 || assetChunk1.subchunkCount == 0;
+
+                  // health
+                  uint32_t bondIndex = graph.adjacentBondIndices[adjacencyIndex];
+                  float healthVal = PxClamp(bondHealths[bondIndex] / bondHealthMax, 0.0f, 1.0f);
+
+                  vec4 color4 = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);
+                  // Color color = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);
+                  Color color{ color4 };
+
+                  const NvBlastBond& solverBond = bonds[bondIndex];
+                  const PxVec3& centroid = reinterpret_cast<const PxVec3&>(solverBond.centroid);
+
+                  // centroid
+                  // if (mode == DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS || mode == DEBUG_RENDER_CENTROIDS)
+                  if (false)
+                  {
+                     const PxVec3& normal = reinterpret_cast<const PxVec3&>(solverBond.normal);
+                     // pushCentroid(debugRenderBuffer.m_lines, centroid, XMFLOAT4ToU32Color(invisibleBond ? BOND_INVISIBLE_COLOR : color), solverBond.area, normal.getNormalized());
+                     dbgRend.DrawSphere(Sphere{ vec3{centroid.x, centroid.y, centroid.z}, 0.1f}, Color_Red, false);
+                  }
+
+                  // chunk connection (bond)
+                  // if ((mode == DEBUG_RENDER_HEALTH_GRAPH || mode == DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS) && !invisibleBond)
+                  if (!invisibleBond)
+                  {
+                     auto& c0L = reinterpret_cast<const vec3&>(blastChunk0.centroid);
+                     auto& c1L = reinterpret_cast<const vec3&>(blastChunk1.centroid);
+
+                     vec3 c0 = transWorld.TransformPoint(c0L);
+                     vec3 c1 = transWorld.TransformPoint(c1L);
+
+                     dbgRend.DrawLine(c0, c1, color, false);
+                  }
+               }
+            }
+         }
+      }
    }
 
    static void RemoveSceneRigidActor(PxScene& pxScene, PxRigidActor& pxRigidActor) {

@@ -13,15 +13,15 @@ namespace pbe {
       Transform operator*(const Transform& other) const;
       Transform TransformInv(const Transform& other) const;
 
-      vec3 TransformPosition(const vec3& point) const;
+      vec3 TransformPoint(const vec3& point) const;
       quat TransformRotation(const quat& rot) const;
       vec3 TransformScale(const vec3& s) const;
 
-      vec3 TransformInvPosition(const vec3& point) const;
+      vec3 TransformInvPoint(const vec3& point) const;
       quat TransformInvRotation(const quat& rot) const;
       vec3 TransformInvScale(const vec3& s) const;
 
-      vec3 TransformDirection(const vec3& dir) const;
+      vec3 Rotate(const vec3& dir) const;
 
       vec3 Right() const;
       vec3 Up() const;

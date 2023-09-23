@@ -82,7 +82,7 @@ namespace pbe {
       draw(9, 8, 1);
    }
 
-   void DbgRend::DrawAABB(const AABB& aabb, const Color& color, bool zTest) {
+   void DbgRend::DrawAABB(const Transform* trans, const AABB& aabb, const Color& color, bool zTest) {
       vec3 a = aabb.min;
       vec3 b = aabb.max;
 
@@ -104,6 +104,12 @@ namespace pbe {
       points[5].y = b.y;
       points[6].y = b.y;
       points[7].y = b.y;
+
+      if (trans) {
+         for (int i = 0; i < 8; ++i) {
+            points[i] = trans->TransformPoint(points[i]);
+         }
+      }
 
       DrawAABBOrderPoints(points, color, zTest);
    }
