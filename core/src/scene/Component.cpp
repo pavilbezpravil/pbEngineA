@@ -8,6 +8,7 @@
 
 #include "imgui_internal.h"
 #include "gui/Gui.h"
+#include "math/Random.h"
 #include "typer/Registration.h"
 #include "typer/Serialize.h"
 #include "physics/PhysXTypeConvet.h"
@@ -428,6 +429,10 @@ namespace pbe {
       editted |= Vec3UI("Scale", local.scale, 1, 70);
 
       return editted;
+   }
+
+   void TimedDieComponent::SetRandomDieTime(float min, float max) {
+      time = Random::Float(min, max);
    }
 
    void RegisterBasicComponents(Typer& typer) {

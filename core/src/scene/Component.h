@@ -164,6 +164,13 @@ namespace pbe {
       vec3 color = vec3(209, 188, 50) / 256.f;
    };
 
+   // todo:
+   struct CORE_API TimedDieComponent {
+      float time = 0.f;
+
+      void SetRandomDieTime(float min, float max);
+   };
+
    void RegisterBasicComponents(class Typer& typer);
 
 }

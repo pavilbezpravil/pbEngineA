@@ -10,12 +10,15 @@
 #include <NvBlastTk.h>
 #include <NvBlastExtDamageShaders.h>
 
+#include "core/CVar.h"
 #include "scene/Utils.h"
 
 
 using namespace Nv::Blast;
 
 namespace pbe {
+
+   static CVarValue<bool> cvAddTimedDieForLeaf{ "phys/add timed die for leaf", true };
 
    void DestructEventListener::receive(const TkEvent* events, uint32_t eventCount) {
       for (uint32_t i = 0; i < eventCount; ++i) {
@@ -50,19 +53,32 @@ namespace pbe {
 
                   Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
+                  bool childIsLeaf = visibleChunkCount == 1;
+
                   for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
                      auto chunkIndex =  visibleChunkIndices[iChunk];
                      NvBlastChunk chunk = tkChild->getAsset()->getChunks()[chunkIndex];
 
                      vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
 
+                     auto& chunkInfo = destructData->chunkInfos[chunkIndex];
+
+                     if (visibleChunkCount == 1) {
+                        childIsLeaf = chunkInfo.isLeaf;
+                     }
+
                      Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
                         .parent = childEntity,
                         .namePrefix = "Chunk Shape",
                         .pos = offset,
-                        .scale = destructData->chunkInfos[chunkIndex].size,
+                        .scale = chunkInfo.size,
                         .type = CubeDesc::PhysShape,
                      });
+                  }
+
+                  // todo: mb do it not here, send event for example
+                  if (cvAddTimedDieForLeaf && childIsLeaf) {
+                     childEntity.Add<TimedDieComponent>().SetRandomDieTime(3, 7);
                   }
 
                   childEntity.GetTransform().SetPosition(parentTrans.Position());

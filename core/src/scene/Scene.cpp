@@ -241,6 +241,14 @@ namespace pbe {
    }
 
    void Scene::OnUpdate(float dt) {
+      for (auto [entityID, td] : View<TimedDieComponent>().each()) {
+         td.time -= dt;
+         if (td.time < 0.f) {
+            DestroyDelayed(Entity{ entityID, this });
+         }
+      }
+      OnSync();
+
       for (auto& system : systems) {
          system->OnUpdate(dt);
       }

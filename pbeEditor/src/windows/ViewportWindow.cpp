@@ -564,6 +564,8 @@ namespace pbe {
 
          auto& rb = shoot.Get<RigidBodyComponent>();
          rb.SetLinearVelocity(camera.Forward() * 25.f);
+
+         shoot.Add<TimedDieComponent>().SetRandomDieTime(5, 10);
       }
    }
 

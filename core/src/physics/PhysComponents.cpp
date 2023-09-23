@@ -318,7 +318,7 @@ namespace pbe {
             bool wasSliced = false;
 
             uint chunkCount = fructureGenerator.GetChunkCount();
-            for (int iChunk = 0; iChunk < chunkCount; ++iChunk) {
+            for (uint iChunk = 0; iChunk < chunkCount; ++iChunk) {
                if (fructureGenerator.ChunkDepth(iChunk) == depth) {
                   auto curChunkSize = fructureGenerator.GetChunkInfo(iChunk).size;
 
