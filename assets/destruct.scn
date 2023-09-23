@@ -1,6 +1,7 @@
 entities:
   - uuid: 3025266316102579978
     tag: oporya 0
+    disabled: true
     SceneTransformComponent:
       position: [-3, 1, 0]
       rotation: [0, -0, 0]
@@ -32,6 +33,7 @@ entities:
       children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630, 12559405180262518403, 13179862857265151497, 5713263649892606456, 6679029739715552203, 12552372105178138956, 12712225918358193427, 6560978832315652530, 13452541091867441318, 8216114767425547920]
   - uuid: 4027702121571600733
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [4.45007515, 1.15543461, 1.70463753]
       rotation: [0, -0, 0]
@@ -73,7 +75,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 75
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -88,6 +90,7 @@ entities:
       children: [4073246892471376794, 12565800549790969604, 13374436542035624158]
   - uuid: 4749616449069671109
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.55741692, 1.15543461, 1.72325563]
       rotation: [0, -0, 0]
@@ -120,6 +123,7 @@ entities:
       children: [16353594630970111719, 11226625768498652818, 7336205652019269908]
   - uuid: 5358771780476770984
     tag: Cube with child
+    disabled: true
     SceneTransformComponent:
       position: [-19.313961, 1.56058121, 8.10294628]
       rotation: [0, -0, 0]
@@ -145,6 +149,7 @@ entities:
       {}
   - uuid: 5383591570267271630
     tag: Balka 2 opori
+    disabled: true
     SceneTransformComponent:
       position: [0, 0, 11.6727247]
       rotation: [0, -0, 0]
@@ -177,6 +182,7 @@ entities:
       {}
   - uuid: 5713263649892606456
     tag: Cube Y
+    disabled: true
     SceneTransformComponent:
       position: [-13.1953297, 0.5, 1.61487651]
       rotation: [0, -0, 90]
@@ -201,6 +207,7 @@ entities:
       {}
   - uuid: 6560978832315652530
     tag: Wall 2 Static Hardnes 25
+    disabled: true
     SceneTransformComponent:
       position: [-20.9729919, 1.84456539, -24.1435623]
       rotation: [0, -0, 0]
@@ -209,6 +216,7 @@ entities:
       children: [9945632018857420978, 4749616449069671109, 16224807005050461541]
   - uuid: 6679029739715552203
     tag: Cube Z
+    disabled: true
     SceneTransformComponent:
       position: [-13.1953297, 0.5, -0.346015692]
       rotation: [0, 89.980217, 0]
@@ -233,6 +241,7 @@ entities:
       {}
   - uuid: 6776904941556836237
     tag: Balka
+    disabled: true
     SceneTransformComponent:
       position: [0, 7.75184727, 0]
       rotation: [0, -0, 18.7614422]
@@ -274,7 +283,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 150
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -289,6 +298,7 @@ entities:
       children: [5011985211048166575, 4655226864281613741, 15486082755356332997]
   - uuid: 8890436197300190957
     tag: Balka
+    disabled: true
     SceneTransformComponent:
       position: [0, 2.5, 0]
       rotation: [0, -0, 0]
@@ -313,6 +323,7 @@ entities:
       {}
   - uuid: 9889813764843162685
     tag: oporay 1
+    disabled: true
     SceneTransformComponent:
       position: [3, 1, 0]
       rotation: [0, -0, 0]
@@ -337,6 +348,7 @@ entities:
       {}
   - uuid: 9945632018857420978
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [4.45007515, 1.15543461, 1.70463753]
       rotation: [0, -0, 0]
@@ -361,6 +373,7 @@ entities:
       {}
   - uuid: 10687103412115808607
     tag: oporya 0
+    disabled: true
     SceneTransformComponent:
       position: [-3, 1, 0]
       rotation: [0, -0, 0]
@@ -385,6 +398,7 @@ entities:
       {}
   - uuid: 11175628135722301133
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.55741692, 1.15543461, 1.72325563]
       rotation: [0, -0, 0]
@@ -412,7 +426,7 @@ entities:
     SceneTransformComponent:
       position: [-0.175170898, 1.5, -2.42259216]
       rotation: [0, -0, 0]
-      scale: [0.367258698, 3, 7.90462112]
+      scale: [0.525336385, 3, 7.90462112]
       parent: 5011985211048166575
     MaterialComponent:
       baseColor: [0.324894488, 0.123377658, 0.123377658]
@@ -426,7 +440,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 150
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -457,6 +471,7 @@ entities:
       {}
   - uuid: 12552372105178138956
     tag: Wall
+    disabled: true
     SceneTransformComponent:
       position: [-21.9346561, 2, 1.66017652]
       rotation: [0, -0, 0]
@@ -481,6 +496,7 @@ entities:
       {}
   - uuid: 12559405180262518403
     tag: Balka 2 opori Falling
+    disabled: true
     SceneTransformComponent:
       position: [0, 0, 17.3341179]
       rotation: [0, -0, 0]
@@ -506,7 +522,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 75
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -521,6 +537,7 @@ entities:
       children: [17440179670422797107, 18295377334111360543, 14955456196593180312]
   - uuid: 13179862857265151497
     tag: Cube X
+    disabled: true
     SceneTransformComponent:
       position: [-13.1953297, 0.5, 3.47000599]
       rotation: [0, -0, 0]
@@ -562,13 +579,14 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 75
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 13452541091867441318
     tag: Wall 2 Static Hardnes 1
+    disabled: true
     SceneTransformComponent:
       position: [-20.9729919, 1.84456539, -36.8354111]
       rotation: [0, -0, 0]
@@ -612,6 +630,7 @@ entities:
       {}
   - uuid: 14239996626430112721
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [0.837581635, -1.01852036, -0.655508041]
       rotation: [0, -0, 0]
@@ -654,6 +673,7 @@ entities:
       {}
   - uuid: 14693310325806337783
     tag: oporay 1
+    disabled: true
     SceneTransformComponent:
       position: [3, 1, 0]
       rotation: [0, -0, 0]
@@ -702,6 +722,7 @@ entities:
       {}
   - uuid: 15082745440369671396
     tag: Wall 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.0270080566, 6.33566761, 0.885704041]
       rotation: [0, -0, 0]
@@ -726,6 +747,7 @@ entities:
       {}
   - uuid: 15343045157092208276
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.91019249, -0.982114315, -0.62148571]
       rotation: [0, -0, 0]
@@ -752,6 +774,7 @@ entities:
       children: [14459406078544728463, 14133987478880718380, 5676435894675039375]
   - uuid: 16224807005050461541
     tag: Wall 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.0270080566, 1.15406585, 0.885702133]
       rotation: [0, -0, 0]
@@ -779,7 +802,7 @@ entities:
     SceneTransformComponent:
       position: [-4.01096201, 1.5, -2.42259216]
       rotation: [0, -0, 0]
-      scale: [0.367258698, 3, 7.90462112]
+      scale: [0.506328523, 3, 7.90462112]
       parent: 5011985211048166575
     MaterialComponent:
       baseColor: [0.362869203, 0.168420315, 0.168420315]
@@ -793,7 +816,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 150
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:

@@ -19,7 +19,7 @@ using namespace Nv::Blast;
 namespace pbe {
 
    static CVarValue<bool> cvAddTimedDieForLeaf{ "phys/add timed die for leaf", true };
-   // static CVarValue<bool> cvInstantDestroyLeafs{ "phys/instant destroy leafs", false };
+   static CVarValue<bool> cvInstantDestroyLeafs{ "phys/instant destroy leafs", true };
 
    void DestructEventListener::receive(const TkEvent* events, uint32_t eventCount) {
       for (uint32_t i = 0; i < eventCount; ++i) {
@@ -62,6 +62,7 @@ namespace pbe {
                   Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
                   bool childIsLeaf = visibleChunkCount == 1;
+                  bool childIsLeafSupport = visibleChunkCount == 1;
 
                   for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
                      auto chunkIndex =  visibleChunkIndices[iChunk];
@@ -73,6 +74,7 @@ namespace pbe {
 
                      if (visibleChunkCount == 1) {
                         childIsLeaf = chunkInfo.isLeaf;
+                        childIsLeafSupport = chunkInfo.isSupport;
                      }
 
                      Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
@@ -90,8 +92,12 @@ namespace pbe {
                   }
 
                   // todo: mb do it not here, send event for example
-                  if (cvAddTimedDieForLeaf && childIsLeaf) {
+                  if (cvAddTimedDieForLeaf && (childIsLeaf || childIsLeafSupport)) {
                      childEntity.Add<TimedDieComponent>().SetRandomDieTime(2.f, 5.f);
+                  }
+
+                  if (cvInstantDestroyLeafs && childIsLeaf) {
+                     childEntity.DestroyDelayed(); // todo: dont create
                   }
 
                   childEntity.GetTransform().SetPosition(parentTrans.Position());

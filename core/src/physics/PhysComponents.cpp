@@ -181,6 +181,7 @@ namespace pbe {
             auto chunkDepth = ChunkDepth(chunkIdx);
             if (chunkDepth == depth || (chunkDepth < depth && GetChunkInfo(chunkIdx).isLeaf)) {
                chunkDescs[chunkIdx].flags = NvBlastChunkDesc::SupportFlag;
+               chunkInfos[chunkIdx].isSupport = true;
             }
          }
       }
@@ -347,6 +348,33 @@ namespace pbe {
          }
 
          fructureGenerator.MarkSupportChunkAtDepth(6);
+
+         // subsupport chunks
+         {
+            uint chunkCount = fructureGenerator.GetChunkCount();
+            for (uint iChunk = 0; iChunk < chunkCount; ++iChunk) {
+               auto& chunkInfo = fructureGenerator.GetChunkInfo(iChunk);
+               if (!chunkInfo.isLeaf) {
+                  continue;
+               }
+
+               auto curChunkSize = chunkInfo.size;
+               auto axisIdx = VectorUtils::LargestAxisIdx(curChunkSize);
+
+               if (curChunkSize[axisIdx] < 0.3f) {
+                  continue;
+               }
+
+               vec3 normalizedChunkSize = curChunkSize / curChunkSize[axisIdx];
+
+               uint3 slices = uint3(
+                  normalizedChunkSize.x > 0.75f ? 1 : 0,
+                  normalizedChunkSize.y > 0.75f ? 1 : 0,
+                  normalizedChunkSize.z > 0.75f ? 1 : 0
+               );
+               fructureGenerator.Slice(iChunk, slices);
+            }
+         }
       }
 
       fructureGenerator.BondGeneration();
@@ -360,6 +388,7 @@ namespace pbe {
       DestructData* destructData = new DestructData{};
       destructData->tkAsset = tkAsset;
       destructData->chunkInfos = std::move(fructureGenerator.chunkInfos);
+      destructData->damageAccelerator = NvBlastExtDamageAcceleratorCreate(destructData->tkAsset->getAssetLL(), 3);
       return destructData;
    }
 
@@ -372,7 +401,7 @@ namespace pbe {
 
       NvBlastExtMaterial material;
       material.health = hardness;
-      material.minDamageThreshold = 0.2f;
+      material.minDamageThreshold = 0.15f;
       material.maxDamageThreshold = 1.0f;
 
       float normalizedDamage = material.getNormalizedDamage(damage);
@@ -388,7 +417,7 @@ namespace pbe {
       auto& params = GetPhysScene().GetDamageParamsPlace<NvBlastExtProgramParams>();
 
       damageDesc = { normalizedDamage, {posL.x, posL.y, posL.z}, 1.0f, 2.f };
-      params = { &damageDesc, nullptr, /*NvBlastExtDamageAccelerator*/ nullptr }; // todo: accelerator
+      params = { &damageDesc, nullptr, destructData->damageAccelerator };
 
       tkActor->damage(damageProgram, &params);
    }

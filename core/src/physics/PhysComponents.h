@@ -4,6 +4,8 @@
 #include "scene/Entity.h"
 
 
+class NvBlastExtDamageAccelerator;
+
 namespace Nv {
    namespace Blast {
       class TkActor;
@@ -21,12 +23,14 @@ namespace pbe {
    struct ChunkInfo {
       vec3 size;
       // uint depth; // todo:
+      bool isSupport = false;
       bool isLeaf;
    };
 
    // todo: name
    struct DestructData {
       Nv::Blast::TkAsset* tkAsset = nullptr;
+      NvBlastExtDamageAccelerator* damageAccelerator = nullptr;
       std::vector<ChunkInfo> chunkInfos;
    };
 

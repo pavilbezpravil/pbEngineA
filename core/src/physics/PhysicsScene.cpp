@@ -43,7 +43,7 @@ namespace pbe {
       destructEventListener = std::make_unique<DestructEventListener>(*this);
 
       // todo:
-      damageParamsBuffer.reserve(1024 * 32);
+      damageParamsBuffer.reserve(1024 * 64);
    }
 
    PhysicsScene::~PhysicsScene() {
