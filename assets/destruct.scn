@@ -7,7 +7,7 @@ entities:
       scale: [1, 2, 1]
       parent: 5383591570267271630
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.594936728, 0.271110415, 0.271110415]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -38,7 +38,7 @@ entities:
       parent: 3459374828559402514
       children: [14239996626430112721, 15343045157092208276]
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.253999472, 0.224590093, 0.61181438]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -69,7 +69,7 @@ entities:
       scale: [1, 6.60310221, 1]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0, 1, 0]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -92,7 +92,7 @@ entities:
       scale: [1, 1, 6.62342501]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0, 0, 1]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -115,7 +115,7 @@ entities:
       scale: [9.671772, 1, 1]
       parent: 12559405180262518403
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.146878168, 0.258133799, 0.696202517]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -138,7 +138,7 @@ entities:
       scale: [9.671772, 1, 1]
       parent: 5383591570267271630
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.704641342, 0.669828892, 0.154604852]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -161,7 +161,7 @@ entities:
       scale: [1, 2, 1]
       parent: 5383591570267271630
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.540084362, 0.227883697, 0.227883697]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -184,7 +184,7 @@ entities:
       scale: [1, 2, 1]
       parent: 12559405180262518403
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.658227861, 0.22218661, 0.564396143]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -230,7 +230,7 @@ entities:
       scale: [6, 4, 0.5]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.207213938, 0.446081698, 0.47679323]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -261,7 +261,7 @@ entities:
       scale: [6.41370583, 1, 1]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [1, 0, 0]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -290,12 +290,12 @@ entities:
   - uuid: 14239996626430112721
     tag: Cube 1
     SceneTransformComponent:
-      position: [0.837582469, -1.01852036, -0.655508041]
+      position: [0.837581635, -1.01852036, -0.655508041]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 5358771780476770984
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.128955364, 0.789029539, 0.0332923681]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -313,7 +313,7 @@ entities:
       scale: [1, 2, 1]
       parent: 12559405180262518403
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.495380014, 0.738396645, 0.612274051]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -336,7 +336,7 @@ entities:
       scale: [10, 6, 0.5]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.654008448, 0.195926592, 0.195926592]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -354,12 +354,12 @@ entities:
   - uuid: 15343045157092208276
     tag: Cube 1
     SceneTransformComponent:
-      position: [-0.910193026, -0.982114315, -0.62148571]
+      position: [-0.91019249, -0.982114315, -0.62148571]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 5358771780476770984
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.822784781, 0.215243265, 0.215243265]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -377,7 +377,7 @@ entities:
       scale: [1, 6, 1]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.2236287, 0.183054715, 0.183054715]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -410,7 +410,7 @@ entities:
       scale: [1, 6, 1]
       parent: 3459374828559402514
     MaterialComponent:
-      baseColor: [0.699999988, 0.699999988, 0.699999988]
+      baseColor: [0.210970461, 0.172693118, 0.172693118]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0

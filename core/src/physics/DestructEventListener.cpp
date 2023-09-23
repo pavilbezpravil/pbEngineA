@@ -19,6 +19,7 @@ using namespace Nv::Blast;
 namespace pbe {
 
    static CVarValue<bool> cvAddTimedDieForLeaf{ "phys/add timed die for leaf", true };
+   // static CVarValue<bool> cvInstantDestroyLeafs{ "phys/instant destroy leafs", false };
 
    void DestructEventListener::receive(const TkEvent* events, uint32_t eventCount) {
       for (uint32_t i = 0; i < eventCount; ++i) {
@@ -39,6 +40,13 @@ namespace pbe {
                parentRb.tkActor = nullptr; // parent was broken and now don't own tkActor
                auto destructData = parentRb.destructData;
                parentRb.destructData = nullptr;
+
+               auto* pParentMaterial = parentEntity.TryGet<MaterialComponent>();
+               if (!pParentMaterial) {
+                  // support all child has the same material
+                  pParentMaterial = parentTrans.children[0].TryGet<MaterialComponent>();
+                  ASSERT(pParentMaterial);
+               }
 
                auto pScene = parentEntity.GetScene();
 
@@ -74,6 +82,10 @@ namespace pbe {
                         .scale = chunkInfo.size,
                         .type = CubeDesc::PhysShape,
                      });
+
+                     if (pParentMaterial) {
+                        visibleChunkEntity.Get<MaterialComponent>() = *pParentMaterial;
+                     }
                   }
 
                   // todo: mb do it not here, send event for example
@@ -97,6 +109,7 @@ namespace pbe {
 
                   auto parentDynamic = parentRb.pxRigidActor->is<PxRigidDynamic>();
 
+                  // todo: dont work with static parent
                   auto m_parentCOM = parentDynamic->getGlobalPose().transform(parentDynamic->getCMassLocalPose().p);
                   auto m_parentLinearVelocity = parentDynamic->getLinearVelocity();
                   auto m_parentAngularVelocity = parentDynamic->getAngularVelocity();
