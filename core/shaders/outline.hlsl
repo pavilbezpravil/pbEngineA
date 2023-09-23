@@ -33,10 +33,9 @@ void OutlineApplyCS( uint2 pixelPos : SV_DispatchThreadID ) {
    // todo: check border
 
    float3 color = gSceneOut[pixelPos].xyz;
-   bool isOutline = all(saturate(1 - gOutlineBlur[pixelPos] * 1000) < 0.5f);
-   isOutline = isOutline & all(saturate(1 - gOutline[pixelPos] * 1000) > 0.5f);
-   // isOutline &= (saturate(1 - gOutlineBlur[pixelPos] * 1000) < 0.5f);
-   float3 outline = gOutlineBlur[pixelPos] * isOutline;
+   float3 outline = gOutlineBlur[pixelPos];
 
-   gSceneOut[pixelPos] = float4(lerp(color, outline, isOutline), 1);
+   bool isBorder = any(gOutlineBlur[pixelPos] > 0) && all(gOutline[pixelPos] == 0);
+   
+   gSceneOut[pixelPos] = float4(lerp(color, gOutlineBlur[pixelPos], isBorder), 1);
 }

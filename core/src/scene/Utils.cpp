@@ -14,7 +14,7 @@ namespace pbe {
    Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos) {
       // todo: find appropriate name
       auto entity = scene.Create(parent, namePrefix);
-      entity.Get<SceneTransformComponent>().Local().position = pos;
+      entity.Get<SceneTransformComponent>().SetPosition(pos);
       return entity;
    }
 
@@ -22,8 +22,8 @@ namespace pbe {
       auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos);
 
       auto& trans = entity.Get<SceneTransformComponent>();
-      trans.Local().scale = desc.scale;
-      trans.Local().rotation = desc.rotation;
+      trans.SetScale(desc.scale);
+      trans.SetRotation(desc.rotation);
 
       entity.Add<GeometryComponent>();
 
@@ -66,25 +66,33 @@ namespace pbe {
    }
 
    Entity SceneAddEntityMenu(Scene& scene, const vec3& spawnPosHint, EditorSelection* selection) {
+      Entity parent = selection ? selection->LastSelected() : Entity{};
+
       if (ImGui::MenuItem("Create Empty")) {
-         return CreateEmpty(scene);
+         return CreateEmpty(scene, "Empty", parent);
       }
+
+      CubeDesc cubeDesc{ .parent = parent, .pos = spawnPosHint };
 
       if (UI_MENU("Geometry")) {
          if (ImGui::MenuItem("Cube")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::GeomMaterial });
+            cubeDesc.type = CubeDesc::GeomMaterial;
+            return CreateCube(scene, cubeDesc);
          }
       }
 
       if (UI_MENU("Physics")) {
          if (ImGui::MenuItem("Dynamic Cube")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysDynamic });
+            cubeDesc.type = CubeDesc::PhysDynamic;
+            return CreateCube(scene, cubeDesc);
          }
          if (ImGui::MenuItem("Static Cube")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysStatic });
+            cubeDesc.type = CubeDesc::PhysStatic;
+            return CreateCube(scene, cubeDesc);
          }
          if (ImGui::MenuItem("Shape")) {
-            return CreateCube(scene, CubeDesc{ .pos = spawnPosHint, .type = CubeDesc::PhysShape });
+            cubeDesc.type = CubeDesc::PhysShape;
+            return CreateCube(scene, cubeDesc);
          }
 
          if (ImGui::MenuItem("Trigger")) {

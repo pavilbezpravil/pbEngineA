@@ -1,7 +1,9 @@
 #pragma once
 #include "scene/Entity.h"
 
+
 namespace pbe {
+   struct Color;
 
    struct EditorSelection {
       void Select(Entity entity, bool clearPrev = true);
@@ -36,12 +38,19 @@ namespace pbe {
          return selected.empty() ? Entity{} : selected.front();
       }
 
+      Entity LastSelected() const {
+         return selected.empty() ? Entity{} : selected.back();
+      }
+
       // handle entity destroy
-      void SyncWithScene();
+      void SyncWithScene(Scene& scene);
 
       void ClearSelection();
 
       std::vector<Entity> selected;
+
+   private:
+      void AddOutlineForChild(Entity& entity, const Color& color, uint depth);
    };
 
 }

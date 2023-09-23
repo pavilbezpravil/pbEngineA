@@ -15,6 +15,20 @@ namespace pbe {
       constexpr vec3 Rgb() const { return {r, g, b}; }
       constexpr operator vec3() const { return Rgb(); }
       constexpr operator vec4() const { return { r, g, b, a }; }
+
+      Color& RbgMultiply(const Color& other) {
+         r *= other.r;
+         g *= other.g;
+         b *= other.b;
+         return *this;
+      }
+
+      Color& RbgMultiply(float scalar) {
+         r *= scalar;
+         g *= scalar;
+         b *= scalar;
+         return *this;
+      }
    };
 
    constexpr Color Color_Black = Color(0, 0, 0);

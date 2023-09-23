@@ -101,7 +101,7 @@ namespace pbe {
 
    void ViewportWindow::OnWindowUI() {
       // todo:
-      selection->SyncWithScene();
+      selection->SyncWithScene(*scene);
 
       if (focused) {
          if (Input::IsKeyDown(KeyCode::RightButton)) {
@@ -214,6 +214,13 @@ namespace pbe {
                auto& trans = e.Get<SceneTransformComponent>();
                camera.position = trans.Position();
                camera.SetViewDirection(trans.Forward());
+            }
+
+            // todo:
+            DbgRend& dbgRend = *scene->dbgRend;
+            for (auto selectedEntity : selection->selected) {
+               auto pos = selectedEntity.GetTransform().Position();
+               dbgRend.DrawSphere(Sphere{ pos, 0.07f }, Color_Yellow, false);
             }
 
             renderer->RenderScene(cmd, *scene, camera, renderContext);
@@ -511,8 +518,19 @@ namespace pbe {
                manipulatorMode = ObjManipulation | Translate | AllAxis;
             }
          }
+
+         // select parent
+         if (Input::IsKeyDown(KeyCode::Q)) {
+            if (selection->LastSelected()) {
+               auto parent = selection->LastSelected().GetTransform().parent;
+               if (parent.GetTransform().parent) { // not root
+                  selection->Select(parent, !Input::IsKeyPressing(KeyCode::Shift));
+               }
+            }
+         }
       }
 
+      // todo: if gizmo active and manipulatorMode == None
       if (!Input::IsKeyPressing(KeyCode::RightButton)) {
          if (Input::IsKeyDown(KeyCode::W)) {
             gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;

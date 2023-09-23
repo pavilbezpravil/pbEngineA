@@ -1015,17 +1015,21 @@ namespace pbe {
       context->IASetIndexBuffer(mesh.indexBuffer->GetBuffer(), DXGI_FORMAT_R16_UINT, 0);
       //
 
-      for (auto [_, trans, outline]
+      for (auto [entityID, trans, outline]
          : scene.View<SceneTransformComponent, OutlineComponent>().each()) {
-         SDrawCallCB cb;
-         cb.instance.transform = trans.GetWorldMatrix();
-         cb.instance.material.baseColor = outline.color;
-         cb.instance.entityID = (uint)trans.entity.GetID();
 
-         auto dynCB = cmd.AllocDynConstantBuffer(cb);
-         program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
+         Entity entity{ entityID, const_cast<Scene*>(&scene) }; // todo:
+         if (entity.Has<GeometryComponent>()) {
+            SDrawCallCB cb;
+            cb.instance.transform = trans.GetWorldMatrix();
+            cb.instance.material.baseColor = outline.color;
+            cb.instance.entityID = (uint)trans.entity.GetID();
 
-         program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
+            auto dynCB = cmd.AllocDynConstantBuffer(cb);
+            program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);
+
+            program.DrawIndexedInstanced(cmd, mesh.geom.IndexCount());
+         }
       }
    }
 
