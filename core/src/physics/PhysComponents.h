@@ -30,6 +30,16 @@ namespace pbe {
       std::vector<ChunkInfo> chunkInfos;
    };
 
+   enum class DestructDbgRendFlags {
+      None = 0,
+      Chunks = BIT(1),
+      ChunksCentroid = BIT(2),
+      BondsHealth = BIT(3),
+      BondsCentroid = BIT(4),
+   };
+
+   DEFINE_ENUM_FLAG_OPERATORS(DestructDbgRendFlags)
+
    struct CORE_API RigidBodyComponent {
 
       void ApplyDamage(const vec3& posW, float damage);
@@ -41,7 +51,7 @@ namespace pbe {
       bool IsDestructible() const { return destructible; }
       physx::PxRigidActor* GetPxRigidActor() { return pxRigidActor; }
 
-      void DbgRender(DbgRend& dbgRend) const;
+      void DbgRender(DbgRend& dbgRend, DestructDbgRendFlags flags) const;
 
       bool dynamic = false;
       bool destructible = false;

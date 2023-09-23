@@ -37,6 +37,8 @@ namespace pbe {
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", true };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
+   CVarValue<bool> cvDestructDbgRend{ "phys/destruct dbg rend", false };
+
    CVarValue<bool> applyFog{ "render/fog/enable", true };
    CVarSlider<int> fogNSteps{ "render/fog/nSteps", 0, 0, 16 };
 
@@ -911,8 +913,14 @@ namespace pbe {
             }
          }
 
-         for (auto [_, rb] : scene.View<RigidBodyComponent>().each()) {
-            rb.DbgRender(dbgRend);
+         if (cvDestructDbgRend) {
+            DestructDbgRendFlags flags =
+               DestructDbgRendFlags::Chunks | DestructDbgRendFlags::ChunksCentroid
+               | DestructDbgRendFlags::BondsHealth | DestructDbgRendFlags::BondsCentroid;
+
+            for (auto [_, rb] : scene.View<RigidBodyComponent>().each()) {
+               rb.DbgRender(dbgRend, flags);
+            }
          }
 
          dbgRend.Render(cmd, camera);

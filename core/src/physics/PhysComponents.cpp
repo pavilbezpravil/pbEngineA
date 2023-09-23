@@ -26,6 +26,7 @@ using namespace Nv::Blast;
 
 namespace pbe {
 
+   // todo: auto& c0L = reinterpret_cast<const vec3&>(blastChunk0.centroid);
    static vec3 Float3ToVec3(const float fs[3]) {
       return vec3(fs[0], fs[1], fs[2]);
    }
@@ -410,7 +411,7 @@ namespace pbe {
       this->tkActor->userData = new Entity{ *(Entity*)pxRigidActor->userData }; // todo: use fixed allocator
    }
 
-   void RigidBodyComponent::DbgRender(DbgRend& dbgRend) const {
+   void RigidBodyComponent::DbgRender(DbgRend& dbgRend, DestructDbgRendFlags flags) const {
       if (!tkActor) {
          return;
       }
@@ -423,7 +424,7 @@ namespace pbe {
       auto tkAsset = tkActor->getAsset();
       auto tkChunks = tkAsset->getChunks();
 
-      if (1) {
+      if (bool(flags & (DestructDbgRendFlags::Chunks | DestructDbgRendFlags::ChunksCentroid))) {
          std::array<uint, 64> visibleChunkIndices; // todo:
 
          uint32_t visibleChunkCount = tkActor->getVisibleChunkCount();
@@ -436,109 +437,79 @@ namespace pbe {
 
             vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
             vec3 chunkCentroidW = transWorld.TransformPoint(chunkCentroidL);
-            // destructData->chunkSizes[chunkIndex]
 
-            dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
+            if (bool(flags & DestructDbgRendFlags::ChunksCentroid)) {
+               dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.03f }, Color_White, false);
+            }
 
-            AABB chunkAABB = AABB::Extends(chunkCentroidL, destructData->chunkInfos[chunkIndex].size / 2.f);
-            dbgRend.DrawAABB(&transWorld, chunkAABB, Color_White, false);
+            if (bool(flags & DestructDbgRendFlags::Chunks)) {
+               AABB chunkAABB = AABB::Extends(chunkCentroidL, destructData->chunkInfos[chunkIndex].size / 2.f);
+               dbgRend.DrawAABB(&transWorld, chunkAABB, Color_White, false);
+            }
          }
       }
 
-      if (0) {
-         for (uint iChunk = 0; iChunk < tkAsset->getChunkCount(); ++iChunk) {
-            NvBlastChunk chunk = tkChunks[iChunk];
-
-            vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
-            vec3 chunkCentroidW = transWorld.TransformPoint(chunkCentroidL);
-
-            dbgRend.DrawSphere(Sphere{ chunkCentroidW, 0.1f }, Color_White, false);
+      if (bool(flags & (DestructDbgRendFlags::BondsCentroid | DestructDbgRendFlags::BondsHealth))) {
+         uint32_t nodeCount = tkActor->getGraphNodeCount();
+         if (nodeCount == 0) { // subsupport chunks don't have graph nodes
+            return;
          }
-      }
-
-      // for (uint i = 0; i < tkActor->getAsset()->getBondCount(); ++i) {
-      //    tkActor->getBondHealths();
-      //    tkActor->getAsset()->getBonds()[i].;
-      // }
-
-      {
-         auto m_tkFamily = &tkActor->getFamily();
-
-         const NvBlastChunk* chunks = m_tkFamily->getAsset()->getChunks();
-         const NvBlastBond* bonds = m_tkFamily->getAsset()->getBonds();
-         const NvBlastSupportGraph graph = m_tkFamily->getAsset()->getGraph();
-         // const float bondHealthMax = m_blastAsset.getBondHealthMax();
-         const float bondHealthMax = 1.f;
-         const uint32_t chunkCount = m_tkFamily->getAsset()->getChunkCount();
-
-         TkActor& actor = *tkActor;
-         // uint32_t lineStartIndex = (uint32_t)debugRenderBuffer.m_lines.size();
-
-         uint32_t nodeCount = actor.getGraphNodeCount();
-         if (nodeCount == 0) // subsupport chunks don't have graph nodes
-            return;;
 
          std::vector<uint32_t> nodes(nodeCount);
-         actor.getGraphNodeIndices(nodes.data(), static_cast<uint32_t>(nodes.size()));
+         tkActor->getGraphNodeIndices(nodes.data(), static_cast<uint32_t>(nodes.size()));
 
-         // if (DEBUG_RENDER_HEALTH_GRAPH <= mode && mode <= DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS)
-         if (true) {
-            const float* bondHealths = actor.getBondHealths();
+         const float* bondHealths = tkActor->getBondHealths();
 
-            // const ExtPxChunk* pxChunks = m_blastAsset.getPxAsset()->getChunks();
+         auto& tkFamily = tkActor->getFamily();
 
-            for (uint32_t node0 : nodes) {
-               const uint32_t chunkIndex0 = graph.chunkIndices[node0];
-               const NvBlastChunk& blastChunk0 = chunks[chunkIndex0];
-               // const ExtPxChunk& assetChunk0 = pxChunks[chunkIndex0];
+         const NvBlastChunk* chunks = tkFamily.getAsset()->getChunks();
+         const NvBlastBond* bonds = tkFamily.getAsset()->getBonds();
+         const NvBlastSupportGraph graph = tkFamily.getAsset()->getGraph();
 
-               for (uint32_t adjacencyIndex = graph.adjacencyPartition[node0]; adjacencyIndex < graph.adjacencyPartition[node0 + 1]; adjacencyIndex++)
-               {
-                  uint32_t node1 = graph.adjacentNodeIndices[adjacencyIndex];
-                  const uint32_t chunkIndex1 = graph.chunkIndices[node1];
-                  const NvBlastChunk& blastChunk1 = chunks[chunkIndex1];
-                  // const ExtPxChunk& assetChunk1 = pxChunks[chunkIndex1];
-                  if (node0 > node1)
-                     continue;
+         for (uint32_t node0 : nodes) {
+            const uint32_t chunkIndex0 = graph.chunkIndices[node0];
+            const NvBlastChunk& chunk0 = chunks[chunkIndex0];
 
-                  bool invisibleBond = chunkIndex0 >= chunkCount || chunkIndex1 >= chunkCount;// || assetChunk0.subchunkCount == 0 || assetChunk1.subchunkCount == 0;
-                  // bool invisibleBond = chunkIndex0 >= chunkCount || chunkIndex1 >= chunkCount || assetChunk0.subchunkCount == 0 || assetChunk1.subchunkCount == 0;
+            for (uint32_t adjacencyIndex = graph.adjacencyPartition[node0]; adjacencyIndex < graph.adjacencyPartition[node0 + 1]; adjacencyIndex++) {
+               uint32_t node1 = graph.adjacentNodeIndices[adjacencyIndex];
+               const uint32_t chunkIndex1 = graph.chunkIndices[node1];
+               const NvBlastChunk& chunk1 = chunks[chunkIndex1];
 
-                  // health
-                  uint32_t bondIndex = graph.adjacentBondIndices[adjacencyIndex];
-                  float healthVal = PxClamp(bondHealths[bondIndex] / bondHealthMax, 0.0f, 1.0f);
-                  if (healthVal == 0.f) {
-                     continue;
-                  }
+               if (node0 > node1) {
+                  continue;
+               }
 
-                  vec4 color4 = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);
-                  // Color color = glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal);
-                  Color color{ color4 };
+               uint32_t bondIndex = graph.adjacentBondIndices[adjacencyIndex];
+               float healthVal = bondHealths[bondIndex];
+               if (healthVal == 0.f) {
+                  continue;
+               }
 
-                  const NvBlastBond& solverBond = bonds[bondIndex];
-                  const PxVec3& centroid = reinterpret_cast<const PxVec3&>(solverBond.centroid);
+               Color color{ glm::mix((vec4)Color_Red, (vec4)Color_Green, healthVal) };
 
-                  // centroid
-                  // if (mode == DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS || mode == DEBUG_RENDER_CENTROIDS)
-                  if (false)
-                  {
-                     const PxVec3& normal = reinterpret_cast<const PxVec3&>(solverBond.normal);
-                     // pushCentroid(debugRenderBuffer.m_lines, centroid, XMFLOAT4ToU32Color(invisibleBond ? BOND_INVISIBLE_COLOR : color), solverBond.area, normal.getNormalized());
-                     dbgRend.DrawSphere(Sphere{ vec3{centroid.x, centroid.y, centroid.z}, 0.1f}, Color_Red, false);
-                  }
+               const NvBlastBond& bond = bonds[bondIndex];
+               const auto centroidL = reinterpret_cast<const vec3&>(bond.centroid);
 
-                  // chunk connection (bond)
-                  // if ((mode == DEBUG_RENDER_HEALTH_GRAPH || mode == DEBUG_RENDER_HEALTH_GRAPH_CENTROIDS) && !invisibleBond)
-                  if (!invisibleBond)
-                  {
-                     auto& c0L = reinterpret_cast<const vec3&>(blastChunk0.centroid);
-                     auto& c1L = reinterpret_cast<const vec3&>(blastChunk1.centroid);
+               if (bool(flags & DestructDbgRendFlags::BondsHealth)) {
+                  auto& c0L = reinterpret_cast<const vec3&>(chunk0.centroid);
+                  auto& c1L = reinterpret_cast<const vec3&>(chunk1.centroid);
 
-                     vec3 c0 = transWorld.TransformPoint(c0L);
-                     vec3 c1 = transWorld.TransformPoint(c1L);
+                  vec3 c0 = transWorld.TransformPoint(c0L);
+                  vec3 c1 = transWorld.TransformPoint(c1L);
 
-                     dbgRend.DrawLine(c0, c1, color, false);
-                  }
+                  dbgRend.DrawLine(c0, c1, color, false);
+               }
+
+               if (bool(flags & DestructDbgRendFlags::BondsCentroid)) {
+                  // todo: area
+                  const vec3& normalL = reinterpret_cast<const vec3&>(bond.normal);
+
+                  vec3 centroidW = transWorld.TransformPoint(centroidL);
+                  vec3 normalW = transWorld.Rotate(normalL);
+
+                  dbgRend.DrawSphere(Sphere{ centroidW, 0.03f }, color, false);
+
+                  dbgRend.DrawLine(centroidW, centroidW + normalW * 0.1f, Color_Blue, false);
                }
             }
          }
