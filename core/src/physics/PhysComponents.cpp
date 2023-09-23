@@ -370,20 +370,17 @@ namespace pbe {
 
       auto posL = PxVec3ToPBE(pxRigidActor->getGlobalPose().transformInv(Vec3ToPx(posW)));
 
-      // todo:
-      float hardness = 500.f; // todo:
-      static NvBlastExtMaterial material;
+      NvBlastExtMaterial material;
       material.health = hardness;
       material.minDamageThreshold = 0.2f;
       material.maxDamageThreshold = 1.0f;
 
       float normalizedDamage = material.getNormalizedDamage(damage);
-
       if (normalizedDamage == 0.f) {
          return;
       }
 
-      INFO("Normalized damage: {}", normalizedDamage);
+      // INFO("Normalized damage: {}", normalizedDamage);
 
       static NvBlastDamageProgram damageProgram = { NvBlastExtFalloffGraphShader, NvBlastExtFalloffSubgraphShader };
 
@@ -400,6 +397,13 @@ namespace pbe {
       ASSERT(dynamic);
       auto dynamic = GetPxRigidDynamic(pxRigidActor);
       dynamic->setLinearVelocity(Vec3ToPx(v), autowake);
+   }
+
+   void RigidBodyComponent::MakeDestructable() {
+      if (!destructible) {
+         destructible = true;
+         CreateOrUpdate(*GetPhysScene().pxScene, GetEntity());
+      }
    }
 
    void RigidBodyComponent::SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData) {
@@ -544,7 +548,7 @@ namespace pbe {
          AddShapesHier(entity);
 
          if (dynamic) {
-            float density = 10.f; // todo:
+            float density = 1.f; // todo:
             PxRigidBodyExt::updateMassAndInertia(*GetPxRigidDynamic(pxRigidActor), density);
          }
 
@@ -805,6 +809,7 @@ namespace pbe {
    STRUCT_BEGIN(RigidBodyComponent)
       STRUCT_FIELD(dynamic)
       STRUCT_FIELD(destructible)
+      STRUCT_FIELD(hardness)
       STRUCT_FIELD(linearDamping)
       STRUCT_FIELD(angularDamping)
    STRUCT_END()

@@ -43,7 +43,7 @@ namespace pbe {
       destructEventListener = std::make_unique<DestructEventListener>(*this);
 
       // todo:
-      damageParamsBuffer.reserve(1024 * 4);
+      damageParamsBuffer.reserve(1024 * 32);
    }
 
    PhysicsScene::~PhysicsScene() {
@@ -275,6 +275,7 @@ namespace pbe {
    void* PhysicsScene::GetDamageParamsPlace(uint paramSize) {
       uint curSize = (uint)damageParamsBuffer.size();
       uint reqSize = curSize + paramSize;
+      ASSERT(reqSize <= damageParamsBuffer.capacity());
       damageParamsBuffer.resize(reqSize);
       return damageParamsBuffer.data() + curSize;
    }

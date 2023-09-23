@@ -18,6 +18,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -28,7 +29,55 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630, 12559405180262518403, 13179862857265151497, 5713263649892606456, 6679029739715552203, 12552372105178138956, 14955456196593180312, 18295377334111360543, 17440179670422797107]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5383591570267271630, 12559405180262518403, 13179862857265151497, 5713263649892606456, 6679029739715552203, 12552372105178138956, 12712225918358193427, 6560978832315652530, 13452541091867441318]
+  - uuid: 4027702121571600733
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [4.45007515, 1.15543461, 1.70463753]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 13452541091867441318
+    MaterialComponent:
+      baseColor: [0.2236287, 0.183054715, 0.183054715]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 4749616449069671109
+    tag: Cube
+    SceneTransformComponent:
+      position: [-4.55741692, 1.15543461, 1.72325563]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 6560978832315652530
+    MaterialComponent:
+      baseColor: [0.210970461, 0.172693118, 0.172693118]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
   - uuid: 5358771780476770984
     tag: Cube with child
     SceneTransformComponent:
@@ -49,6 +98,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -80,10 +130,19 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
+  - uuid: 6560978832315652530
+    tag: Wall 2 Static Hardnes 25
+    SceneTransformComponent:
+      position: [-20.9729919, 1.84456539, -24.1435623]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [9945632018857420978, 4749616449069671109, 16224807005050461541]
   - uuid: 6679029739715552203
     tag: Cube Z
     SceneTransformComponent:
@@ -103,6 +162,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -126,6 +186,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -149,6 +210,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -172,8 +234,33 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 9945632018857420978
+    tag: Cube 1
+    SceneTransformComponent:
+      position: [4.45007515, 1.15543461, 1.70463753]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 6560978832315652530
+    MaterialComponent:
+      baseColor: [0.2236287, 0.183054715, 0.183054715]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 10687103412115808607
@@ -195,8 +282,33 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 11175628135722301133
+    tag: Cube
+    SceneTransformComponent:
+      position: [-4.55741692, 1.15543461, 1.72325563]
+      rotation: [0, -0, 0]
+      scale: [1, 6, 1]
+      parent: 13452541091867441318
+    MaterialComponent:
+      baseColor: [0.210970461, 0.172693118, 0.172693118]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 11807877512905403012
@@ -218,6 +330,7 @@ entities:
     RigidBodyComponent:
       dynamic: false
       destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -241,6 +354,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -253,6 +367,14 @@ entities:
       scale: [1, 1, 1]
       parent: 3459374828559402514
       children: [10687103412115808607, 14693310325806337783, 6776904941556836237]
+  - uuid: 12712225918358193427
+    tag: Wall 2 Static Hardness 50
+    SceneTransformComponent:
+      position: [-20.9729919, 1.84456539, -6.88570213]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [17440179670422797107, 18295377334111360543, 14955456196593180312]
   - uuid: 13179862857265151497
     tag: Cube X
     SceneTransformComponent:
@@ -272,10 +394,19 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
+  - uuid: 13452541091867441318
+    tag: Wall 2 Static Hardnes 1
+    SceneTransformComponent:
+      position: [-20.9729919, 1.84456539, -36.8354111]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [4027702121571600733, 11175628135722301133, 15082745440369671396]
   - uuid: 14028351006921883563
     tag: Sky
     SceneTransformComponent:
@@ -324,6 +455,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
     RigidBodyShapeComponent:
@@ -331,10 +463,10 @@ entities:
   - uuid: 14955456196593180312
     tag: Wall 1
     SceneTransformComponent:
-      position: [-21, 3, -6]
+      position: [-0.0270080566, 1.15543461, 0.885702133]
       rotation: [0, -0, 0]
       scale: [10, 6, 0.5]
-      parent: 3459374828559402514
+      parent: 12712225918358193427
     MaterialComponent:
       baseColor: [0.654008448, 0.195926592, 0.195926592]
       roughness: 0.100000001
@@ -347,6 +479,31 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 15082745440369671396
+    tag: Wall 1
+    SceneTransformComponent:
+      position: [-0.0270080566, 6.33566761, 0.885704041]
+      rotation: [0, -0, 0]
+      scale: [10, 6, 0.5]
+      parent: 13452541091867441318
+    MaterialComponent:
+      baseColor: [0.654008448, 0.195926592, 0.195926592]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 1
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -369,13 +526,37 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyShapeComponent:
       {}
+  - uuid: 16224807005050461541
+    tag: Wall 1
+    SceneTransformComponent:
+      position: [-0.0270080566, 1.15406585, 0.885702133]
+      rotation: [0, -0, 0]
+      scale: [10, 6, 0.5]
+      parent: 6560978832315652530
+    MaterialComponent:
+      baseColor: [0.654008448, 0.195926592, 0.195926592]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 25
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17440179670422797107
     tag: Cube 1
     SceneTransformComponent:
-      position: [-16.5229168, 3, -5.25242662]
+      position: [4.45007515, 1.15543461, 1.70463753]
       rotation: [0, -0, 0]
       scale: [1, 6, 1]
-      parent: 3459374828559402514
+      parent: 12712225918358193427
     MaterialComponent:
       baseColor: [0.2236287, 0.183054715, 0.183054715]
       roughness: 0.100000001
@@ -388,6 +569,7 @@ entities:
     RigidBodyComponent:
       dynamic: false
       destructible: false
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:
@@ -405,10 +587,10 @@ entities:
   - uuid: 18295377334111360543
     tag: Cube
     SceneTransformComponent:
-      position: [-25.5304089, 3, -5.1624465]
+      position: [-4.55741692, 1.15543461, 1.72325563]
       rotation: [0, -0, 0]
       scale: [1, 6, 1]
-      parent: 3459374828559402514
+      parent: 12712225918358193427
     MaterialComponent:
       baseColor: [0.210970461, 0.172693118, 0.172693118]
       roughness: 0.100000001
@@ -421,6 +603,7 @@ entities:
     RigidBodyComponent:
       dynamic: false
       destructible: false
+      hardness: 50
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
     RigidBodyShapeComponent:

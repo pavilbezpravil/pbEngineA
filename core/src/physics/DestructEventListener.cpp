@@ -82,6 +82,7 @@ namespace pbe {
                         .scale = chunkInfo.size,
                         .type = CubeDesc::PhysShape,
                      });
+                     visibleChunkEntity.Add<DestructionChunkComponent>();
 
                      if (pParentMaterial) {
                         visibleChunkEntity.Get<MaterialComponent>() = *pParentMaterial;
@@ -90,7 +91,7 @@ namespace pbe {
 
                   // todo: mb do it not here, send event for example
                   if (cvAddTimedDieForLeaf && childIsLeaf) {
-                     childEntity.Add<TimedDieComponent>().SetRandomDieTime(3, 7);
+                     childEntity.Add<TimedDieComponent>().SetRandomDieTime(2.f, 5.f);
                   }
 
                   childEntity.GetTransform().SetPosition(parentTrans.Position());
@@ -101,6 +102,8 @@ namespace pbe {
 
                   RigidBodyComponent childRb{};
                   childRb.dynamic = true;
+                  // todo: mb make component for destructable object?
+                  childRb.hardness = parentRb.hardness;
 
                   auto& childRb2 = childEntity.Add<RigidBodyComponent>(std::move(childRb));
                   childRb2.SetDestructible(*tkChild, *destructData);

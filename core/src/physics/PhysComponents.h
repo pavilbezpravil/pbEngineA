@@ -46,6 +46,9 @@ namespace pbe {
 
       void SetLinearVelocity(const vec3& v, bool autowake = true);
 
+      void MakeDestructable();
+
+      // todo: internal
       void SetDestructible(Nv::Blast::TkActor& tkActor, DestructData& destructData);
 
       bool IsDestructible() const { return destructible; }
@@ -55,6 +58,9 @@ namespace pbe {
 
       bool dynamic = false;
       bool destructible = false;
+
+      // todo:
+      float hardness = 50.f;
 
       float linearDamping = 0.03f;
       float angularDamping = 0.03f;
@@ -87,6 +93,10 @@ namespace pbe {
    struct CORE_API RigidBodyShapeComponent {
       // todo:
       float friction = 0.7f;
+   };
+
+   struct CORE_API DestructionChunkComponent {
+
    };
 
    struct TriggerComponent {
