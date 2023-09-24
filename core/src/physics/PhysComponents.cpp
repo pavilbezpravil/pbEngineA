@@ -293,14 +293,15 @@ namespace pbe {
          auto tkFramework = NvBlastTkFrameworkGet();
 
          bool wasCoverage = tkFramework->ensureAssetExactSupportCoverage(chunkDescs.data(), (uint)chunkDescs.size());
-         INFO("Was coverage {}", wasCoverage);
          ASSERT(wasCoverage);
+         if (!wasCoverage) {
+            WARN("ChunkDescs was not coverage");
+         }
 
          // todo: 'chunkReorderMap' may be skipped
          std::vector<uint32_t> chunkReorderMap(chunkDescs.size());  // Will be filled with a map from the original chunk descriptor order to the new one
          bool requireReordering = !tkFramework->reorderAssetDescChunks(chunkDescs.data(), (uint)chunkDescs.size(),
             bondDescs.data(), (uint)bondDescs.size(), chunkReorderMap.data());
-         INFO("Require reordering {}", requireReordering);
 
          if (requireReordering) {
             std::vector<ChunkInfo> newChunkInfos;
@@ -312,8 +313,6 @@ namespace pbe {
 
             std::swap(chunkInfos, newChunkInfos);
          }
-
-         // ASSERT(!requireReordering);
 
          TkAssetDesc assetDesc;
          assetDesc.chunkCount = (uint)chunkDescs.size();
@@ -666,11 +665,6 @@ namespace pbe {
          }
          pxRigidActor->userData = new Entity{ entity }; // todo: use fixed allocator
 
-         // todo: tmp, remove after reconvert all scenes
-         if (entity.Has<GeometryComponent>()) {
-            entity.AddOrReplace<RigidBodyShapeComponent>();
-         }
-
          AddShapesHier(entity);
 
          if (dynamic) {
@@ -768,7 +762,7 @@ namespace pbe {
       PX_RELEASE(tkActor);
 
       if (tkFamily.getActorCount() == 0) {
-         INFO("Destrcut actors count ZERO. Delete tkAsset");
+         // INFO("Destrcut actors count ZERO. Delete tkAsset");
          PX_RELEASE(destructData->tkAsset);
          delete destructData;
          destructData = nullptr;
@@ -798,7 +792,11 @@ namespace pbe {
 
       for (auto& child : trans.children) {
          ASSERT(!child.Has<RigidBodyComponent>());
-         AddShapesHier(child);
+         if (child.Has<RigidBodyComponent>()) {
+            WARN("RigidBodyComponent::AddShapesHier: child entity has no RigidBodyComponent");
+         } else {
+            AddShapesHier(child);
+         }
       }
    }
 

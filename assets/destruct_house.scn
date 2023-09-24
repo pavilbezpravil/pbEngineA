@@ -40,6 +40,7 @@ entities:
       angularDamping: 0.0299999993
   - uuid: 5011985211048166575
     tag: Floor
+    disabled: true
     SceneTransformComponent:
       position: [2.21715331, 0, 2.00227499]
       rotation: [0, -0, 0]
@@ -54,6 +55,7 @@ entities:
       angularDamping: 0.0299999993
   - uuid: 5676435894675039375
     tag: Cube 2
+    disabled: true
     SceneTransformComponent:
       position: [-2.09962487, 3.18887568, -2.42259216]
       rotation: [0, -0, 90]
@@ -72,6 +74,7 @@ entities:
       {}
   - uuid: 7336205652019269908
     tag: Cube 2
+    disabled: true
     SceneTransformComponent:
       position: [-2.09962487, 3.13367748, -2.42259216]
       rotation: [0, -0, 0]
@@ -98,6 +101,7 @@ entities:
       children: [5011985211048166575, 4655226864281613741, 15486082755356332997]
   - uuid: 11226625768498652818
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.175170898, 1.5, -2.42259216]
       rotation: [0, -0, 0]
@@ -187,6 +191,7 @@ entities:
       intensity: 1
   - uuid: 14133987478880718380
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.175170898, 1.50000048, -2.42259216]
       rotation: [0, -0, 0]
@@ -205,6 +210,7 @@ entities:
       {}
   - uuid: 14459406078544728463
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.01096201, 1.50000048, -2.42259216]
       rotation: [0, -0, 0]
@@ -223,6 +229,7 @@ entities:
       {}
   - uuid: 15486082755356332997
     tag: Floor 2
+    disabled: true
     SceneTransformComponent:
       position: [2.21715331, 6.62776804, 2.00227499]
       rotation: [0, -0, 0]
@@ -237,6 +244,7 @@ entities:
       angularDamping: 0.0299999993
   - uuid: 16353594630970111719
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.01096201, 1.5, -2.42259216]
       rotation: [0, -0, 0]

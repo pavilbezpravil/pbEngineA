@@ -885,6 +885,10 @@ namespace pbe {
             auto trans0 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor0);
             auto trans1 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor1);
 
+            if (!trans0 || !trans1) {
+               continue;
+            }
+
             auto pos0 = trans0->position;
             auto pos1 = trans1->position;
             auto dir = glm::normalize(pos1 - pos0);

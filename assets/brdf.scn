@@ -17,8 +17,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3315499358658657356
     tag: Roughness 10
     SceneTransformComponent:
@@ -37,8 +41,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3611181185276354634
     tag: Roughness 6
     SceneTransformComponent:
@@ -57,8 +65,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3868207312893180434
     tag: Roughness 0
     SceneTransformComponent:
@@ -77,8 +89,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 5682158235099175481
     tag: Roughness 9
     SceneTransformComponent:
@@ -97,8 +113,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 6217054525412911674
     tag: Roughness 7
     SceneTransformComponent:
@@ -117,8 +137,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 8528456562529227432
     tag: Direct Light
     SceneTransformComponent:
@@ -162,8 +186,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 14720384052388404530
     tag: Ground
     SceneTransformComponent:
@@ -182,8 +210,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: false
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 16107182069876620820
     tag: Roughness 8
     SceneTransformComponent:
@@ -202,8 +234,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 16496094965237223248
     tag: Sky
     SceneTransformComponent:
@@ -233,8 +269,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17854511947397319276
     tag: Roughness 4
     SceneTransformComponent:
@@ -253,8 +293,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17954951722055481433
     tag: Roughness 2
     SceneTransformComponent:
@@ -273,5 +317,9 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}

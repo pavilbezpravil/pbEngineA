@@ -10,7 +10,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -18,8 +17,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 626035225016349364
     tag: Cube 11
     SceneTransformComponent:
@@ -31,7 +34,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -39,8 +41,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 1368552048009711588
     tag: Zabor
     SceneTransformComponent:
@@ -60,7 +66,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -68,8 +73,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 2581732857357690927
     tag: Cube 8
     SceneTransformComponent:
@@ -81,7 +90,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -89,8 +97,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 2922838799331956797
     tag: Cube 7
     SceneTransformComponent:
@@ -102,7 +114,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -110,8 +121,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3375409647724478307
     tag: Cube 8
     SceneTransformComponent:
@@ -123,7 +138,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -131,8 +145,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3607168831755751250
     tag: Cube 9
     SceneTransformComponent:
@@ -144,7 +162,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -152,8 +169,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3827715626389345497
     tag: Ground
     SceneTransformComponent:
@@ -165,7 +186,6 @@ entities:
       baseColor: [0.200000003, 0.600000024, 0.200000003]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -173,8 +193,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: false
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 3981832720582519854
     tag: Cube 9
     SceneTransformComponent:
@@ -186,7 +210,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -194,8 +217,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 4214104322141041959
     tag: Cube 4
     SceneTransformComponent:
@@ -207,7 +234,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -215,8 +241,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 4345425347490236523
     tag: Cube 9
     SceneTransformComponent:
@@ -228,7 +258,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -236,8 +265,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 4847075123750635507
     tag: Cube 11
     SceneTransformComponent:
@@ -249,7 +282,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -257,8 +289,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 5293780520850346005
     tag: Cube 4
     SceneTransformComponent:
@@ -270,7 +306,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -278,8 +313,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 6638741680882317068
     tag: Cube 1
     SceneTransformComponent:
@@ -291,7 +330,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -299,8 +337,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 6822155431195724786
     tag: Cube 14
     SceneTransformComponent:
@@ -312,7 +354,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -320,8 +361,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 6953315740057853216
     tag: Cube 5
     SceneTransformComponent:
@@ -333,7 +378,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -341,8 +385,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 7583534829187989203
     tag: Cube 9
     SceneTransformComponent:
@@ -354,7 +402,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -362,8 +409,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 7691561392093123789
     tag: Zabor 1
     SceneTransformComponent:
@@ -383,7 +434,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -391,8 +441,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 8489440501067703751
     tag: Cube 3
     SceneTransformComponent:
@@ -404,7 +458,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -412,8 +465,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 8576752366673647879
     tag: Cube 5
     SceneTransformComponent:
@@ -425,7 +482,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -433,13 +489,17 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 9912137282956009357
     tag: Zabor 2
     SceneTransformComponent:
       position: [-5.20484591, 4.76837158e-07, -4.52101898]
-      rotation: [0, 46.0960846, 0]
+      rotation: [0, 46.0960884, 0]
       scale: [1, 1, 1]
       parent: 13701448711373167078
       children: [6638741680882317068, 10022333944066667517, 2567217522657887325, 4214104322141041959, 8576752366673647879, 17468122956446030387, 2922838799331956797, 14342702975639395137, 3981832720582519854, 11543910609249361681, 15848880796253241063, 14858172084586281506, 16223800719763599019, 16978193559996998104]
@@ -454,7 +514,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -462,8 +521,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 10176473105737061272
     tag: Cube 2
     SceneTransformComponent:
@@ -475,7 +538,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -483,8 +545,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 10341744432141808621
     tag: Cube 11
     SceneTransformComponent:
@@ -496,7 +562,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -504,8 +569,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 10494867818956819951
     tag: Cube 4
     SceneTransformComponent:
@@ -517,7 +586,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -525,8 +593,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 10577450014113326606
     tag: Zabor 3
     SceneTransformComponent:
@@ -546,7 +618,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -554,8 +625,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 10873189336032269696
     tag: Cube 6
     SceneTransformComponent:
@@ -567,7 +642,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -575,8 +649,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 11056367967492610449
     tag: Cube
     SceneTransformComponent:
@@ -588,7 +666,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -596,8 +673,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 11417958313120545845
     tag: Cube 2
     SceneTransformComponent:
@@ -609,7 +690,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -617,8 +697,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 11543910609249361681
     tag: Cube 10
     SceneTransformComponent:
@@ -630,7 +714,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -638,8 +721,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 11871224175141270265
     tag: Cube 3
     SceneTransformComponent:
@@ -651,7 +738,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -659,8 +745,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 12064427927091501165
     tag: Cube 5
     SceneTransformComponent:
@@ -672,7 +762,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -680,8 +769,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 12906284501421640928
     tag: Cube 4
     SceneTransformComponent:
@@ -693,7 +786,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -701,8 +793,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 12936420185270401148
     tag: Cube 10
     SceneTransformComponent:
@@ -714,7 +810,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -722,8 +817,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 13032487255379102727
     tag: Cube 10
     SceneTransformComponent:
@@ -735,7 +834,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -743,8 +841,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 13258575294191347404
     tag: Cube 6
     SceneTransformComponent:
@@ -756,7 +858,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -764,8 +865,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 13371160901445071631
     tag: Cube 7
     SceneTransformComponent:
@@ -777,7 +882,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -785,8 +889,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 13607672658798652931
     tag: Cube 6
     SceneTransformComponent:
@@ -798,7 +906,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -806,8 +913,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 13701448711373167078
     tag: Scene
     SceneTransformComponent:
@@ -826,7 +937,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -834,8 +944,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 14375144753062544365
     tag: Cube 5
     SceneTransformComponent:
@@ -847,7 +961,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -855,8 +968,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 14858172084586281506
     tag: Cube 12
     SceneTransformComponent:
@@ -868,7 +985,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -876,8 +992,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 14993294289619110307
     tag: Cube 7
     SceneTransformComponent:
@@ -889,7 +1009,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -897,8 +1016,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 15495952203847800724
     tag: Cube 10
     SceneTransformComponent:
@@ -910,7 +1033,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -918,8 +1040,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 15695051441272518575
     tag: Cube 1
     SceneTransformComponent:
@@ -931,7 +1057,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -939,8 +1064,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 15848880796253241063
     tag: Cube 11
     SceneTransformComponent:
@@ -952,7 +1081,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -960,8 +1088,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 15934140815796841434
     tag: Direct Light
     SceneTransformComponent:
@@ -983,7 +1115,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -991,8 +1122,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 16728104993845517093
     tag: Cube 12
     SceneTransformComponent:
@@ -1004,7 +1139,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1012,8 +1146,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 16788898187677508638
     tag: Sky
     SceneTransformComponent:
@@ -1036,7 +1174,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1044,8 +1181,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 16978193559996998104
     tag: Cube 14
     SceneTransformComponent:
@@ -1057,7 +1198,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1065,8 +1205,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17003981009677238449
     tag: Cube 8
     SceneTransformComponent:
@@ -1078,7 +1222,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1086,8 +1229,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17192807584200597530
     tag: Cube 13
     SceneTransformComponent:
@@ -1099,7 +1246,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1107,8 +1253,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 17468122956446030387
     tag: Cube 6
     SceneTransformComponent:
@@ -1120,7 +1270,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1128,8 +1277,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 18187582511383080327
     tag: Cube 3
     SceneTransformComponent:
@@ -1141,7 +1294,6 @@ entities:
       baseColor: [0.699999988, 0.699999988, 0.699999988]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -1149,5 +1301,9 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}

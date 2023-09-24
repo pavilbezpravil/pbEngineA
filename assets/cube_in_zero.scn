@@ -27,14 +27,11 @@ entities:
       baseColor: [0.148213416, 0.780590713, 0.7565763]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    RigidBodyComponent:
-      dynamic: true
   - uuid: 17958657347364189104
     tag: Sky
     SceneTransformComponent:

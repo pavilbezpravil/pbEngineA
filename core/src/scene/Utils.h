@@ -8,6 +8,7 @@ namespace pbe {
 
    Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {});
 
+   // todo: add space for transform
    struct CubeDesc {
       Entity parent = {};
       string_view namePrefix = "Cube";

@@ -69,7 +69,7 @@ namespace pbe {
 
             int steps = timer.Update(dt);
             while (steps-- > 0) {
-               Entity e = CreateCube(GetScene(), CubeDesc{
+               Entity e = CreateCube(GetScene(), CubeDesc {
                      .parent = owner,
                      .color = Random::Color(),
                   });

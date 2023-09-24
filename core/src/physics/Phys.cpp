@@ -66,6 +66,7 @@ namespace pbe {
    }
 
    // todo: look on default filter shader
+   // todo: notify about contact collision only destructible objects
    PxFilterFlags PxSimulationFilterShader(
          PxFilterObjectAttributes attributes0, PxFilterData filterData0,
          PxFilterObjectAttributes attributes1, PxFilterData filterData1,

@@ -36,7 +36,6 @@ entities:
       baseColor: [0.755274296, 0.19758229, 0.19758229]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -53,7 +52,6 @@ entities:
       baseColor: [0.169417292, 0.772151887, 0.642449498]
       roughness: 0.275999993
       metallic: 1
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -70,7 +68,6 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0
       metallic: 1
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -87,7 +84,6 @@ entities:
       baseColor: [0.815686285, 0.815686285, 0.815686285]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -105,7 +101,6 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:

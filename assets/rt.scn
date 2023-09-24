@@ -21,7 +21,6 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -48,18 +47,11 @@ entities:
       baseColor: [1, 1, 1]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    TestScript:
-      values:
-        floatValue: 2
-        intValue: 2
-      speed: 1
-      doMove: true
   - uuid: 7709018462035949994
     tag: Scene
     SceneTransformComponent:
@@ -86,18 +78,11 @@ entities:
       baseColor: [0.19758229, 0.409363985, 0.755274296]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    TestScript:
-      values:
-        floatValue: 2
-        intValue: 2
-      speed: 1
-      doMove: true
   - uuid: 10854271582006416714
     tag: Cube
     SceneTransformComponent:
@@ -109,16 +94,11 @@ entities:
       baseColor: [0.898734152, 0.0758425519, 0.0758425519]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    RigidBodyComponent:
-      dynamic: true
-      linearDamping: 0.100000001
-      angularDamping: 0.100000001
   - uuid: 12468854452323807279
     tag: green
     SceneTransformComponent:
@@ -130,7 +110,6 @@ entities:
       baseColor: [0.169928446, 0.7763713, 0.137584805]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:
@@ -147,7 +126,6 @@ entities:
       baseColor: [0.797468364, 0.117769592, 0.117769592]
       roughness: 0.100000001
       metallic: 0
-      emissiveColor: [1, 1, 1]
       emissivePower: 0
       opaque: true
     GeometryComponent:

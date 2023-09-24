@@ -17,8 +17,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: true
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 9163139420797736816
     tag: Sky
     SceneTransformComponent:
@@ -58,8 +62,12 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyComponent:
       dynamic: false
+      destructible: false
+      hardness: 50
       linearDamping: 0.100000001
       angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
   - uuid: 15777611535369612217
     tag: Scene
     SceneTransformComponent:
