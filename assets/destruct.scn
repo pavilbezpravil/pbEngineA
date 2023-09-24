@@ -58,6 +58,7 @@ entities:
       {}
   - uuid: 4073246892471376794
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.01096201, 1.50000024, -2.42259216]
       rotation: [0, -0, 0]
@@ -82,6 +83,7 @@ entities:
       {}
   - uuid: 4655226864281613741
     tag: Floor 1
+    disabled: true
     SceneTransformComponent:
       position: [2.21715331, 3.39927745, 2.00227499]
       rotation: [0, -0, 0]
@@ -121,9 +123,14 @@ entities:
       scale: [1, 1, 1]
       parent: 8216114767425547920
       children: [16353594630970111719, 11226625768498652818, 7336205652019269908]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
   - uuid: 5358771780476770984
     tag: Cube with child
-    disabled: true
     SceneTransformComponent:
       position: [-19.313961, 1.56058121, 8.10294628]
       rotation: [0, -0, 0]
@@ -158,6 +165,7 @@ entities:
       children: [3025266316102579978, 9889813764843162685, 8890436197300190957]
   - uuid: 5676435894675039375
     tag: Cube 2
+    disabled: true
     SceneTransformComponent:
       position: [-2.09962487, 3.18887568, -2.42259216]
       rotation: [0, -0, 90]
@@ -267,9 +275,9 @@ entities:
   - uuid: 7336205652019269908
     tag: Cube 2
     SceneTransformComponent:
-      position: [-2.09962487, 3.18887591, -2.42259216]
-      rotation: [0, -0, 90]
-      scale: [0.367258698, 5.6261363, 7.90462112]
+      position: [-2.09962487, 3.13367748, -2.42259216]
+      rotation: [0, -0, 0]
+      scale: [6.29627943, 0.300000012, 8.90160275]
       parent: 5011985211048166575
     MaterialComponent:
       baseColor: [0.276024133, 0.573839664, 0.5323717]
@@ -280,12 +288,6 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 150
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 8216114767425547920
@@ -437,12 +439,6 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 150
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 11807877512905403012
@@ -505,6 +501,7 @@ entities:
       children: [10687103412115808607, 14693310325806337783, 6776904941556836237]
   - uuid: 12565800549790969604
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.175170898, 1.50000024, -2.42259216]
       rotation: [0, -0, 0]
@@ -529,6 +526,7 @@ entities:
       {}
   - uuid: 12712225918358193427
     tag: Wall 2 Static Hardness 50
+    disabled: true
     SceneTransformComponent:
       position: [-20.9729919, 1.84456539, -6.88570213]
       rotation: [0, -0, 0]
@@ -562,6 +560,7 @@ entities:
       {}
   - uuid: 13374436542035624158
     tag: Cube 2
+    disabled: true
     SceneTransformComponent:
       position: [-2.09962487, 3.18887591, -2.42259216]
       rotation: [0, -0, 90]
@@ -606,6 +605,7 @@ entities:
       intensity: 1
   - uuid: 14133987478880718380
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.175170898, 1.50000048, -2.42259216]
       rotation: [0, -0, 0]
@@ -630,7 +630,6 @@ entities:
       {}
   - uuid: 14239996626430112721
     tag: Cube 1
-    disabled: true
     SceneTransformComponent:
       position: [0.837581635, -1.01852036, -0.655508041]
       rotation: [0, -0, 0]
@@ -649,6 +648,7 @@ entities:
       {}
   - uuid: 14459406078544728463
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.01096201, 1.50000048, -2.42259216]
       rotation: [0, -0, 0]
@@ -698,6 +698,7 @@ entities:
       {}
   - uuid: 14955456196593180312
     tag: Wall 1
+    disabled: true
     SceneTransformComponent:
       position: [-0.0270080566, 1.15543461, 0.885702133]
       rotation: [0, -0, 0]
@@ -747,7 +748,6 @@ entities:
       {}
   - uuid: 15343045157092208276
     tag: Cube 1
-    disabled: true
     SceneTransformComponent:
       position: [-0.91019249, -0.982114315, -0.62148571]
       rotation: [0, -0, 0]
@@ -766,6 +766,7 @@ entities:
       {}
   - uuid: 15486082755356332997
     tag: Floor 2
+    disabled: true
     SceneTransformComponent:
       position: [2.21715331, 6.79778051, 2.00227499]
       rotation: [0, -0, 0]
@@ -813,16 +814,11 @@ entities:
     GeometryComponent:
       type: 1
       sizeData: [1, 1, 1]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 150
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
     RigidBodyShapeComponent:
       {}
   - uuid: 17440179670422797107
     tag: Cube 1
+    disabled: true
     SceneTransformComponent:
       position: [4.45007515, 1.15543461, 1.70463753]
       rotation: [0, -0, 0]
@@ -857,6 +853,7 @@ entities:
       intensity: 1
   - uuid: 18295377334111360543
     tag: Cube
+    disabled: true
     SceneTransformComponent:
       position: [-4.55741692, 1.15543461, 1.72325563]
       rotation: [0, -0, 0]

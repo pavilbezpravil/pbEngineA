@@ -19,7 +19,7 @@ using namespace Nv::Blast;
 namespace pbe {
 
    static CVarValue<bool> cvAddTimedDieForLeaf{ "phys/add timed die for leaf", true };
-   static CVarValue<bool> cvInstantDestroyLeafs{ "phys/instant destroy leafs", true };
+   static CVarValue<bool> cvInstantDestroyLeafs{ "phys/instant destroy leafs", false };
 
    void DestructEventListener::receive(const TkEvent* events, uint32_t eventCount) {
       for (uint32_t i = 0; i < eventCount; ++i) {

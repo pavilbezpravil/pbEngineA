@@ -167,7 +167,7 @@ namespace pbe {
    }
 
    void PhysicsScene::OnEntityEnable() {
-      for (auto e : pScene->ViewAll<GeometryComponent, RigidBodyComponent, DelayedEnableMarker>()) {
+      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedEnableMarker>()) {
          Entity entity{ e, &scene };
 
          // todo: when copy component copy ptr to

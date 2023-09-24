@@ -39,7 +39,7 @@ namespace pbe {
 
    class FructureGenerator {
    public:
-      FructureGenerator(const vec3& parentSize) { // todo:
+      void AddParent(const vec3& parentSize) { // todo:
          chunkDescs.resize(1);
          chunkInfos.resize(1);
 
@@ -58,6 +58,34 @@ namespace pbe {
             .size = parentSize,
             .isLeaf = true,
          };
+      }
+
+      void AddChunk(uint parentIdx, const vec3& center, const vec3& size, bool replace = false) { // todo:
+         uint chunkIdx = (uint)chunkDescs.size();
+
+         uint reqSize = chunkIdx;
+         if (!replace) {
+            ++reqSize;
+         }
+         chunkDescs.resize(reqSize);
+         chunkInfos.resize(reqSize);
+
+         uint nextChunkIdx = replace ? parentIdx : chunkIdx;
+         auto& chunkDesc = chunkDescs[nextChunkIdx];
+
+         chunkDesc.parentChunkDescIndex = parentIdx;
+
+         chunkDesc.centroid[0] = center[0];
+         chunkDesc.centroid[1] = center[1];
+         chunkDesc.centroid[2] = center[2];
+
+         chunkDesc.volume = size.x * size.y * size.z;
+         chunkDesc.flags = NvBlastChunkDesc::NoFlags;
+         chunkDesc.userData = nextChunkIdx;
+
+         auto& chunkInfo = chunkInfos[nextChunkIdx];
+         chunkInfo.size = size;
+         chunkInfo.isLeaf = true;
       }
 
       // next chunk will be added to the next indexies
@@ -304,16 +332,23 @@ namespace pbe {
       std::vector<NvBlastBondDesc> bondDescs;
    };
 
-   static DestructData* GetDestructData(const vec3& chunkSize) {
+   static DestructData* GetDestructData(Entity& entity) {
       // uint slices = std::max(1, (int)chunkSize.x);
 
-      FructureGenerator fructureGenerator{ chunkSize };
+      auto& trans = entity.GetTransform();
+      vec3 chunkSize = trans.Scale();
+
+      FructureGenerator fructureGenerator;
 
       if (0) {
+         fructureGenerator.AddParent(chunkSize);
+
          uint3 slices = uint3(chunkSize / 1.0f);
          fructureGenerator.Slice(0, slices);
          fructureGenerator.MarkSupportChunkAtDepth(1);
-      } else {
+      } else if (0) {
+         fructureGenerator.AddParent(chunkSize);
+
          // todo: not optimal
          for (size_t depth = 0; depth < 6; depth++) {
             bool wasSliced = false;
@@ -375,6 +410,68 @@ namespace pbe {
                fructureGenerator.Slice(iChunk, slices);
             }
          }
+      } else {
+         // fructureGenerator.AddParent(chunkSize);
+
+         bool parentWasAdded = false;
+
+         if (auto geom = entity.TryGet<GeometryComponent>()) {
+            ASSERT(geom->type == GeomType::Box);
+            parentWasAdded = true;
+            fructureGenerator.AddChunk(UINT32_MAX, vec3{ 0, 0, 0 }, chunkSize); // todo:
+         }
+
+         for (auto& child : entity.GetTransform().children) {
+            if (!child.Has<RigidBodyShapeComponent>()) {
+               continue;
+            }
+
+            // todo:
+            if (child.Has<RigidBodyComponent>()) {
+               // child.Remove<RigidBodyComponent>();
+            }
+
+            auto& childTrans = child.GetTransform();
+
+            // todo:
+            fructureGenerator.AddChunk(parentWasAdded ? 0 : UINT32_MAX, childTrans.Local().position, childTrans.World().scale);
+            parentWasAdded = true;
+         }
+
+         // todo: not optimal
+         for (size_t depth = 0; depth < 6; depth++) {
+            bool wasSliced = false;
+
+            uint chunkCount = fructureGenerator.GetChunkCount();
+            for (uint iChunk = 0; iChunk < chunkCount; ++iChunk) {
+               if (fructureGenerator.ChunkDepth(iChunk) == depth) {
+                  auto curChunkSize = fructureGenerator.GetChunkInfo(iChunk).size;
+
+                  auto axisIdx = VectorUtils::LargestAxisIdx(curChunkSize);
+
+                  if (curChunkSize[axisIdx] < 1.f) {
+                     continue;
+                  }
+
+                  vec3 normalizedChunkSize = curChunkSize / curChunkSize[axisIdx];
+
+                  uint3 slices = uint3(
+                     normalizedChunkSize.x > 0.75f ? 1 : 0,
+                     normalizedChunkSize.y > 0.75f ? 1 : 0,
+                     normalizedChunkSize.z > 0.75f ? 1 : 0
+                  );
+                  fructureGenerator.Slice(iChunk, slices);
+
+                  wasSliced = true;
+               }
+            }
+
+            if (!wasSliced) {
+               break;
+            }
+         }
+
+         fructureGenerator.MarkSupportChunkAtDepth(6);
       }
 
       fructureGenerator.BondGeneration();
@@ -622,11 +719,11 @@ namespace pbe {
 
       // todo: handle change
       if (destructible && tkActor == nullptr) {
-         auto [trans, geom]  = entity.Get<SceneTransformComponent, GeometryComponent>();
-         ASSERT(geom.type == GeomType::Box);
+         // auto [trans, geom]  = entity.Get<SceneTransformComponent, GeometryComponent>();
+         // ASSERT(geom.type == GeomType::Box);
 
          ASSERT(!destructData);
-         destructData = GetDestructData(trans.Scale());
+         destructData = GetDestructData(entity);
 
          auto tkFramework = NvBlastTkFrameworkGet();
 
