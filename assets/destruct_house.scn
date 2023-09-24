@@ -32,12 +32,6 @@ entities:
       scale: [1, 1, 1]
       parent: 8216114767425547920
       children: [4073246892471376794, 12565800549790969604, 13374436542035624158]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 50
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
   - uuid: 5011985211048166575
     tag: Floor
     SceneTransformComponent:
@@ -46,12 +40,6 @@ entities:
       scale: [1, 1, 1]
       parent: 8216114767425547920
       children: [16353594630970111719, 11226625768498652818, 7336205652019269908]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 50
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
   - uuid: 5676435894675039375
     tag: Cube 2
     SceneTransformComponent:
@@ -96,6 +84,12 @@ entities:
       scale: [1, 1, 1]
       parent: 3459374828559402514
       children: [5011985211048166575, 4655226864281613741, 15486082755356332997]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.0299999993
+      angularDamping: 0.0299999993
   - uuid: 11226625768498652818
     tag: Cube 1
     SceneTransformComponent:
@@ -229,12 +223,6 @@ entities:
       scale: [1, 1, 1]
       parent: 8216114767425547920
       children: [14459406078544728463, 14133987478880718380, 5676435894675039375]
-    RigidBodyComponent:
-      dynamic: true
-      destructible: true
-      hardness: 50
-      linearDamping: 0.0299999993
-      angularDamping: 0.0299999993
   - uuid: 16353594630970111719
     tag: Cube
     SceneTransformComponent:

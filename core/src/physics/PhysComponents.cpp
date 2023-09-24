@@ -88,6 +88,45 @@ namespace pbe {
          chunkInfo.isLeaf = true;
       }
 
+      Transform rootTrans;
+      void AddRoot(const Entity& entity) {
+         rootTrans = entity.GetTransform().World();
+
+         AddParent({0, 0, 0}); // todo:
+         chunkInfos[0].isLeaf = false;
+
+         AddEntityWithChilds(0, entity);
+      }
+
+      void AddEntityWithChilds(uint parentIdx, const Entity& entity) {
+         if (entity.Has<RigidBodyShapeComponent>()) {
+            if (!entity.Has<GeometryComponent>()) {
+               WARN("Child {} of destruct actor must have GeometryComponent", entity.GetName());
+               return;
+            }
+            ASSERT(entity.Get<GeometryComponent>().type == GeomType::Box);
+
+            // if (entity.Has<RigidBodyComponent>()) {
+            //    WARN("Child {} of destruct actor has RigidBodyComponent", entity.GetName());
+            //    return;
+            // }
+
+            auto& trans = entity.GetTransform();
+
+            auto relativeTrans = rootTrans.TransformInv(trans.World());
+            vec3 relativeScale = relativeTrans.scale;
+            relativeScale = relativeTrans.Rotate(relativeScale);
+            relativeScale = abs(relativeScale);
+
+            AddChunk(parentIdx, relativeTrans.position, relativeScale);
+         }
+
+         for (auto& child : entity.GetTransform().children) {
+            // todo: mb parent must be entity chunk if it was added
+            AddEntityWithChilds(parentIdx, child);
+         }
+      }
+
       // next chunk will be added to the next indexies
       uint GetChunkCount() const {
          return (uint)chunkDescs.size();
@@ -232,7 +271,7 @@ namespace pbe {
             aabbs[i] = AABB::Extends(
                Float3ToVec3(chunkDescs[chunkIdx].centroid),
                GetChunkInfo(chunkIdx).size / 2.f);
-            aabbs[i].Expand(0.0001f); // for future intersection test
+            aabbs[i].Expand(0.01f); // for future intersection test
          }
 
          bondDescs.reserve(nSupportChunks * 3); // assume min 3 bonds per chunk in general case
@@ -410,42 +449,42 @@ namespace pbe {
             }
          }
       } else {
-         // fructureGenerator.AddParent(chunkSize);
+         // todo: which size for parent?
+         fructureGenerator.AddParent(chunkSize);
 
-         bool parentWasAdded = false;
+         // if (auto geom = entity.TryGet<GeometryComponent>()) {
+         //    ASSERT(geom->type == GeomType::Box);
+         //    fructureGenerator.AddChunk(0, vec3{ 0, 0, 0 }, chunkSize); // todo:
+         // }
 
-         if (auto geom = entity.TryGet<GeometryComponent>()) {
-            ASSERT(geom->type == GeomType::Box);
-            parentWasAdded = true;
-            fructureGenerator.AddChunk(UINT32_MAX, vec3{ 0, 0, 0 }, chunkSize); // todo:
-         }
+         // auto& parentTrans = entity.GetTransform();
 
-         auto& parentTrans = entity.GetTransform();
+         // fructureGenerator.rootTrans = entity.GetTransform().World();
+         // fructureGenerator.AddEntityWithChilds(0, entity);
+         fructureGenerator.AddRoot(entity);
 
-         for (auto& child : entity.GetTransform().children) {
-            if (!child.Has<RigidBodyShapeComponent>()) {
-               continue;
-            }
-
-            // todo:
-            if (child.Has<RigidBodyComponent>()) {
-               // child.Remove<RigidBodyComponent>();
-            }
-
-            auto& childTrans = child.GetTransform();
-
-            auto relativeTrans = parentTrans.World().TransformInv(childTrans.World());
-            vec3 relativeScale = relativeTrans.scale;
-            relativeScale = relativeTrans.Rotate(relativeScale);
-            relativeScale = abs(relativeScale);
-
-            // todo:
-            fructureGenerator.AddChunk(parentWasAdded ? 0 : UINT32_MAX, childTrans.Local().position, relativeScale);
-            parentWasAdded = true;
-         }
+         // for (auto& child : entity.GetTransform().children) {
+         //    if (!child.Has<RigidBodyShapeComponent>()) {
+         //       continue;
+         //    }
+         //
+         //    if (child.Has<RigidBodyComponent>()) {
+         //       WARN("Child {} of destruct actor has RigidBodyComponent", child.GetName());
+         //       continue;
+         //    }
+         //
+         //    auto& childTrans = child.GetTransform();
+         //
+         //    auto relativeTrans = parentTrans.World().TransformInv(childTrans.World());
+         //    vec3 relativeScale = relativeTrans.scale;
+         //    relativeScale = relativeTrans.Rotate(relativeScale);
+         //    relativeScale = abs(relativeScale);
+         //
+         //    fructureGenerator.AddChunk(0, childTrans.Local().position, relativeScale);
+         // }
 
          // todo: not optimal
-         for (size_t depth = 0; depth < 6; depth++) {
+         for (size_t depth = 1; depth < 6; depth++) {
             bool wasSliced = false;
 
             uint chunkCount = fructureGenerator.GetChunkCount();

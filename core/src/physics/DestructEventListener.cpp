@@ -45,6 +45,11 @@ namespace pbe {
                if (!pParentMaterial) {
                   // support all child has the same material
                   pParentMaterial = parentTrans.children[0].TryGet<MaterialComponent>();
+                  // todo:
+                  if (!pParentMaterial) {
+                     static MaterialComponent defaultParentMaterial;
+                     pParentMaterial = &defaultParentMaterial;
+                  }
                   ASSERT(pParentMaterial);
                }
 
