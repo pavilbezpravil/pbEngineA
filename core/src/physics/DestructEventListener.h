@@ -1,6 +1,8 @@
 #pragma once
 #include <NvBlastTkEvent.h>
 
+#include "math/Types.h"
+
 
 namespace Nv {
    namespace Blast {
@@ -19,6 +21,8 @@ namespace pbe {
       void receive(const Nv::Blast::TkEvent* events, uint32_t eventCount) override;
    private:
       PhysicsScene& scene;
+
+      std::vector<uint> visibleChunkIndices;
    };
 
 }

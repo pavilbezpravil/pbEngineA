@@ -101,7 +101,9 @@ namespace pbe {
 
    void ViewportWindow::OnWindowUI() {
       // todo:
-      selection->SyncWithScene(*scene);
+      if (scene) {
+         selection->SyncWithScene(*scene);
+      }
 
       if (focused) {
          if (Input::IsKeyDown(KeyCode::RightButton)) {

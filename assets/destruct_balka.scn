@@ -1,0 +1,213 @@
+entities:
+  - uuid: 3025266316102579978
+    tag: oporya 0
+    SceneTransformComponent:
+      position: [-3, 1, 0]
+      rotation: [0, -0, 0]
+      scale: [0.699999988, 2, 1.29999995]
+      parent: 5383591570267271630
+    MaterialComponent:
+      baseColor: [0.594936728, 0.271110415, 0.271110415]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 3459374828559402514
+    tag: Scene
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5383591570267271630, 12559405180262518403]
+  - uuid: 5383591570267271630
+    tag: Balka 2 opori
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [3025266316102579978, 9889813764843162685, 8890436197300190957]
+  - uuid: 6776904941556836237
+    tag: Balka
+    SceneTransformComponent:
+      position: [0, 7.75184727, 0]
+      rotation: [0, -0, 18.7614422]
+      scale: [9.671772, 1, 1]
+      parent: 12559405180262518403
+    MaterialComponent:
+      baseColor: [0.146878168, 0.258133799, 0.696202517]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 8890436197300190957
+    tag: Balka
+    SceneTransformComponent:
+      position: [0, 2.5, 0]
+      rotation: [0, -0, 0]
+      scale: [9.671772, 1, 1]
+      parent: 5383591570267271630
+    MaterialComponent:
+      baseColor: [0.704641342, 0.669828892, 0.154604852]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 9889813764843162685
+    tag: oporay 1
+    SceneTransformComponent:
+      position: [3, 1, 0]
+      rotation: [0, -0, 0]
+      scale: [0.699999988, 2, 1.29999995]
+      parent: 5383591570267271630
+    MaterialComponent:
+      baseColor: [0.540084362, 0.227883697, 0.227883697]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 10687103412115808607
+    tag: oporya 0
+    SceneTransformComponent:
+      position: [-3, 1, 0]
+      rotation: [0, -0, 0]
+      scale: [1.5, 2, 1.5]
+      parent: 12559405180262518403
+    MaterialComponent:
+      baseColor: [0.658227861, 0.22218661, 0.564396143]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 11807877512905403012
+    tag: Ground
+    SceneTransformComponent:
+      position: [0, -0.5, 0]
+      rotation: [0, -0, 0]
+      scale: [100, 1, 100]
+      parent: 3459374828559402514
+    MaterialComponent:
+      baseColor: [0.200000003, 0.600000024, 0.200000003]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: false
+      destructible: false
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 12559405180262518403
+    tag: Balka 2 opori Falling
+    SceneTransformComponent:
+      position: [0, 0, 5]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+      children: [10687103412115808607, 14693310325806337783, 6776904941556836237]
+  - uuid: 14028351006921883563
+    tag: Sky
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+    SkyComponent:
+      directLight: 18446744073709551615
+      color: [1, 1, 1]
+      intensity: 1
+  - uuid: 14693310325806337783
+    tag: oporay 1
+    SceneTransformComponent:
+      position: [3, 1, 0]
+      rotation: [0, -0, 0]
+      scale: [1.5, 2, 1.5]
+      parent: 12559405180262518403
+    MaterialComponent:
+      baseColor: [0.495380014, 0.738396645, 0.612274051]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 17772976089333309317
+    tag: Direct Light
+    SceneTransformComponent:
+      position: [0, 0, 0]
+      rotation: [45, 45.0000038, 0]
+      scale: [1, 1, 1]
+      parent: 3459374828559402514
+    DirectLightComponent:
+      color: [1, 1, 1]
+      intensity: 1

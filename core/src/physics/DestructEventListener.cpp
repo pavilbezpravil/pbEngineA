@@ -53,10 +53,9 @@ namespace pbe {
                for (uint32_t j = 0; j < splitEvent->numChildren; ++j) {
                   auto tkChild = splitEvent->children[j];
 
-                  std::array<uint, 64> visibleChunkIndices; // todo:
-
+                  ASSERT_MT_UNIQUE();
                   uint32_t visibleChunkCount = tkChild->getVisibleChunkCount();
-                  ASSERT(visibleChunkCount < visibleChunkIndices.size());
+                  visibleChunkIndices.resize(visibleChunkCount);
                   tkChild->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
                   Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
@@ -64,8 +63,7 @@ namespace pbe {
                   bool childIsLeaf = visibleChunkCount == 1;
                   bool childIsLeafSupport = visibleChunkCount == 1;
 
-                  for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
-                     auto chunkIndex =  visibleChunkIndices[iChunk];
+                  for (uint chunkIndex : visibleChunkIndices) {
                      NvBlastChunk chunk = tkChild->getAsset()->getChunks()[chunkIndex];
 
                      vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
