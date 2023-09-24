@@ -420,6 +420,8 @@ namespace pbe {
             fructureGenerator.AddChunk(UINT32_MAX, vec3{ 0, 0, 0 }, chunkSize); // todo:
          }
 
+         auto& parentTrans = entity.GetTransform();
+
          for (auto& child : entity.GetTransform().children) {
             if (!child.Has<RigidBodyShapeComponent>()) {
                continue;
@@ -432,8 +434,13 @@ namespace pbe {
 
             auto& childTrans = child.GetTransform();
 
+            auto relativeTrans = parentTrans.World().TransformInv(childTrans.World());
+            vec3 relativeScale = relativeTrans.scale;
+            relativeScale = relativeTrans.Rotate(relativeScale);
+            relativeScale = abs(relativeScale);
+
             // todo:
-            fructureGenerator.AddChunk(parentWasAdded ? 0 : UINT32_MAX, childTrans.Local().position, childTrans.World().scale);
+            fructureGenerator.AddChunk(parentWasAdded ? 0 : UINT32_MAX, childTrans.Local().position, relativeScale);
             parentWasAdded = true;
          }
 
