@@ -43,25 +43,25 @@ namespace pbe {
          rootTrans = entity.GetTransform().World();
          rootTrans.scale = vec3{ 1.f };
 
-         chunkDescs.resize(1);
-         chunkInfos.resize(1);
+         // chunkDescs.resize(1);
+         // chunkInfos.resize(1);
+         //
+         // // parent
+         // // invalid index denotes a chunk hierarchy root
+         // chunkDescs[0].parentChunkDescIndex = UINT32_MAX;
+         // chunkDescs[0].centroid[0] = 0.0f;
+         // chunkDescs[0].centroid[1] = 0.0f;
+         // chunkDescs[0].centroid[2] = 0.0f;
+         // chunkDescs[0].volume = 0.f; // todo: ?
+         // chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
+         // chunkDescs[0].userData = 0;
+         //
+         // chunkInfos[0] = {
+         //    .size = vec3_Zero, // todo: ?
+         //    .isLeaf = false,
+         // };
 
-         // parent
-         // invalid index denotes a chunk hierarchy root
-         chunkDescs[0].parentChunkDescIndex = UINT32_MAX;
-         chunkDescs[0].centroid[0] = 0.0f;
-         chunkDescs[0].centroid[1] = 0.0f;
-         chunkDescs[0].centroid[2] = 0.0f;
-         chunkDescs[0].volume = 0.f; // todo: ?
-         chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-         chunkDescs[0].userData = 0;
-
-         chunkInfos[0] = {
-            .size = vec3_Zero, // todo: ?
-            .isLeaf = false,
-         };
-
-         AddEntityWithChilds(0, entity);
+         AddEntityWithChilds(UINT32_MAX, entity);
       }
 
       void AddEntityWithChilds(uint parentIdx, const Entity& entity) {
@@ -84,16 +84,17 @@ namespace pbe {
             relativeScale = relativeTrans.Rotate(relativeScale);
             relativeScale = abs(relativeScale);
 
-            AddChunk(parentIdx, relativeTrans.position, relativeScale);
+            uint chunkIdx = AddChunk(UINT32_MAX, relativeTrans.position, relativeScale);
+            // chunkToEntity[chunkIdx] = entity.GetID();
          }
 
          for (auto& child : entity.GetTransform().children) {
             // todo: mb parent must be entity chunk if it was added
-            AddEntityWithChilds(parentIdx, child);
+            AddEntityWithChilds(UINT32_MAX, child);
          }
       }
 
-      void AddChunk(uint parentIdx, const vec3& center, const vec3& size, bool replace = false) { // todo:
+      uint AddChunk(uint parentIdx, const vec3& center, const vec3& size, bool replace = false) { // todo:
          uint chunkIdx = (uint)chunkDescs.size();
 
          uint reqSize = chunkIdx;
@@ -119,6 +120,8 @@ namespace pbe {
          auto& chunkInfo = chunkInfos[nextChunkIdx];
          chunkInfo.size = size;
          chunkInfo.isLeaf = true;
+
+         return nextChunkIdx;
       }
 
       // next chunk will be added to the next indexies
@@ -227,7 +230,7 @@ namespace pbe {
 
       uint ChunkDepth(uint chunkIdx) const {
          uint depth = 0;
-         while (chunkIdx != 0) {
+         while (chunkIdx != UINT32_MAX) {
             chunkIdx = chunkDescs[chunkIdx].parentChunkDescIndex;
             ++depth;
          }
@@ -359,6 +362,7 @@ namespace pbe {
 
       // todo:
       std::vector<ChunkInfo> chunkInfos;
+      // std::unordered_map<uint, EntityID> chunkToEntity;
    private:
       std::vector<NvBlastChunkDesc> chunkDescs;
       std::vector<NvBlastBondDesc> bondDescs;
@@ -516,14 +520,11 @@ namespace pbe {
       auto tkChunks = tkAsset->getChunks();
 
       if (bool(flags & (DestructDbgRendFlags::Chunks | DestructDbgRendFlags::ChunksCentroid))) {
-         std::array<uint, 64> visibleChunkIndices; // todo:
-
          uint32_t visibleChunkCount = tkActor->getVisibleChunkCount();
-         ASSERT(visibleChunkCount < visibleChunkIndices.size());
+         std::vector<uint> visibleChunkIndices(visibleChunkCount);
          tkActor->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
-         for (uint iChunk = 0; iChunk < visibleChunkCount; ++iChunk) {
-            auto chunkIndex = visibleChunkIndices[iChunk];
+         for (uint chunkIndex : visibleChunkIndices) {
             NvBlastChunk chunk = tkChunks[chunkIndex];
 
             vec3 chunkCentroidL = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
