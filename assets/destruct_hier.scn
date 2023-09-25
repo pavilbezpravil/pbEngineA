@@ -23,7 +23,7 @@ entities:
       position: [0, 0, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
-      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 7656471987939309306, 11491684878437939180]
+      children: [17772976089333309317, 14028351006921883563, 11807877512905403012, 5358771780476770984, 5419856214482749592, 7656471987939309306, 11491684878437939180]
   - uuid: 3804830033439142534
     tag: Cube Right
     SceneTransformComponent:
@@ -42,6 +42,24 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyShapeComponent:
       {}
+  - uuid: 5011175102272333024
+    tag: Cube Left
+    SceneTransformComponent:
+      position: [-0.899999976, -1, -0.75]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 5419856214482749592
+    MaterialComponent:
+      baseColor: [0.822784781, 0.215243265, 0.215243265]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyShapeComponent:
+      {}
   - uuid: 5358771780476770984
     tag: Cube Hier
     SceneTransformComponent:
@@ -50,6 +68,31 @@ entities:
       scale: [1, 1, 1]
       parent: 3459374828559402514
       children: [14239996626430112721, 15343045157092208276]
+    MaterialComponent:
+      baseColor: [0.253999472, 0.224590093, 0.61181438]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyComponent:
+      dynamic: true
+      destructible: true
+      hardness: 50
+      linearDamping: 0.100000001
+      angularDamping: 0.100000001
+    RigidBodyShapeComponent:
+      {}
+  - uuid: 5419856214482749592
+    tag: Cube Hier Scaled
+    SceneTransformComponent:
+      position: [-5, 2, 0]
+      rotation: [0, -0, 0]
+      scale: [1.5, 1, 2]
+      parent: 3459374828559402514
+      children: [10633901489191330040, 5011175102272333024]
     MaterialComponent:
       baseColor: [0.253999472, 0.224590093, 0.61181438]
       roughness: 0.100000001
@@ -88,7 +131,7 @@ entities:
   - uuid: 7656471987939309306
     tag: Cube Hier Rotaion
     SceneTransformComponent:
-      position: [-6.50099421, 4.67194366, 0]
+      position: [-10, 4.67194366, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 3459374828559402514
@@ -147,10 +190,28 @@ entities:
       sizeData: [1, 1, 1]
     RigidBodyShapeComponent:
       {}
+  - uuid: 10633901489191330040
+    tag: Cube Right
+    SceneTransformComponent:
+      position: [0.899999976, -1, -0.75]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+      parent: 5419856214482749592
+    MaterialComponent:
+      baseColor: [0.128955364, 0.789029539, 0.0332923681]
+      roughness: 0.100000001
+      metallic: 0
+      emissivePower: 0
+      opaque: true
+    GeometryComponent:
+      type: 1
+      sizeData: [1, 1, 1]
+    RigidBodyShapeComponent:
+      {}
   - uuid: 11491684878437939180
     tag: Cube Hier 2 level
     SceneTransformComponent:
-      position: [-11.7304916, 4.67194366, 0]
+      position: [-15, 4.67194366, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
       parent: 3459374828559402514
