@@ -43,28 +43,10 @@ namespace pbe {
          rootTrans = entity.GetTransform().World();
          rootTrans.scale = vec3{ 1.f };
 
-         // chunkDescs.resize(1);
-         // chunkInfos.resize(1);
-         //
-         // // parent
-         // // invalid index denotes a chunk hierarchy root
-         // chunkDescs[0].parentChunkDescIndex = UINT32_MAX;
-         // chunkDescs[0].centroid[0] = 0.0f;
-         // chunkDescs[0].centroid[1] = 0.0f;
-         // chunkDescs[0].centroid[2] = 0.0f;
-         // chunkDescs[0].volume = 0.f; // todo: ?
-         // chunkDescs[0].flags = NvBlastChunkDesc::NoFlags;
-         // chunkDescs[0].userData = 0;
-         //
-         // chunkInfos[0] = {
-         //    .size = vec3_Zero, // todo: ?
-         //    .isLeaf = false,
-         // };
-
-         AddEntityWithChilds(UINT32_MAX, entity);
+         AddEntityWithChilds(entity);
       }
 
-      void AddEntityWithChilds(uint parentIdx, const Entity& entity) {
+      void AddEntityWithChilds(const Entity& entity) {
          if (entity.Has<RigidBodyShapeComponent>()) {
             if (!entity.Has<GeometryComponent>()) {
                WARN("Child {} of destruct actor must have GeometryComponent", entity.GetName());
@@ -85,12 +67,12 @@ namespace pbe {
             relativeScale = abs(relativeScale);
 
             uint chunkIdx = AddChunk(UINT32_MAX, relativeTrans.position, relativeScale);
-            // chunkToEntity[chunkIdx] = entity.GetID();
+            chunkToEntity[chunkIdx] = entity.GetID();
          }
 
          for (auto& child : entity.GetTransform().children) {
             // todo: mb parent must be entity chunk if it was added
-            AddEntityWithChilds(UINT32_MAX, child);
+            AddEntityWithChilds(child);
          }
       }
 
@@ -362,7 +344,7 @@ namespace pbe {
 
       // todo:
       std::vector<ChunkInfo> chunkInfos;
-      // std::unordered_map<uint, EntityID> chunkToEntity;
+      std::unordered_map<uint, EntityID> chunkToEntity;
    private:
       std::vector<NvBlastChunkDesc> chunkDescs;
       std::vector<NvBlastBondDesc> bondDescs;
@@ -451,6 +433,10 @@ namespace pbe {
       destructData->tkAsset = tkAsset;
       destructData->chunkInfos = std::move(fructureGenerator.chunkInfos);
       destructData->damageAccelerator = NvBlastExtDamageAcceleratorCreate(destructData->tkAsset->getAssetLL(), 3);
+
+      // todo: find direct and readably way
+      entity.Get<RigidBodyComponent>().chunkToEntity = std::move(fructureGenerator.chunkToEntity);
+
       return destructData;
    }
 

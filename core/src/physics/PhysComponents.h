@@ -75,6 +75,8 @@ namespace pbe {
       Nv::Blast::TkActor* tkActor = nullptr;
 
       DestructData* destructData = nullptr;  // todo:
+      // todo:
+      std::unordered_map<uint, EntityID> chunkToEntity;
 
    private:
       void CreateOrUpdate(physx::PxScene& pxScene, Entity& entity);
@@ -99,9 +101,9 @@ namespace pbe {
       float friction = 0.7f;
    };
 
-   struct CORE_API DestructionChunkComponent {
-
-   };
+   // struct CORE_API DestructionChunkComponent {
+   //
+   // };
 
    struct TriggerComponent {
       physx::PxRigidActor* pxRigidActor = nullptr;

@@ -41,17 +41,10 @@ namespace pbe {
                auto destructData = parentRb.destructData;
                parentRb.destructData = nullptr;
 
-               auto* pParentMaterial = parentEntity.TryGet<MaterialComponent>();
-               if (!pParentMaterial) {
-                  // support all child has the same material
-                  pParentMaterial = parentTrans.children[0].TryGet<MaterialComponent>();
-                  // todo:
-                  if (!pParentMaterial) {
-                     static MaterialComponent defaultParentMaterial;
-                     pParentMaterial = &defaultParentMaterial;
-                  }
-                  ASSERT(pParentMaterial);
-               }
+               const auto& parentChunkToEntity = parentRb.chunkToEntity;
+               ASSERT(!parentChunkToEntity.empty());
+
+               const auto* chunks = destructData->tkAsset->getChunks();
 
                auto pScene = parentEntity.GetScene();
 
@@ -68,12 +61,13 @@ namespace pbe {
                   bool childIsLeaf = visibleChunkCount == 1;
                   bool childIsLeafSupport = visibleChunkCount == 1;
 
+                  std::unordered_map<uint, EntityID> childChunkToEntity(visibleChunkCount);
+
                   for (uint chunkIndex : visibleChunkIndices) {
-                     NvBlastChunk chunk = tkChild->getAsset()->getChunks()[chunkIndex];
-
-                     vec3 offset = vec3{ chunk.centroid[0], chunk.centroid[1], chunk.centroid[2] };
-
+                     const NvBlastChunk& chunk = chunks[chunkIndex];
                      auto& chunkInfo = destructData->chunkInfos[chunkIndex];
+
+                     auto& offset = reinterpret_cast<const vec3&>(*chunk.centroid);
 
                      if (visibleChunkCount == 1) {
                         childIsLeaf = chunkInfo.isLeaf;
@@ -87,11 +81,19 @@ namespace pbe {
                         .scale = chunkInfo.size,
                         .type = CubeDesc::PhysShape,
                      });
-                     visibleChunkEntity.Add<DestructionChunkComponent>();
+                     // visibleChunkEntity.Add<DestructionChunkComponent>();
 
-                     if (pParentMaterial) {
-                        visibleChunkEntity.Get<MaterialComponent>() = *pParentMaterial;
+                     childChunkToEntity[chunkIndex] = visibleChunkEntity.GetID();
+
+                     uint visibleChunkParentIdx = chunkIndex;
+                     while (!parentChunkToEntity.contains(visibleChunkParentIdx)) {
+                        visibleChunkParentIdx = chunks[visibleChunkParentIdx].parentChunkIndex;
+                        ASSERT(visibleChunkParentIdx != UINT32_MAX);
                      }
+
+                     // todo: copy shape parametrs too
+                     Entity visibleChunkParentEntity = { parentChunkToEntity.at(visibleChunkParentIdx), parentEntity.GetScene() };
+                     visibleChunkEntity.Get<MaterialComponent>() = visibleChunkParentEntity.Get<MaterialComponent>();
                   }
 
                   // todo: mb do it not here, send event for example
@@ -116,6 +118,7 @@ namespace pbe {
 
                   auto& childRb2 = childEntity.Add<RigidBodyComponent>(std::move(childRb));
                   childRb2.SetDestructible(*tkChild, *destructData);
+                  childRb2.chunkToEntity = std::move(childChunkToEntity); // todo:
 
                   auto childDynamic = childRb2.pxRigidActor->is<PxRigidDynamic>();
 
