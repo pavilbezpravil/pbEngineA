@@ -18,6 +18,11 @@ struct SCameraCB;
 
 namespace pbe {
 
+   template <typename T>
+   class CVarValue;
+
+   extern CORE_API CVarValue<bool> rayTracingSceneRender;
+
    // todo: move to utils
    vec2 UVToNDC(const vec2& uv);
    vec2 NDCToUV(const vec2& ndc);

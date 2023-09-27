@@ -56,6 +56,12 @@ namespace pbe {
       ToggleSelect(entity, clearPrevSelection);
    }
 
+   void EditorSelection::ChangeScene(Scene& scene) {
+      for (auto& entity: selected) {
+         entity = scene.GetEntity(entity.GetUUID());
+      }
+   }
+
    void EditorSelection::SyncWithScene(Scene& scene) {
       // bool unselected = true;
       // while (!unselected) {

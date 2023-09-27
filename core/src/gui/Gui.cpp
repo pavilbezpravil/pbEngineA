@@ -4,6 +4,10 @@
 
 namespace pbe {
 
+   vec2 ToVec2(const ImVec2& v) {
+      return { v.x, v.y };
+   }
+
    ImGuiContext* GetImGuiContext() {
       return ImGui::GetCurrentContext();
    }

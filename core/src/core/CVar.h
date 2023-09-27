@@ -48,6 +48,10 @@ namespace pbe {
             : CVar(name), value(initialValue) {
       }
 
+      CVarValue& operator= (T newValue) {
+         value = newValue;
+         return *this;
+      }
       operator T() const { return value; }
 
       void UI() override;

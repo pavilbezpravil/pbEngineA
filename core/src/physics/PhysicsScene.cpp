@@ -172,6 +172,9 @@ namespace pbe {
 
          // todo: when copy component copy ptr to
          auto& rb = entity.Get<RigidBodyComponent>();
+         ASSERT(!rb.pxRigidActor);
+         ASSERT(!rb.destructData);
+         ASSERT(!rb.tkActor);
          rb.pxRigidActor = nullptr;
          rb.destructData = nullptr;
          rb.tkActor = nullptr;

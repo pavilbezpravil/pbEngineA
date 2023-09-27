@@ -9,7 +9,7 @@
 namespace pbe {
 
    void InspectorWindow::OnWindowUI() {
-      Entity entity = selection ? selection->FirstSelected() : Entity{};
+      Entity entity = selection ? selection->LastSelected() : Entity{};
 
       if (!entity.Valid()) {
          ImGui::Text("No entity");

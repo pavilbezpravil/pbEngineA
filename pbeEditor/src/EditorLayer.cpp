@@ -264,6 +264,10 @@ namespace pbe {
          ImGui::ShowDemoWindow(&showImGuiWindow);
       }
 
+      if (auto pScene = GetActiveScene()) {
+         editorSelection.SyncWithScene(*pScene);
+      }
+
       for (auto& window : editorWindows) {
          if (!window->show) {
             continue;
@@ -300,6 +304,7 @@ namespace pbe {
 
    void EditorLayer::OnEvent(Event& event) {
       if (auto* e = event.GetEvent<KeyDownEvent>()) {
+         // todo: it's inspector and scene hierarchy window logic
          if (e->keyCode == KeyCode::Escape) {
             editorSelection.ClearSelection();
          }
@@ -312,6 +317,7 @@ namespace pbe {
             editorSelection.ClearSelection();
          }
 
+         // todo: scene hierarchy window logic
          if (Input::IsKeyPressing(KeyCode::Ctrl)) {
             if (e->keyCode == KeyCode::P) {
                TogglePlayStop();
@@ -341,7 +347,7 @@ namespace pbe {
    }
 
    void EditorLayer::SetActiveScene(Scene* scene) {
-      editorSelection.ClearSelection();
+      editorSelection.ChangeScene(*scene);
 
       sceneHierarchyWindow->SetScene(scene);
       viewportWindow->scene = scene;

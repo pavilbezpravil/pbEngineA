@@ -1,15 +1,17 @@
 #pragma once
 
-#include <string_view>
-
 #include "core/Assert.h"
 #include "core/Core.h"
 #include "core/Type.h"
+#include "math/Types.h"
+
 
 namespace pbe {
 
    // todo:
    constexpr char DRAG_DROP_ENTITY[] = "DD_ENTITY";
+
+   CORE_API vec2 ToVec2(const ImVec2& v);
 
    namespace ui {
 
@@ -28,6 +30,22 @@ namespace pbe {
       };
 
 #define UI_WINDOW(name, ...) ui::Window uiWindow{name, __VA_ARGS__}
+
+      struct ChildWindow {
+         ChildWindow(const char* str_id, const ImVec2& size = ImVec2(0, 0), bool border = false, ImGuiWindowFlags flags = 0) {
+            opened = ImGui::BeginChild(str_id, size, border, flags);
+         }
+
+         ~ChildWindow() {
+            ImGui::EndChild();
+         }
+
+         operator bool() const { return opened; }
+
+         bool opened = false;
+      };
+
+#define UI_CHILD_WINDOW(strID, ...) ui::ChildWindow uiWindow{strID, __VA_ARGS__}
 
       struct MenuBar {
          MenuBar() {

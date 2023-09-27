@@ -34,13 +34,11 @@ namespace pbe {
          return !selected.empty();
       }
 
-      Entity FirstSelected() const {
-         return selected.empty() ? Entity{} : selected.front();
-      }
-
       Entity LastSelected() const {
          return selected.empty() ? Entity{} : selected.back();
       }
+
+      void ChangeScene(Scene& scene);
 
       // handle entity destroy
       void SyncWithScene(Scene& scene);

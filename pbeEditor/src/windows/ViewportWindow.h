@@ -17,6 +17,16 @@ namespace pbe {
       float snap = 1;
    };
 
+   struct ViewportSettings {
+      vec3 cameraPos{};
+      vec2 cameraAngles{};
+
+      bool showToolbar = true;
+      float renderScale = 1.f;
+      int showedTexIdx = 0;
+      bool rayTracingRendering = true;
+   };
+
    class ViewportWindow : public EditorWindow {
    public:
       // using EditorWindow::EditorWindow;
@@ -45,6 +55,14 @@ namespace pbe {
 
       GizmoCfg gizmoCfg;
 
+      // todo: add enum ViewportState
+
+      enum class ViewportState {
+         None,
+         ObjManipulation,
+         CameraMove,
+      };
+
       enum ManipulatorMode {
          None = 0,
          Translate = BIT(1),
@@ -53,19 +71,33 @@ namespace pbe {
          AxisX = BIT(4),
          AxisY = BIT(5),
          AxisZ = BIT(6),
-         ObjManipulation = BIT(7),
-         CameraMove = BIT(8),
       };
 
    private:
       ManipulatorMode AllAxis = ManipulatorMode(AxisX | AxisY | AxisZ);
+
+      ViewportSettings settings;
 
       bool zoomEnable = false;
 
       Transform manipulatorRelativeTransform;
       vec3 manipulatorInitialPos;
 
+      ViewportState state = ViewportState::None;
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
+
+      void ViewportToolbar();
+
+      void ApplyDamageFromCamera(const vec3& rayDirection);
+      void SelectEntity(EntityID entityID);
+
+      void DrawTexture(CommandList& cmd, Texture2D& image, const ImVec2& imSize);
+      void AddEntityPopup(const vec2& cursorUV);
+
+      void Manipulator(const vec2& cursorUV);
+
+      void ManipulatorResetTransforms();
+      void StopManipulator();
 
       void StartCameraMove();
       void StopCameraMove();
