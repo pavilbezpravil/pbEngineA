@@ -85,10 +85,10 @@ namespace pbe {
       cameraCB.projection = projection;
 
       cameraCB.viewProjection = GetViewProjection();
-      cameraCB.invViewProjection = cameraCB.viewProjection;
+      cameraCB.invViewProjection = glm::inverse(cameraCB.viewProjection);
 
       cameraCB.prevViewProjection = GetPrevViewProjection();
-      cameraCB.prevInvViewProjection = cameraCB.prevViewProjection;
+      cameraCB.prevInvViewProjection = glm::inverse(cameraCB.prevViewProjection);
 
       auto frustumCornerLeftUp = glm::inverse(projection) * vec4{ 1, 1, 0, 1 };
       frustumCornerLeftUp /= frustumCornerLeftUp.w;

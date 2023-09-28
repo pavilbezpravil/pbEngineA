@@ -114,6 +114,7 @@ namespace pbe {
    }
 
    void ViewportWindow::OnWindowUI() {
+      auto startCursorPos = ImGui::GetCursorPos();
       auto contentRegion = ImGui::GetContentRegionAvail();
       int2 size = vec2{ contentRegion.x, contentRegion.y } * settings.renderScale;
 
@@ -179,12 +180,7 @@ namespace pbe {
       }
 
       if (state == ViewportState::None) {
-         ImGui::SetCursorPos(ImVec2{ 3, 5 });
-         if (ImGui::Button("=")) {
-            settings.showToolbar = !settings.showToolbar;
-         }
-
-         ViewportToolbar();
+         ViewportToolbar(startCursorPos);
       }
    }
 
@@ -373,16 +369,22 @@ namespace pbe {
       }
    }
 
-   void ViewportWindow::ViewportToolbar() {
+   void ViewportWindow::ViewportToolbar(const ImVec2& cursorPos) {
+      ImGui::SetCursorPos(cursorPos + ImVec2{ 3, 5 });
+      if (ImGui::Button(settings.showToolbar ? "<" : ">")) {
+         settings.showToolbar = !settings.showToolbar;
+      }
+
       if (!settings.showToolbar) {
          return;
       }
+
+      ImGui::SameLine();
 
       UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.3f }));
       UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
       // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
 
-      ImGui::SetCursorPos(ImVec2{ 25, 10 });
       if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 560, ImGui::GetFrameHeight() }))) {
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);

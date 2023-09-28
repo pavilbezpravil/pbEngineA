@@ -23,7 +23,7 @@ namespace pbe {
       bool showToolbar = true;
       float renderScale = 1.f;
       int showedTexIdx = 0;
-      bool rayTracingRendering = true;
+      bool rayTracingRendering = false;
 
       bool useGizmo = true; // instead of manipulator
       int space = 1; // world
@@ -88,7 +88,7 @@ namespace pbe {
       ViewportState state = ViewportState::None;
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
 
-      void ViewportToolbar();
+      void ViewportToolbar(const ImVec2& cursorPos);
 
       void ApplyDamageFromCamera(const vec3& rayDirection);
       void SelectEntity(EntityID entityID);
