@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Renderer.h"
 
-#include <NvBlastTkActor.h>
-
 #include "DbgRend.h"
 #include "RendRes.h"
 #include "RTRenderer.h"

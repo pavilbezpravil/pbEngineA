@@ -385,7 +385,7 @@ namespace pbe {
       UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
       // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
 
-      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 560, ImGui::GetFrameHeight() }))) {
+      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 660, ImGui::GetFrameHeight() }))) {
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
@@ -412,15 +412,24 @@ namespace pbe {
             ImGui::SameLine();
          }
 
-         // todo:
-         // if (UI_MENU("Visualize")) {
-         //    if (ImGui::MenuItem("Scene")) {
-         //
-         //    }
-         //    if (ImGui::MenuItem("Physics")) {
-         //
-         //    }
-         // }
+         constexpr const char* visualizePopupName = "Visualize Popup";
+         if (ImGui::Button("Visualize")) {
+            ImGui::OpenPopup(visualizePopupName);
+         }
+
+         if (UI_POPUP(visualizePopupName, ImGuiWindowFlags_MenuBar)) {
+            if (UI_MENU("Physics")) {
+               static bool showPhysics = true;
+               static bool showJoints = true;
+
+               if (ImGui::Selectable("Joints", &showJoints, ImGuiSelectableFlags_DontClosePopups)) {
+                  
+               }
+               if (ImGui::Selectable("Destruction", &showPhysics, ImGuiSelectableFlags_DontClosePopups)) {
+                  
+               }
+            }
+         }
       }
    }
 
