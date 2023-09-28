@@ -63,7 +63,6 @@ namespace pbe {
 
    // todo: add hotkey remove cfg
    CVarSlider<float> zoomScale{ "zoom/scale", 0.05f, 0.f, 1.f };
-   CVarValue<bool> cvGizmo{ "gizmo", false };
 
    enum class EditorShowTexture : int {
       Lit,
@@ -81,10 +80,14 @@ namespace pbe {
    STRUCT_BEGIN(ViewportSettings)
       STRUCT_FIELD(cameraPos)
       STRUCT_FIELD(cameraAngles)
+
       STRUCT_FIELD(showToolbar)
       STRUCT_FIELD(renderScale)
       STRUCT_FIELD(showedTexIdx)
       STRUCT_FIELD(rayTracingRendering)
+
+      STRUCT_FIELD(useGizmo)
+      STRUCT_FIELD(space)
    STRUCT_END()
 
    ViewportWindow::ViewportWindow(std::string_view name) : EditorWindow(name) {
@@ -169,18 +172,20 @@ namespace pbe {
 
       Zoom(image, cursorPixelIdx);
 
-      if (cvGizmo) {
+      if (settings.useGizmo) {
          Gizmo(vec2{ contentRegion.x, contentRegion.y }, cursorPos);
       } else {
          Manipulator(cursorUV);
       }
 
-      ImGui::SetCursorPos(ImVec2{ 3, 5 });
-      if (ImGui::Button("=")) {
-         settings.showToolbar = !settings.showToolbar;
-      }
+      if (state == ViewportState::None) {
+         ImGui::SetCursorPos(ImVec2{ 3, 5 });
+         if (ImGui::Button("=")) {
+            settings.showToolbar = !settings.showToolbar;
+         }
 
-      ViewportToolbar();
+         ViewportToolbar();
+      }
    }
 
    void ViewportWindow::OnUpdate(float dt) {
@@ -189,7 +194,7 @@ namespace pbe {
          return;
       }
 
-      if (Input::IsKeyPressing(KeyCode::RightButton)) {
+      if (Input::IsKeyDown(KeyCode::RightButton)) {
          StartCameraMove();
       }
       if (Input::IsKeyUp(KeyCode::RightButton)) {
@@ -234,19 +239,10 @@ namespace pbe {
             camera.UpdateView();
          }
 
-         // todo: remove
-         if (Input::IsKeyDown(KeyCode::W)) {
-            gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
-         }
-         if (Input::IsKeyDown(KeyCode::R)) {
-            gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
-         }
-         if (Input::IsKeyDown(KeyCode::S)) {
-            gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
-         }
-         if (Input::IsKeyDown(KeyCode::Q)) {
-            gizmoCfg.space = 1 - gizmoCfg.space;
-         }
+         // todo: find suitable hot key
+         // if (Input::IsKeyDown(KeyCode::Q)) {
+         //    settings.space = 1 - settings.space;
+         // }
 
          if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
             freeCamera = !freeCamera;
@@ -322,6 +318,18 @@ namespace pbe {
    }
 
    void ViewportWindow::Gizmo(const vec2& contentRegion, const vec2& cursorPos) {
+      if (state == ViewportState::None) {
+         if (Input::IsKeyDown(KeyCode::W)) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::TRANSLATE;
+         }
+         if (Input::IsKeyDown(KeyCode::R)) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::ROTATE;
+         }
+         if (Input::IsKeyDown(KeyCode::S)) {
+            gizmoCfg.operation = ImGuizmo::OPERATION::SCALE;
+         }
+      }
+
       auto selectedEntity = selection->LastSelected();
       if (!selectedEntity.Valid()) {
          return;
@@ -342,7 +350,7 @@ namespace pbe {
       ImGuizmo::Manipulate(glm::value_ptr(camera.view),
          glm::value_ptr(camera.projection),
          (ImGuizmo::OPERATION)gizmoCfg.operation,
-         (ImGuizmo::MODE)gizmoCfg.space,
+         (ImGuizmo::MODE)settings.space,
          glm::value_ptr(entityTransform),
          nullptr,
          snap ? snapValues : nullptr);
@@ -370,20 +378,19 @@ namespace pbe {
          return;
       }
 
-      UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.2f }));
+      UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.3f }));
       UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
       // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
 
-      ImGui::SetCursorPos(ImVec2{ 20, 10 });
-      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 300, ImGui::GetFrameHeight() }))) {
+      ImGui::SetCursorPos(ImVec2{ 25, 10 });
+      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 560, ImGui::GetFrameHeight() }))) {
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
-         const char* items[] = { "Lit", "Unlit", "Normal", "Roughness", "Metallic", "Diffuse", "Specular",  "Motion" };
-
-         ImGui::SetNextItemWidth(90);
-         ImGui::Combo("##Scene RTs", &settings.showedTexIdx, items, IM_ARRAYSIZE(items));
-         ImGui::SameLine(0, 0);
+         ImGui::SetNextItemWidth(100);
+         const char* sceneRTs[] = { "Lit", "Unlit", "Normal", "Roughness", "Metallic", "Diffuse", "Specular",  "Motion" };
+         ImGui::Combo("##Scene RTs", &settings.showedTexIdx, sceneRTs, IM_ARRAYSIZE(sceneRTs));
+         ImGui::SameLine();
 
          ImGui::SetNextItemWidth(100);
          ImGui::SliderFloat("Scale", &settings.renderScale, 0.1f, 2.f);
@@ -392,6 +399,16 @@ namespace pbe {
          ImGui::Checkbox("RT", &settings.rayTracingRendering);
          rayTracingSceneRender = settings.rayTracingRendering;
          ImGui::SameLine();
+
+         ImGui::Checkbox("Gizmo", &settings.useGizmo);
+         ImGui::SameLine();
+
+         if (settings.useGizmo) {
+            ImGui::SetNextItemWidth(100);
+            const char* spaces[] = { "Local", "World" };
+            ImGui::Combo("##Transform Space", &settings.space, spaces, IM_ARRAYSIZE(spaces));
+            ImGui::SameLine();
+         }
 
          // todo:
          // if (UI_MENU("Visualize")) {

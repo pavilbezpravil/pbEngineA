@@ -5,6 +5,11 @@
 
 namespace pbe {
 
+   enum class Space {
+      Local,
+      World
+   };
+
    struct CORE_API Transform {
       vec3 position;
       quat rotation;

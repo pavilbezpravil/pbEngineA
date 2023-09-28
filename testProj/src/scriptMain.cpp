@@ -52,6 +52,25 @@ namespace pbe {
    TYPER_REGISTER_SCRIPT(TestScript);
 
 
+   class TransformPrinterScript : public Script {
+   public:
+      void OnUpdate(float dt) override {
+         if (print) {
+            const auto& trans = owner.GetTransform();
+            INFO("{}: position {}, rotation {}, scale {}", owner.GetName(), trans.Position(), trans.Rotation(), trans.Scale());
+         }
+      }
+
+      bool print = true;
+   };
+
+   STRUCT_BEGIN(TransformPrinterScript)
+      STRUCT_FIELD(print)
+   STRUCT_END()
+   TYPER_REGISTER_COMPONENT(TransformPrinterScript);
+   TYPER_REGISTER_SCRIPT(TransformPrinterScript);
+
+
    class CubeSpawnerScript : public Script {
    public:
       void OnEnable() override {

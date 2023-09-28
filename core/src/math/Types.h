@@ -151,3 +151,8 @@ template<typename OStream>
 OStream& operator<<(OStream& os, const glm::vec4& v) {
    return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 }
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const glm::quat& v) {
+   return os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
+}

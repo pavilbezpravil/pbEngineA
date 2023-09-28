@@ -13,7 +13,6 @@ namespace pbe {
 
    struct GizmoCfg {
       int operation = 7; // translate
-      int space = 1; // world
       float snap = 1;
    };
 
@@ -25,6 +24,9 @@ namespace pbe {
       float renderScale = 1.f;
       int showedTexIdx = 0;
       bool rayTracingRendering = true;
+
+      bool useGizmo = true; // instead of manipulator
+      int space = 1; // world
    };
 
    class ViewportWindow : public EditorWindow {
