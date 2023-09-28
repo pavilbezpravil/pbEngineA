@@ -132,7 +132,7 @@ namespace pbe {
 
       CommandList cmd{ sDevice->g_pd3dDeviceContext };
 
-      if (state == ViewportState::None && Input::IsKeyDown(KeyCode::LeftButton) && !ImGuizmo::IsOver()) {
+      if (state == ViewportState::None && Input::IsKeyDown(KeyCode::LeftButton) && ImGui::IsWindowHovered() && !ImGuizmo::IsOver()) {
          if (Input::IsKeyPressing(KeyCode::Ctrl)) {
             ApplyDamageFromCamera(camera.GetWorldSpaceRayDirFromUV(cursorUV));
          } else {
@@ -258,7 +258,9 @@ namespace pbe {
                // todo: set rotation
             }
          }
+      }
 
+      if (state == ViewportState::None || state == ViewportState::CameraMove) {
          // todo:
          static TimedAction timer{ 5 };
          bool doShoot = Input::IsKeyPressing(KeyCode::Space);

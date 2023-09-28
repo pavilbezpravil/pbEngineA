@@ -29,15 +29,10 @@ namespace pbe {
          return false;
       };
 
-      bool checkAllSelected = false;
-      while (!checkAllSelected) {
-         checkAllSelected = true;
-         for (auto selectedEntity : selected) {
-            if (IsParentFor(entity, selectedEntity)) {
-               Unselect(selectedEntity);
-               checkAllSelected = false;
-               break;
-            }
+      for (size_t i = selected.size(); i; --i) {
+         auto& selectedEntity = selected[i - 1u];
+         if (IsParentFor(entity, selectedEntity)) {
+            Unselect(selectedEntity);
          }
       }
 
@@ -63,22 +58,9 @@ namespace pbe {
    }
 
    void EditorSelection::SyncWithScene(Scene& scene) {
-      // bool unselected = true;
-      // while (!unselected) {
-      //    unselected = false;
-      //    for (auto entity : selected) {
-      //       if (!entity) {
-      //          Unselect(entity);
-      //          unselected = true;
-      //          break;
-      //       }
-      //    }
-      // }
-
-      for (auto entity : selected) {
+      for (size_t i = selected.size(); i; --i) {
+         auto& entity = selected[i - 1u];
          if (!entity) {
-            selected.clear();
-            return; // todo:
             Unselect(entity);
          }
       }
@@ -86,8 +68,7 @@ namespace pbe {
       scene.ClearComponent<OutlineComponent>();
 
       for (auto& entity : selected) {
-         entity.Add<OutlineComponent>().color = Color_Yellow;
-         AddOutlineForChild(entity, Color_Yellow, 1);
+         AddOutlineForChild(entity, Color_Yellow, 0);
       }
    }
 
@@ -98,11 +79,12 @@ namespace pbe {
    }
 
    void EditorSelection::AddOutlineForChild(Entity& entity, const Color& color, uint depth) {
+      entity.Add<OutlineComponent>().color = color;
+
       Color nextChildColor = color;
       nextChildColor.RbgMultiply(0.8f);
 
       for (auto& child : entity.GetTransform().children) {
-         child.Add<OutlineComponent>().color = color;
          AddOutlineForChild(child, nextChildColor, depth + 1);
       }
    }

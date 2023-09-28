@@ -25,27 +25,28 @@ namespace pbe {
    void SceneHierarchyWindow::OnWindowUI() {
       if (!pScene) {
          ImGui::Text("No scene");
-      } else {
-         auto& scene = *pScene;
-         // todo: undo on delete entity
+         return;
+      }
 
-         // todo: undo
-         if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
-            Entity entity = SceneAddEntityMenu(scene, vec3_Zero); // todo: spawnPosHint
-            if (entity) {
-               ToggleSelectEntity(entity);
-            }
+      auto& scene = *pScene;
+      // todo: undo on delete entity
+
+      // todo: undo
+      if (UI_POPUP_CONTEXT_WINDOW(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+         Entity entity = SceneAddEntityMenu(scene, vec3_Zero); // todo: spawnPosHint
+         if (entity) {
+            ToggleSelectEntity(entity);
          }
+      }
 
-         UIEntity(pScene->GetRootEntity(), true);
+      UIEntity(pScene->GetRootEntity(), true);
 
-         // place item for drag&drop to root
-         // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
-         ImGui::Dummy(ImGui::GetContentRegionAvail());
-         DragDropChangeParent(pScene->GetRootEntity());
-         if (ImGui::IsItemClicked() && !Input::IsKeyPressing(KeyCode::Ctrl)) {
-            selection->ClearSelection();
-         }
+      // place item for drag&drop to root
+      // ImGui::SetCursorPosY(0); // todo: mb it help to reorder items in hierarchy
+      ImGui::Dummy(ImGui::GetContentRegionAvail());
+      DragDropChangeParent(pScene->GetRootEntity());
+      if (ImGui::IsItemClicked() && !Input::IsKeyPressing(KeyCode::Ctrl)) {
+         selection->ClearSelection();
       }
    }
 

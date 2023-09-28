@@ -392,9 +392,9 @@ namespace pbe {
    }
 
    void EditorLayer::OnStop() {
+      SetActiveScene(editorScene.get());
       runtimeScene->OnStop();
       runtimeScene = {};
-      SetActiveScene(editorScene.get());
       editorState = State::Edit;
    }
 
