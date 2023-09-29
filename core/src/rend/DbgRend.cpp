@@ -18,13 +18,14 @@ namespace pbe {
    DbgRend::~DbgRend() {
    }
 
-   void DbgRend::DrawLine(const vec3& start, const vec3& end, const Color& color, bool zTest) {
+   void DbgRend::DrawLine(const vec3& start, const vec3& end, const Color& color, bool zTest, EntityID entityID) {
+      uint entityIDUint = (uint)entityID;
       if (zTest) {
-         lines.emplace_back(start, color);
-         lines.emplace_back(end, color);
+         lines.emplace_back(start, entityIDUint, color);
+         lines.emplace_back(end, entityIDUint, color);
       } else {
-         linesNoZ.emplace_back(start, color);
-         linesNoZ.emplace_back(end, color);
+         linesNoZ.emplace_back(start, entityIDUint, color);
+         linesNoZ.emplace_back(end, entityIDUint, color);
       }
    }
 
@@ -189,11 +190,11 @@ namespace pbe {
 
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-      ID3D11InputLayout* inputLayout = rendres::GetInputLayout(program->vs->blob.Get(), VertexPosColor::inputElementDesc);
+      ID3D11InputLayout* inputLayout = rendres::GetInputLayout(program->vs->blob.Get(), VertexPosUintColor::inputElementDesc);
       context->IASetInputLayout(inputLayout);
 
-      auto draw = [&cmd, &context, &program](std::vector<VertexPosColor>& lines) {
-         auto stride = (uint)sizeof(VertexPosColor);
+      auto draw = [&cmd, &context, &program](std::vector<VertexPosUintColor>& lines) {
+         auto stride = (uint)sizeof(VertexPosUintColor);
          auto dynVerts = cmd.AllocDynVertBuffer(lines.data(), stride * (uint)lines.size());
 
          ID3D11Buffer* vBuffer = dynVerts.buffer->GetBuffer();
