@@ -75,6 +75,7 @@ struct std::hash<pbe::ProgramDesc> {
       HashCombine(res, v.vs);
       HashCombine(res, v.hs);
       HashCombine(res, v.ds);
+      HashCombine(res, v.gs);
       HashCombine(res, v.ps);
 
       HashCombine(res, v.cs);
@@ -108,6 +109,7 @@ namespace pbe {
          "vs_5_0",
          "hs_5_0",
          "ds_5_0",
+         "gs_5_0",
          "ps_5_0",
          "cs_5_0",
       };
@@ -243,6 +245,11 @@ namespace pbe {
          nullptr, &ds);
          SetDbgName(ds.Get(), dbgName);
          break;
+      case ShaderType::Geometry: sDevice->g_pd3dDevice->CreateGeometryShader(
+         shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
+         nullptr, &gs);
+         SetDbgName(gs.Get(), dbgName);
+         break;
       case ShaderType::Pixel: sDevice->g_pd3dDevice->CreatePixelShader(
          shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(),
          nullptr, &ps);
@@ -286,6 +293,7 @@ namespace pbe {
          cmd.pContext->VSSetShader(vs ? vs->vs.Get() : nullptr, nullptr, 0);
          cmd.pContext->HSSetShader(hs ? hs->hs.Get() : nullptr, nullptr, 0);
          cmd.pContext->DSSetShader(ds ? ds->ds.Get() : nullptr, nullptr, 0);
+         cmd.pContext->GSSetShader(gs ? gs->gs.Get() : nullptr, nullptr, 0);
          cmd.pContext->PSSetShader(ps ? ps->ps.Get() : nullptr, nullptr, 0);
       } else {
          if (cs) {
@@ -310,9 +318,9 @@ namespace pbe {
          return -1;
       };
 
-      int slots[5] = { getSlot(vs), getSlot(hs), getSlot(ds), getSlot(ps), getSlot(cs) };
+      int slots[6] = { getSlot(vs), getSlot(hs), getSlot(ds), getSlot(gs), getSlot(ps), getSlot(cs) };
       int slot = -1;
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < _countof(slots); i++) {
          int s = slots[i];
          if (s != -1) {
             ASSERT(slot == -1 || slot == s);
@@ -364,13 +372,14 @@ namespace pbe {
    }
 
    bool GpuProgram::Valid() const {
-      return (!vs || vs->Valid()) && (!hs || hs->Valid()) && (!ds || ds->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
+      return (!vs || vs->Valid()) && (!hs || hs->Valid()) && (!ds || ds->Valid()) && (!gs || gs->Valid()) && (!ps || ps->Valid()) && (!cs || cs->Valid());
    }
 
    GpuProgram::GpuProgram(const ProgramDesc& desc) : desc(desc) {
       vs = ShaderCompile(desc.vs);
       hs = ShaderCompile(desc.hs);
       ds = ShaderCompile(desc.ds);
+      gs = ShaderCompile(desc.gs);
       ps = ShaderCompile(desc.ps);
       cs = ShaderCompile(desc.cs);
    }

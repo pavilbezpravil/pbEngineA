@@ -66,6 +66,7 @@ namespace pbe {
       Vertex,
       Hull,
       Domain,
+      Geometry,
       Pixel,
       Compute,
       Unknown
@@ -98,6 +99,7 @@ namespace pbe {
       ComPtr<ID3D11VertexShader> vs;
       ComPtr<ID3D11HullShader> hs;
       ComPtr<ID3D11DomainShader> ds;
+      ComPtr<ID3D11GeometryShader> gs;
       ComPtr<ID3D11PixelShader> ps;
       ComPtr<ID3D11ComputeShader> cs;
 
@@ -110,6 +112,7 @@ namespace pbe {
       ShaderDesc vs;
       ShaderDesc hs;
       ShaderDesc ds;
+      ShaderDesc gs;
       ShaderDesc ps;
 
       ShaderDesc cs;
@@ -128,6 +131,16 @@ namespace pbe {
       static ProgramDesc VsPs(std::string_view path, std::string_view vsEntry, std::string_view psEntry = {}) {
          ProgramDesc desc;
          desc.vs = { path.data(), vsEntry.data(), ShaderType::Vertex };
+         if (!psEntry.empty()) {
+            desc.ps = { path.data(), psEntry.data(), ShaderType::Pixel };
+         }
+         return desc;
+      }
+
+      static ProgramDesc VsGsPs(std::string_view path, std::string_view vsEntry, std::string_view gsEntry, std::string_view psEntry = {}) {
+         ProgramDesc desc;
+         desc.vs = { path.data(), vsEntry.data(), ShaderType::Vertex };
+         desc.gs = { path.data(), gsEntry.data(), ShaderType::Geometry };
          if (!psEntry.empty()) {
             desc.ps = { path.data(), psEntry.data(), ShaderType::Pixel };
          }
@@ -179,6 +192,7 @@ namespace pbe {
       Ref<Shader> vs;
       Ref<Shader> hs;
       Ref<Shader> ds;
+      Ref<Shader> gs;
       Ref<Shader> ps;
       Ref<Shader> cs;
 

@@ -71,6 +71,7 @@ namespace pbe {
          pContext->VSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
          pContext->HSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
          pContext->DSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
+         pContext->GSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
          pContext->PSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
 
          pContext->CSSetConstantBuffers1(bind.slot, _countof(dxBuffer), dxBuffer, &offsetInBytes, &size);
@@ -102,6 +103,7 @@ namespace pbe {
          pContext->VSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
          pContext->HSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
          pContext->DSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
+         pContext->GSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
          pContext->PSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);
 
          pContext->CSSetShaderResources(bind.slot, _countof(viewsSRV), viewsSRV);

@@ -27,7 +27,7 @@ VsOut vs_main(VsIn input) {
 
   return output;
 }
-
+  
 struct PsOut {
   float4 color : SV_Target0;
 };
