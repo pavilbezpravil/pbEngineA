@@ -27,11 +27,12 @@ VsOut vs_main(VsIn input) {
 
   return output;
 }
-  
+
 struct PsOut {
   float4 color : SV_Target0;
 };
 
+[earlydepthstencil]
 PsOut ps_main(VsOut input) : SV_TARGET {
   uint2 pixelIdx = input.posH.xy;
 
