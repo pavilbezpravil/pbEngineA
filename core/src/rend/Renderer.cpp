@@ -835,9 +835,6 @@ namespace pbe {
          GPU_MARKER("Dbg Rend");
          PROFILE_GPU("Dbg Rend");
 
-         cmd.SetRenderTargets(context.colorLDR, context.depth);
-         cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
-
          DbgRend& dbgRend = *scene.dbgRend;
 
          // int size = 50;
@@ -873,7 +870,7 @@ namespace pbe {
             dbgRend.DrawAABB(nullptr, { trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f });
          }
 
-         for (auto [_, joint] : scene.View<JointComponent>().each()) {
+         for (auto [entityID, joint] : scene.View<JointComponent>().each()) {
             if (!joint.IsValid()) {
                continue;
             }
@@ -899,7 +896,7 @@ namespace pbe {
             } else if (joint.type == JointType::Distance) {
                auto posMin = pos0 + dir * joint.distance.minDistance;
                auto posMax = pos0 + dir * joint.distance.maxDistance;
-               dbgRend.DrawLine(posMin, posMax, defColor);
+               dbgRend.DrawLine(posMin, posMax, defColor, false, entityID);
             } else if (joint.type == JointType::Revolute) {
                dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, Color_Red);
                dbgRend.DrawSphere(sphere, defColor);
@@ -924,6 +921,9 @@ namespace pbe {
                rb.DbgRender(dbgRend, flags);
             }
          }
+
+         cmd.SetRenderTargetsUAV(context.colorLDR, context.depth, underCursorBuffer);
+         cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
          dbgRend.Render(cmd, camera);
          dbgRend.Clear();

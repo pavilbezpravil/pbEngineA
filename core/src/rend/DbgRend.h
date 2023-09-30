@@ -4,8 +4,10 @@
 #include "math/Types.h"
 #include "core/Ref.h"
 #include "math/Color.h"
+#include "scene/Entity.h"
 
 namespace pbe {
+   class Buffer;
    struct Transform;
    class Entity;
 
@@ -14,6 +16,7 @@ namespace pbe {
    struct Frustum;
    struct RenderCamera;
    struct VertexPosColor;
+   struct VertexPosUintColor;
    class GpuProgram;
 
    class CommandList;
@@ -25,7 +28,7 @@ namespace pbe {
       DbgRend();
       ~DbgRend();
 
-      void DrawLine(const vec3& start, const vec3& end, const Color& color = Color_White, bool zTest = true);
+      void DrawLine(const vec3& start, const vec3& end, const Color& color = Color_White, bool zTest = true, EntityID entityID = NullEntityID);
       void DrawSphere(const Sphere& sphere, const Color& color = Color_White, bool zTest = true);
 
       // trans - optional
@@ -42,8 +45,8 @@ namespace pbe {
       void Render(CommandList& cmd, const RenderCamera& camera);
 
    private:
-      std::vector<VertexPosColor> lines;
-      std::vector<VertexPosColor> linesNoZ;
+      std::vector<VertexPosUintColor> lines;
+      std::vector<VertexPosUintColor> linesNoZ;
    };
 
 }
