@@ -52,19 +52,18 @@ bool IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere) {
     return false;
 }
 
-bool IntersectAABB_Fast(Ray ray, float bestHitTMax, float3 aabbMin, float3 aabbMax) {
-    // todo: ray inv direction
-    float3 tMin = (aabbMin - ray.origin) / ray.direction;
-    float3 tMax = (aabbMax - ray.origin) / ray.direction;
+float IntersectAABB_Fast(float3 rayOrigin, float3 rayInvDirection, float3 aabbMin, float3 aabbMax) {
+    float3 tMin = (aabbMin - rayOrigin) * rayInvDirection;
+    float3 tMax = (aabbMax - rayOrigin) * rayInvDirection;
     float3 t1 = min(tMin, tMax);
     float3 t2 = max(tMin, tMax);
     float tNear = max(max(t1.x, t1.y), t1.z);
     float tFar = min(min(t2.x, t2.y), t2.z);
 
-    if (tFar > tNear && tNear < bestHitTMax && tFar > 0) {
-        return true;
+    if (tFar > tNear && tFar > 0) {
+        return tNear;
     }
-    return false;
+    return INF;
 }
 
 bool IntersectAABB(Ray ray, inout RayHit bestHit, float3 center, float3 halfSize) {

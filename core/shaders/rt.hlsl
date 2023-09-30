@@ -35,7 +35,7 @@ Ray CreateCameraRay(float2 uv) {
 void IntersectObj(Ray ray, inout RayHit bestHit, SRTObject obj, uint objIdx) {
     int geomType = obj.geomType;
 
-    // geomType = 0;
+    // geomType = 1;
     if (geomType == 1) {
         // if (IntersectAABB(ray, bestHit, obj.position, obj.halfSize)) {
         if (IntersectOBB(ray, bestHit, obj.position, obj.rotation, obj.halfSize)) {
@@ -58,6 +58,8 @@ RayHit Trace(Ray ray) {
     if (gRTConstants.bvhNodes == 0) {
         return bestHit;
     }
+
+    float3 rayInvDirection = 1 / ray.direction;
 
     float tMax = INF;
 
@@ -101,20 +103,38 @@ RayHit Trace(Ray ray) {
         BVHNode nodeLeft = gBVHNodes[iNodeLeft];
         BVHNode nodeRight = gBVHNodes[iNodeRight];
 
-        bool intersectL = IntersectAABB_Fast(ray, bestHit.tMax, nodeLeft.aabbMin, nodeLeft.aabbMax);
-        bool intersectR = IntersectAABB_Fast(ray, bestHit.tMax, nodeRight.aabbMin, nodeRight.aabbMax);
+        float intersectLDist = IntersectAABB_Fast(ray.origin, rayInvDirection, nodeLeft.aabbMin, nodeLeft.aabbMax);
+        float intersectRDist = IntersectAABB_Fast(ray.origin, rayInvDirection, nodeRight.aabbMin, nodeRight.aabbMax);
+
+        bool intersectL = intersectLDist < bestHit.tMax;
+        bool intersectR = intersectRDist < bestHit.tMax;
 
         if (!intersectL && !intersectR) {
             iNode = stack[--stackPtr];
         } else {
-            iNode = intersectL ? iNodeLeft : iNodeRight;
+            // when we nedd to visit both node chose left or first visit nearest node
+            #if 0
+                iNode = intersectL ? iNodeLeft : iNodeRight;
 
-            if (intersectL && intersectR) {
-                // todo: message it?
-                if (stackPtr < BVH_STACK_SIZE - 1) {
-                    stack[stackPtr++] = iNodeRight;
+                if (intersectL && intersectR) {
+                    // todo: message it?
+                    if (stackPtr < BVH_STACK_SIZE - 1) {
+                        stack[stackPtr++] = iNodeRight;
+                    }
                 }
-            }
+            #else
+                if (intersectL && intersectR) {
+                    bool isFirstVisitLeft = intersectLDist < intersectRDist;
+                    iNode = isFirstVisitLeft ? iNodeLeft : iNodeRight;
+
+                    // todo: message it?
+                    if (stackPtr < BVH_STACK_SIZE - 1) {
+                        stack[stackPtr++] = !isFirstVisitLeft ? iNodeLeft : iNodeRight;
+                    }
+                } else {
+                    iNode = intersectL ? iNodeLeft : iNodeRight;
+                }
+            #endif
         }
     }
 
@@ -137,7 +157,7 @@ RayHit Trace(Ray ray) {
 
     for (int iObject = 0; iObject < gRTConstants.nObjects; iObject++) {
         SRTObject obj = gRtObjects[iObject];
-        IntersectObj(ray, bestHit, obj, objIdx);
+        IntersectObj(ray, bestHit, obj, iObject);
     }
 
     return bestHit;
@@ -544,6 +564,20 @@ float HenyeyGreenstein(float g, float costh) {
 float MiScattering(float g, float VDotL) {
     // lerp( forward, backward )
     return lerp(HenyeyGreenstein(g, VDotL), HenyeyGreenstein(g, -VDotL), 0.8);
+}
+
+// https://iquilezles.org/articles/fog/
+float3 applyFog(
+                float3  rgb,      // original color of the pixel
+                float distance, // camera to point distance
+                float3  rayOri,   // camera position
+                float3  rayDir )  // camera to point vector
+{
+    float a = 1;
+    float b = 1; // todo:
+    float fogAmount = (a / b) * exp(-rayOri.y * b) * (1.0-exp( -distance * rayDir.y * b )) / rayDir.y;
+    float3  fogColor  = float3(0.5,0.6,0.7);
+    return lerp( rgb, fogColor, fogAmount );
 }
 
 [numthreads(8, 8, 1)]
