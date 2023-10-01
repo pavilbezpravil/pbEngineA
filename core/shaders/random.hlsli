@@ -13,8 +13,8 @@ void RandomInitSeed(uint seed) {
     gRandomSeed = pcg_hash(seed);
 }
 
-void RandomInitSeedFromUint2(uint2 id, uint frameDepend) {
-    RandomInitSeed(id.x * 214234 + id.y * 521334 + frameDepend);
+void RandomInitSeedFromUint2(uint2 id, uint frameIdx) {
+    RandomInitSeed(id.x * 214234 + id.y * 521334 + frameIdx * 171915);
 }
 
 float RandomFloat(inout uint seed) {

@@ -22,7 +22,6 @@ namespace pbe {
    CVarValue<bool> cvRenderDecals{ "render/decals", true };
    CVarValue<bool> cvRenderOpaqueSort{ "render/opaque sort", false };
    CVarValue<bool> cvRenderShadowMap{ "render/shadow map", true };
-   CVarValue<bool> cvRenderZPass{ "render/z pass", true };
    CVarValue<bool> cvRenderSsao{ "render/ssao", false };
    CVarValue<bool> cvRenderTransparency{ "render/transparency", true };
    CVarValue<bool> cvRenderTransparencySort{ "render/transparency sort", true };
@@ -531,50 +530,50 @@ namespace pbe {
 
       cmd.SetSRV({ SRV_SLOT_LIGHTS }, lightBuffer);
 
+      cmd.SetViewport({}, context.colorHDR->GetDesc().size);
+      cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+
+      {
+         GPU_MARKER("ZPass");
+         PROFILE_GPU("ZPass");
+
+         // todo: without normal?
+         cmd.SetRenderTargets(context.normalTex, context.depth);
+         cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
+
+         auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+         programDesc.vs.defines.AddDefine("ZPASS");
+         programDesc.ps.defines.AddDefine("ZPASS");
+         auto baseZPass = GetGpuProgram(programDesc);
+
+         RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
+      }
+
+      {
+         GPU_MARKER("GBuffer");
+         PROFILE_GPU("GBuffer");
+
+         Texture2D* rts[] = { context.colorHDR, context.baseColorTex,
+            context.normalTex, context.motionTex, context.viewz };
+         uint nRts = _countof(rts);
+         cmd.SetRenderTargets(nRts, rts, context.depth);
+         cmd.SetPsUAV(nRts, context.underCursorBuffer);
+
+         cmd.SetViewport({}, context.depth->GetDesc().size);
+
+         cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
+
+         auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
+         programDesc.vs.defines.AddDefine("GBUFFER");
+         programDesc.ps.defines.AddDefine("GBUFFER");
+
+         auto baseZPass = GetGpuProgram(programDesc);
+         RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
+
+         cmd.SetRenderTargets();
+      }
+
       if (rayTracingSceneRender) {
-         cmd.SetViewport({}, context.colorHDR->GetDesc().size);
-         cmd.SetBlendState(rendres::blendStateDefaultRGBA);
-
-         {
-            GPU_MARKER("ZPass");
-            PROFILE_GPU("ZPass");
-         
-            // todo: without normal?
-            cmd.SetRenderTargets(context.normalTex, context.depth);
-            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-         
-            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-            programDesc.vs.defines.AddDefine("ZPASS");
-            programDesc.ps.defines.AddDefine("ZPASS");
-            auto baseZPass = GetGpuProgram(programDesc);
-         
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
-         }
-
-         {
-            GPU_MARKER("GBuffer");
-            PROFILE_GPU("GBuffer");
-
-            Texture2D* rts[] = { context.colorHDR, context.baseColorTex,
-               context.normalTex, context.motionTex, context.viewz };
-            uint nRts = _countof(rts);
-            cmd.SetRenderTargets(nRts, rts, context.depth);
-            cmd.SetPsUAV(nRts, context.underCursorBuffer);
-
-            cmd.SetViewport({}, context.depth->GetDesc().size);
-
-            cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
-
-            auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-            programDesc.vs.defines.AddDefine("GBUFFER");
-            programDesc.ps.defines.AddDefine("GBUFFER");
-
-            auto baseZPass = GetGpuProgram(programDesc);
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
-
-            cmd.SetRenderTargets();
-         }
-
          rtRenderer->RenderScene(cmd, scene, camera, context);
          ResetCS_SRV_UAV();
       } else {
@@ -610,74 +609,47 @@ namespace pbe {
 
          cmd.SetViewport({}, context.colorHDR->GetDesc().size); /// todo:
 
-         if (cvRenderZPass) {
-            {
-               GPU_MARKER("ZPass");
-               PROFILE_GPU("ZPass");
+         if (cvRenderSsao) {
+            GPU_MARKER("SSAO");
+            PROFILE_GPU("SSAO");
 
-               cmd.SetRenderTargets(context.normalTex, context.depth);
-               cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-               cmd.SetBlendState(rendres::blendStateDefaultRGBA);
+            cmd.SetRenderTargets();
 
-               auto programDesc = ProgramDesc::VsPs("base.hlsl", "vs_main", "ps_main");
-               programDesc.vs.defines.AddDefine("ZPASS");
-               programDesc.ps.defines.AddDefine("ZPASS");
-               auto baseZPass = GetGpuProgram(programDesc);
+            auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.hlsl", "main"));
 
-               RenderSceneAllObjects(cmd, opaqueObjs, *baseZPass);
-            }
+            ssaoPass->Activate(cmd);
 
-            if (cvRenderSsao) {
-               GPU_MARKER("SSAO");
-               PROFILE_GPU("SSAO");
+            ssaoPass->SetSRV(cmd, "gDepth", *context.depth);
+            ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
+            ssaoPass->SetSRV(cmd, "gNormal", *context.normalTex);
+            ssaoPass->SetUAV(cmd, "gSsao", *context.ssao);
 
-               cmd.SetRenderTargets();
+            cmd.Dispatch2D(glm::ceil(vec2{ context.colorHDR->GetDesc().size } / vec2{ 8 }));
 
-               auto ssaoPass = GetGpuProgram(ProgramDesc::Cs("ssao.hlsl", "main"));
+            ResetCS_SRV_UAV();
+         }
 
-               ssaoPass->Activate(cmd);
+         {
+            GPU_MARKER("Deferred");
+            PROFILE_GPU("Deferred");
 
-               ssaoPass->SetSRV(cmd, "gDepth", *context.depth);
-               ssaoPass->SetSRV(cmd, "gRandomDirs", *ssaoRandomDirs);
-               ssaoPass->SetSRV(cmd, "gNormal", *context.normalTex);
-               ssaoPass->SetUAV(cmd, "gSsao", *context.ssao);
+            cmd.SetRenderTargets();
 
-               cmd.Dispatch2D(glm::ceil(vec2{ context.colorHDR->GetDesc().size } / vec2{ 8 }));
+            auto pass = GetGpuProgram(ProgramDesc::Cs("deferred.hlsl", "DeferredCS"));
 
-               ResetCS_SRV_UAV();
-            }
+            pass->Activate(cmd);
 
-            {
-               GPU_MARKER("Color");
-               PROFILE_GPU("Color");
+            pass->SetSRV(cmd, "gBaseColor", *context.baseColorTex);
+            pass->SetSRV(cmd, "gNormal", *context.normalTex);
+            pass->SetSRV(cmd, "gViewZ", *context.viewz);
+            pass->SetUAV(cmd, "gColorOut", *context.colorHDR);
 
-               // baseColorPass->SetUAV(cmd, "gUnderCursorBuffer", *underCursorBuffer);
-               // cmd.SetRenderTargets(context.colorHDR, context.depth);
+            cmd.Dispatch2D(context.colorHDR->GetDesc().size, int2{ 8 });
 
-               cmd.SetRenderTargetsUAV(context.colorHDR, context.depth, underCursorBuffer);
-
-               cmd.SetDepthStencilState(rendres::depthStencilStateEqual);
-               cmd.SetBlendState(rendres::blendStateDefaultRGB);
-
-               baseColorPass->SetSRV(cmd, "gSsao", *context.ssao);
-               baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-               RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass);
-            }
-         } else {
-            GPU_MARKER("Color (Without ZPass)");
-            PROFILE_GPU("Color (Without ZPass)");
-
-            cmd.SetRenderTargets(context.colorHDR, context.depth);
-            cmd.SetDepthStencilState(rendres::depthStencilStateDepthReadWrite);
-            cmd.SetBlendState(rendres::blendStateDefaultRGB);
-            baseColorPass->SetSRV(cmd, "gSsao", *context.ssao);
-            baseColorPass->SetSRV(cmd, "gDecals", *decalBuffer);
-
-            RenderSceneAllObjects(cmd, opaqueObjs, *baseColorPass);
+            ResetCS_SRV_UAV();
          }
 
          terrainSystem.Render(cmd, scene, context);
-
          waterSystem.Render(cmd, scene, context);
 
          if (cvRenderTransparency && !transparentObjs.empty()) {
@@ -783,9 +755,12 @@ namespace pbe {
       }
 
       if (cvOutlineEnable) {
+         GPU_MARKER("Outline");
+         PROFILE_GPU("Outline");
+
          {
-            GPU_MARKER("Outline");
-            PROFILE_GPU("Outline");
+            GPU_MARKER("Render");
+            PROFILE_GPU("Render");
 
             cmd.SetRenderTargets(&*context.outlineTex);
             cmd.SetViewport({}, context.depth->GetDesc().size);
@@ -794,8 +769,8 @@ namespace pbe {
          }
 
          {
-            GPU_MARKER("Outline Blur");
-            PROFILE_GPU("Outline Blur");
+            GPU_MARKER("Blur");
+            PROFILE_GPU("Blur");
 
             cmd.SetRenderTargets();
 
@@ -812,8 +787,8 @@ namespace pbe {
          }
 
          {
-            GPU_MARKER("Outline Apply");
-            PROFILE_GPU("Outline Apply");
+            GPU_MARKER("Apply");
+            PROFILE_GPU("Apply");
 
             cmd.SetRenderTargets();
 

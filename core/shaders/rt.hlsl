@@ -184,11 +184,9 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
         }
 
         if (hit.tMax < INF) {
-            // float3 albedo = hit.normal * 0.5f + 0.5f;
-            // return hit.normal * 0.5f + 0.5f;
             SRTObject obj = gRtObjects[hit.objID];
 
-            ray.origin = hit.position + hit.normal * 0.0001;
+            ray.origin = hit.position;
 
             float3 V = -ray.direction;
             float3 N = hit.normal;
@@ -245,12 +243,9 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
     return color;
 }
 
+// todo:
 void RTRandomInitSeed(uint2 id) {
-    RandomInitSeedFromUint2(id, asuint(gRTConstants.random01));
-}
-
-float2 GetUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
-    return (float2(id) + 0.5 + pixelOffset) / float2(texSize);
+    RandomInitSeedFromUint2(id, gScene.iFrame);
 }
 
 #if 0
@@ -269,7 +264,7 @@ void GBufferCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float2 uv = DispatchUV(id, gRTConstants.rtSize);
     Ray ray = CreateCameraRay(uv);
 
     RayHit hit = Trace(ray);
@@ -311,7 +306,7 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     for (int i = 0; i < nRays; i++) {
         float2 offset = RandomFloat2() - 0.5; // todo: halton sequence
         offset = 0;
-        float2 uv = GetUV(id, gRTConstants.rtSize, offset);
+        float2 uv = DispatchUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
         float firstHitDistance;
@@ -323,35 +318,14 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id.xy] = float4(color, 1);
 }
 
-bool ViewZDiscard(float viewZ) {
-    return viewZ > 1e4; // todo: constant
-}
-
-// from NRD source
-// orthoMode = { 0 - perspective, -1 - right handed ortho, 1 - left handed ortho }
-float3 ReconstructViewPosition( float2 uv, float2 cameraFrustumSize, float viewZ = 1.0, float orthoMode = 0.0 ) {
-    float3 p;
-    p.xy = uv * cameraFrustumSize * float2(2, -2) + cameraFrustumSize * float2(-1, 1);
-    p.xy *= viewZ * ( 1.0 - abs( orthoMode ) ) + orthoMode;
-    p.z = viewZ;
-
-    return p;
-}
-
-float3 ReconstructWorldPosition( float3 viewPos ) {
-    return mul(GetCamera().invView, float4(viewPos, 1)).xyz;
-}
-
 RWTexture2D<float4> gDiffuseOut;
 RWTexture2D<float4> gSpecularOut;
 
-// #if defined(USE_PSR)
+#if defined(USE_PSR)
     RWTexture2D<float> gViewZOut;
     RWTexture2D<float4> gNormalOut;
     RWTexture2D<float4> gBaseColorOut;
-// #endif
 
-#if defined(USE_PSR)
     bool CheckSurfaceForPSR(float roughness, float metallic) {
         // float3 normal, float3 V
         return roughness < 0.01 && metallic > 0.95;
@@ -385,7 +359,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float2 uv = DispatchUV(id, gRTConstants.rtSize);
     float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
     float3 posW = ReconstructWorldPosition(viewPos);
 
@@ -398,8 +372,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     RTRandomInitSeed(id);
 
-    Ray ray;
-
     #if defined(USE_PSR)
         float4 baseColorMetallic = gBaseColorOut[id];
         float3 baseColor = baseColorMetallic.xyz;
@@ -409,6 +381,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
         // todo: better condition
         if (CheckSurfaceForPSR(roughness, metallic)) {
+            Ray ray;
             ray.origin = posW;
             ray.direction = reflect(-V, normal);
 
@@ -445,6 +418,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         }
     #endif // USE_PSR
 
+    Ray ray;
     ray.origin = posW;
 
     // todo:
@@ -464,20 +438,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     }
 
     for (int i = 0; i < nRays; i++) {
-        #if 1
-            float3 L = -gScene.directLight.direction;
-            float NDotL = dot(normal, L);
-
-            if (NDotL > 0) {
-                Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
-                RayHit shadowHit = Trace(shadowRay); // todo: any hit
-                if (shadowHit.tMax == INF) {
-                    float3 directLightShade = NDotL * gScene.directLight.color;
-                    diffuseRadiance += directLightShade;
-                }
-            }
-        #endif
-
         ray.direction = normalize(RandomPointOnUnitHemisphere(normal));
 
         float Diffuse_NDotL = max(dot(normal, ray.direction), 0);
@@ -494,6 +454,22 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     specularHitDistance /= nRays;
     specularRadiance /= nRays;
+
+    #if 1
+    {
+        float3 L = -gScene.directLight.direction;
+        float NDotL = dot(normal, L);
+
+        if (NDotL > 0) {
+            Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
+            RayHit shadowHit = Trace(shadowRay); // todo: any hit
+            if (shadowHit.tMax == INF) {
+                float3 directLightShade = NDotL * gScene.directLight.color;
+                diffuseRadiance += directLightShade;
+            }
+        }
+    }
+    #endif
 
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
@@ -518,7 +494,7 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     
     float viewZ = gViewZ[id];
 
-    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float2 uv = DispatchUV(id, gRTConstants.rtSize);
     float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
     float3 posW = ReconstructWorldPosition(viewPos);
 
@@ -589,7 +565,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
     
     float viewZ = gViewZ[id];
 
-    float2 uv = GetUV(id, gRTConstants.rtSize);
+    float2 uv = DispatchUV(id, gRTConstants.rtSize);
     float3 viewPos = ReconstructViewPosition( uv, GetCamera().frustumSize, viewZ );
     float3 posW = ReconstructWorldPosition(viewPos);
 

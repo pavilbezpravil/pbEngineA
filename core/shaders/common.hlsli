@@ -139,4 +139,8 @@ bool FrustumSphereTest(float4 planes[6], float3 center, float radius) {
    return true;
 }
 
+float2 DispatchUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
+    return (float2(id) + 0.5 + pixelOffset) / float2(texSize);
+}
+
 #endif

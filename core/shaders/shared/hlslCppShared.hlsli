@@ -71,7 +71,7 @@ struct SLight {
 };
 
 struct SSceneCB {
-   int iFrame;
+   uint iFrame;
    float time;
    float animationTime;
    float deltaTime;

@@ -104,23 +104,8 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
 
   float3 L = LightGetL(light, surface.posW);
 
-  float3 H = normalize(V + L);
-  float3 N = surface.normalW;
-
-  // cook-torrance brdf
-  float NDF = DistributionGGX(N, H, surface.roughness);
-  float G = GeometrySmith(N, V, L, surface.roughness);
-  float3 F = fresnelSchlick(max(dot(H, V), 0.0), surface.F0);
-
-  float3 kD = 1 - F;
-
-  float3 numerator = NDF * G * F;
-  float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
-  float3 specular = numerator / denominator;
-
-  // add to outgoing radiance Lo
-  float NdotL = max(dot(N, L), 0);
-  return (kD * surface.albedo / PI + specular) * radiance * NdotL;  
+  float3 brdf = BRDF_NDotL(L, V, surface.normalW, surface.F0, surface.albedo, surface.roughness);
+  return brdf * radiance;
 }
 
 float3 Shade(Surface surface, float3 V) {
