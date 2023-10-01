@@ -165,7 +165,13 @@ RayHit Trace(Ray ray) {
 
 #endif
 
-float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed) {
+float3 DirectLightDirection() {
+    float3 L = -gScene.directLight.direction;
+    const float spread = 0.02; // todo:
+    return normalize(L + RandomPointInUnitSphere() * spread);
+}
+
+float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
     float3 color = 0;
     float3 energy = 1;
 
@@ -173,6 +179,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
         RayHit hit = Trace(ray);
 
         if (depth == 0) {
+            // todo: mb add less
             hitDistance += hit.tMax;
         }
 
@@ -201,8 +208,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
                 float NDotL = dot(N, L);
 
                 if (NDotL > 0) {
-                    const float spread = 0.02; // todo:
-                    Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                    Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
                     RayHit shadowHit = Trace(shadowRay);
                     if (shadowHit.tMax == INF) {
                         float3 directLightShade = NDotL * albedo * gScene.directLight.color / PI_2;
@@ -210,7 +216,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
                     }
                 }
 
-                ray.direction = normalize(RandomInHemisphere(hit.normal, seed));
+                ray.direction = normalize(RandomPointOnUnitHemisphere(hit.normal));
 
                 float NDotRayDir = max(dot(N, ray.direction), 0);
                 energy *= albedo * NDotRayDir;
@@ -220,9 +226,8 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
                 float3 specular = F;
 
                 float roughness = obj.roughness * obj.roughness; // todo:
-                // ray.direction = reflect(ray.direction, hit.normal + RandomInUnitSphere(seed) * roughness);
                 ray.direction = reflect(ray.direction, hit.normal);
-                ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness);
+                ray.direction = normalize(ray.direction + RandomPointInUnitSphere() * roughness);
 
                 energy *= specular;
             }
@@ -240,9 +245,8 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance, inout uint seed
     return color;
 }
 
-
-uint GetRandomSeed(uint2 id) {
-    return id.x * 214234 + id.y * 521334 + asuint(gRTConstants.random01);
+void RTRandomInitSeed(uint2 id) {
+    RandomInitSeedFromUint2(id, asuint(gRTConstants.random01));
 }
 
 float2 GetUV(uint2 id, uint2 texSize, float2 pixelOffset = 0) {
@@ -298,20 +302,20 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    uint seed = GetRandomSeed(id);
+    RTRandomInitSeed(id);
 
     int nRays = gRTConstants.nRays;
 
     float3 color = 0;
 
     for (int i = 0; i < nRays; i++) {
-        float2 offset = RandomFloat2(seed) - 0.5; // todo: halton sequence
+        float2 offset = RandomFloat2() - 0.5; // todo: halton sequence
         offset = 0;
         float2 uv = GetUV(id, gRTConstants.rtSize, offset);
 
         Ray ray = CreateCameraRay(uv);
         float firstHitDistance;
-        color += RayColor(ray, gRTConstants.rayDepth, firstHitDistance, seed);
+        color += RayColor(ray, gRTConstants.rayDepth, firstHitDistance);
     }
 
     color /= nRays;
@@ -392,7 +396,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
 
-    uint seed = GetRandomSeed(id);
+    RTRandomInitSeed(id);
 
     Ray ray;
 
@@ -454,9 +458,9 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     for (int i = 0; i < nRays; i++) {
         ray.direction = reflect(-V, normal);
-        ray.direction = normalize(ray.direction + RandomInUnitSphere(seed) * roughness * roughness);
+        ray.direction = normalize(ray.direction + RandomPointInUnitSphere() * roughness * roughness);
 
-        specularRadiance += RayColor(ray, gRTConstants.rayDepth, specularHitDistance, seed);
+        specularRadiance += RayColor(ray, gRTConstants.rayDepth, specularHitDistance);
     }
 
     for (int i = 0; i < nRays; i++) {
@@ -465,8 +469,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             float NDotL = dot(normal, L);
 
             if (NDotL > 0) {
-                const float spread = 0.02; // todo:
-                Ray shadowRay = CreateRay(ray.origin, normalize(L + RandomInUnitSphere(seed) * spread));
+                Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
                 RayHit shadowHit = Trace(shadowRay); // todo: any hit
                 if (shadowHit.tMax == INF) {
                     float3 directLightShade = NDotL * gScene.directLight.color;
@@ -475,10 +478,10 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
             }
         #endif
 
-        ray.direction = normalize(RandomInHemisphere(normal, seed));
+        ray.direction = normalize(RandomPointOnUnitHemisphere(normal));
 
         float Diffuse_NDotL = max(dot(normal, ray.direction), 0);
-        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance, seed) * Diffuse_NDotL;
+        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance) * Diffuse_NDotL;
     }
 
     #if defined(USE_PSR)
@@ -582,7 +585,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         return;
     }
 
-    uint seed = GetRandomSeed(id);
+    RTRandomInitSeed(id);
     
     float viewZ = gViewZ[id];
 
@@ -614,7 +617,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
 
     float stepLength = dist / maxSteps; // todo: 
 
-    float initialOffset = RandomFloat(seed) * stepLength;
+    float initialOffset = RandomFloat() * stepLength;
     float3 fogPosW = gCamera.position + -V * initialOffset;
 
     float accTransmittance = 1;
@@ -639,8 +642,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         #if 1
             float3 L = -gScene.directLight.direction;
 
-            const float spread = 0.02; // todo:
-            Ray shadowRay = CreateRay(fogPosW, normalize(L + RandomInUnitSphere(seed) * spread * 0));
+            Ray shadowRay = CreateRay(fogPosW, DirectLightDirection());
             RayHit shadowHit = Trace(shadowRay); // todo: any hit
             if (shadowHit.tMax == INF) {
                 radiance = gScene.directLight.color;

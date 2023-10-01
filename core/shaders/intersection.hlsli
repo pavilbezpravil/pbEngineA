@@ -7,7 +7,7 @@ struct RayHit {
     float tMin;
     float tMax;
     float3 normal;
-    int objID;
+    uint objID;
 };
 
 RayHit CreateRayHit() {
@@ -16,7 +16,7 @@ RayHit CreateRayHit() {
     hit.tMin = 0.00001; // todo:
     hit.tMax = INF;
     hit.normal = 0;
-    hit.objID = 0;
+    hit.objID = UINT_MAX;
     return hit;
 }
 
