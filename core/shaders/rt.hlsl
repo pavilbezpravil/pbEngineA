@@ -567,17 +567,13 @@ float MiScattering(float g, float VDotL) {
 }
 
 // https://iquilezles.org/articles/fog/
-float3 applyFog(
-                float3  rgb,      // original color of the pixel
-                float distance, // camera to point distance
-                float3  rayOri,   // camera position
-                float3  rayDir )  // camera to point vector
-{
-    float a = 1;
-    float b = 1; // todo:
-    float fogAmount = (a / b) * exp(-rayOri.y * b) * (1.0-exp( -distance * rayDir.y * b )) / rayDir.y;
-    float3  fogColor  = float3(0.5,0.6,0.7);
-    return lerp( rgb, fogColor, fogAmount );
+float GetHeightFog(float3 rayOri, float3 rayDir, float distance) {
+    float a = 0.002;
+    float b = 0.05; // todo:
+
+    // todo: devide by zero
+    float fogAmount = (a / b) * exp(-rayOri.y * b) * (1.0 - exp( -distance * rayDir.y * b )) / rayDir.y;
+    return saturate(fogAmount);
 }
 
 [numthreads(8, 8, 1)]
@@ -596,16 +592,23 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
 
     float3 V = gCamera.position - posW;
     float dist = length(V);
+    V = normalize(V);
+
+    float3 fogColor  = float3(0.5, 0.6, 0.7);
 
     const float MAX_DIST = 50;
     if (dist > MAX_DIST) {
         dist = MAX_DIST;
     }
 
-    V = normalize(V);
-
     const int maxSteps = gScene.fogNSteps;
     if (maxSteps <= 0) {
+        return;
+        float4 color = gColorOut[id];
+        float fog = GetHeightFog(gCamera.position, -V, dist);
+        color.xyz = lerp(color.xyz, fogColor, fog);
+        gColorOut[id] = color;
+
         return;
     }
 
@@ -621,8 +624,6 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
 
     float prevStepLength = initialOffset;
 
-    float3 fogColor = float3(1, 1.5, 1) * 0.5;
-
     for(int i = 0; i < maxSteps; ++i) {
         // float t = i / float(maxSteps - 1);
         float fogDensity = saturate(noise(fogPosW * 0.3) - 0.2);
@@ -630,7 +631,7 @@ void RTFogCS (uint2 id : SV_DispatchThreadID) {
         fogDensity *= 0.5;
 
         fogDensity = 0.1;
-        fogDensity = HeightFogDensity(fogPosW) * 0.2;
+        fogDensity = HeightFogDensity(fogPosW) * 0.04;
 
         float3 scattering = 0;
 

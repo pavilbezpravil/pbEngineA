@@ -124,16 +124,18 @@ namespace pbe {
 
                   auto parentDynamic = parentRb.pxRigidActor->is<PxRigidDynamic>();
 
-                  // todo: dont work with static parent
-                  auto m_parentCOM = parentDynamic->getGlobalPose().transform(parentDynamic->getCMassLocalPose().p);
-                  auto m_parentLinearVelocity = parentDynamic->getLinearVelocity();
-                  auto m_parentAngularVelocity = parentDynamic->getAngularVelocity();
+                  if (parentDynamic) {
+                     // todo: dont work with static parent
+                     auto m_parentCOM = parentDynamic->getGlobalPose().transform(parentDynamic->getCMassLocalPose().p);
+                     auto m_parentLinearVelocity = parentDynamic->getLinearVelocity();
+                     auto m_parentAngularVelocity = parentDynamic->getAngularVelocity();
 
-                  const PxVec3 COM = childDynamic->getGlobalPose().transform(childDynamic->getCMassLocalPose().p);
-                  const PxVec3 linearVelocity = m_parentLinearVelocity + m_parentAngularVelocity.cross(COM - m_parentCOM);
-                  const PxVec3 angularVelocity = m_parentAngularVelocity;
-                  childDynamic->setLinearVelocity(linearVelocity);
-                  childDynamic->setAngularVelocity(angularVelocity);
+                     const PxVec3 COM = childDynamic->getGlobalPose().transform(childDynamic->getCMassLocalPose().p);
+                     const PxVec3 linearVelocity = m_parentLinearVelocity + m_parentAngularVelocity.cross(COM - m_parentCOM);
+                     const PxVec3 angularVelocity = m_parentAngularVelocity;
+                     childDynamic->setLinearVelocity(linearVelocity);
+                     childDynamic->setAngularVelocity(angularVelocity);
+                  }
                }
             }
             break;
