@@ -29,7 +29,7 @@ namespace pbe {
       }
    }
 
-   void DbgRend::DrawSphere(const Sphere& sphere, const Color& color, bool zTest) {
+   void DbgRend::DrawSphere(const Sphere& sphere, const Color& color, bool zTest, EntityID entityID) {
       // Icosahedron
       const double t = (1.0 + std::sqrt(5.0)) / 2.0;
 
@@ -55,9 +55,9 @@ namespace pbe {
       }
 
       auto draw = [&](int a, int b, int c) {
-         DrawLine(points[a], points[b], color, zTest);
-         DrawLine(points[b], points[c], color, zTest);
-         DrawLine(points[c], points[a], color, zTest);
+         DrawLine(points[a], points[b], color, zTest, entityID);
+         DrawLine(points[b], points[c], color, zTest, entityID);
+         DrawLine(points[c], points[a], color, zTest, entityID);
       };
 
       // Faces
@@ -164,12 +164,12 @@ namespace pbe {
       }
    }
 
-   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const Color& color, bool zTest) {
+   void DbgRend::DrawLine(const Entity& entity0, const Entity& entity1, const Color& color, bool zTest, EntityID entityID) {
       if (!entity0 || !entity1) {
          return;
       }
 
-      DrawLine(entity0.GetTransform().Position(), entity1.GetTransform().Position(), color, zTest);
+      DrawLine(entity0.GetTransform().Position(), entity1.GetTransform().Position(), color, zTest, entityID);
    }
 
    void DbgRend::Clear() {

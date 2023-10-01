@@ -31,7 +31,7 @@ namespace pbe {
    CVarValue<bool> instancedDraw{ "render/instanced draw", true };
    CVarValue<bool> cvOutlineEnable{ "render/outline", true };
    CVarValue<bool> indirectDraw{ "render/indirect draw", false };
-   CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", true };
+   CVarValue<bool> depthDownsampleEnable{ "render/depth downsample enable", false };
    CVarValue<bool> rayTracingSceneRender{ "render/ray tracing scene render", true };
    CVarValue<bool> animationTimeUpdate{ "render/animation time update", true };
 
@@ -701,7 +701,7 @@ namespace pbe {
             RenderSceneAllObjects(cmd, transparentObjs, *baseColorPass);
          }
 
-         if (1) { // todo
+         if (0) { // todo
             GPU_MARKER("Linearize Depth");
             PROFILE_GPU("Linearize Depth");
 
@@ -860,11 +860,11 @@ namespace pbe {
             // dbgRend.DrawFrustum(Frustum{ cullCamera.GetViewProjection() },cullCamera.position, cullCamera.Forward());  
          }
 
-         for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
-            dbgRend.DrawSphere({ trans.Position(), light.radius }, light.color);
+         for (auto [entityID, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
+            dbgRend.DrawSphere({ trans.Position(), light.radius }, light.color, true, entityID);
          }
 
-         for (auto [e, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
+         for (auto [entityID, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
             // todo: OBB
             // todo: box, sphere, capsule
             dbgRend.DrawAABB(nullptr, { trans.Position() - trans.Scale() * 0.5f, trans.Position() + trans.Scale() * 0.5f });
@@ -875,7 +875,7 @@ namespace pbe {
                continue;
             }
 
-            dbgRend.DrawLine(joint.entity0, joint.entity1, Color_White);
+            dbgRend.DrawLine(joint.entity0, joint.entity1, Color_White, false, entityID);
 
             auto trans0 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor0);
             auto trans1 = joint.GetAnchorTransform(JointComponent::Anchor::Anchor1);
@@ -892,21 +892,21 @@ namespace pbe {
 
             Color defColor = Color_Blue;
             if (joint.type == JointType::Fixed) {
-               dbgRend.DrawSphere(sphere, defColor);
+               dbgRend.DrawSphere(sphere, defColor, false, entityID);
             } else if (joint.type == JointType::Distance) {
                auto posMin = pos0 + dir * joint.distance.minDistance;
                auto posMax = pos0 + dir * joint.distance.maxDistance;
                dbgRend.DrawLine(posMin, posMax, defColor, false, entityID);
             } else if (joint.type == JointType::Revolute) {
-               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, Color_Red);
-               dbgRend.DrawSphere(sphere, defColor);
+               dbgRend.DrawLine(pos0, pos0 + trans0->Right() * 3.f, Color_Red, false, entityID);
+               dbgRend.DrawSphere(sphere, defColor, false, entityID);
             } else if (joint.type == JointType::Spherical) {
-               dbgRend.DrawSphere(sphere, defColor);
+               dbgRend.DrawSphere(sphere, defColor, false, entityID);
             } else if (joint.type == JointType::Prismatic) {
                dbgRend.DrawLine(
                   pos0 + trans0->Right() * joint.prismatic.lowerLimit,
                   pos0 + trans0->Right() * joint.prismatic.upperLimit,
-                  defColor);
+                  defColor, false, entityID);
             } else {
                UNIMPLEMENTED();
             }
