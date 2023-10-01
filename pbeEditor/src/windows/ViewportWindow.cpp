@@ -706,6 +706,8 @@ namespace pbe {
       entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
       entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
       entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
+
+      entity.AddOrReplace<TransformChangedMarker>();
    }
 
    void ViewportWindow::StopManipulator() {

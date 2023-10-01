@@ -140,7 +140,8 @@ namespace pbe {
          transparentDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
          transparentDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
          transparentDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-         transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+         transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
+         // transparentDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
          device->CreateBlendState(&transparentDesc, &blendStateTransparency);
          resourses.push_back(blendStateTransparency);
