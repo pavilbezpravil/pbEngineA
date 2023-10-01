@@ -178,15 +178,15 @@ namespace pbe {
    }
 
    void DbgRend::Render(CommandList& cmd, const RenderCamera& camera) {
-      auto programDesc = ProgramDesc::VsPs("dbgRend.hlsl", "vs_main", "ps_main");
+      auto programDesc = ProgramDesc::VsGsPs("dbgRend.hlsl", "vs_main", "MainGS", "ps_main");
       auto program = GetGpuProgram(programDesc);
 
       program->Activate(cmd);
 
       auto context = cmd.pContext;
 
-      cmd.SetBlendState(rendres::blendStateDefaultRGB);
-      // cmd.SetBlendState(rendres::blendStateTransparency);
+      // cmd.SetBlendState(rendres::blendStateDefaultRGB);
+      cmd.SetBlendState(rendres::blendStateTransparency);
 
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 

@@ -116,11 +116,14 @@ namespace pbe {
    void ViewportWindow::OnWindowUI() {
       auto startCursorPos = ImGui::GetCursorPos();
       auto contentRegion = ImGui::GetContentRegionAvail();
-      int2 size = vec2{ contentRegion.x, contentRegion.y } * settings.renderScale;
+      int2 size = int2{ contentRegion.x, contentRegion.y };
 
       if (!all(size > 1)) {
          return;
       }
+
+      size = vec2{ contentRegion.x, contentRegion.y } * settings.renderScale;
+      size = glm::max(size, int2{ 1 });
 
       if (!renderContext.colorHDR || renderContext.colorHDR->GetDesc().size != size) {
          renderContext = CreateRenderContext(size);
@@ -174,7 +177,7 @@ namespace pbe {
       Zoom(image, cursorPixelIdx);
 
       if (settings.useGizmo) {
-         Gizmo(vec2{ contentRegion.x, contentRegion.y }, cursorPos);
+         Gizmo(ToVec2(contentRegion), cursorPos);
       } else {
          Manipulator(cursorUV);
       }
@@ -395,7 +398,7 @@ namespace pbe {
          ImGui::SameLine();
 
          ImGui::SetNextItemWidth(100);
-         ImGui::SliderFloat("Scale", &settings.renderScale, 0.1f, 2.f);
+         ImGui::SliderFloat("Scale", &settings.renderScale, 0.1f, 1.f);
          ImGui::SameLine();
 
          ImGui::Checkbox("RT", &settings.rayTracingRendering);
