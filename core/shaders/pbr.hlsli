@@ -2,6 +2,7 @@
 #define PBR_HEADER
 
 #include "math.hlsli"
+#include "STL.hlsli"
 
 float3 fresnelSchlick(float cosTheta, float3 F0) {
     return F0 + (1 - F0) * pow(saturate(1 - cosTheta), 5);
@@ -58,16 +59,6 @@ void BRDFSpecular(float3 L, float3 V, float3 normal, float3 F0, float roughness,
     float denominator = 4 * max(dot(N, V), 0) * max(dot(N, L), 0) + 0.0001;
     float3 specular = numerator / denominator;
     kS = specular;
-}
-
-float3 BRDF_NDotL(float3 L, float3 V, float3 normal, float3 F0, float3 albedo, float roughness) {
-    float3 kD;
-    float3 kS;
-
-    BRDFSpecular(L, V, normal, F0, roughness, kD, kS);
-
-    float NdotL = ComputeNDotL(normal, L);
-    return (kD * albedo / PI + kS) * NdotL;
 }
 
 #endif // PBR_HEADER

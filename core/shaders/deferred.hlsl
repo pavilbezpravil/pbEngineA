@@ -79,7 +79,8 @@ void DeferredCS(uint2 id : SV_DispatchThreadID) {
    float3 Lo = Shade(surface, V);
 
    float3 ambient = 0.1 * surface.albedo;
-   float3 color = ambient + Lo;
+   float3 emissive = gColorOut[id].xyz;
+   float3 color = ambient + Lo + emissive;
 
    gColorOut[id] = float4(color, 1);
 }

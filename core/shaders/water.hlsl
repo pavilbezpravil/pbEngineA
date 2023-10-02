@@ -243,7 +243,7 @@ struct PsOut {
 };
 
 Texture2D<float> gDepth;
-Texture2D<float3> gRefraction;
+Texture2D<float4> gRefraction;
 
 float WaterFresnel(float dotNV) {
 	float ior = 1.33f;
@@ -273,7 +273,7 @@ PsOut waterPS(PixelInputType input) : SV_TARGET {
    float3 reflectionDirection = reflect(-V, normalW);
    float3 reflectionColor = GetSkyColor(reflectionDirection);
 
-   float3 refractionColor = gRefraction.Sample(gSamplerLinear, screenUV);
+   float3 refractionColor = gRefraction.Sample(gSamplerLinear, screenUV).xyz;
    
    float waterDepth = length(toCamera);
 

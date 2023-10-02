@@ -104,8 +104,9 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
 
   float3 L = LightGetL(light, surface.posW);
 
-  float3 brdf = BRDF_NDotL(L, V, surface.normalW, surface.F0, surface.albedo, surface.roughness);
-  return brdf * radiance;
+  float3 Cdiff, Cspec;
+  STL::BRDF::DirectLighting(surface.normalW, L, V, surface.F0, surface.roughness, Cdiff, Cspec);
+  return (Cdiff * surface.albedo + Cspec) * radiance;
 }
 
 float3 Shade(Surface surface, float3 V) {
