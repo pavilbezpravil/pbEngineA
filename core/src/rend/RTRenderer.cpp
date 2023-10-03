@@ -354,19 +354,20 @@ namespace pbe {
 
          CMD_BINDS_GUARD();
 
-         pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
-
          if (cvUsePSR) {
             pass->SetUAV(cmd, "gViewZOut", context.viewz);
             pass->SetUAV(cmd, "gNormalOut", context.normalTex);
             pass->SetUAV(cmd, "gColorOut", context.colorHDR);
+            pass->SetUAV(cmd, "gBaseColorOut", context.baseColorTex);
          } else {
             pass->SetSRV(cmd, "gViewZ", context.viewz);
             pass->SetSRV(cmd, "gNormal", context.normalTex);
+            pass->SetSRV(cmd, "gBaseColor", context.baseColorTex);
          }
 
          pass->SetUAV(cmd, "gDiffuseOut", context.diffuseTex);
          pass->SetUAV(cmd, "gSpecularOut", context.specularTex);
+         pass->SetUAV(cmd, "gDirectLightingOut", context.directLightingUnfilteredTex);
 
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
@@ -425,6 +426,7 @@ namespace pbe {
          pass->SetSRV(cmd, "gNormal", context.normalTex);
          pass->SetSRV(cmd, "gDiffuse", diffuse);
          pass->SetSRV(cmd, "gSpecular", specular);
+         pass->SetSRV(cmd, "gDirectLighting", context.directLightingUnfilteredTex);
 
          pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 

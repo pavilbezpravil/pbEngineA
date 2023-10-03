@@ -6,6 +6,7 @@
 #include "sky.hlsli"
 #include "random.hlsli"
 #include "intersection.hlsli"
+#include "lighting.hlsli"
 
 #include "NRDEncoding.hlsli"
 #include "NRD.hlsli"
@@ -171,6 +172,246 @@ float3 DirectLightDirection() {
     return normalize(L + RandomPointInUnitSphere() * spread);
 }
 
+#define USE_NEW_TRACING 1
+
+#if USE_NEW_TRACING
+
+struct TraceOpaqueDesc {
+    Surface surface;
+    float3 V;
+    float viewZ;
+
+    uint2 pixelPos;
+    uint pathNum;
+    uint bounceNum;
+};
+
+struct TraceOpaqueResult {
+    float3 diffRadiance;
+    float diffHitDist;
+
+    float3 specRadiance;
+    float specHitDist;
+};
+
+// Taken out from NRD
+float GetSpecMagicCurve( float roughness ) {
+    float f = 1.0 - exp2( -200.0 * roughness * roughness );
+    f *= STL::Math::Pow01( roughness, 0.5 );
+    return f;
+}
+
+float EstimateDiffuseProbability( float3 baseColor, float metalness, float roughness, float3 N, float3 V, bool useMagicBoost = false ) {
+    float3 albedo, Rf0;
+    ConvertBaseColorMetalnessToAlbedoRf0(baseColor, metalness, albedo, Rf0 );
+
+    float NoV = abs( dot( N, V ) );
+    float3 Fenv = STL::BRDF::EnvironmentTerm_Rtg( Rf0, NoV, roughness );
+
+    float lumSpec = STL::Color::Luminance( Fenv );
+    float lumDiff = STL::Color::Luminance( albedo * ( 1.0 - Fenv ) );
+
+    float diffProb = lumDiff / ( lumDiff + lumSpec + 1e-6 );
+
+    // Boost diffuse if roughness is high
+    if ( useMagicBoost ) {
+        diffProb = lerp( diffProb, 1.0, GetSpecMagicCurve( roughness ) );
+    }
+
+    return diffProb < 0.005 ? 0.0 : diffProb;
+}
+
+float EstimateDiffuseProbability( Surface surface, float3 V, bool useMagicBoost = false ) {
+    return EstimateDiffuseProbability( surface.baseColor, surface.metalness, surface.roughness, surface.normalW, V, useMagicBoost );
+}
+
+TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
+    TraceOpaqueResult result = ( TraceOpaqueResult )0;
+
+    uint pathNum = desc.pathNum * 2;
+    uint diffPathsNum = 0;
+
+    [loop]
+    for( uint iPath = 0; iPath < pathNum; iPath++ ) {
+        Surface surface = desc.surface;
+        float3 V = desc.V;
+
+        float firstHitDist = 0;
+
+        float3 Lsum = 0.0;
+        float3 pathThroughput = 1.0;
+
+        bool isDiffusePath = false;
+
+        [loop]
+        for( uint bounceIndex = 1; bounceIndex <= desc.bounceNum; bounceIndex++ ) {
+            bool isDiffuse;
+            float3 rayDir;
+
+            // Origin point
+            {
+                float diffuseProbability = EstimateDiffuseProbability( surface, V );
+                float rnd = RandomFloat();
+
+                if (bounceIndex == 1) {
+                    isDiffuse = iPath & 1;
+                } else {
+                    isDiffuse = rnd < diffuseProbability;
+                    pathThroughput /= abs( float( !isDiffuse ) - diffuseProbability );
+                    // isDiffuse = false;
+                }
+
+                // isDiffuse = rnd < diffuseProbability;
+                // pathThroughput /= abs( float( !isDiffuse ) - diffuseProbability );
+
+                if ( bounceIndex == 1 ) {
+                    isDiffusePath = isDiffuse;
+                }
+
+                // Choose a ray
+                if (0) {
+                    float2 rnd = RandomFloat2();
+                    
+                    float3x3 mLocalBasis = STL::Geometry::GetBasis( surface.normalW );
+
+                    if( isDiffuse ) {
+                        rayDir = STL::ImportanceSampling::Cosine::GetRay( rnd );
+                    } else {
+                        float3 Vlocal = STL::Geometry::RotateVector( mLocalBasis, V );
+                        float3 Hlocal = STL::ImportanceSampling::VNDF::GetRay( rnd, surface.roughness, Vlocal, 0.95 );
+                        rayDir = reflect( -Vlocal, Hlocal ); // todo: may it point inside surface?
+                    }
+
+                    rayDir = STL::Geometry::RotateVectorInverse( mLocalBasis, rayDir );
+                } else {
+                    if( isDiffuse ) {
+                        rayDir = RandomPointOnUnitHemisphere( surface.normalW );
+                    } else {
+                        float roughness2 = surface.roughness * surface.roughness;
+                        rayDir = reflect( -V, surface.normalW );
+                        rayDir = normalize( rayDir + RandomPointInUnitSphere() * roughness2 );
+                    }
+                }
+
+                // todo:
+                rayDir = rayDir * sign(dot( rayDir, surface.normalW ));
+
+                float3 albedo, Rf0;
+                ConvertBaseColorMetalnessToAlbedoRf0( surface, albedo, Rf0 );
+
+                float3 H = normalize( V + rayDir );
+                float VoH = abs( dot( V, H ) );
+                float NoL = saturate( dot( surface.normalW, rayDir ) );
+
+                if( isDiffuse ) {
+                    float NoV = abs( dot( surface.normalW, V ) );
+                    pathThroughput *= STL::Math::Pi( 1.0 ) * albedo * STL::BRDF::DiffuseTerm_Burley( surface.roughness, NoL, NoV, VoH );
+                } else {
+                    float3 F = STL::BRDF::FresnelTerm_Schlick( Rf0, VoH );
+                    pathThroughput *= F;
+
+                    // See paragraph "Usage in Monte Carlo renderer" from http://jcgt.org/published/0007/04/01/paper.pdf
+                    pathThroughput *= STL::BRDF::GeometryTerm_Smith( surface.roughness, NoL );
+                }
+
+                // pathThroughput *= albedo;
+
+                const float THROUGHPUT_THRESHOLD = 0.001;
+                if( THROUGHPUT_THRESHOLD != 0.0 && STL::Color::Luminance( pathThroughput ) < THROUGHPUT_THRESHOLD )
+                    break;
+            }
+
+            // Trace to the next hit
+            Ray ray = CreateRay(surface.posW, rayDir);
+            RayHit hit = Trace(ray);
+
+            // Hit point
+            if (bounceIndex == 1) {
+                firstHitDist = hit.tMax;
+            }
+
+            if (hit.tMax < INF) {
+                SRTObject obj = gRtObjects[hit.objID];
+
+                surface.posW = hit.position;
+                surface.normalW = hit.normal;
+                surface.baseColor = obj.baseColor;
+                surface.metalness = obj.metallic;
+                surface.roughness = obj.roughness;
+                
+                V = -ray.direction;
+
+                float3 L = obj.baseColor * obj.emissivePower;
+
+                // Shadow test ray
+                float3 toLight = DirectLightDirection();
+                float NDotL = dot(surface.normalW, toLight);
+
+                if (NDotL > 0) {
+                    // todo:
+                    Ray shadowRay = CreateRay(surface.posW, toLight);
+                    RayHit shadowHit = Trace(shadowRay);
+                    if (shadowHit.tMax == INF) {
+                        // todo:
+                        float3 albedo, Rf0;
+                        ConvertBaseColorMetalnessToAlbedoRf0( surface, albedo, Rf0 );
+
+                        float3 directLightShade = NDotL * albedo * gScene.directLight.color;
+                        L += directLightShade;
+                    }
+                }
+
+                // L += Shade(surface, V);
+                Lsum += L * pathThroughput;
+            } else {
+                float3 L = GetSkyColor(ray.direction);
+                Lsum += L * pathThroughput;
+                break;
+            }
+        }
+
+        // todo: add ambient light
+        float normHitDist = REBLUR_FrontEnd_GetNormHitDist( firstHitDist, desc.viewZ, gRTConstants.nrdHitDistParams, isDiffusePath ? 1.0 : desc.surface.roughness );
+
+        if( isDiffusePath ) {
+            result.diffRadiance += Lsum;
+            result.diffHitDist += normHitDist;
+            diffPathsNum++;
+        } else {
+            result.specRadiance += Lsum;
+            result.specHitDist += normHitDist;
+        }
+    }
+
+    // Material de-modulation ( convert irradiance into radiance )
+    float3 albedo, Rf0;
+    ConvertBaseColorMetalnessToAlbedoRf0( desc.surface.baseColor, desc.surface.metalness, albedo, Rf0 );
+
+    float NoV = abs( dot( desc.surface.normalW, desc.V ) );
+    float3 Fenv = STL::BRDF::EnvironmentTerm_Rtg( Rf0, NoV, desc.surface.roughness );
+    float3 diffDemod = ( 1.0 - Fenv ) * albedo * 0.99 + 0.01;
+    float3 specDemod = Fenv * 0.99 + 0.01;
+
+    result.diffRadiance /= diffDemod;
+    result.specRadiance /= specDemod;
+
+    // Radiance is already divided by sampling probability, we need to average across all paths
+    float radianceNorm = 1.0 / float( desc.pathNum );
+    result.diffRadiance *= radianceNorm;
+    result.specRadiance *= radianceNorm;
+
+    // Others are not divided by sampling probability, we need to average across diffuse / specular only paths
+    float diffNorm = diffPathsNum == 0 ? 0.0 : 1.0 / float( diffPathsNum );
+    result.diffHitDist *= diffNorm;
+
+    float specNorm = pathNum == diffPathsNum ? 0.0 : 1.0 / float( pathNum - diffPathsNum );
+    result.specHitDist *= specNorm;
+
+    return result;
+}
+
+#endif
+
 float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
     float3 color = 0;
     float3 energy = 1;
@@ -202,14 +443,14 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
                 float3 albedo = obj.baseColor * (1 - obj.metallic);
 
                 // Shadow test ray
-                float3 L = -gScene.directLight.direction;
+                float3 L = DirectLightDirection();
                 float NDotL = dot(N, L);
 
                 if (NDotL > 0) {
-                    Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
+                    Ray shadowRay = CreateRay(ray.origin, L);
                     RayHit shadowHit = Trace(shadowRay);
                     if (shadowHit.tMax == INF) {
-                        float3 directLightShade = NDotL * albedo * gScene.directLight.color / PI_2;
+                        float3 directLightShade = NDotL * albedo * gScene.directLight.color;
                         color += directLightShade * energy;
                     }
                 }
@@ -318,8 +559,11 @@ void rtCS (uint2 id : SV_DispatchThreadID) {
     gColorOut[id.xy] = float4(color, 1);
 }
 
+Texture2D<float4> gBaseColor;
+
 RWTexture2D<float4> gDiffuseOut;
 RWTexture2D<float4> gSpecularOut;
+RWTexture2D<float4> gDirectLightingOut;
 
 #if defined(USE_PSR)
     RWTexture2D<float> gViewZOut;
@@ -335,12 +579,20 @@ RWTexture2D<float4> gSpecularOut;
         return gViewZOut[pixelPos];
     }
 
+    float4 RTDiffuseSpecularCS_ReadBaseColorMetalness(uint2 pixelPos) {
+        return gBaseColorOut[pixelPos];
+    }
+
     float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
         return gNormalOut[pixelPos];
     }
 #else
     float RTDiffuseSpecularCS_ReadViewZ(uint2 pixelPos) {
         return gViewZ[pixelPos];
+    }
+
+    float4 RTDiffuseSpecularCS_ReadBaseColorMetalness(uint2 pixelPos) {
+        return gBaseColor[pixelPos];
     }
 
     float4 RTDiffuseSpecularCS_ReadNormal(uint2 pixelPos) {
@@ -370,13 +622,13 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     float3 normal = normalRoughness.xyz;
     float roughness = normalRoughness.w;
 
+    float4 baseColorMetallic = RTDiffuseSpecularCS_ReadBaseColorMetalness(id);
+    float3 baseColor = baseColorMetallic.xyz;
+    float  metallic = baseColorMetallic.w;
+
     RTRandomInitSeed(id);
 
     #if defined(USE_PSR)
-        float4 baseColorMetallic = gBaseColorOut[id];
-        float3 baseColor = baseColorMetallic.xyz;
-        float  metallic = baseColorMetallic.w;
-
         float3 psrEnergy = 1;
 
         // todo: better condition
@@ -418,6 +670,32 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         }
     #endif // USE_PSR
 
+    float3 albedo, Rf0;
+    ConvertBaseColorMetalnessToAlbedoRf0( baseColor, metallic, albedo, Rf0 );
+
+    Surface surface;
+    surface.posW = posW;
+    surface.normalW = normal;
+    surface.baseColor = baseColor;
+    surface.metalness = metallic;
+    surface.roughness = roughness;
+
+#if USE_NEW_TRACING
+    TraceOpaqueDesc opaqueDesc;
+
+    opaqueDesc.surface = surface;
+    opaqueDesc.V = V;
+    opaqueDesc.viewZ = viewZ;
+
+    opaqueDesc.pixelPos = id;
+    opaqueDesc.pathNum = gRTConstants.nRays;
+    opaqueDesc.bounceNum = gRTConstants.rayDepth;
+
+    TraceOpaqueResult opaqueResult = TraceOpaque( opaqueDesc );
+
+    gDiffuseOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(opaqueResult.diffRadiance, opaqueResult.diffHitDist);
+    gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(opaqueResult.specRadiance, opaqueResult.specHitDist);
+#else
     Ray ray;
     ray.origin = posW;
 
@@ -455,22 +733,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     specularHitDistance /= nRays;
     specularRadiance /= nRays;
 
-    #if 1
-    {
-        float3 L = -gScene.directLight.direction;
-        float NDotL = dot(normal, L);
-
-        if (NDotL > 0) {
-            Ray shadowRay = CreateRay(ray.origin, DirectLightDirection());
-            RayHit shadowHit = Trace(shadowRay); // todo: any hit
-            if (shadowHit.tMax == INF) {
-                float3 directLightShade = NDotL * gScene.directLight.color;
-                diffuseRadiance += directLightShade;
-            }
-        }
-    }
-    #endif
-
     // color = normal * 0.5 + 0.5;
     // color = reflect(V, normal) * 0.5 + 0.5;
     // radiance = frac(posW);
@@ -480,11 +742,32 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     float specularNormHitDist = REBLUR_FrontEnd_GetNormHitDist(specularHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
     gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(specularRadiance, specularNormHitDist);
+#endif
+
+    // todo:
+    #if 1
+    {
+        float3 directLighting = 0;
+
+        float3 L = DirectLightDirection();
+        float NDotL = dot(normal, L);
+
+        if (NDotL > 0) {
+            Ray shadowRay = CreateRay(surface.posW, L);
+            RayHit shadowHit = Trace(shadowRay); // todo: any hit
+            if (shadowHit.tMax == INF) {
+                directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+            }
+        }
+
+        gDirectLightingOut[id] = float4(directLighting, 1);
+    }
+    #endif
 }
 
-Texture2D<float4> gBaseColor;
 Texture2D<float4> gDiffuse;
 Texture2D<float4> gSpecular;
+Texture2D<float4> gDirectLighting;
 
 [numthreads(8, 8, 1)]
 void RTCombineCS (uint2 id : SV_DispatchThreadID) {
@@ -516,12 +799,31 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
     float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
 
+#if USE_NEW_TRACING
+    float3 albedo, Rf0;
+    ConvertBaseColorMetalnessToAlbedoRf0( baseColor, metallic, albedo, Rf0 );
+
+    float NoV = abs( dot( normal, V ) );
+    float3 Fenv = STL::BRDF::EnvironmentTerm_Rtg( Rf0, NoV, roughness );
+
+    float3 diffDemod = ( 1.0 - Fenv ) * albedo * 0.99 + 0.01;
+    float3 specDemod = Fenv * 0.99 + 0.01;
+
+    float3 Ldiff = diffuse * diffDemod;
+    float3 Lspec = specular * specDemod;
+
+    float3 directLighting = gDirectLighting[id].xyz;
+
+    float3 color = Ldiff + Lspec + directLighting;
+#else
     float3 F0 = lerp(0.04, baseColor, metallic);
     float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
 
+    float3 directLighting = gDirectLighting[id].xyz;
     // todo:
     float3 albedo = baseColor * (1 - metallic);
-    float3 color = (1 - F) * albedo * diffuse / PI + F * specular;
+    float3 color = (1 - F) * albedo * diffuse / PI + F * specular + directLighting;
+#endif
 
     float3 emissive = gColorOut[id].xyz;
     gColorOut[id] = float4(color + emissive, 1);

@@ -546,23 +546,23 @@ namespace pbe {
          static filewatch::FileWatch<std::string> watch(
             gShadersSourcePath,
             [](const std::string& path, const filewatch::Event change_type) {
-               anySrcChanged = true;
                std::cout << path << " : ";
                switch (change_type) {
                case filewatch::Event::added:
-                  std::cout << "The file was added to the directory." << '\n';
+                  // std::cout << "The file was added to the directory." << '\n';
                   break;
                case filewatch::Event::removed:
-                  std::cout << "The file was removed from the directory." << '\n';
+                  // std::cout << "The file was removed from the directory." << '\n';
                   break;
                case filewatch::Event::modified:
+                  anySrcChanged = true;
                   std::cout << "The file was modified. This can be a change in the time stamp or attributes." << '\n';
                   break;
                case filewatch::Event::renamed_old:
-                  std::cout << "The file was renamed and this is the old name." << '\n';
+                  // std::cout << "The file was renamed and this is the old name." << '\n';
                   break;
                case filewatch::Event::renamed_new:
-                  std::cout << "The file was renamed and this is the new name." << '\n';
+                  // std::cout << "The file was renamed and this is the new name." << '\n';
                   break;
                }
             }

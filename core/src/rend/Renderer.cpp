@@ -217,6 +217,14 @@ namespace pbe {
          };
          context.specularTex = Texture2D::Create(texDesc);
          context.specularHistoryTex = Texture2D::Create(texDesc);
+
+         texDesc = {
+            .size = size,
+            .format = DXGI_FORMAT_R16G16B16A16_FLOAT,
+            .bindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
+            .name = "direct lighting unfiltered",
+         };
+         context.directLightingUnfilteredTex = Texture2D::Create(texDesc);
       }
 
       texDesc = {

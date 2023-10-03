@@ -84,15 +84,32 @@ struct Surface {
   float3 posW;
   float3 normalW;
   float roughness;
-  float metallic;
-  float3 albedo;
-  float3 F0;
+  float metalness;
+  float3 baseColor;
 };
+
+void ConvertBaseColorMetalnessToAlbedoRf0( float3 baseColor, float metalness, out float3 albedo, out float3 Rf0, float reflectance = 0.5 ) {
+  albedo = baseColor * saturate( 1.0 - metalness );
+  Rf0 = lerp( 0.16 * reflectance * reflectance, baseColor, metalness );
+}
+
+void ConvertBaseColorMetalnessToAlbedoRf0( Surface surface, out float3 albedo, out float3 Rf0, float reflectance = 0.5 ) {
+  ConvertBaseColorMetalnessToAlbedoRf0( surface.baseColor, surface.metalness, albedo, Rf0, reflectance );
+}
 
 float3 LightRadiance(SLight light, float3 posW) {
   float attenuation = LightAttenuation(light, posW);
   float3 radiance = light.color * attenuation;
   return radiance;
+}
+
+float3 LightShadeLo(Surface surface, float3 V, float3 radiance, float3 L) {
+  float3 albedo, Rf0;
+  ConvertBaseColorMetalnessToAlbedoRf0(surface.baseColor, surface.metalness, albedo, Rf0 );
+
+  float3 Cdiff, Cspec;
+  STL::BRDF::DirectLighting(surface.normalW, L, V, Rf0, surface.roughness, Cdiff, Cspec);
+  return (Cdiff * albedo + Cspec) * radiance;
 }
 
 float3 LightShadeLo(SLight light, Surface surface, float3 V) {
@@ -101,12 +118,9 @@ float3 LightShadeLo(SLight light, Surface surface, float3 V) {
     return 0;
   }
   float3 radiance = light.color * attenuation;
-
   float3 L = LightGetL(light, surface.posW);
 
-  float3 Cdiff, Cspec;
-  STL::BRDF::DirectLighting(surface.normalW, L, V, surface.F0, surface.roughness, Cdiff, Cspec);
-  return (Cdiff * surface.albedo + Cspec) * radiance;
+  return LightShadeLo(surface, V, radiance, L);
 }
 
 float3 Shade(Surface surface, float3 V) {

@@ -91,7 +91,7 @@ PsOut ps_main(VsOut input) : SV_TARGET {
    SMaterial material = instance.material;
 
    Surface surface;
-   surface.metallic = material.metallic;
+   surface.metalness = material.metallic;
    surface.roughness = material.roughness;
 
    surface.posW = posW;
@@ -119,12 +119,11 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
       // todo: decal.baseColor
       baseColor = lerp(baseColor, decal.baseColor.rgb, alpha);
-      surface.metallic = lerp(surface.metallic, decal.metallic, alpha);
+      surface.metalness = lerp(surface.metalness, decal.metallic, alpha);
       surface.roughness = lerp(surface.roughness, decal.roughness, alpha);
    }
 
-   surface.albedo = baseColor * (1.0 - surface.metallic);
-   surface.F0 = lerp(0.04, baseColor, surface.metallic);
+   surface.baseColor = baseColor;
 
    // lighting
 
@@ -133,9 +132,12 @@ PsOut ps_main(VsOut input) : SV_TARGET {
 
    float ssaoMask = gSsao.SampleLevel(gSamplerLinear, screenUV, 0).x;
 
+   float3 albedo, Rf0;
+   ConvertBaseColorMetalnessToAlbedoRf0(surface.baseColor, surface.metalness, albedo, Rf0 );
+
    // float ao = ssaoMask; // todo:
    float ao = 0; // todo:
-   float3 ambient = 0.02 * surface.albedo * ao;
+   float3 ambient = 0.02 * albedo * ao;
    float3 color = ambient + Lo;
 
    color *= ssaoMask; // todo: applied on transparent too

@@ -41,7 +41,7 @@ void DeferredCS(uint2 id : SV_DispatchThreadID) {
    float  metallic = baseColorMetallic.w;
 
    Surface surface;
-   surface.metallic = metallic;
+   surface.metalness = metallic;
    surface.roughness = roughness;
 
    surface.posW = posW;
@@ -73,12 +73,14 @@ void DeferredCS(uint2 id : SV_DispatchThreadID) {
    }
 #endif
 
-   surface.albedo = baseColor * (1.0 - surface.metallic);
-   surface.F0 = lerp(0.04, baseColor, surface.metallic);
+   surface.baseColor = baseColor;
 
    float3 Lo = Shade(surface, V);
 
-   float3 ambient = 0.1 * surface.albedo;
+   float3 albedo, Rf0;
+   ConvertBaseColorMetalnessToAlbedoRf0(surface.baseColor, surface.metalness, albedo, Rf0 );
+
+   float3 ambient = 0.1 * albedo * 0; // todo: only in shadow
    float3 emissive = gColorOut[id].xyz;
    float3 color = ambient + Lo + emissive;
 
