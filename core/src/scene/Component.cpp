@@ -135,6 +135,7 @@ namespace pbe {
    STRUCT_END()
 
    STRUCT_BEGIN(LightComponent)
+      STRUCT_FIELD_UI(UIColorEdit3)
       STRUCT_FIELD(color)
       STRUCT_FIELD(intensity)
       STRUCT_FIELD(radius)

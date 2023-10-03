@@ -335,7 +335,7 @@ namespace pbe {
          for (auto [e, trans, light] : scene.View<SceneTransformComponent, LightComponent>().each()) {
             SLight l;
             l.position = trans.Position();
-            l.color = light.color;
+            l.color = light.color * light.intensity;
             l.radius = light.radius;
             l.type = SLIGHT_TYPE_POINT;
 

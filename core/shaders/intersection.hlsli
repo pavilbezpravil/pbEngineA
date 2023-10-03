@@ -10,11 +10,11 @@ struct RayHit {
     uint objID;
 };
 
-RayHit CreateRayHit() {
+RayHit CreateRayHit(float tMax = INF) {
     RayHit hit;
     hit.position = 0;
     hit.tMin = 0.00001; // todo:
-    hit.tMax = INF;
+    hit.tMax = tMax;
     hit.normal = 0;
     hit.objID = UINT_MAX;
     return hit;

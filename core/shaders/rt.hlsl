@@ -53,16 +53,14 @@ void IntersectObj(Ray ray, inout RayHit bestHit, SRTObject obj, uint objIdx) {
 
 // #define DELAYED_INTERSECT
 
-RayHit Trace(Ray ray) {
-    RayHit bestHit = CreateRayHit();
+RayHit Trace(Ray ray, float tMax = INF) {
+    RayHit bestHit = CreateRayHit(tMax);
 
     if (gRTConstants.bvhNodes == 0) {
         return bestHit;
     }
 
     float3 rayInvDirection = 1 / ray.direction;
-
-    float tMax = INF;
 
     #ifdef DELAYED_INTERSECT
         // todo: group shared?
@@ -171,10 +169,6 @@ float3 DirectLightDirection() {
     const float spread = 0.02; // todo:
     return normalize(L + RandomPointInUnitSphere() * spread);
 }
-
-#define USE_NEW_TRACING 1
-
-#if USE_NEW_TRACING
 
 struct TraceOpaqueDesc {
     Surface surface;
@@ -314,9 +308,7 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
                     pathThroughput *= STL::BRDF::GeometryTerm_Smith( surface.roughness, NoL );
                 }
 
-                // pathThroughput *= albedo;
-
-                const float THROUGHPUT_THRESHOLD = 0.001;
+                const float THROUGHPUT_THRESHOLD = 0.01;
                 if( THROUGHPUT_THRESHOLD != 0.0 && STL::Color::Luminance( pathThroughput ) < THROUGHPUT_THRESHOLD )
                     break;
             }
@@ -409,8 +401,6 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
 
     return result;
 }
-
-#endif
 
 float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
     float3 color = 0;
@@ -680,7 +670,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     surface.metalness = metallic;
     surface.roughness = roughness;
 
-#if USE_NEW_TRACING
     TraceOpaqueDesc opaqueDesc;
 
     opaqueDesc.surface = surface;
@@ -695,54 +684,6 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
     gDiffuseOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(opaqueResult.diffRadiance, opaqueResult.diffHitDist);
     gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(opaqueResult.specRadiance, opaqueResult.specHitDist);
-#else
-    Ray ray;
-    ray.origin = posW;
-
-    // todo:
-    int nRays = gRTConstants.nRays;
-
-    float diffuseHitDistance = 0;
-    float specularHitDistance = 0;
-
-    float3 diffuseRadiance = 0;
-    float3 specularRadiance = 0;
-
-    for (int i = 0; i < nRays; i++) {
-        ray.direction = reflect(-V, normal);
-        ray.direction = normalize(ray.direction + RandomPointInUnitSphere() * roughness * roughness);
-
-        specularRadiance += RayColor(ray, gRTConstants.rayDepth, specularHitDistance);
-    }
-
-    for (int i = 0; i < nRays; i++) {
-        ray.direction = normalize(RandomPointOnUnitHemisphere(normal));
-
-        float Diffuse_NDotL = max(dot(normal, ray.direction), 0);
-        diffuseRadiance += RayColor(ray, gRTConstants.rayDepth, diffuseHitDistance) * Diffuse_NDotL;
-    }
-
-    #if defined(USE_PSR)
-        diffuseRadiance *= psrEnergy;
-        specularRadiance *= psrEnergy;
-    #endif
-
-    diffuseHitDistance /= nRays;
-    diffuseRadiance /= nRays;
-
-    specularHitDistance /= nRays;
-    specularRadiance /= nRays;
-
-    // color = normal * 0.5 + 0.5;
-    // color = reflect(V, normal) * 0.5 + 0.5;
-    // radiance = frac(posW);
-
-    float diffuseNormHitDist = REBLUR_FrontEnd_GetNormHitDist(diffuseHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
-    gDiffuseOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(diffuseRadiance, diffuseNormHitDist);
-
-    float specularNormHitDist = REBLUR_FrontEnd_GetNormHitDist(specularHitDistance, viewZ, gRTConstants.nrdHitDistParams, roughness);
-    gSpecularOut[id] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(specularRadiance, specularNormHitDist);
-#endif
 
     // todo:
     #if 1
@@ -752,13 +693,51 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         float3 L = DirectLightDirection();
         float NDotL = dot(normal, L);
 
+        Ray shadowRay = CreateRay(surface.posW, L);
         if (NDotL > 0) {
-            Ray shadowRay = CreateRay(surface.posW, L);
             RayHit shadowHit = Trace(shadowRay); // todo: any hit
             if (shadowHit.tMax == INF) {
                 directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
             }
         }
+
+        #if 1
+            if (gScene.nLights > 0) {
+                float pdf = 1.f / gScene.nLights;
+
+                float rnd = RandomFloat();
+                uint iLight = min(uint(rnd * gScene.nLights), gScene.nLights - 1);
+                SLight light = gLights[iLight];
+
+                float attenuation = LightAttenuation(light, surface.posW);
+                if (attenuation > 0) {
+                    float3 radiance = light.color * attenuation / pdf;
+                    float lightRadius = 0.3f;
+
+                    float3 lightPosNoised = light.position + RandomPointInUnitSphere() * lightRadius;
+                    float3 Lnoised = normalize(lightPosNoised - posW);
+
+                    float3 toLight = lightPosNoised - posW;
+                    float toLightDist = length(toLight);
+                    // float3 L = toLight / toLightDist;
+
+                    float NDotL = dot(normal, Lnoised);
+
+                    shadowRay.direction = Lnoised;
+                    if (NDotL > 0) {
+                        RayHit shadowHit = Trace(shadowRay, toLightDist); // todo: any hit
+                        if (shadowHit.tMax == toLightDist) {
+                            float3 L = LightGetL(light, surface.posW);
+                            directLighting += LightShadeLo(surface, V, radiance, L);
+                        }
+                    }
+                }
+            }
+        #else
+            for(int i = 0; i < gScene.nLights; ++i) {
+                directLighting += LightShadeLo(gLights[i], surface, V);
+            }
+        #endif
 
         gDirectLightingOut[id] = float4(directLighting, 1);
     }
@@ -799,7 +778,6 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
     float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
 
-#if USE_NEW_TRACING
     float3 albedo, Rf0;
     ConvertBaseColorMetalnessToAlbedoRf0( baseColor, metallic, albedo, Rf0 );
 
@@ -813,19 +791,9 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 Lspec = specular * specDemod;
 
     float3 directLighting = gDirectLighting[id].xyz;
+    float3 emissive = gColorOut[id].xyz;
 
     float3 color = Ldiff + Lspec + directLighting;
-#else
-    float3 F0 = lerp(0.04, baseColor, metallic);
-    float3 F = fresnelSchlick(max(dot(normal, V), 0.0), F0);
-
-    float3 directLighting = gDirectLighting[id].xyz;
-    // todo:
-    float3 albedo = baseColor * (1 - metallic);
-    float3 color = (1 - F) * albedo * diffuse / PI + F * specular + directLighting;
-#endif
-
-    float3 emissive = gColorOut[id].xyz;
     gColorOut[id] = float4(color + emissive, 1);
 }
 
