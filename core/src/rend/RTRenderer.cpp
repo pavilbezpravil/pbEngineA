@@ -369,6 +369,9 @@ namespace pbe {
          pass->SetUAV(cmd, "gSpecularOut", context.specularTex);
          pass->SetUAV(cmd, "gDirectLightingOut", context.directLightingUnfilteredTex);
 
+         pass->SetUAV(cmd, "gShadowDataOut", context.shadowDataTex);
+         pass->SetUAV(cmd, "gShadowDataTranslucencyOut", context.shadowDataTranslucencyTex);
+
          cmd.Dispatch2D(outTexSize, int2{ 8, 8 });
       }
 
@@ -396,6 +399,10 @@ namespace pbe {
          desc.IN_SPEC_RADIANCE_HITDIST = context.specularTex;
          desc.OUT_DIFF_RADIANCE_HITDIST = context.diffuseHistoryTex;
          desc.OUT_SPEC_RADIANCE_HITDIST = context.specularHistoryTex; // todo: names
+
+         desc.IN_SHADOWDATA = context.shadowDataTex;
+         desc.IN_SHADOW_TRANSLUCENCY = context.shadowDataTranslucencyTex;
+         desc.OUT_SHADOW_TRANSLUCENCY = context.shadowDataTranslucencyHistoryTex;
 
          if (cvNRDValidation) {
             desc.validation = true;
@@ -427,6 +434,7 @@ namespace pbe {
          pass->SetSRV(cmd, "gDiffuse", diffuse);
          pass->SetSRV(cmd, "gSpecular", specular);
          pass->SetSRV(cmd, "gDirectLighting", context.directLightingUnfilteredTex);
+         pass->SetSRV(cmd, "gShadowDataTranslucency", cvDenoise ? context.shadowDataTranslucencyHistoryTex : context.shadowDataTranslucencyTex);
 
          pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 

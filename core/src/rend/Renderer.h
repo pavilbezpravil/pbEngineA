@@ -108,6 +108,10 @@ namespace pbe {
       Ref<Texture2D> specularTex;
       Ref<Texture2D> specularHistoryTex;
 
+      Ref<Texture2D> shadowDataTex;
+      Ref<Texture2D> shadowDataTranslucencyTex;
+      Ref<Texture2D> shadowDataTranslucencyHistoryTex;
+
       Ref<Texture2D> directLightingUnfilteredTex;
 
       Ref<Texture2D> outlineTex;

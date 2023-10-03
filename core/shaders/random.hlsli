@@ -72,7 +72,7 @@ float3 RandomPointInUnitSphereCube() {
 // }
 float3 RandomPointInUnitSphere() {
     // todo:
-    return RandomPointInUnitSphereCube();
+    // return RandomPointInUnitSphereCube();
 
     float u = RandomFloat();
     float v = RandomFloat();
@@ -98,7 +98,7 @@ float3 RandomPointInUnitSphere() {
 
 float3 RandomPointOnUnitSphere() {
     // todo:
-    return normalize(RandomPointInUnitSphere());
+    // return normalize(RandomPointInUnitSphere());
 
     float theta = PI_2 * RandomFloat(gRandomSeed);
     float phi = acos(1.0 - 2.0 * RandomFloat(gRandomSeed));

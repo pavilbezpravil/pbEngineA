@@ -49,11 +49,13 @@ namespace pbe {
    uint2 nriRenderResolution = { UINT_MAX, UINT_MAX };
 
    constexpr nrd::Identifier NRD_DENOISE_DIFFUSE_SPECULAR = 1;
+   constexpr nrd::Identifier NRD_DENOISE_SHADOW = 2;
 
    static void NRDDenoisersInit(uint2 renderResolution) {
       const nrd::DenoiserDesc denoiserDescs[] =
       {
          { NRD_DENOISE_DIFFUSE_SPECULAR, nrd::Denoiser::REBLUR_DIFFUSE_SPECULAR, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
+         { NRD_DENOISE_SHADOW, nrd::Denoiser::SIGMA_SHADOW_TRANSLUCENCY, (uint16_t)renderResolution.x, (uint16_t)renderResolution.y },
       };
 
       nrd::InstanceCreationDesc instanceCreationDesc = {};
@@ -97,6 +99,9 @@ namespace pbe {
       settings.enablePerformanceMode = cvNRDPerfMode;
       NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE_SPECULAR, &settings);
 
+      nrd::SigmaSettings sigmaSettings = {};
+      NRD.SetDenoiserSettings(NRD_DENOISE_SHADOW, &sigmaSettings);
+
       NrdUserPool userPool = {};
       {
          NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_MV, desc.IN_MV);
@@ -108,12 +113,16 @@ namespace pbe {
          NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_DIFF_RADIANCE_HITDIST, desc.OUT_DIFF_RADIANCE_HITDIST);
          NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SPEC_RADIANCE_HITDIST, desc.OUT_SPEC_RADIANCE_HITDIST);
 
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SHADOWDATA, desc.IN_SHADOWDATA);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::IN_SHADOW_TRANSLUCENCY, desc.IN_SHADOW_TRANSLUCENCY);
+         NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_SHADOW_TRANSLUCENCY, desc.OUT_SHADOW_TRANSLUCENCY);
+
          if (desc.validation) {
             NrdIntegration_SetResource(userPool, nrd::ResourceType::OUT_VALIDATION, desc.OUT_VALIDATION);
          }
       }
 
-      const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE_SPECULAR };
+      const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE_SPECULAR, NRD_DENOISE_SHADOW };
       NRD.Denoise(denoisers, _countof(denoisers), cmd, userPool);
    }
 

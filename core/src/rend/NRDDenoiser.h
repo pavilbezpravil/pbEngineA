@@ -22,6 +22,10 @@ namespace pbe {
       // OPTIONAL INPUTS - IN_DIFF_CONFIDENCE,  IN_SPEC_CONFIDENCE
       // OUTPUTS - OUT_DIFF_RADIANCE_HITDIST, OUT_SPEC_RADIANCE_HITDIST
 
+      // from SIGMA_SHADOW_TRANSLUCENCY
+      // INPUTS - IN_NORMAL_ROUGHNESS, IN_SHADOWDATA, IN_SHADOW_TRANSLUCENCY, OUT_SHADOW_TRANSLUCENCY (used as history)
+      // OUTPUTS - OUT_SHADOW_TRANSLUCENCY
+
       uint2 textureSize{};
 
       mat4 mViewToClip{};
@@ -41,6 +45,10 @@ namespace pbe {
 
       Texture2D* OUT_DIFF_RADIANCE_HITDIST{};
       Texture2D* OUT_SPEC_RADIANCE_HITDIST{};
+
+      Texture2D* IN_SHADOWDATA{};
+      Texture2D* IN_SHADOW_TRANSLUCENCY{};
+      Texture2D* OUT_SHADOW_TRANSLUCENCY{};
 
       Texture2D* OUT_VALIDATION{};
    };

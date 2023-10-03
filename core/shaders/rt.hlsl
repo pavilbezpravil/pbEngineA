@@ -164,10 +164,24 @@ RayHit Trace(Ray ray) {
 
 #endif
 
+const static float gDirectLightTanAngularRadius = 0.05;
+
+float3 LightTanAngularRadius(float3 pos, float3 lightPos, float lightRadius) {
+    return lightRadius / length(lightPos - pos);
+}
+
+float3 LightDirection(float3 toLight, float tanAngularRadius) {
+    float2 rnd = RandomFloat2();
+    rnd = STL::ImportanceSampling::Cosine::GetRay( rnd ).xy;
+    rnd *= tanAngularRadius;
+
+    float3x3 mSunBasis = STL::Geometry::GetBasis( toLight );
+    return normalize( mSunBasis[ 0 ] * rnd.x + mSunBasis[ 1 ] * rnd.y + mSunBasis[ 2 ] );
+}
+
 float3 DirectLightDirection() {
     float3 L = -gScene.directLight.direction;
-    const float spread = 0.02; // todo:
-    return normalize(L + RandomPointInUnitSphere() * spread);
+    return LightDirection(L, gDirectLightTanAngularRadius);
 }
 
 struct TraceOpaqueDesc {
@@ -555,6 +569,10 @@ RWTexture2D<float4> gDiffuseOut;
 RWTexture2D<float4> gSpecularOut;
 RWTexture2D<float4> gDirectLightingOut;
 
+RWTexture2D<float2> gShadowDataOut;
+RWTexture2D<float4> gShadowDataTranslucencyOut;
+Texture2D<float4> gShadowDataTranslucency;
+
 #if defined(USE_PSR)
     RWTexture2D<float> gViewZOut;
     RWTexture2D<float4> gNormalOut;
@@ -693,15 +711,30 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
         float3 L = DirectLightDirection();
         float NDotL = dot(normal, L);
 
+        // todo:
+        float shadowTranslucency = 1;
+        float shadowHitDist = 0;
+
         Ray shadowRay = CreateRay(surface.posW, L);
         if (NDotL > 0) {
             RayHit shadowHit = Trace(shadowRay); // todo: any hit
+            shadowHitDist = shadowHit.tMax;
             if (shadowHit.tMax == INF) {
-                directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+                // directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+            } else {
+                shadowTranslucency = 0;
             }
         }
 
-        #if 1
+        directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+
+        float4 shadowData1;
+        float2 shadowData0 = SIGMA_FrontEnd_PackShadow( viewZ, shadowHitDist == INF ? NRD_FP16_MAX : shadowHitDist, gDirectLightTanAngularRadius, shadowTranslucency, shadowData1 );
+
+        gShadowDataOut[id] = shadowData0;
+        gShadowDataTranslucencyOut[id] = shadowData1;
+
+        #if 0
             if (gScene.nLights > 0) {
                 float pdf = 1.f / gScene.nLights;
 
@@ -775,6 +808,10 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 baseColor = baseColorMetallic.xyz;
     float  metallic = baseColorMetallic.w;
 
+    float4 shadowData = gShadowDataTranslucency[id];
+    shadowData = SIGMA_BackEnd_UnpackShadow( shadowData );
+    float3 shadow = lerp( shadowData.yzw, 1.0, shadowData.x );
+
     float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
     float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
 
@@ -793,7 +830,7 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 directLighting = gDirectLighting[id].xyz;
     float3 emissive = gColorOut[id].xyz;
 
-    float3 color = Ldiff + Lspec + directLighting;
+    float3 color = Ldiff + Lspec + directLighting * shadow;
     gColorOut[id] = float4(color + emissive, 1);
 }
 
