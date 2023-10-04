@@ -7,19 +7,26 @@ uint pcg_hash(uint input) {
     return (word >> 22u) ^ word;
 }
 
+uint RandomNextUint(uint seed) {
+    return pcg_hash(seed);
+}
+
 static uint gRandomSeed;
 
-void RandomInitSeed(uint seed) {
-    gRandomSeed = pcg_hash(seed);
+void RandomInitialize(uint2 id, uint frameIdx) {
+    gRandomSeed = id.x * 214234 + id.y * 521334 + RandomNextUint(frameIdx * 171915 + 968123);
 }
 
-void RandomInitSeedFromUint2(uint2 id, uint frameIdx) {
-    RandomInitSeed(id.x * 214234 + id.y * 521334 + frameIdx * 171915);
+uint RandomUint(inout uint seed) {
+    seed = RandomNextUint(seed);
+    return seed;
 }
+
+#define _UintToFloat01( x ) ( 2.0 - asfloat( ( x >> 9 ) | 0x3F800000 ) )
 
 float RandomFloat(inout uint seed) {
-    seed = pcg_hash(seed);
-    return (float)seed / (float)UINT_MAX;
+    seed = RandomUint(seed);
+    return _UintToFloat01(seed);
 }
 
 float2 RandomFloat2(inout uint seed) {
@@ -27,18 +34,18 @@ float2 RandomFloat2(inout uint seed) {
 }
 
 float3 RandomFloat3(inout uint seed) {
-    return float3(RandomFloat(seed), RandomFloat(seed), RandomFloat(seed));
+    return float3(RandomFloat2(seed), RandomFloat(seed));
 }
 
 float RandomFloat() {
     return RandomFloat(gRandomSeed);
 }
 
-float RandomFloat2() {
+float2 RandomFloat2() {
     return RandomFloat2(gRandomSeed);
 }
 
-float RandomFloat3() {
+float3 RandomFloat3() {
     return RandomFloat3(gRandomSeed);
 }
 

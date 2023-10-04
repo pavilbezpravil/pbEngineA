@@ -490,7 +490,7 @@ float3 RayColor(Ray ray, int nRayDepth, inout float hitDistance) {
 
 // todo:
 void RTRandomInitSeed(uint2 id) {
-    RandomInitSeedFromUint2(id, gScene.iFrame);
+    RandomInitialize(id, gScene.iFrame);
 }
 
 #if 0
