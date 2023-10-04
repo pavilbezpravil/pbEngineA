@@ -36,6 +36,10 @@ namespace pbe {
 
       bool validation = false;
       bool clearHistory = false;
+      bool diffuseSpecular = true;
+      bool shadow = true;
+      bool perfMode = true;
+      float splitScreen = 0.f;
 
       Texture2D* IN_MV{};
       Texture2D* IN_NORMAL_ROUGHNESS{};
