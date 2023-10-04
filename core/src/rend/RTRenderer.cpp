@@ -41,6 +41,11 @@ namespace pbe {
    CVarValue<bool> cvNRDValidation{ "render/denoise/nrd validation", false };
    CVarTrigger cvClearHistory{ "render/denoise/clear history" };
 
+   CVarSlider<float>  cvNRDSplitScreen{ "render/denoise/split screen", 0, 0, 1 };
+   CVarValue<bool> cvNRDPerfMode{ "render/denoise/perf mode", true };
+   CVarValue<bool> cvDenoiseDiffSpec{ "render/denoise/diffuse&specular", true };
+   CVarValue<bool> cvDenoiseShadow{ "render/denoise/shadow", true };
+
    CVarValue<bool> cvFog{ "render/rt/fog enable", false };
 
    RTRenderer::~RTRenderer() {
@@ -377,6 +382,7 @@ namespace pbe {
 
       Texture2D* diffuse = context.diffuseTex;
       Texture2D* specular = context.specularTex;
+      Texture2D* shadow = context.shadowDataTranslucencyTex;
 
       if (cvDenoise) {
          GPU_MARKER("Denoise");
@@ -386,6 +392,10 @@ namespace pbe {
 
          desc.textureSize = outTexSize;
          desc.clearHistory = cvClearHistory;
+         desc.diffuseSpecular = cvDenoiseDiffSpec;
+         desc.shadow = cvDenoiseShadow;
+         desc.perfMode = cvNRDPerfMode;
+         desc.splitScreen = cvNRDSplitScreen;
 
          desc.mViewToClip = camera.projection;
          desc.mViewToClipPrev = camera.prevProjection;
@@ -412,8 +422,13 @@ namespace pbe {
          NRDResize(outTexSize);
          NRDDenoise(cmd, desc);
 
-         diffuse = context.diffuseHistoryTex;
-         specular = context.specularHistoryTex;
+         if (desc.diffuseSpecular) {
+            diffuse = context.diffuseHistoryTex;
+            specular = context.specularHistoryTex;
+         }
+         if (desc.shadow) {
+            shadow = context.shadowDataTranslucencyHistoryTex;
+         }
       }
 
       if (!cvNRDValidation) {
@@ -434,7 +449,7 @@ namespace pbe {
          pass->SetSRV(cmd, "gDiffuse", diffuse);
          pass->SetSRV(cmd, "gSpecular", specular);
          pass->SetSRV(cmd, "gDirectLighting", context.directLightingUnfilteredTex);
-         pass->SetSRV(cmd, "gShadowDataTranslucency", cvDenoise ? context.shadowDataTranslucencyHistoryTex : context.shadowDataTranslucencyTex);
+         pass->SetSRV(cmd, "gShadowDataTranslucency", shadow);
 
          pass->SetUAV(cmd, "gColorOut", context.colorHDR);
 

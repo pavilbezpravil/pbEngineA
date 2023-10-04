@@ -41,9 +41,6 @@ uint4 TexGather(Texture2D<uint> tex, float2 uv)
 
 namespace pbe {
 
-   CVarSlider<float>  cvNRDSplitScreen{ "render/denoise/split screen", 0, 0, 1 };
-   CVarValue<bool> cvNRDPerfMode{ "render/denoise/perf mode", false };
-
    NrdIntegration NRD = NrdIntegration();
 
    uint2 nriRenderResolution = { UINT_MAX, UINT_MAX };
@@ -91,12 +88,12 @@ namespace pbe {
       // todo: better nrd::AccumulationMode::RESTART
       commonSettings.accumulationMode = desc.clearHistory ? nrd::AccumulationMode::CLEAR_AND_RESTART : nrd::AccumulationMode::CONTINUE;
       commonSettings.enableValidation = desc.validation;
-      commonSettings.splitScreen = cvNRDSplitScreen;
+      commonSettings.splitScreen = desc.splitScreen;
 
       NRD.SetCommonSettings(commonSettings);
 
       nrd::ReblurSettings settings = {};
-      settings.enablePerformanceMode = cvNRDPerfMode;
+      settings.enablePerformanceMode = desc.perfMode;
       NRD.SetDenoiserSettings(NRD_DENOISE_DIFFUSE_SPECULAR, &settings);
 
       nrd::SigmaSettings sigmaSettings = {};
@@ -122,8 +119,19 @@ namespace pbe {
          }
       }
 
-      const nrd::Identifier denoisers[] = { NRD_DENOISE_DIFFUSE_SPECULAR, NRD_DENOISE_SHADOW };
-      NRD.Denoise(denoisers, _countof(denoisers), cmd, userPool);
+      nrd::Identifier denoisers[2];
+      uint nDenoisers = 0;
+
+      if (desc.diffuseSpecular) {
+         denoisers[nDenoisers++] = NRD_DENOISE_DIFFUSE_SPECULAR;
+      }
+      if (desc.shadow) {
+         denoisers[nDenoisers++] = NRD_DENOISE_SHADOW;
+      }
+
+      if (nDenoisers > 0) {
+         NRD.Denoise(denoisers, nDenoisers, cmd, userPool);
+      }
    }
 
    void NRDTerm() {
