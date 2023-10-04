@@ -770,7 +770,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                         // float weight = 1 / pdf; // todo:
                         float weight = 1 / gScene.nLights; // todo:
                         weight = 1;
-                        float distanceToOccluder;
+                        float distanceToOccluder = 0;
 
                         float NDotL = dot(normal, Lnoised);
 
@@ -782,12 +782,10 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
                             if (shadowHit.tMax == toLightDist) {
                                 distanceToOccluder = NRD_FP16_MAX;
-                                weight = 0;
+                                // weight = 0;
                             } else {
                                 // weight = 0;
                             }
-                        } else {
-                            distanceToOccluder = 0;
                         }
 
                         SIGMA_FrontEnd_MultiLightUpdate( lightRadiance, distanceToOccluder, lightTanAngularRadius, weight, multiLightShadowData );
@@ -845,7 +843,7 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float4 shadowData = gShadowDataTranslucency[id];
     shadowData = SIGMA_BackEnd_UnpackShadow( shadowData );
     float3 shadow = lerp( shadowData.yzw, 1.0, shadowData.x );
-    // float3 shadow = shadowData.yzw;
+    // shadow = shadowData.yzw;
 
     float3 diffuse = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gDiffuse[id]).xyz;
     float3 specular = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(gSpecular[id]).xyz;
