@@ -18,8 +18,8 @@ entities:
       scale: [39.3040085, 0.999999821, 25.0262299]
       parent: 7709018462035949994
     MaterialComponent:
-      baseColor: [1, 1, 1]
-      roughness: 0
+      baseColor: [0.224615395, 0.172089934, 0.172089934]
+      roughness: 0.5
       metallic: 0
       emissivePower: 0
       opaque: true
@@ -44,7 +44,7 @@ entities:
       scale: [6, 1, 4]
       parent: 8155500682261400838
     MaterialComponent:
-      baseColor: [1, 1, 1]
+      baseColor: [0.323076904, 0.323076904, 0.323076904]
       roughness: 0.100000001
       metallic: 0
       emissivePower: 0
@@ -75,8 +75,8 @@ entities:
       scale: [6, 4, 0.999999642]
       parent: 8155500682261400838
     MaterialComponent:
-      baseColor: [0.19758229, 0.409363985, 0.755274296]
-      roughness: 0.100000001
+      baseColor: [0.12653254, 0.271276891, 0.507692337]
+      roughness: 0
       metallic: 0
       emissivePower: 0
       opaque: true
@@ -91,8 +91,8 @@ entities:
       scale: [1, 1, 1]
       parent: 7709018462035949994
     MaterialComponent:
-      baseColor: [0.898734152, 0.0758425519, 0.0758425519]
-      roughness: 0.100000001
+      baseColor: [0.541538477, 0.13996686, 0.13996686]
+      roughness: 0.405000001
       metallic: 0
       emissivePower: 0
       opaque: true
@@ -107,8 +107,8 @@ entities:
       scale: [0.999999821, 4, 4]
       parent: 8155500682261400838
     MaterialComponent:
-      baseColor: [0.169928446, 0.7763713, 0.137584805]
-      roughness: 0.100000001
+      baseColor: [0.132065013, 0.44615382, 0.115313604]
+      roughness: 0.5
       metallic: 0
       emissivePower: 0
       opaque: true
@@ -123,8 +123,8 @@ entities:
       scale: [0.999999464, 4, 4]
       parent: 8155500682261400838
     MaterialComponent:
-      baseColor: [0.797468364, 0.117769592, 0.117769592]
-      roughness: 0.100000001
+      baseColor: [0.544615388, 0.0703810826, 0.0703810826]
+      roughness: 0.421000004
       metallic: 0
       emissivePower: 0
       opaque: true

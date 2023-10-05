@@ -37,7 +37,7 @@ namespace pbe {
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarValue<bool> cvUsePSR{ "render/rt/use psr", false }; // todo: on my laptop it takes 50% more time
 
-   CVarValue<bool> cvDenoise{ "render/denoise/enable", false };
+   CVarValue<bool> cvDenoise{ "render/denoise/enable", true };
    CVarValue<bool> cvNRDValidation{ "render/denoise/nrd validation", false };
    CVarTrigger cvClearHistory{ "render/denoise/clear history" };
 

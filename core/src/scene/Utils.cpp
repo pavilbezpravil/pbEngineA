@@ -45,6 +45,12 @@ namespace pbe {
       return entity;
    }
 
+   Entity CreateLight(Scene& scene, string_view namePrefix, const vec3& pos) {
+      auto entity = CreateEmpty(scene, namePrefix, {}, pos);
+      entity.Add<LightComponent>();
+      return entity;
+   }
+
    Entity CreateDirectLight(Scene& scene, string_view namePrefix, const vec3& pos) {
       auto entity = CreateEmpty(scene, namePrefix, {}, pos);
       entity.Get<SceneTransformComponent>().Local().rotation = quat{ vec3{PIHalf * 0.5, PIHalf * 0.5, 0 } };
@@ -138,6 +144,9 @@ namespace pbe {
       }
 
       if (UI_MENU("Lighting")) {
+         if (ImGui::MenuItem("Light")) {
+            return CreateLight(scene);
+         }
          if (ImGui::MenuItem("Create Direct Light")) {
             return CreateDirectLight(scene);
          }

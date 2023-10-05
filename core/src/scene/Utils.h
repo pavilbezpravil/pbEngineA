@@ -39,6 +39,7 @@ namespace pbe {
 
    Entity CORE_API CreateCube(Scene& scene, const CubeDesc& desc = {});
 
+   Entity CORE_API CreateLight(Scene& scene, string_view namePrefix = "Light", const vec3& pos = {});
    Entity CORE_API CreateDirectLight(Scene& scene, string_view namePrefix = "Direct Light", const vec3& pos = {});
    Entity CORE_API CreateSky(Scene& scene, string_view namePrefix = "Sky", const vec3& pos = {});
 

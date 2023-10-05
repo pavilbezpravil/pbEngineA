@@ -805,102 +805,126 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     // todo:
     #if 1
     {
-        float3 directLighting = 0;
-
-        float3 L = DirectLightDirection();
-        float NDotL = dot(normal, L);
-
-        // todo:
-        float shadowTranslucency = 1;
-        float shadowHitDist = 0;
-
-        Ray shadowRay = CreateRay(surface.posW, L);
-        if (NDotL > 0) {
-            RayHit shadowHit = Trace(shadowRay); // todo: any hit
-            shadowHitDist = shadowHit.tMax;
-            if (shadowHit.tMax == INF) {
-                // directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
-            } else {
-                shadowTranslucency = 0;
-            }
-        }
-
-        directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
-
-        float4 shadowData1;
-        float2 shadowData0 = SIGMA_FrontEnd_PackShadow( viewZ, shadowHitDist == INF ? NRD_FP16_MAX : shadowHitDist, gDirectLightTanAngularRadius, shadowTranslucency, shadowData1 );
-
-        gShadowDataOut[id] = shadowData0;
-        gShadowDataTranslucencyOut[id] = shadowData1;
-
+        // only direct light
         #if 0
-            if (gScene.nLights > 0) {
-                SIGMA_MULTILIGHT_DATATYPE multiLightShadowData = SIGMA_FrontEnd_MultiLightStart();
+            float3 directLighting = 0;
 
-                float3 Lsum = 0; // todo:
+            float3 L = DirectLightDirection();
+            float NDotL = dot(normal, L);
 
-                float pdf = 1.f / gScene.nLights;
+            // todo:
+            float shadowTranslucency = 1;
+            float shadowHitDist = 0;
 
-                float rnd = RandomFloat();
-                // uint iLight = min(uint(rnd * gScene.nLights), gScene.nLights - 1);
+            Ray shadowRay = CreateRay(surface.posW, L);
+            if (NDotL > 0) {
+                RayHit shadowHit = Trace(shadowRay); // todo: any hit
+                shadowHitDist = shadowHit.tMax;
+                if (shadowHit.tMax == INF) {
+                    // directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+                } else {
+                    shadowTranslucency = 0;
+                }
+            }
 
-                for(int i = 0; i < gScene.nLights; ++i) {
-                    SLight light = gLights[i];
+            directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
 
-                    float3 lightRadiance = LightShadeLo(light, surface, V);
-                    Lsum += lightRadiance;
-                    directLighting += lightRadiance;
+            float4 shadowData1;
+            float2 shadowData0 = SIGMA_FrontEnd_PackShadow( viewZ, shadowHitDist == INF ? NRD_FP16_MAX : shadowHitDist, gDirectLightTanAngularRadius, shadowTranslucency, shadowData1 );
 
-                    float attenuation = LightAttenuation(light, surface.posW);
-                    // if (i == iLight && attenuation > 0) 
-                    {
-                        float lightRadius = 0.2f; // todo:
+            gShadowDataOut[id] = shadowData0;
+            gShadowDataTranslucencyOut[id] = shadowData1;
+        #else
+            float3 directLighting = 0;
 
-                        float lightTanAngularRadius = LightTanAngularRadius(surface.posW, light.position, lightRadius);
-                        float3 Lnoised = LightDirection(normalize(light.position - surface.posW), lightTanAngularRadius);
-                        // float3 lightPosNoised = light.position + RandomPointInUnitSphere() * lightRadius;
-                        // float3 Lnoised = normalize(lightPosNoised - posW);
+            float3 L = DirectLightDirection();
+            float NDotL = dot(normal, L);
 
-                        // float3 toLight = lightPosNoised - posW;
-                        float3 toLight = light.position - surface.posW;
-                        float toLightDist = length(toLight);
-                        // float3 L = toLight / toLightDist;
+            // todo:
+            float shadowTranslucency = 1;
+            float shadowHitDist = 0;
 
-                        // float weight = 1 / pdf; // todo:
-                        float weight = 1 / gScene.nLights; // todo:
-                        weight = 1;
-                        float distanceToOccluder = 0;
+            SIGMA_MULTILIGHT_DATATYPE multiLightShadowData = SIGMA_FrontEnd_MultiLightStart();
 
-                        float NDotL = dot(normal, Lnoised);
+            float distanceToOccluder = 0;
+            float weight = 1;
 
-                        shadowRay.direction = Lnoised;
-                        if (NDotL > 0) {
-                            RayHit shadowHit = Trace(shadowRay, toLightDist); // todo: any hit
+            Ray shadowRay = CreateRay(surface.posW, L);
+            if (NDotL > 0) {
+                RayHit shadowHit = Trace(shadowRay); // todo: any hit
+                shadowHitDist = shadowHit.tMax;
+                if (shadowHit.tMax == INF) {
+                    distanceToOccluder = NRD_FP16_MAX;
+                    // weight = 0;
+                } else {
+                    // weight = 0;
+                }
+            }
 
-                            distanceToOccluder = shadowHit.tMax;
+            directLighting += LightShadeLo(surface, V, gScene.directLight.color, -gScene.directLight.direction);
+            SIGMA_FrontEnd_MultiLightUpdate( directLighting, distanceToOccluder, gDirectLightTanAngularRadius, weight, multiLightShadowData );
 
-                            if (shadowHit.tMax == toLightDist) {
-                                distanceToOccluder = NRD_FP16_MAX;
-                                // weight = 0;
-                            } else {
-                                // weight = 0;
+            #if 1
+                if (gScene.nLights > 0) {
+                    float pdf = 1.f / gScene.nLights;
+
+                    // uint iLight = min(uint(rnd * gScene.nLights), gScene.nLights - 1);
+
+                    for(int i = 0; i < gScene.nLights; ++i) {
+                        SLight light = gLights[i];
+
+                        float3 lightRadiance = LightShadeLo(light, surface, V);
+                        directLighting += lightRadiance;
+
+                        float attenuation = LightAttenuation(light, surface.posW);
+                        // if (i == iLight && attenuation > 0) 
+                        {
+                            float lightRadius = 0.2f; // todo:
+
+                            float lightTanAngularRadius = LightTanAngularRadius(surface.posW, light.position, lightRadius);
+                            float3 Lnoised = LightDirection(normalize(light.position - surface.posW), lightTanAngularRadius);
+                            // float3 lightPosNoised = light.position + RandomPointInUnitSphere() * lightRadius;
+                            // float3 Lnoised = normalize(lightPosNoised - posW);
+
+                            // float3 toLight = lightPosNoised - posW;
+                            float3 toLight = light.position - surface.posW;
+                            float toLightDist = length(toLight);
+                            // float3 L = toLight / toLightDist;
+
+                            float weight = 1;
+                            float distanceToOccluder = 0;
+
+                            float NDotL = dot(normal, Lnoised);
+
+                            shadowRay.direction = Lnoised;
+                            if (NDotL > 0) {
+                                RayHit shadowHit = Trace(shadowRay, toLightDist); // todo: any hit
+
+                                distanceToOccluder = shadowHit.tMax;
+
+                                if (shadowHit.tMax == toLightDist) {
+                                    distanceToOccluder = NRD_FP16_MAX;
+                                    // weight = 0;
+                                } else {
+                                    // weight = 0;
+                                }
                             }
-                        }
 
-                        SIGMA_FrontEnd_MultiLightUpdate( lightRadiance, distanceToOccluder, lightTanAngularRadius, weight, multiLightShadowData );
+                            SIGMA_FrontEnd_MultiLightUpdate( lightRadiance, distanceToOccluder, lightTanAngularRadius, weight, multiLightShadowData );
+                        }
                     }
                 }
+            #else
+                // for(int i = 0; i < gScene.nLights; ++i) {
+                //     directLighting += LightShadeLo(gLights[i], surface, V);
+                // }
+            #endif
 
-                float4 shadowData1;
-                float2 shadowData0 = SIGMA_FrontEnd_MultiLightEnd( viewZ, multiLightShadowData, Lsum , shadowData1 );
+            float4 shadowData1;
+            float2 shadowData0 = SIGMA_FrontEnd_MultiLightEnd( viewZ, multiLightShadowData, directLighting , shadowData1 );
 
-                gShadowDataOut[id] = shadowData0;
-                gShadowDataTranslucencyOut[id] = shadowData1;
-            }
-        #else
-            for(int i = 0; i < gScene.nLights; ++i) {
-                directLighting += LightShadeLo(gLights[i], surface, V);
-            }
+            gShadowDataOut[id] = shadowData0;
+            gShadowDataTranslucencyOut[id] = shadowData1;
         #endif
 
         gDirectLightingOut[id] = float4(directLighting, 1);
