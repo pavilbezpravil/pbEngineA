@@ -149,6 +149,10 @@ namespace pbe {
       STRUCT_FIELD(intensity)
    STRUCT_END()
 
+   STRUCT_BEGIN(RTImportanceVolumeComponent)
+      STRUCT_FIELD(radius)
+   STRUCT_END()
+
    STRUCT_BEGIN(DecalComponent)
       STRUCT_FIELD(baseColor)
       STRUCT_FIELD(metallic)
@@ -443,6 +447,7 @@ namespace pbe {
       INTERNAL_ADD_COMPONENT(GeometryComponent);
       INTERNAL_ADD_COMPONENT(LightComponent);
       INTERNAL_ADD_COMPONENT(DirectLightComponent);
+      INTERNAL_ADD_COMPONENT(RTImportanceVolumeComponent);
       INTERNAL_ADD_COMPONENT(DecalComponent);
       INTERNAL_ADD_COMPONENT(SkyComponent);
       INTERNAL_ADD_COMPONENT(WaterComponent);

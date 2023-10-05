@@ -169,8 +169,6 @@ namespace pbe {
 
       PIX_EVENT_SYSTEM(Render, "RT Render Scene");
 
-      uint importanceSampleObjIdx = -1;
-
       std::vector<SRTObject> objs;
 
       std::vector<AABB> aabbs;
@@ -194,9 +192,6 @@ namespace pbe {
          obj.metallic = material.metallic;
          obj.roughness = material.roughness;
          obj.emissivePower = material.emissivePower;
-         if (material.emissivePower > 0) {
-            importanceSampleObjIdx = (uint)objs.size();
-         }
 
          // todo: sphere may be optimized
          // todo: not fastest way
@@ -255,6 +250,29 @@ namespace pbe {
 
       cmd.UpdateSubresource(*rtObjectsBuffer, objs.data(), 0, nObj * sizeof(SRTObject));
 
+      uint nImportanceVolumes = 0;
+      {
+         std::vector<SRTImportanceVolume> importanceVolumes;
+
+         for (auto [e, trans, volume]
+            : scene.View<SceneTransformComponent, RTImportanceVolumeComponent>().each()) {
+            SRTImportanceVolume v;
+            v.position = trans.Position();
+            v.radius = volume.radius; // todo: mb radius is scale?
+
+            importanceVolumes.emplace_back(v);
+         }
+
+         nImportanceVolumes = (uint)importanceVolumes.size();
+
+         if (!importanceVolumesBuffer || importanceVolumesBuffer->ElementsCount() < nImportanceVolumes) {
+            auto bufferDesc = Buffer::Desc::Structured("ImportanceVolumes", nImportanceVolumes, sizeof(SRTImportanceVolume));
+            importanceVolumesBuffer = Buffer::Create(bufferDesc);
+         }
+
+         cmd.UpdateSubresource(*importanceVolumesBuffer, importanceVolumes.data(), 0, nImportanceVolumes * sizeof(SRTImportanceVolume));
+      }
+
       auto& outTexture = *context.colorHDR;
       auto outTexSize = outTexture.GetDesc().size;
 
@@ -287,7 +305,7 @@ namespace pbe {
       rtCB.nRays = cvNRays;
       rtCB.random01 = Random::Float(0.f, 1.f);
       rtCB.historyWeight = historyWeight;
-      rtCB.importanceSampleObjIdx = importanceSampleObjIdx;
+      rtCB.nImportanceVolumes = nImportanceVolumes;
 
       rtCB.bvhNodes = bvhNodes;
 
@@ -358,6 +376,8 @@ namespace pbe {
          setSharedResource(*pass);
 
          CMD_BINDS_GUARD();
+
+         pass->SetSRV(cmd, "gImportanceVolumes", importanceVolumesBuffer);
 
          if (cvUsePSR) {
             pass->SetUAV(cmd, "gViewZOut", context.viewz);

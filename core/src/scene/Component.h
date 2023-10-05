@@ -137,6 +137,10 @@ namespace pbe {
       float intensity = 1;
    };
 
+   struct RTImportanceVolumeComponent {
+      float radius = 1;
+   };
+
    struct DecalComponent {
       vec4 baseColor = vec4_One;
       float metallic = 0.f;

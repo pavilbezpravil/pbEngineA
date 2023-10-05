@@ -20,6 +20,7 @@ namespace pbe {
 
       Ref<Buffer> rtObjectsBuffer;
       Ref<Buffer> bvhNodesBuffer;
+      Ref<Buffer> importanceVolumesBuffer;
    };
 
 }

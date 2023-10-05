@@ -19,6 +19,7 @@ cbuffer gRTConstantsCB : register(b0) {
 
 StructuredBuffer<SRTObject> gRtObjects : register(t0);
 StructuredBuffer<BVHNode> gBVHNodes : register(t1);
+StructuredBuffer<SRTImportanceVolume> gImportanceVolumes;
 // StructuredBuffer<SMaterial> gMaterials;
 
 float3 GetCameraRayDirection(float2 uv) {
@@ -233,6 +234,55 @@ float EstimateDiffuseProbability( Surface surface, float3 V, bool useMagicBoost 
     return EstimateDiffuseProbability( surface.baseColor, surface.metalness, surface.roughness, surface.normalW, V, useMagicBoost );
 }
 
+float CalculateSphereHalfAngle(float3 p, float3 sphereCenter, float sphereRadius) {
+    float3 toSphere = sphereCenter - p;
+    float distanceToSphere = length(toSphere);
+    
+    float halfAngle = atan(sphereRadius / distanceToSphere);
+    return halfAngle;
+}
+
+// float CalculateSolidAngle(float3 p, float3 sphereCenter, float sphereRadius) {
+//     float halfAngle = CalculateSphereHalfAngle(p, sphereCenter, sphereRadius);
+//     return PI_2 * (1.0f - cos(halfAngle));
+// }
+
+float CalculateSolidAngle(float3 p, float3 sphereCenter, float sphereRadius) {
+    float distanceToSphere = length(sphereCenter - p);
+    return PI_2 * saturate( (sphereRadius * sphereRadius) / (distanceToSphere * distanceToSphere));
+}
+
+// #define IMPORTANCE_SAMPLING
+
+#ifdef IMPORTANCE_SAMPLING
+// return weight
+float DirectionToImportanceVolume(float3 pos, inout float3 direction) {
+    uint nVolumes = gRTConstants.nImportanceVolumes;
+    if (nVolumes == 0) {
+        return 0;
+    }
+
+    // todo: write func
+    float rnd = RandomFloat();
+    uint iVolume = min(uint(rnd * nVolumes), nVolumes - 1);
+
+    SRTImportanceVolume volume = gImportanceVolumes[iVolume];
+
+    // todo: handle point inside volume
+    float3 posInsideVolume = volume.position + RandomPointInUnitSphere() * volume.radius;
+
+    float3 toVolume = posInsideVolume - pos;
+    float toVolumeDist = length(toVolume);
+
+    direction = toVolume / toVolumeDist;
+
+    float scale = CalculateSolidAngle(pos, volume.position, volume.radius) / PI_2;
+
+    return nVolumes * scale;
+}
+
+#endif
+
 TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
     TraceOpaqueResult result = ( TraceOpaqueResult )0;
 
@@ -277,7 +327,7 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
                 }
 
                 // Choose a ray
-                if (0) {
+                if (1) {
                     float2 rnd = RandomFloat2();
                     
                     float3x3 mLocalBasis = STL::Geometry::GetBasis( surface.normalW );
@@ -301,6 +351,19 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
                     }
                 }
 
+                #ifdef IMPORTANCE_SAMPLING
+                if (isDiffuse) {
+                    const float IMPORTANCE_CHANCE = 0.1;
+
+                    bool isImportance = RandomFloat() < IMPORTANCE_CHANCE;
+                    if (isImportance) {
+                        pathThroughput *= DirectionToImportanceVolume(surface.posW, rayDir);
+                    }
+                    
+                    pathThroughput /= abs( float(!isImportance) - IMPORTANCE_CHANCE);
+                }
+                #endif
+
                 // todo:
                 rayDir = rayDir * sign(dot( rayDir, surface.normalW ));
 
@@ -322,7 +385,7 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
                     pathThroughput *= STL::BRDF::GeometryTerm_Smith( surface.roughness, NoL );
                 }
 
-                const float THROUGHPUT_THRESHOLD = 0.01;
+                const float THROUGHPUT_THRESHOLD = 0.001;
                 if( THROUGHPUT_THRESHOLD != 0.0 && STL::Color::Luminance( pathThroughput ) < THROUGHPUT_THRESHOLD )
                     break;
             }
@@ -347,25 +410,61 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
                 
                 V = -ray.direction;
 
-                float3 L = obj.baseColor * obj.emissivePower;
+                float3 L = 0;
+                // todo: mb skip?
+                // L = obj.baseColor * obj.emissivePower;
 
-                // Shadow test ray
-                float3 toLight = DirectLightDirection();
-                float NDotL = dot(surface.normalW, toLight);
+                #if 1
+                    // Shadow test ray
+                    float3 toLight = DirectLightDirection();
+                    float NDotL = dot(surface.normalW, toLight);
 
-                if (NDotL > 0) {
-                    // todo:
-                    Ray shadowRay = CreateRay(surface.posW, toLight);
-                    RayHit shadowHit = Trace(shadowRay);
-                    if (shadowHit.tMax == INF) {
+                    if (NDotL > 0) {
                         // todo:
-                        float3 albedo, Rf0;
-                        ConvertBaseColorMetalnessToAlbedoRf0( surface, albedo, Rf0 );
+                        Ray shadowRay = CreateRay(surface.posW, toLight);
+                        RayHit shadowHit = Trace(shadowRay);
+                        if (shadowHit.tMax == INF) {
+                            // todo:
+                            float3 albedo, Rf0;
+                            ConvertBaseColorMetalnessToAlbedoRf0( surface, albedo, Rf0 );
 
-                        float3 directLightShade = NDotL * albedo * gScene.directLight.color;
-                        L += directLightShade;
+                            float3 directLightShade = NDotL * albedo * gScene.directLight.color;
+                            L += directLightShade;
+                        }
                     }
-                }
+                #else
+                    if (gScene.nLights > 0) {
+                        float pdf = 1.f / gScene.nLights;
+
+                        float rnd = RandomFloat();
+                        uint iLight = RandomUintRange(0, gScene.nLights);
+
+                        SLight light = gLights[iLight];
+
+                        float lightRadius = 0.0f; // todo:
+
+                        float lightTanAngularRadius = LightTanAngularRadius(surface.posW, light.position, lightRadius);
+                        float3 Lnoised = LightDirection(normalize(light.position - surface.posW), lightTanAngularRadius);
+
+                        float3 toLight = light.position - surface.posW;
+                        float toLightDist = length(toLight);
+
+                        float NDotL = dot(surface.normalW, Lnoised);
+
+                        if (NDotL > 0) {
+                            Ray shadowRay = CreateRay(surface.posW, Lnoised);
+                            RayHit shadowHit = Trace(shadowRay, toLightDist); // todo: any hit
+
+                            if (shadowHit.tMax != toLightDist) {
+                                // todo: super strange
+                                SRTObject obj = gRtObjects[shadowHit.objID];
+                                // light.color = obj.baseColor * obj.emissivePower;
+                                light.color *= float(obj.emissivePower > 0);
+                            }
+                            L += LightShadeLo(light, surface, V);
+                        }
+                    }
+                #endif
 
                 // L += Shade(surface, V);
                 Lsum += L * pathThroughput;
@@ -755,7 +854,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
                     float attenuation = LightAttenuation(light, surface.posW);
                     // if (i == iLight && attenuation > 0) 
                     {
-                        float lightRadius = 0.5f; // todo:
+                        float lightRadius = 0.2f; // todo:
 
                         float lightTanAngularRadius = LightTanAngularRadius(surface.posW, light.position, lightRadius);
                         float3 Lnoised = LightDirection(normalize(light.position - surface.posW), lightTanAngularRadius);
@@ -806,6 +905,64 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
 
         gDirectLightingOut[id] = float4(directLighting, 1);
     }
+    #else
+        float3 directLighting = 0;
+
+        // todo:
+        float shadowTranslucency = 1;
+        float shadowHitDist = 0;
+
+        uint nVolumes = gRTConstants.nImportanceVolumes;
+        if (nVolumes > 0) {
+            // SIGMA_MULTILIGHT_DATATYPE multiLightShadowData = SIGMA_FrontEnd_MultiLightStart();
+
+            float3 Lsum = 0; // todo:
+
+            float pdf = 1.f / nVolumes;
+
+            // todo: write func
+            float rnd = RandomFloat();
+            uint iVolume = min(uint(rnd * nVolumes), nVolumes - 1);
+            iVolume = 0; // todo:
+
+            SRTImportanceVolume volume = gImportanceVolumes[iVolume];
+
+            // todo: handle point inside volume
+            float3 posInsideVolume = volume.position + RandomPointInUnitSphere() * volume.radius;
+            // float tanAngularRadius = LightTanAngularRadius(surface.posW, volume.position, volume.radius);
+            // float3 toVolume = LightDirection(normalize(light.position - surface.posW), lightTanAngularRadius);
+            float3 toVolume = posInsideVolume - surface.posW;
+            float toVolumeDist = length(toVolume);
+            float3 toVolumeDir = toVolume / toVolumeDist;
+
+            Ray shadowRay = CreateRay(surface.posW, toVolumeDir);
+
+            // directLighting = frac(surface.posW);
+
+            float NDotL = dot(surface.normalW, toVolumeDir);
+            if (NDotL > 0) {
+                RayHit shadowHit = Trace(shadowRay, toVolumeDist);
+
+                if (shadowHit.tMax != toVolumeDist) {
+                    // directLighting += 0.1;
+                    SRTObject obj = gRtObjects[shadowHit.objID];
+
+                    float scale = CalculateSolidAngle(surface.posW, volume.position, volume.radius) / PI_2;
+                    // scale = 1 / distance(surface.posW, volume.position);
+
+                    float3 lightRadiance = obj.baseColor * obj.emissivePower;
+                    directLighting += LightShadeLo(surface, V, lightRadiance, toVolumeDir) * scale;
+                }
+            }
+        }
+
+        float4 shadowData1;
+        float2 shadowData0 = SIGMA_FrontEnd_PackShadow( viewZ, shadowHitDist == INF ? NRD_FP16_MAX : shadowHitDist, gDirectLightTanAngularRadius, shadowTranslucency, shadowData1 );
+
+        gShadowDataOut[id] = shadowData0;
+        gShadowDataTranslucencyOut[id] = shadowData1;
+
+        gDirectLightingOut[id] = float4(directLighting, 1);
     #endif
 }
 
@@ -864,6 +1021,7 @@ void RTCombineCS (uint2 id : SV_DispatchThreadID) {
     float3 emissive = gColorOut[id].xyz;
 
     float3 color = Ldiff + Lspec + directLighting * shadow;
+    // float3 color = directLighting;
     gColorOut[id] = float4(color + emissive, 1);
 }
 

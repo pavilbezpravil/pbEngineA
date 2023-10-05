@@ -22,6 +22,10 @@ uint RandomUint(inout uint seed) {
     return seed;
 }
 
+uint RandomUintRange(uint minVal, uint maxVal) {
+    return RandomUint(gRandomSeed) % (maxVal - minVal + 1) + minVal;
+}
+
 #define _UintToFloat01( x ) ( 2.0 - asfloat( ( x >> 9 ) | 0x3F800000 ) )
 
 float RandomFloat(inout uint seed) {

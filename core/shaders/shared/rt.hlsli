@@ -25,6 +25,11 @@ struct BVHNode {
    uint   pad;
 };
 
+struct SRTImportanceVolume {
+   float3 position;
+   float radius;
+};
+
 struct SRTConstants {
    uint2 rtSize;
    int rayDepth;
@@ -33,7 +38,7 @@ struct SRTConstants {
    int nRays;
    float random01;
    float historyWeight;
-   uint importanceSampleObjIdx; // todo:
+   uint nImportanceVolumes;
 
    uint _sdff3;
    uint bvhNodes;

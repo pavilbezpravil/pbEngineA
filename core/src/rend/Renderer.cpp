@@ -871,6 +871,10 @@ namespace pbe {
             dbgRend.DrawSphere({ trans.Position(), light.radius }, light.color, true, entityID);
          }
 
+         for (auto [entityID, trans, volume] : scene.View<SceneTransformComponent, RTImportanceVolumeComponent>().each()) {
+            dbgRend.DrawSphere({ trans.Position(), volume.radius }, Color_Magenta, true, entityID);
+         }
+
          for (auto [entityID, trans, light] : scene.View<SceneTransformComponent, TriggerComponent>().each()) {
             // todo: OBB
             // todo: box, sphere, capsule
