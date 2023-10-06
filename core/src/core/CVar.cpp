@@ -87,6 +87,10 @@ namespace pbe {
       ImGui::InputInt(name.c_str(), &value);
    }
 
+   void CVarValue<uint>::UI() {
+      ImGui::InputScalar(name.c_str(), ImGuiDataType_U32, (void*)&value, nullptr, nullptr, "%d");
+   }
+
    void CVarValue<float>::UI() {
       ImGui::InputFloat(name.c_str(), &value);
    }

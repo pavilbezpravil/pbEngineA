@@ -35,6 +35,7 @@ namespace pbe {
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
    CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
+   CVarValue<uint> cvBvhAABBRenderLevel{ "render/rt/bvh aabb render level", UINT_MAX };
    CVarValue<bool> cvUsePSR{ "render/rt/use psr", false }; // todo: on my laptop it takes 50% more time
 
    CVarValue<bool> cvDenoise{ "render/denoise/enable", true };
@@ -95,18 +96,20 @@ namespace pbe {
          BuildRecursive(0, 0, size);
       }
 
-      void Render(DbgRend& dbgRend, uint idx = 0, uint level = 0) {
+      void Render(DbgRend& dbgRend, uint showLevel = -1,  uint idx = 0, uint level = 0) {
          if (idx >= buildedNodes.size()) {
             return;
          }
 
          auto& node = buildedNodes[idx];
 
-         dbgRend.DrawAABB(nullptr, AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
+         if (showLevel == -1 || showLevel == level) {
+            dbgRend.DrawAABB(nullptr, AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
+         }
 
          if (node.objIdx == UINT_MAX) {
-            Render(dbgRend, LeftIdx(idx), level + 1);
-            Render(dbgRend, RightIdx(idx), level + 1);
+            Render(dbgRend, showLevel, LeftIdx(idx), level + 1);
+            Render(dbgRend, showLevel, RightIdx(idx), level + 1);
          }
       }
 
@@ -229,7 +232,7 @@ namespace pbe {
          // for (auto& aabb : aabbs) {
          //    dbgRender.DrawAABB(aabb);
          // }
-         bvh.Render(dbgRender);
+         bvh.Render(dbgRender, cvBvhAABBRenderLevel);
       }
 
       // todo: make it dynamic

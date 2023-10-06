@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/Types.h"
 
 namespace pbe {
 
@@ -62,6 +63,7 @@ namespace pbe {
 
    extern template void CORE_API CVarValue<bool>::UI();
    extern template void CORE_API CVarValue<int>::UI();
+   extern template void CORE_API CVarValue<uint>::UI();
    extern template void CORE_API CVarValue<float>::UI();
 
    template<typename T>
