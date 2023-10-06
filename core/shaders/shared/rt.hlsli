@@ -22,7 +22,7 @@ struct BVHNode {
    float3 aabbMin;
    uint   objIdx;
    float3 aabbMax;
-   uint   pad;
+   uint   secondChildOffset;
 };
 
 struct SRTImportanceVolume {

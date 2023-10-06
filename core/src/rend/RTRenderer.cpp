@@ -4,6 +4,7 @@
 // todo: remove include
 #include "NRD.h"
 #include <NRDSettings.h>
+#include <numeric>
 
 #include "Buffer.h"
 #include "CommandList.h"
@@ -55,114 +56,135 @@ namespace pbe {
    }
 
    struct BVH {
-      struct Node {
-         vec3 aabbMin;
-         uint objIdx = UINT_MAX;
-
-         vec3 aabbMax;
-         uint pad;
+      struct BuildNode {
+         AABB aabb;
+         uint children[2] = { UINT_MAX, UINT_MAX };
+         uint objIdx = UINT_MAX; // todo: aabb idx
       };
 
-      std::vector<Node> nodes;
+      struct AABBInfo {
+         AABB aabb;
+         uint idx;
+      };
 
-      std::vector<Node> buildedNodes;
+      std::vector<BuildNode> nodes;
+      std::vector<BVHNode> linearNodes;
 
       uint Nodes() const {
-         return (uint)buildedNodes.size();
+         // return (uint)buildedNodes.size();
       }
 
-      void Build(const std::vector<AABB>& aabbs) {
+      void Build(const std::span<AABB>& aabbs) {
          nodes.clear();
-         buildedNodes.clear();
+         // buildedNodes.clear();
 
          uint size = (uint)aabbs.size();
          if (size == 0) {
             return;
          }
 
-         // todo: do it thought generator
-         nodes.resize(size);
-
+         std::vector<AABBInfo> aabbInfos(size);
          for (uint i = 0; i < size; ++i) {
-            nodes[i] = Node {
-               .aabbMin = aabbs[i].min,
-               .objIdx = (uint)i,
-               .aabbMax = aabbs[i].max,
-            };
+            aabbInfos[i] = AABBInfo{ aabbs[i], i};
          }
 
-         // todo: not best size
-         buildedNodes.reserve(size* 2);
-         BuildRecursive(0, 0, size);
+         nodes.reserve(size * 3); // todo: not best size
+         BuildRecursive(aabbInfos, 0, size);
       }
 
-      void Render(DbgRend& dbgRend, uint showLevel = -1,  uint idx = 0, uint level = 0) {
-         if (idx >= buildedNodes.size()) {
+      void Flatten() {
+         linearNodes.resize(nodes.size());
+         uint offset = 0;
+         RecursiveFlatten(0, offset);
+      }
+
+      uint RecursiveFlatten(uint nodeIdx, uint& offset) {
+         auto& node = nodes[nodeIdx];
+
+         auto& linearNode = linearNodes[offset++];
+         linearNode.aabbMin = node.aabb.min;
+         linearNode.aabbMax = node.aabb.max;
+         linearNode.objIdx = node.objIdx;
+
+         if (node.objIdx == UINT_MAX) {
+            RecursiveFlatten(node.children[0], offset);
+            linearNode.secondChildOffset = RecursiveFlatten(node.children[1], offset);
+         }
+      }
+
+      void Render(DbgRend& dbgRend, uint showLevel = -1, uint nodeIdx = 0, uint level = 0) {
+         if (nodeIdx == UINT_MAX) {
             return;
          }
 
-         auto& node = buildedNodes[idx];
+         auto& node = nodes[nodeIdx];
 
          if (showLevel == -1 || showLevel == level) {
-            dbgRend.DrawAABB(nullptr, AABB::MinMax(node.aabbMin, node.aabbMax), Random::Color(level));
+            dbgRend.DrawAABB(nullptr, node.aabb, Random::Color(level));
          }
 
          if (node.objIdx == UINT_MAX) {
-            Render(dbgRend, showLevel, LeftIdx(idx), level + 1);
-            Render(dbgRend, showLevel, RightIdx(idx), level + 1);
+            Render(dbgRend, showLevel, node.children[0], level + 1);
+            Render(dbgRend, showLevel, node.children[1], level + 1);
          }
       }
 
    private:
-      void BuildRecursive(int buildNodeIdx, int start, int end) {
-         int count = end - start;
+      uint BuildRecursive(std::span<AABBInfo> aabbInfos, uint start, uint end) {
+         uint count = end - start;
          if (count == 0) {
-            return;
+            return UINT_MAX;
          }
 
-         AABB combinedAABB = AABB::MinMax(nodes[start].aabbMin, nodes[start].aabbMax);
+         uint buildNodeIdx = (uint)nodes.size();
+         nodes.push_back({});
+         auto& buildNode = nodes.back();
+
+         AABB combinedAABB = aabbInfos[start].aabb;
          for (int i = 1; i < count; ++i) {
-            auto& node = nodes[start + i];
-            combinedAABB.AddAABB(AABB::MinMax(node.aabbMin, node.aabbMax));
+            combinedAABB.AddAABB(aabbInfos[start + i].aabb);
          }
 
-         int mid = start + (count + 1) / 2;
-
-         if (count > 2) {
-            auto axisIdx = VectorUtils::LargestAxisIdx(combinedAABB.Size());
-            std::sort(nodes.begin() + start, nodes.begin() + end,
-               [axisIdx](const Node& a, const Node& b) { return a.aabbMin[axisIdx] < b.aabbMin[axisIdx]; });
-         } else {
-            mid = start + 1;
+         buildNode.aabb = combinedAABB;
+         if (count == 1) {
+            buildNode.objIdx = aabbInfos[start].idx;
+            return buildNodeIdx;
          }
 
-         int reqSize = buildNodeIdx + 1;
-         if (reqSize > buildedNodes.size()) {
-            buildedNodes.resize(reqSize);
-         }
+         uint mid = start + count / 2;
+         auto axisIdx = VectorUtils::LargestAxisIdx(combinedAABB.Size());
 
-         buildedNodes[buildNodeIdx] = Node {
-            .aabbMin = combinedAABB.min,
-            .objIdx = count == 1 ? nodes[start].objIdx : UINT_MAX,
-            .aabbMax = combinedAABB.max,
+         enum class SplitMethod {
+            Middle,
+            EqualCounts,
+            SAH,
+         };
+         
+         SplitMethod splitMethod = SplitMethod::EqualCounts;
+
+         switch (splitMethod)
+         {
+         case SplitMethod::Middle:
+            // float pivot = combinedAABB.Center()[axisIdx];
+            // auto it = std::ranges::partition(aabbInfos.begin() + start, aabbInfos.begin() + end,
+            //    [&](const AABBInfo& a) { return a.aabb.Center()[axisIdx] < pivot; });
+            // mid = it - aabbInfos.begin();
+            // if (mid != start && mid != end) break;
+
+         case SplitMethod::EqualCounts:
+            mid = start + count / 2;
+            std::ranges::nth_element(aabbInfos.begin() + start, aabbInfos.begin() + mid, aabbInfos.begin() + end,
+               [&](const AABBInfo& a, const AABBInfo& b) { return a.aabb.Center()[axisIdx] < b.aabb.Center()[axisIdx]; });
+            break;
+         case SplitMethod::SAH:
+            // https://github.com/mmp/pbrt-v3/blob/master/src/accelerators/bvh.cpp
+            break;
          };
 
          if (count > 1) {
-            BuildRecursive(LeftIdx(buildNodeIdx), start, mid);
-            BuildRecursive(RightIdx(buildNodeIdx), mid, end);
+            buildNode.children[0] = BuildRecursive(aabbInfos, start, mid);
+            buildNode.children[1] = BuildRecursive(aabbInfos, mid, end);
          }
-      }
-
-      int ParentIdx(uint idx) const {
-         return idx == 0 ? 0 : (idx - 1) / 2;
-      }
-
-      int LeftIdx(uint idx) const {
-         return idx * 2 + 1;
-      }
-
-      int RightIdx(uint idx) const {
-         return idx * 2 + 2;
       }
    };
 
