@@ -70,7 +70,7 @@ RayHit Trace(Ray ray, float tMax = INF) {
         uint nLeafsIntersects = 0;
     #endif
 
-    const uint BVH_STACK_SIZE = 12;
+    const uint BVH_STACK_SIZE = 24;
     uint stack[BVH_STACK_SIZE];
     stack[0] = UINT_MAX;
     uint stackPtr = 1;
@@ -78,7 +78,8 @@ RayHit Trace(Ray ray, float tMax = INF) {
     uint iNode = 0;
 
     while (iNode != UINT_MAX) {
-        uint objIdx = gBVHNodes[iNode].objIdx;
+        BVHNode node = gBVHNodes[iNode];
+        uint objIdx = node.objIdx;
         bool isLeaf = objIdx != UINT_MAX;
 
         // todo: slow
@@ -97,17 +98,23 @@ RayHit Trace(Ray ray, float tMax = INF) {
             continue;
         }
 
-        uint iNodeLeft = iNode * 2 + 1;
-        uint iNodeRight = iNode * 2 + 2;
+        uint iNodeLeft = iNode + 1;
+        uint iNodeRight = node.secondChildOffset;
 
         BVHNode nodeLeft = gBVHNodes[iNodeLeft];
-        BVHNode nodeRight = gBVHNodes[iNodeRight];
 
         float intersectLDist = IntersectAABB_Fast(ray.origin, rayInvDirection, nodeLeft.aabbMin, nodeLeft.aabbMax);
-        float intersectRDist = IntersectAABB_Fast(ray.origin, rayInvDirection, nodeRight.aabbMin, nodeRight.aabbMax);
-
         bool intersectL = intersectLDist < bestHit.tMax;
-        bool intersectR = intersectRDist < bestHit.tMax;
+
+        float intersectRDist = intersectLDist + 1;
+        bool intersectR = false;
+
+        if (node.secondChildOffset != UINT_MAX) {
+            BVHNode nodeRight = gBVHNodes[iNodeRight];
+            intersectRDist = IntersectAABB_Fast(ray.origin, rayInvDirection, nodeRight.aabbMin, nodeRight.aabbMax);
+            intersectR = intersectRDist < bestHit.tMax;
+        }
+    
 
         if (!intersectL && !intersectR) {
             iNode = stack[--stackPtr];

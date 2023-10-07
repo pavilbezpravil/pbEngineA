@@ -16,13 +16,15 @@ namespace pbe {
    };
 
    struct AABB {
-      vec3 min;
-      vec3 max;
+      vec3 min = vec3{ FLT_MAX };
+      vec3 max = vec3{ FLT_MIN };
 
       static AABB Empty();
       static AABB MinMax(const vec3& min, const vec3& max);
       static AABB Extends(const vec3& center, const vec3& extends);
       static AABB FromAABBs(const AABB* aabbs, uint size);
+
+      static AABB Union(const AABB& a, const AABB& b);
 
       void AddPoint(const vec3& p);
       void AddAABB(const AABB& aabb);
@@ -30,14 +32,19 @@ namespace pbe {
       void Translate(const vec3& v);
       void Expand(float expand); // increase size by expand in all directions
 
-      vec3 Center() const { return (min + max) * 0.5f; }
-      vec3 Size() const { return max - min; }
-      vec3 Extents() const { return Size() * 0.5f; }
+      vec3 Center() const;
+      vec3 Size() const;
+      vec3 Extents() const;
+
+      vec3 Offset(const vec3& p) const { return (p - min) / Size(); }
 
       bool Contains(const vec3& p) const;
       bool Intersects(const AABB& aabb) const;
 
       float Volume() const;
+      float Area() const;
+
+      bool IsEmpty() const;
    };
 
    struct CORE_API Plane {

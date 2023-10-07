@@ -28,6 +28,13 @@ namespace pbe {
       return aabb;
    }
 
+   AABB AABB::Union(const AABB& a, const AABB& b) {
+      return AABB::MinMax(
+         glm::min(a.min, b.min),
+         glm::max(a.max, b.max)
+      );
+   }
+
    void AABB::AddPoint(const vec3& p) {
       min = glm::min(min, p);
       max = glm::max(max, p);
@@ -48,6 +55,15 @@ namespace pbe {
       max += expand;
    }
 
+   vec3 AABB::Center() const {
+      ASSERT(!IsEmpty());
+      return (min + max) * 0.5f;
+   }
+
+   vec3 AABB::Size() const { return IsEmpty() ? vec3_Zero : max - min; }
+
+   vec3 AABB::Extents() const { return Size() * 0.5f; }
+
    bool AABB::Contains(const vec3& p) const {
       return
          p.x >= min.x && p.x <= max.x &&
@@ -66,6 +82,13 @@ namespace pbe {
       vec3 s = Size();
       return s.x * s.y * s.z;
    }
+
+   float AABB::Area() const {
+      vec3 s = Size();
+      return 2.f * (s.x * s.y + s.x * s.z + s.y * s.z);
+   }
+
+   bool AABB::IsEmpty() const { return min.x > max.x; }
 
    Plane Plane::FromPointNormal(const vec3& p, const vec3& n) {
       Plane plane;
