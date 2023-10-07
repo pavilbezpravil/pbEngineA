@@ -35,7 +35,7 @@ namespace pbe {
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
-   CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", true };
+   CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
    CVarValue<uint> cvBvhAABBRenderLevel{ "render/rt/bvh aabb show level", UINT_MAX };
    CVarValue<uint> cvBvhSpliMethod{ "render/rt/bvh split method", 2 };
    CVarValue<bool> cvUsePSR{ "render/rt/use psr", false }; // todo: on my laptop it takes 50% more time
