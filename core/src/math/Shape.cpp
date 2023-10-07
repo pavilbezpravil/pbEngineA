@@ -6,7 +6,7 @@
 namespace pbe {
 
    AABB AABB::Empty() {
-      return {vec3{FLT_MAX}, vec3{FLT_MIN}};
+      return {vec3{FLT_MAX}, vec3{-FLT_MAX}};
    }
 
    AABB AABB::MinMax(const vec3& min, const vec3& max) {

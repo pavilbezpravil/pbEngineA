@@ -35,9 +35,9 @@ namespace pbe {
    CVarValue<bool> cvAccumulate{ "render/rt/accumulate", false };
    CVarValue<bool> cvRTDiffuse{ "render/rt/diffuse", true };
    CVarValue<bool> cvRTSpecular{ "render/rt/specular", true }; // todo
-   CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", false };
+   CVarValue<bool> cvBvhAABBRender{ "render/rt/bvh aabb render", true };
    CVarValue<uint> cvBvhAABBRenderLevel{ "render/rt/bvh aabb show level", UINT_MAX };
-   CVarValue<uint> cvBvhSpliMethod{ "render/rt/bvh split method", 1 };
+   CVarValue<uint> cvBvhSpliMethod{ "render/rt/bvh split method", 2 };
    CVarValue<bool> cvUsePSR{ "render/rt/use psr", false }; // todo: on my laptop it takes 50% more time
 
    CVarValue<bool> cvDenoise{ "render/denoise/enable", true };
@@ -96,6 +96,10 @@ namespace pbe {
 
       void Flatten() {
          linearNodes.resize(nodes.size());
+         if (nodes.empty()) {
+            return;
+         }
+
          uint offset = 0;
          RecursiveFlatten(0, offset);
       }
@@ -119,7 +123,7 @@ namespace pbe {
       }
 
       void Render(DbgRend& dbgRend, uint showLevel = -1, uint nodeIdx = 0, uint level = 0) {
-         if (nodeIdx == UINT_MAX) {
+         if (nodeIdx == UINT_MAX || nodes.empty()) {
             return;
          }
 
@@ -188,7 +192,7 @@ namespace pbe {
             };
 
             constexpr uint nAxis = 3;
-            constexpr uint nBuckets = 7;
+            constexpr uint nBuckets = 4;
             BucketInfo buckets[nBuckets * nAxis];
 
             float cost[(nBuckets - 1) * nAxis];
@@ -201,7 +205,7 @@ namespace pbe {
 
                   auto& bucket = buckets[b + axisIdx * nBuckets];
                   bucket.count++;
-                  bucket.bounds = AABB::Union(bucket.bounds, aabb);
+                  bucket.bounds.AddAABB(aabb);
                }
 
                for (uint i = 0; i < nBuckets - 1; ++i) {
@@ -248,7 +252,7 @@ namespace pbe {
                   return b <= iSplitBucket;
                }
             );
-            mid = (uint)it.size();
+            mid = count - (uint)it.size();
             ASSERT(mid != 0);
             ASSERT(mid != count);
 

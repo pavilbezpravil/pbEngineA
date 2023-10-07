@@ -244,7 +244,14 @@ namespace pbe {
          // }
 
          if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
-            freeCamera = !freeCamera;
+            // freeCamera = !freeCamera;
+
+            while (selection->HasSelection()) {
+               if (Entity entity = selection->LastSelected()) {
+                  entity.DestroyDelayed();
+               }
+               selection->Unselect(selection->LastSelected());
+            }
          }
 
          if (Input::IsKeyDown(KeyCode::C)) { // todo: other key

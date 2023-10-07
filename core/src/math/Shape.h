@@ -17,7 +17,7 @@ namespace pbe {
 
    struct AABB {
       vec3 min = vec3{ FLT_MAX };
-      vec3 max = vec3{ FLT_MIN };
+      vec3 max = vec3{ -FLT_MAX };
 
       static AABB Empty();
       static AABB MinMax(const vec3& min, const vec3& max);
