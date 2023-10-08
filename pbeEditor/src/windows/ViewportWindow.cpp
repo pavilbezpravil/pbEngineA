@@ -243,14 +243,19 @@ namespace pbe {
          //    settings.space = 1 - settings.space;
          // }
 
-         if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
-            // freeCamera = !freeCamera;
+         // freeCamera = !freeCamera;
 
+         if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
             while (selection->HasSelection()) {
-               if (Entity entity = selection->LastSelected()) {
-                  entity.DestroyDelayed();
-               }
+               Entity entity = selection->LastSelected();
+               entity.DestroyDelayed();
                selection->Unselect(selection->LastSelected());
+            }
+         }
+
+         if (Input::IsKeyDown(KeyCode::H)) {
+            for (Entity& entity : selection->selected) {
+               entity.EnableToggle();
             }
          }
 
