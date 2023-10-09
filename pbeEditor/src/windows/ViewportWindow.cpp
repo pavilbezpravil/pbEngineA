@@ -182,9 +182,9 @@ namespace pbe {
          Manipulator(cursorUV);
       }
 
-      // if (state == ViewportState::None) {
-      ViewportToolbar(startCursorPos);
-      // }
+      if (state == ViewportState::None) {
+         ViewportToolbar(startCursorPos);
+      }
 
       float hotKeyBarHeight = HotKeyBar();
 
@@ -261,15 +261,14 @@ namespace pbe {
             }
 
             if (Input::IsKeyDown(KeyCode::H)) {
-               bool disable = !selection->LastSelected().Enabled();
+               bool disable = selection->LastSelected().Enabled();
 
                notifyManager.AddNotify(disable ? "Disable" : "Enable");
 
                for (Entity& entity : selection->selected) {
                   if (disable) {
                      entity.Disable();
-                  }
-                  else {
+                  } else {
                      entity.Enable();
                   }
                }
@@ -410,9 +409,15 @@ namespace pbe {
    }
 
    void ViewportWindow::ViewportToolbar(const ImVec2& cursorPos) {
-      ImGui::SetCursorPos(cursorPos + ImVec2{ 3, 5 });
-      if (ImGui::Button(settings.showToolbar ? "<" : ">")) {
-         settings.showToolbar = !settings.showToolbar;
+      ImGui::SetCursorPos(cursorPos + ImVec2{ 4, 4 });
+      {
+         UI_PUSH_STYLE_COLOR(ImGuiCol_Button, (ImVec4{ 0, 0, 0, 0.2f }));
+         UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonActive, (ImVec4{ 0, 0, 0, 0.4f }));
+         UI_PUSH_STYLE_COLOR(ImGuiCol_ButtonHovered, (ImVec4{ 0, 0, 0, 0.3f }));
+
+         if (ImGui::Button(settings.showToolbar ? "<" : ">")) {
+            settings.showToolbar = !settings.showToolbar;
+         }
       }
 
       if (!settings.showToolbar) {
@@ -423,9 +428,10 @@ namespace pbe {
 
       UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.3f }));
       UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
 
-      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ 660, ImGui::GetFrameHeight() }))) {
+      float windowWidth = ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x;
+
+      if (UI_CHILD_WINDOW("Viewport tools", (ImVec2{ windowWidth, ImGui::GetFrameHeight()}))) {
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
          UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
 
