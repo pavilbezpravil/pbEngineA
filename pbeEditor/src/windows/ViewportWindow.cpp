@@ -186,7 +186,7 @@ namespace pbe {
          ViewportToolbar(startCursorPos);
       }
 
-      NotifyPanel();
+      Notifies();
    }
 
    void ViewportWindow::OnUpdate(float dt) {
@@ -209,35 +209,73 @@ namespace pbe {
       }
 
       if (state == ViewportState::None) {
-         if (Input::IsKeyPressing(KeyCode::Shift)) {
-            if (Input::IsKeyDown(KeyCode::D)) {
-               auto prevSelected = selection->selected;
-               selection->ClearSelection();
+         if (selection->HasSelection()) {
+            if (Input::IsKeyPressing(KeyCode::Shift)) {
+               if (Input::IsKeyDown(KeyCode::D)) {
+                  notifyManager.AddNotify("Duplicated");
 
-               for (auto entity : prevSelected) {
-                  auto duplicatedEntity = scene->Duplicate(entity);
-                  selection->Select(duplicatedEntity, false);
+                  auto prevSelected = selection->selected;
+                  selection->ClearSelection();
+
+                  for (auto entity : prevSelected) {
+                     auto duplicatedEntity = scene->Duplicate(entity);
+                     selection->Select(duplicatedEntity, false);
+                  }
+
+                  state = ViewportState::ObjManipulation;
+                  manipulatorMode = Translate | AllAxis;
                }
-
-               state = ViewportState::ObjManipulation;
-               manipulatorMode = Translate | AllAxis;
             }
-         }
 
-         // select parent
-         if (Input::IsKeyDown(KeyCode::Q)) {
-            if (selection->LastSelected()) {
+            if (Input::IsKeyDown(KeyCode::Q)) {
+               notifyManager.AddNotify("Selected parent");
+
                auto parent = selection->LastSelected().GetTransform().parent;
                if (parent.GetTransform().parent) { // not root
                   selection->Select(parent, !Input::IsKeyPressing(KeyCode::Shift));
                }
             }
-         }
 
-         if (Input::IsKeyDown(KeyCode::F) && selection->LastSelected()) {
-            auto selectedEntity = selection->LastSelected();
-            camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
-            camera.UpdateView();
+            if (Input::IsKeyDown(KeyCode::F)) {
+               notifyManager.AddNotify("Focused");
+
+               auto selectedEntity = selection->LastSelected();
+               camera.position = selectedEntity.GetTransform().Position() - camera.Forward() * 3.f;
+               camera.UpdateView();
+            }
+
+            if (Input::IsKeyDown(KeyCode::X)) {
+               notifyManager.AddNotify("Deleted");
+
+               while (selection->HasSelection()) {
+                  Entity entity = selection->LastSelected();
+                  entity.DestroyDelayed();
+                  selection->Unselect(selection->LastSelected());
+               }
+            }
+
+            if (Input::IsKeyDown(KeyCode::H)) {
+               bool disable = !selection->LastSelected().Enabled();
+
+               notifyManager.AddNotify(disable ? "Disable" : "Enable");
+
+               for (Entity& entity : selection->selected) {
+                  if (disable) {
+                     entity.Disable();
+                  }
+                  else {
+                     entity.Enable();
+                  }
+               }
+            }
+
+            if (Input::IsKeyDown(KeyCode::C)) { // todo: other key
+               notifyManager.AddNotify("Set camera position");
+
+               Entity e = selection->LastSelected();
+               e.Get<SceneTransformComponent>().SetPosition(camera.position);
+               // todo: set rotation
+            }
          }
 
          // todo: find suitable hot key
@@ -246,27 +284,6 @@ namespace pbe {
          // }
 
          // freeCamera = !freeCamera;
-
-         if (Input::IsKeyDown(KeyCode::X)) { // todo: other key
-            while (selection->HasSelection()) {
-               Entity entity = selection->LastSelected();
-               entity.DestroyDelayed();
-               selection->Unselect(selection->LastSelected());
-            }
-         }
-
-         if (Input::IsKeyDown(KeyCode::H)) {
-            for (Entity& entity : selection->selected) {
-               entity.EnableToggle();
-            }
-         }
-
-         if (Input::IsKeyDown(KeyCode::C)) { // todo: other key
-            if (Entity e = selection->LastSelected()) {
-               e.Get<SceneTransformComponent>().SetPosition(camera.position);
-               // todo: set rotation
-            }
-         }
       }
 
       if (state == ViewportState::None || state == ViewportState::CameraMove) {
@@ -450,26 +467,12 @@ namespace pbe {
       }
    }
 
-   void ViewportWindow::NotifyPanel() {
-      ImVec2 messageSize{ 400, 50 };
+   void ViewportWindow::StatusBar() {
+      // todo: implement status bar
+   }
 
-      ImGui::SetCursorPos({0, 0});
-      auto contentRegion = ImGui::GetContentRegionAvail();
-
-      ImGui::SetCursorPos(ImVec2{ 5,contentRegion.y - messageSize.y - 5 });
-
-      UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.3f }));
-      UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
-      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
-
-      if (UI_CHILD_WINDOW("Notify panel", messageSize)) {
-         // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
-         // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
-
-         ImGui::Text("Notify panel");
-         ImGui::Separator();
-         ImGui::Text("Notify message");
-      }
+   void ViewportWindow::Notifies() {
+      notifyManager.UI();
    }
 
    void ViewportWindow::ApplyDamageFromCamera(const vec3& rayDirection) {

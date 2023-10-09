@@ -3,6 +3,7 @@
 #include "EditorCamera.h"
 #include "EditorSelection.h"
 #include "EditorWindow.h"
+#include "NotifyManager.h"
 #include "math/Transform.h"
 #include "rend/Renderer.h"
 
@@ -88,8 +89,11 @@ namespace pbe {
       ViewportState state = ViewportState::None;
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
 
+      NotifyManager notifyManager; // todo: move to EditorWindow
+
       void ViewportToolbar(const ImVec2& cursorPos);
-      void NotifyPanel();
+      void StatusBar();
+      void Notifies();
 
       void ApplyDamageFromCamera(const vec3& rayDirection);
       void SelectEntity(EntityID entityID);
