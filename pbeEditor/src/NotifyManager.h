@@ -11,7 +11,7 @@ namespace pbe {
       };
 
       void AddNotify(std::string_view message, Type type = Info);
-      void UI();
+      void UI(float nextNotifyPosY);
 
    private:
       struct Notify {

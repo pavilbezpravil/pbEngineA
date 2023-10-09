@@ -813,7 +813,7 @@ void RTDiffuseSpecularCS (uint2 id : SV_DispatchThreadID) {
     #if 1
     {
         // only direct light
-        #if 0
+        #if 1
             float3 directLighting = 0;
 
             float3 L = DirectLightDirection();

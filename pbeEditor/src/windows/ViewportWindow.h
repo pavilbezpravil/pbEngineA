@@ -58,8 +58,6 @@ namespace pbe {
 
       GizmoCfg gizmoCfg;
 
-      // todo: add enum ViewportState
-
       enum class ViewportState {
          None,
          ObjManipulation,
@@ -92,8 +90,7 @@ namespace pbe {
       NotifyManager notifyManager; // todo: move to EditorWindow
 
       void ViewportToolbar(const ImVec2& cursorPos);
-      void StatusBar();
-      void Notifies();
+      float HotKeyBar(); // return height
 
       void ApplyDamageFromCamera(const vec3& rayDirection);
       void SelectEntity(EntityID entityID);

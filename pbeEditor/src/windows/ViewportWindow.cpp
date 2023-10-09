@@ -182,11 +182,17 @@ namespace pbe {
          Manipulator(cursorUV);
       }
 
-      if (state == ViewportState::None) {
-         ViewportToolbar(startCursorPos);
-      }
+      // if (state == ViewportState::None) {
+      ViewportToolbar(startCursorPos);
+      // }
 
-      Notifies();
+      float hotKeyBarHeight = HotKeyBar();
+
+      {
+         ImGui::SetCursorPos({ 0, 0 });
+         auto contentRegion = ImGui::GetContentRegionAvail();
+         notifyManager.UI(contentRegion.y - hotKeyBarHeight);
+      }
    }
 
    void ViewportWindow::OnUpdate(float dt) {
@@ -467,12 +473,102 @@ namespace pbe {
       }
    }
 
-   void ViewportWindow::StatusBar() {
-      // todo: implement status bar
-   }
+   float ViewportWindow::HotKeyBar() {
+      float barPadding = 5;
 
-   void ViewportWindow::Notifies() {
-      notifyManager.UI();
+      UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0.5, 0.5, 0.5, 0.5f }));
+      UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ barPadding, barPadding }));
+
+      ImGui::SetCursorPos({ 0, 0 });
+      auto contentRegion = ImGui::GetContentRegionAvail();
+
+      ImVec2 barSize = { contentRegion.x, ImGui::GetFrameHeightWithSpacing() };
+
+      ImGui::SetCursorPos(ImVec2{ 0, contentRegion.y - barSize.y });
+
+      if (UI_CHILD_WINDOW("HotKey bar", barSize, false, ImGuiWindowFlags_AlwaysUseWindowPadding)) {
+         switch (state) {
+            case ViewportState::None:
+               if (!Input::IsKeyPressing(KeyCode::Ctrl)) {
+                  ImGui::Text("LM - select");
+                  ImGui::SameLine();
+               }
+
+               ImGui::Text("RM - camera move");
+               ImGui::SameLine();
+
+               if (selection->HasSelection()) {
+                  ImGui::Text("G/R/S - translation/rotation/scale");
+                  ImGui::SameLine();
+
+                  ImGui::Text("Q - select parent");
+                  ImGui::SameLine();
+
+                  ImGui::Text("H - disable");
+                  ImGui::SameLine();
+
+                  ImGui::Text("X - delete");
+                  ImGui::SameLine();
+
+                  ImGui::Text("F - focus");
+                  ImGui::SameLine();
+
+                  ImGui::Text("C - set camera position");
+                  ImGui::SameLine();
+               }
+
+               ImGui::Text("Ctrl + LM - apply damage");
+               ImGui::SameLine();
+               break;
+            case ViewportState::CameraMove:
+               ImGui::Text("W/A/S/D - move");
+               ImGui::SameLine();
+               ImGui::Text("Q/E - up/down");
+               ImGui::SameLine();
+               break;
+            case ViewportState::ObjManipulation:
+               ImGui::Text("LM - confirm");
+               ImGui::SameLine();
+
+               ImGui::Text("RM - cancel");
+               ImGui::SameLine();
+
+               if ((manipulatorMode & Translate) == 0) {
+                  ImGui::Text("G - translate");
+                  ImGui::SameLine();
+               } else if ((manipulatorMode & Rotate) == 0) {
+                  ImGui::Text("R - rotate");
+                  ImGui::SameLine();
+               } else if ((manipulatorMode & Scale) == 0) {
+                  ImGui::Text("S - scale");
+                  ImGui::SameLine();
+               }
+
+               ImGui::Text("world space");
+               ImGui::SameLine();
+
+               bool allAxisMode = (manipulatorMode & AllAxis) == AllAxis;
+
+               if ((manipulatorMode & AxisX) == 0 || allAxisMode) {
+                  ImGui::Text("X - x axis");
+                  ImGui::SameLine();
+               }
+
+               if ((manipulatorMode & AxisX) == 0 || allAxisMode) {
+                  ImGui::Text("Y - y axis");
+                  ImGui::SameLine();
+               }
+
+               if ((manipulatorMode & AxisX) == 0 || allAxisMode) {
+                  ImGui::Text("Y - y axis");
+                  ImGui::SameLine();
+               }
+
+               break;
+         }
+      }
+
+      return barSize.y;
    }
 
    void ViewportWindow::ApplyDamageFromCamera(const vec3& rayDirection) {
