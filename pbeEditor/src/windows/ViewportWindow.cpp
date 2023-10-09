@@ -685,6 +685,7 @@ namespace pbe {
          Entity addedEntity = SceneAddEntityMenu(*scene, spawnPosHint, selection);
          if (addedEntity) {
             selection->ToggleSelect(addedEntity);
+            notifyManager.AddNotify("Add entity");
          }
       }
    }
@@ -694,27 +695,7 @@ namespace pbe {
          return;
       }
 
-      auto& dbgRend = *scene->dbgRend;
-
-      Entity entity = selection->LastSelected();
-      auto relativePos = manipulatorRelativeTransform.position;
-
-      vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
-
-      Plane plane = Plane::FromPointNormal(relativePos, camera.Forward());
-      Ray ray = Ray{ camera.position, cameraDir };
-
-      auto currentPlanePos = plane.RayIntersectionAt(ray);
-
-      if (state == ViewportState::None) {
-         manipulatorRelativeTransform = {
-            entity.GetTransform().Position(),
-            entity.GetTransform().Rotation(),
-            entity.GetTransform().Scale(),
-         };
-
-         manipulatorInitialPos = currentPlanePos;
-      }
+      bool isInitialStateNone = state == ViewportState::None;
 
       if (Input::IsKeyDown(KeyCode::G)) {
          state = ViewportState::ObjManipulation;
@@ -731,6 +712,26 @@ namespace pbe {
 
       if (state != ViewportState::ObjManipulation) {
          return;
+      }
+
+      Entity entity = selection->LastSelected();
+      auto relativePos = manipulatorRelativeTransform.position;
+
+      vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
+
+      Plane plane = Plane::FromPointNormal(relativePos, camera.Forward());
+      Ray ray = Ray{ camera.position, cameraDir };
+
+      auto currentPlanePos = plane.RayIntersectionAt(ray);
+
+      if (isInitialStateNone) {
+         manipulatorRelativeTransform = {
+            entity.GetTransform().Position(),
+            entity.GetTransform().Rotation(),
+            entity.GetTransform().Scale(),
+         };
+
+         manipulatorInitialPos = currentPlanePos;
       }
 
       ManipulatorResetTransforms();
@@ -753,6 +754,8 @@ namespace pbe {
          manipulatorMode |= AxisZ;
       }
 
+      auto& dbgRend = *scene->dbgRend;
+
       dbgRend.DrawSphere(Sphere{ relativePos, 0.03f }, Color_Yellow, false);
 
       if (manipulatorMode & (Rotate | Scale)) {
@@ -773,19 +776,33 @@ namespace pbe {
       if (manipulatorMode & Translate) {
          vec3 translation = currentPlanePos - manipulatorInitialPos;
 
-         vec3 translationProcessed = vec3{ 0 };
+         if ((manipulatorMode & AllAxis) != AllAxis) {
+            vec3 posOnBillboardPlane = manipulatorRelativeTransform.position + translation;
+            vec3 rayFromCam = glm::normalize(posOnBillboardPlane - camera.position);
 
-         if (manipulatorMode & AxisX) {
-            translationProcessed.x = dot(translation, vec3_X);
-         }
-         if (manipulatorMode & AxisY) {
-            translationProcessed.y = dot(translation, vec3_Y);
-         }
-         if (manipulatorMode & AxisZ) {
-            translationProcessed.z = dot(translation, vec3_Z);
+            vec3 axis = vec3_Zero;
+            if (manipulatorMode & AxisX) {
+               axis = vec3_X;
+            }
+            if (manipulatorMode & AxisY) {
+               axis = vec3_Y;
+            }
+            if (manipulatorMode & AxisZ) {
+               axis = vec3_Z;
+            }
+
+            vec3 planeNormal = glm::normalize(glm::cross(axis, camera.Forward()));
+            planeNormal = glm::normalize(glm::cross(axis, planeNormal));
+
+            Plane alongPlane = Plane::FromPointNormal(relativePos, planeNormal);
+            Ray rayToBillboardPos = Ray{ camera.position, rayFromCam };
+
+            auto alongIntersectPos = alongPlane.RayIntersectionAt(rayToBillboardPos);
+
+            translation = dot(alongIntersectPos - relativePos, axis) * axis;
          }
 
-         entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translationProcessed);
+         entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
       }
 
       if (manipulatorMode & Rotate) {
