@@ -715,14 +715,6 @@ namespace pbe {
       }
 
       Entity entity = selection->LastSelected();
-      auto relativePos = manipulatorRelativeTransform.position;
-
-      vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
-
-      Plane plane = Plane::FromPointNormal(relativePos, camera.Forward());
-      Ray ray = Ray{ camera.position, cameraDir };
-
-      auto currentPlanePos = plane.RayIntersectionAt(ray);
 
       if (isInitialStateNone) {
          manipulatorRelativeTransform = {
@@ -730,7 +722,18 @@ namespace pbe {
             entity.GetTransform().Rotation(),
             entity.GetTransform().Scale(),
          };
+      }
 
+      auto relativePos = manipulatorRelativeTransform.position;
+
+      vec3 cameraDir = camera.GetWorldSpaceRayDirFromUV(cursorUV);
+
+      Plane billboardPlane = Plane::FromPointNormal(relativePos, camera.Forward());
+      Ray ray = Ray{ camera.position, cameraDir };
+
+      auto currentPlanePos = billboardPlane.RayIntersectionAt(ray);
+
+      if (isInitialStateNone) {
          manipulatorInitialPos = currentPlanePos;
       }
 
@@ -773,6 +776,8 @@ namespace pbe {
          }
       }
 
+      bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
+
       if (manipulatorMode & Translate) {
          vec3 translation = currentPlanePos - manipulatorInitialPos;
 
@@ -800,6 +805,10 @@ namespace pbe {
             auto alongIntersectPos = alongPlane.RayIntersectionAt(rayToBillboardPos);
 
             translation = dot(alongIntersectPos - relativePos, axis) * axis;
+         }
+
+         if (snap) {
+            translation = glm::round(translation);
          }
 
          entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
