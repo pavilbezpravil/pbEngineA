@@ -89,6 +89,7 @@ namespace pbe {
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
 
       void ViewportToolbar(const ImVec2& cursorPos);
+      void NotifyPanel();
 
       void ApplyDamageFromCamera(const vec3& rayDirection);
       void SelectEntity(EntityID entityID);

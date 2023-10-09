@@ -185,6 +185,8 @@ namespace pbe {
       if (state == ViewportState::None) {
          ViewportToolbar(startCursorPos);
       }
+
+      NotifyPanel();
    }
 
    void ViewportWindow::OnUpdate(float dt) {
@@ -445,6 +447,28 @@ namespace pbe {
                }
             }
          }
+      }
+   }
+
+   void ViewportWindow::NotifyPanel() {
+      ImVec2 messageSize{ 400, 50 };
+
+      ImGui::SetCursorPos({0, 0});
+      auto contentRegion = ImGui::GetContentRegionAvail();
+
+      ImGui::SetCursorPos(ImVec2{ 5,contentRegion.y - messageSize.y - 5 });
+
+      UI_PUSH_STYLE_COLOR(ImGuiCol_ChildBg, (ImVec4{ 0, 0, 0, 0.3f }));
+      UI_PUSH_STYLE_VAR(ImGuiStyleVar_ChildRounding, 10);
+      // UI_PUSH_STYLE_VAR(ImGuiStyleVar_WindowPadding, (ImVec2{ 5, 5 }));
+
+      if (UI_CHILD_WINDOW("Notify panel", messageSize)) {
+         // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameBorderSize, 1);
+         // UI_PUSH_STYLE_VAR(ImGuiStyleVar_FrameRounding, 10);
+
+         ImGui::Text("Notify panel");
+         ImGui::Separator();
+         ImGui::Text("Notify message");
       }
    }
 
