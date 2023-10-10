@@ -236,6 +236,15 @@ namespace pbe {
       return s;
    }
 
+   void SceneTransformComponent::SetTransform(const Transform& transform, Space space) {
+      if (space == Space::World && HasParent()) {
+         auto pTrans = parent.Get<SceneTransformComponent>().World();
+         local = pTrans.TransformInv(transform);
+      } else {
+         local = transform;
+      }
+   }
+
    void SceneTransformComponent::SetPosition(const vec3& pos, Space space) {
       if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();

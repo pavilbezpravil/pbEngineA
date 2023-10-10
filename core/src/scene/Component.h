@@ -42,6 +42,7 @@ namespace pbe {
       quat Rotation(Space space = Space::World) const;
       vec3 Scale(Space space = Space::World) const;
 
+      void SetTransform(const Transform& transform, Space space = Space::World);
       void SetPosition(const vec3& pos, Space space = Space::World);
       void SetRotation(const quat& rot, Space space = Space::World);
       void SetScale(const vec3& s, Space space = Space::World);

@@ -233,7 +233,7 @@ namespace pbe {
                      selection->Select(duplicatedEntity, false);
                   }
 
-                  StartManipulator(Translate | AllAxis);
+                  StartManipulator(Translate);
                }
             }
 
@@ -715,25 +715,17 @@ namespace pbe {
       }
 
       if (Input::IsKeyDown(KeyCode::G)) {
-         StartManipulator(Translate | AllAxis);
+         StartManipulator(Translate);
       }
       if (Input::IsKeyDown(KeyCode::R)) {
-         StartManipulator(Rotate | AllAxis);
+         StartManipulator(Rotate);
       }
       if (Input::IsKeyDown(KeyCode::S)) {
-         StartManipulator(Scale | AllAxis);
+         StartManipulator(Scale);
       }
 
       if (state != ViewportState::ObjManipulation) {
          return;
-      }
-
-      Entity entity = selection->LastSelected();
-
-      bool startManipulate = manipulatorMode & RequestStart;
-      manipulatorMode &= ~RequestStart;
-      if (startManipulate) {
-         manipulatorRelativeTransform = entity.GetTransform().World();
       }
 
       auto relativePos = manipulatorRelativeTransform.position;
@@ -744,6 +736,9 @@ namespace pbe {
       Ray ray = Ray{ camera.position, cameraDir };
 
       auto currentPlanePos = billboardPlane.RayIntersectionAt(ray);
+
+      bool startManipulate = manipulatorMode & RequestStart;
+      manipulatorMode &= ~RequestStart;
 
       if (startManipulate) {
          manipulatorInitialBillboardPos = currentPlanePos;
@@ -822,12 +817,20 @@ namespace pbe {
             translation = dot(alongIntersectPos - relativePos, axis) * axis;
          }
 
-         entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
+         for (Entity& entity : selection->selected) {
+            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            if (it == selectedEntityInitialTransforms.end()) {
+               continue;
+            }
 
-         if (useSnap) {
-            vec3 position = entity.GetTransform().Position((Space)settings.snapSpace);
-            position = glm::round(position / settings.snapTranslationScale) * settings.snapTranslationScale;
-            entity.GetTransform().SetPosition(position, (Space)settings.snapSpace);
+            auto& trans = entity.GetTransform();
+            trans.SetPosition(it->second.position + translation);
+
+            if (useSnap) {
+               vec3 position = trans.Position((Space)settings.snapSpace);
+               position = glm::round(position / settings.snapTranslationScale) * settings.snapTranslationScale;
+               trans.SetPosition(position, (Space)settings.snapSpace);
+            }
          }
       }
 
@@ -855,8 +858,17 @@ namespace pbe {
             angle *= glm::sign(glm::dot(camera.Forward(), axis));
          }
 
-         quat rotation = glm::angleAxis(angle, axis);
-         entity.GetTransform().SetRotation(rotation * manipulatorRelativeTransform.rotation);
+         for (Entity& entity : selection->selected) {
+            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            if (it == selectedEntityInitialTransforms.end()) {
+               continue;
+            }
+
+            auto& trans = entity.GetTransform();
+
+            quat rotation = glm::angleAxis(angle, axis);
+            trans.SetRotation(rotation * it->second.rotation);
+         }
       }
 
       if (manipulatorMode & Scale) {
@@ -870,16 +882,31 @@ namespace pbe {
             manipulatorMode & AxisZ ? scale : 1.f,
          };
 
-         entity.GetTransform().SetScale(manipulatorRelativeTransform.scale * scale3);
+         for (Entity& entity : selection->selected) {
+            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            if (it == selectedEntityInitialTransforms.end()) {
+               continue;
+            }
 
-         if (useSnap) {
-            vec3 scale = entity.GetTransform().Scale((Space)settings.snapSpace);
-            scale = glm::round(scale / settings.snapTranslationScale) * settings.snapTranslationScale;
-            entity.GetTransform().SetScale(scale, (Space)settings.snapSpace);
+            auto& trans = entity.GetTransform();
+            trans.SetScale(it->second.scale * scale3);
+
+            if (useSnap) {
+               vec3 scale = trans.Scale((Space)settings.snapSpace);
+               scale = glm::round(scale / settings.snapTranslationScale) * settings.snapTranslationScale;
+               trans.SetScale(scale, (Space)settings.snapSpace);
+            }
          }
       }
 
-      entity.AddOrReplace<TransformChangedMarker>();
+      for (Entity& entity : selection->selected) {
+         auto it = selectedEntityInitialTransforms.find(entity.GetID());
+         if (it == selectedEntityInitialTransforms.end()) {
+            continue;
+         }
+
+         entity.AddOrReplace<TransformChangedMarker>();
+      }
 
       if (Input::IsKeyDown(KeyCode::LeftButton)) {
          state = ViewportState::None;
@@ -891,22 +918,38 @@ namespace pbe {
          return;
       }
 
-      Entity entity = selection->LastSelected();
+      for (Entity& entity : selection->selected) {
+         auto it = selectedEntityInitialTransforms.find(entity.GetID());
+         if (it == selectedEntityInitialTransforms.end()) {
+            continue;
+         }
 
-      entity.GetTransform().SetPosition(manipulatorRelativeTransform.position);
-      entity.GetTransform().SetRotation(manipulatorRelativeTransform.rotation);
-      entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
-
-      entity.AddOrReplace<TransformChangedMarker>();
+         entity.GetTransform().SetTransform(it->second);
+         entity.AddOrReplace<TransformChangedMarker>();
+      }
    }
 
    void ViewportWindow::StartManipulator(ManipulatorMode mode) {
+      if (state == ViewportState::ObjManipulation) {
+         manipulatorMode &= ~(Translate | Rotate | Scale);
+         manipulatorMode |= mode;
+         return;
+      }
+
       if (state != ViewportState::None) {
          return;
       }
 
       state = ViewportState::ObjManipulation;
-      manipulatorMode = mode | RequestStart;
+      manipulatorMode = mode | AllAxis | RequestStart;
+
+      selectedEntityInitialTransforms.clear();
+      for (auto entity : selection->selected) {
+         selectedEntityInitialTransforms[entity.GetID()] = entity.GetTransform().World();
+      }
+
+      // todo: add average
+      manipulatorRelativeTransform = selection->LastSelected().GetTransform().World();
    }
 
    void ViewportWindow::StopManipulator() {

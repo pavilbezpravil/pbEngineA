@@ -81,7 +81,7 @@ namespace pbe {
       };
 
    private:
-      ManipulatorMode AllAxis = ManipulatorMode(AxisX | AxisY | AxisZ);
+      static constexpr ManipulatorMode AllAxis = ManipulatorMode(AxisX | AxisY | AxisZ);
 
       ViewportSettings settings;
 
@@ -89,6 +89,8 @@ namespace pbe {
 
       Transform manipulatorRelativeTransform;
       vec3 manipulatorInitialBillboardPos;
+
+      std::unordered_map<EntityID, Transform> selectedEntityInitialTransforms;
 
       ViewportState state = ViewportState::None;
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
