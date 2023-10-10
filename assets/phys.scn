@@ -247,8 +247,8 @@ entities:
       scale: [123.703011, 1, 162.817719]
       parent: 16296614365138388011
     MaterialComponent:
-      baseColor: [0.118677557, 0.852320671, 0.137250826]
-      roughness: 0.100000001
+      baseColor: [0.0846018195, 0.455696225, 0.0939966142]
+      roughness: 0.289999992
       metallic: 0
       emissivePower: 0
       opaque: true
@@ -1646,8 +1646,8 @@ entities:
       scale: [20, 1, 20]
       parent: 16296614365138388011
     MaterialComponent:
-      baseColor: [0.47156924, 0.852320671, 0.118677557]
-      roughness: 0.100000001
+      baseColor: [0.311736465, 0.535864949, 0.104007535]
+      roughness: 0.232999995
       metallic: 0
       emissivePower: 0
       opaque: true

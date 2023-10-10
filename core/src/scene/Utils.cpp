@@ -166,6 +166,7 @@ namespace pbe {
             for (int i = 0; i < 500; ++i) {
                CreateCube(scene, CubeDesc{
                   .parent = root,
+                  .space = Space::Local,
                   .pos = Random::Float3(-cubeSize, cubeSize),
                   .rotation = Random::Float3(vec3{ 0 }, vec3{ 30.f }), // todo: PI?
                   .scale = Random::Float3(vec3{ 0 }, vec3{ 3.f }),
@@ -180,7 +181,7 @@ namespace pbe {
 
             for (int i = 0; i < 8; ++i) {
                Entity e = CreateEmpty(scene, std::format("Light {}", i),
-                  root, Random::Float3(-cubeSize, cubeSize));
+                  root, Random::Float3(-cubeSize, cubeSize), Space::Local);
 
                auto& light = e.Add<LightComponent>();
                light.color = Random::Float3(vec3{ 0 }, vec3{ 1.f });
@@ -209,6 +210,7 @@ namespace pbe {
                for (int x = 0; x < size; ++x) {
                   CreateCube(scene, CubeDesc{
                      .parent = root,
+                     .space = Space::Local,
                      .pos = vec3{ -size / 2.f + x, y + 0.5f, 0 },
                      .color = Random::Color() });
                }
@@ -227,6 +229,7 @@ namespace pbe {
                for (int x = 0; x < width; ++x) {
                   CreateCube(scene, CubeDesc{
                      .parent = root,
+                     .space = Space::Local,
                      .pos = vec3{ -width / 2.f + x, y + 0.5f, 0 },
                      .color = Random::Color() });
                }
@@ -243,6 +246,7 @@ namespace pbe {
             for (int i = 0; i < size; ++i) {
                CreateCube(scene, CubeDesc{
                   .parent = root,
+                  .space = Space::Local,
                   .pos = vec3{0, i + 0.5f, 0},
                   .color = Random::Color() });
             }
@@ -263,6 +267,7 @@ namespace pbe {
             for (int i = 0; i < size - 1; ++i) {
                Entity cur = CreateCube(scene, CubeDesc{
                   .parent = root,
+                  .space = Space::Local,
                   .pos = vec3{0, i * 2 + 0.5f, 0},
                   .color = Random::Color() });
 

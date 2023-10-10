@@ -72,6 +72,8 @@ namespace pbe {
          AxisX = BIT(4),
          AxisY = BIT(5),
          AxisZ = BIT(6),
+
+         RequestStart = BIT(7),
       };
 
    private:
@@ -82,7 +84,7 @@ namespace pbe {
       bool zoomEnable = false;
 
       Transform manipulatorRelativeTransform;
-      vec3 manipulatorInitialPos;
+      vec3 manipulatorInitialBillboardPos;
 
       ViewportState state = ViewportState::None;
       ManipulatorMode manipulatorMode = ManipulatorMode::None;
@@ -101,6 +103,7 @@ namespace pbe {
       void Manipulator(const vec2& cursorUV);
 
       void ManipulatorResetTransforms();
+      void StartManipulator(ManipulatorMode mode);
       void StopManipulator();
 
       void StartCameraMove();

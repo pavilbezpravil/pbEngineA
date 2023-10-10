@@ -201,20 +201,21 @@ namespace pbe {
          return;
       }
 
-      if (Input::IsKeyDown(KeyCode::RightButton)) {
-         StartCameraMove();
-      }
-      if (Input::IsKeyUp(KeyCode::RightButton)) {
-         StopCameraMove();
-      }
-
       camera.NextFrame(); // todo:
 
       if (state == ViewportState::CameraMove) {
+         if (Input::IsKeyUp(KeyCode::RightButton)) {
+            StopCameraMove();
+         }
+
          camera.Update(dt);
       }
 
       if (state == ViewportState::None) {
+         if (Input::IsKeyDown(KeyCode::RightButton)) {
+            StartCameraMove();
+         }
+
          if (selection->HasSelection()) {
             if (Input::IsKeyPressing(KeyCode::Shift)) {
                if (Input::IsKeyDown(KeyCode::D)) {
@@ -228,8 +229,7 @@ namespace pbe {
                      selection->Select(duplicatedEntity, false);
                   }
 
-                  state = ViewportState::ObjManipulation;
-                  manipulatorMode = Translate | AllAxis;
+                  StartManipulator(Translate | AllAxis);
                }
             }
 
@@ -692,22 +692,18 @@ namespace pbe {
 
    void ViewportWindow::Manipulator(const vec2& cursorUV) {
       if (!selection->HasSelection() || state == ViewportState::CameraMove) {
+         StopManipulator();
          return;
       }
 
-      bool isInitialStateNone = state == ViewportState::None;
-
       if (Input::IsKeyDown(KeyCode::G)) {
-         state = ViewportState::ObjManipulation;
-         manipulatorMode = Translate | AllAxis;
+         StartManipulator(Translate | AllAxis);
       }
       if (Input::IsKeyDown(KeyCode::R)) {
-         state = ViewportState::ObjManipulation;
-         manipulatorMode = Rotate | AllAxis;
+         StartManipulator(Rotate | AllAxis);
       }
       if (Input::IsKeyDown(KeyCode::S)) {
-         state = ViewportState::ObjManipulation;
-         manipulatorMode = Scale | AllAxis;
+         StartManipulator(Scale | AllAxis);
       }
 
       if (state != ViewportState::ObjManipulation) {
@@ -716,12 +712,10 @@ namespace pbe {
 
       Entity entity = selection->LastSelected();
 
-      if (isInitialStateNone) {
-         manipulatorRelativeTransform = {
-            entity.GetTransform().Position(),
-            entity.GetTransform().Rotation(),
-            entity.GetTransform().Scale(),
-         };
+      bool startManipulate = manipulatorMode & RequestStart;
+      manipulatorMode &= ~RequestStart;
+      if (startManipulate) {
+         manipulatorRelativeTransform = entity.GetTransform().World();
       }
 
       auto relativePos = manipulatorRelativeTransform.position;
@@ -733,8 +727,8 @@ namespace pbe {
 
       auto currentPlanePos = billboardPlane.RayIntersectionAt(ray);
 
-      if (isInitialStateNone) {
-         manipulatorInitialPos = currentPlanePos;
+      if (startManipulate) {
+         manipulatorInitialBillboardPos = currentPlanePos;
       }
 
       ManipulatorResetTransforms();
@@ -779,7 +773,7 @@ namespace pbe {
       bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
 
       if (manipulatorMode & Translate) {
-         vec3 translation = currentPlanePos - manipulatorInitialPos;
+         vec3 translation = currentPlanePos - manipulatorInitialBillboardPos;
 
          if ((manipulatorMode & AllAxis) != AllAxis) {
             vec3 posOnBillboardPlane = manipulatorRelativeTransform.position + translation;
@@ -815,7 +809,7 @@ namespace pbe {
       }
 
       if (manipulatorMode & Rotate) {
-         vec3 initialDir = normalize(manipulatorInitialPos - relativePos);
+         vec3 initialDir = normalize(manipulatorInitialBillboardPos - relativePos);
          vec3 currentDir = normalize(currentPlanePos - relativePos);
 
          vec3 cross = glm::cross(initialDir, currentDir);
@@ -843,7 +837,7 @@ namespace pbe {
       }
 
       if (manipulatorMode & Scale) {
-         float initialDistance = glm::distance(manipulatorInitialPos, relativePos);
+         float initialDistance = glm::distance(manipulatorInitialBillboardPos, relativePos);
          float currentDistance = glm::distance(currentPlanePos, relativePos);
          float scale = currentDistance / initialDistance;
 
@@ -875,6 +869,15 @@ namespace pbe {
       entity.GetTransform().SetScale(manipulatorRelativeTransform.scale);
 
       entity.AddOrReplace<TransformChangedMarker>();
+   }
+
+   void ViewportWindow::StartManipulator(ManipulatorMode mode) {
+      if (state != ViewportState::None) {
+         return;
+      }
+
+      state = ViewportState::ObjManipulation;
+      manipulatorMode = mode | RequestStart;
    }
 
    void ViewportWindow::StopManipulator() {

@@ -88,7 +88,7 @@ namespace pbe {
 
    struct MaterialComponent {
       vec3 baseColor = vec3_One * 0.5f;
-      float roughness = 0.5f;
+      float roughness = 0.3f;
       float metallic = 0;
       float emissivePower = 0;
 

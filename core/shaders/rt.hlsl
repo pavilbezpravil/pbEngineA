@@ -419,7 +419,7 @@ TraceOpaqueResult TraceOpaque( TraceOpaqueDesc desc ) {
 
                 float3 L = 0;
                 // todo: mb skip?
-                // L = obj.baseColor * obj.emissivePower;
+                L = obj.baseColor * obj.emissivePower;
 
                 #if 1
                     // Shadow test ray
