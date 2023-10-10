@@ -157,6 +157,33 @@ namespace pbe {
          }
       }
 
+      if (UI_MENU("Actions")) {
+         uint nSelected = selection ? (uint)selection->selected.size() : 0;
+
+         if (ImGui::MenuItem("Create parent for selected", 0, false, nSelected >= 2)) {
+            vec3 midPoint = vec3_Zero;
+            for (auto entity : selection->selected) {
+               midPoint += entity.GetTransform().Position();
+            }
+            midPoint /= (float)selection->selected.size();
+
+            Entity parentForSelected = CreateEmpty(scene, "Parent for selected", {}, midPoint);
+            for (auto entity : selection->selected) {
+               entity.GetTransform().SetParent(parentForSelected);
+            }
+            return parentForSelected;
+         }
+
+         if (ImGui::MenuItem("Last selected as parent for selected", 0, false, nSelected >= 2)) {
+            Entity parentForSelected = selection->LastSelected();
+
+            for (auto entity : selection->selected | std::views::reverse | std::views::drop(1)) {
+               entity.GetTransform().SetParent(parentForSelected);
+            }
+            return parentForSelected;
+         }
+      }
+
       if (UI_MENU("Presets")) {
          vec3 cubeSize{ 25, 10, 25 };
 
