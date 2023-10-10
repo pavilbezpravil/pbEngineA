@@ -197,7 +197,11 @@ namespace pbe {
       return transform;
    }
 
-   vec3 SceneTransformComponent::Position() const {
+   vec3 SceneTransformComponent::Position(Space space) const {
+      if (space == Space::Local) {
+         return local.position;
+      }
+
       vec3 pos = local.position;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
@@ -206,7 +210,11 @@ namespace pbe {
       return pos;
    }
 
-   quat SceneTransformComponent::Rotation() const {
+   quat SceneTransformComponent::Rotation(Space space) const {
+      if (space == Space::Local) {
+         return local.rotation;
+      }
+
       quat rot = local.rotation;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
@@ -215,7 +223,11 @@ namespace pbe {
       return rot;
    }
 
-   vec3 SceneTransformComponent::Scale() const {
+   vec3 SceneTransformComponent::Scale(Space space) const {
+      if (space == Space::Local) {
+         return local.scale;
+      }
+
       vec3 s = local.scale;
       if (parent) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
@@ -224,8 +236,8 @@ namespace pbe {
       return s;
    }
 
-   void SceneTransformComponent::SetPosition(const vec3& pos) {
-      if (HasParent()) {
+   void SceneTransformComponent::SetPosition(const vec3& pos, Space space) {
+      if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.position = glm::inverse(pTrans.Rotation()) * (pos - pTrans.Position()) / pTrans.Scale();
       } else {
@@ -233,8 +245,8 @@ namespace pbe {
       }
    }
 
-   void SceneTransformComponent::SetRotation(const quat& rot) {
-      if (HasParent()) {
+   void SceneTransformComponent::SetRotation(const quat& rot, Space space) {
+      if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.rotation = glm::inverse(pTrans.Rotation()) * rot;
       } else {
@@ -242,8 +254,8 @@ namespace pbe {
       }
    }
 
-   void SceneTransformComponent::SetScale(const vec3& s) {
-      if (HasParent()) {
+   void SceneTransformComponent::SetScale(const vec3& s, Space space) {
+      if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.scale = s / pTrans.Scale();
       } else {

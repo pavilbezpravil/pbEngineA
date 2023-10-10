@@ -11,19 +11,21 @@
 
 namespace pbe {
 
-   Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos) {
+   static Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos, Space space) {
       // todo: find appropriate name
       auto entity = scene.Create(parent, namePrefix);
-      entity.Get<SceneTransformComponent>().SetPosition(pos);
+      entity.Get<SceneTransformComponent>().SetPosition(pos, space);
       return entity;
    }
 
    Entity CreateCube(Scene& scene, const CubeDesc& desc) {
-      auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos);
+      auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos, desc.space);
 
       auto& trans = entity.Get<SceneTransformComponent>();
-      trans.SetScale(desc.scale);
-      trans.SetRotation(desc.rotation);
+      trans.SetScale(desc.scale, desc.space);
+      trans.SetRotation(desc.rotation, desc.space);
+
+      trans.UpdatePrevTransform();
 
       entity.Add<GeometryComponent>();
 

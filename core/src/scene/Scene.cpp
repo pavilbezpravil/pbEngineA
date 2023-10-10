@@ -173,8 +173,9 @@ namespace pbe {
       //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
       // }
 
-      for (auto e : ViewAll<DelayedEnableMarker>()) {
-         registry.erase<DisableMarker>(e);
+      for (auto [entityID, trans] : ViewAll<DelayedEnableMarker, SceneTransformComponent>().each()) {
+         trans.UpdatePrevTransform();
+         registry.erase<DisableMarker>(entityID);
       }
       registry.clear<DelayedEnableMarker>();
    }
@@ -338,6 +339,7 @@ namespace pbe {
       // todo: move after loop?
       auto& dstTrans = dst.GetTransform();
       dstTrans.Local() = srcTrans.Local();
+      dstTrans.UpdatePrevTransform();
 
       for (auto child : srcTrans.children) {
          Entity duplicatedChild = { hierEntitiesMap[child.GetUUID()].enttEntity, dst.GetScene()};

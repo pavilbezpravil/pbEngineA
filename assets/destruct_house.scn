@@ -87,7 +87,7 @@ entities:
     RigidBodyComponent:
       dynamic: true
       destructible: true
-      hardness: 50
+      hardness: 75
       linearDamping: 0.0299999993
       angularDamping: 0.0299999993
   - uuid: 11226625768498652818

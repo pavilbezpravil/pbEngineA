@@ -1,18 +1,20 @@
 #pragma once
 
 #include "Entity.h"
+#include "math/Transform.h"
 
 namespace pbe {
 
    struct EditorSelection;
 
-   Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {});
+   Entity CORE_API CreateEmpty(Scene& scene, string_view namePrefix = "Empty", Entity parent = {}, const vec3& pos = {}, Space space = Space::World);
 
    // todo: add space for transform
    struct CubeDesc {
       Entity parent = {};
       string_view namePrefix = "Cube";
 
+      Space space = Space::World;
       vec3 pos = vec3_Zero;
       quat rotation = quat_Identity;
       vec3 scale = vec3_One;

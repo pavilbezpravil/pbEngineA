@@ -58,6 +58,11 @@ namespace pbe {
 
                   Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
 
+                  auto& childTrans = childEntity.GetTransform();
+                  childTrans.SetPosition(parentTrans.Position());
+                  childTrans.SetRotation(parentTrans.Rotation());
+                  vec3 childScale = childTrans.Scale();
+
                   bool childIsLeaf = visibleChunkCount == 1;
                   bool childIsLeafSupport = visibleChunkCount == 1;
 
@@ -77,11 +82,14 @@ namespace pbe {
                      Entity visibleChunkEntity = CreateCube(*pScene, CubeDesc {
                         .parent = childEntity,
                         .namePrefix = "Chunk Shape",
+                        .space = Space::Local,
                         .pos = offset,
-                        .scale = chunkInfo.size,
+                        .scale = chunkInfo.size / childScale,
                         .type = CubeDesc::PhysShape,
                      });
                      // visibleChunkEntity.Add<DestructionChunkComponent>();
+
+                     // todo: update prev transform for correct motion
 
                      childChunkToEntity[chunkIndex] = visibleChunkEntity.GetID();
 
@@ -104,9 +112,6 @@ namespace pbe {
                   if (cvInstantDestroyLeafs && childIsLeaf) {
                      childEntity.DestroyDelayed(); // todo: dont create
                   }
-
-                  childEntity.GetTransform().SetPosition(parentTrans.Position());
-                  childEntity.GetTransform().SetRotation(parentTrans.Rotation());
 
                   // it may be destroyed TkActor with already delete userData
                   tkChild->userData = nullptr;

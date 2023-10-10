@@ -164,6 +164,12 @@ namespace pbe {
          uint mid = count / 2;
          auto axisIdx = VectorUtils::LargestAxisIdx(combinedAABB.Size());
 
+         auto SplitEqualCount = [&] {
+            mid = count / 2;
+            std::ranges::nth_element(aabbInfos, aabbInfos.begin() + mid,
+               [&](const AABBInfo& a, const AABBInfo& b) { return a.aabb.Center()[axisIdx] < b.aabb.Center()[axisIdx]; });
+         };
+
          switch (splitMethod)
          {
          case SplitMethod::Middle: {
@@ -174,9 +180,7 @@ namespace pbe {
             if (mid != 0 && mid != aabbInfos.size()) break;
          }
          case SplitMethod::EqualCounts:
-            mid = count / 2;
-            std::ranges::nth_element(aabbInfos, aabbInfos.begin() + mid,
-               [&](const AABBInfo& a, const AABBInfo& b) { return a.aabb.Center()[axisIdx] < b.aabb.Center()[axisIdx]; });
+            SplitEqualCount();
             break;
          case SplitMethod::SAH:
             if (count <= 2) {
@@ -253,8 +257,11 @@ namespace pbe {
                }
             );
             mid = count - (uint)it.size();
-            ASSERT(mid != 0);
-            ASSERT(mid != count);
+
+            if (mid == 0 || mid == count) {
+               INFO("BVH build: SAH fallback to split equal count");
+               SplitEqualCount();
+            }
 
             break;
          };

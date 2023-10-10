@@ -38,13 +38,13 @@ namespace pbe {
 
       // todo: return const ref
       // World space
-      vec3 Position() const;
-      quat Rotation() const;
-      vec3 Scale() const;
+      vec3 Position(Space space = Space::World) const;
+      quat Rotation(Space space = Space::World) const;
+      vec3 Scale(Space space = Space::World) const;
 
-      void SetPosition(const vec3& pos);
-      void SetRotation(const quat& rot);
-      void SetScale(const vec3& s);
+      void SetPosition(const vec3& pos, Space space = Space::World);
+      void SetRotation(const quat& rot, Space space = Space::World);
+      void SetScale(const vec3& s, Space space = Space::World);
 
       vec3 Right() const;
       vec3 Up() const;
@@ -87,8 +87,8 @@ namespace pbe {
    };
 
    struct MaterialComponent {
-      vec3 baseColor = vec3_One;
-      float roughness = 0.1f;
+      vec3 baseColor = vec3_One * 0.5f;
+      float roughness = 0.5f;
       float metallic = 0;
       float emissivePower = 0;
 
