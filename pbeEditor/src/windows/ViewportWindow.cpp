@@ -86,6 +86,10 @@ namespace pbe {
       STRUCT_FIELD(showedTexIdx)
       STRUCT_FIELD(rayTracingRendering)
 
+      STRUCT_FIELD(useSnap)
+      STRUCT_FIELD(snapSpace)
+      STRUCT_FIELD(snapTranslationScale)
+
       STRUCT_FIELD(useGizmo)
       STRUCT_FIELD(space)
    STRUCT_END()
@@ -448,6 +452,20 @@ namespace pbe {
          rayTracingSceneRender = settings.rayTracingRendering;
          ImGui::SameLine();
 
+         ImGui::Checkbox("Snap", &settings.useSnap);
+         ImGui::SameLine();
+
+         if (settings.useSnap) {
+            ImGui::SetNextItemWidth(100);
+            const char* spaces[] = { "Local", "World" };
+            ImGui::Combo("##Snap Space", &settings.snapSpace, spaces, IM_ARRAYSIZE(spaces));
+            ImGui::SameLine();
+
+            ImGui::SetNextItemWidth(100);
+            ImGui::SliderFloat("Snap value", &settings.snapTranslationScale, 0.01f, 0.2f, "%.2f");
+            ImGui::SameLine();
+         }
+
          ImGui::Checkbox("Gizmo", &settings.useGizmo);
          ImGui::SameLine();
 
@@ -770,7 +788,10 @@ namespace pbe {
          }
       }
 
-      bool snap = Input::IsKeyPressing(KeyCode::Ctrl);
+      bool useSnap = settings.useSnap;
+      if (Input::IsKeyPressing(KeyCode::Ctrl)) {
+         useSnap = !useSnap;
+      }
 
       if (manipulatorMode & Translate) {
          vec3 translation = currentPlanePos - manipulatorInitialBillboardPos;
@@ -801,11 +822,13 @@ namespace pbe {
             translation = dot(alongIntersectPos - relativePos, axis) * axis;
          }
 
-         if (snap) {
-            translation = glm::round(translation);
-         }
-
          entity.GetTransform().SetPosition(manipulatorRelativeTransform.position + translation);
+
+         if (useSnap) {
+            vec3 position = entity.GetTransform().Position((Space)settings.snapSpace);
+            position = glm::round(position / settings.snapTranslationScale) * settings.snapTranslationScale;
+            entity.GetTransform().SetPosition(position, (Space)settings.snapSpace);
+         }
       }
 
       if (manipulatorMode & Rotate) {
@@ -848,6 +871,12 @@ namespace pbe {
          };
 
          entity.GetTransform().SetScale(manipulatorRelativeTransform.scale * scale3);
+
+         if (useSnap) {
+            vec3 scale = entity.GetTransform().Scale((Space)settings.snapSpace);
+            scale = glm::round(scale / settings.snapTranslationScale) * settings.snapTranslationScale;
+            entity.GetTransform().SetScale(scale, (Space)settings.snapSpace);
+         }
       }
 
       entity.AddOrReplace<TransformChangedMarker>();

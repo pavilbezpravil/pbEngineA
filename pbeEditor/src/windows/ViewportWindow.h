@@ -26,6 +26,10 @@ namespace pbe {
       int showedTexIdx = 0;
       bool rayTracingRendering = false;
 
+      bool useSnap = false;
+      int snapSpace = 1; // world
+      float snapTranslationScale = 0.1f;
+
       bool useGizmo = true; // instead of manipulator
       int space = 1; // world
    };
