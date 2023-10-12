@@ -2,14 +2,38 @@
 #include "Utils.h"
 
 #include "Component.h"
-#include "../../../pbeEditor/src/EditorSelection.h"
+#include "../../../pbeEditor/src/EditorSelection.h" // todo:
+#include "app/Input.h"
 #include "gui/Gui.h"
 #include "math/Color.h"
+#include "math/Common.h"
 #include "math/Random.h"
 #include "physics/PhysComponents.h"
 #include "physics/PhysicsScene.h"
 
 namespace pbe {
+
+   // todo:
+   static vec3 MiddlePointForEntities(std::span<Entity> entities) {
+      vec3 midPoint = vec3_Zero;
+      for (auto entity : entities) {
+         midPoint += entity.GetTransform().Position();
+      }
+      midPoint /= entities.empty() ? 1.f : (float)entities.size();
+
+      return midPoint;
+   }
+
+   static Entity CreateParentForEntities(Scene& scene, std::span<Entity> entities) {
+      vec3 midPoint = MiddlePointForEntities(entities);
+
+      Entity parentForSelected = CreateEmpty(scene, "Parent for selected", {}, midPoint);
+      for (auto entity : entities) {
+         entity.GetTransform().SetParent(parentForSelected);
+      }
+
+      return parentForSelected;
+   }
 
    static Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos, Space space) {
       // todo: find appropriate name
@@ -157,30 +181,98 @@ namespace pbe {
          }
       }
 
+      // if (Input::IsKeyDown(KeyCode::A)) {
+      //    ImGui::OpenPopup("Actions");
+      // }
       if (UI_MENU("Actions")) {
          uint nSelected = selection ? (uint)selection->selected.size() : 0;
 
          if (ImGui::MenuItem("Create parent for selected", 0, false, nSelected >= 2)) {
-            vec3 midPoint = vec3_Zero;
-            for (auto entity : selection->selected) {
-               midPoint += entity.GetTransform().Position();
-            }
-            midPoint /= (float)selection->selected.size();
-
-            Entity parentForSelected = CreateEmpty(scene, "Parent for selected", {}, midPoint);
-            for (auto entity : selection->selected) {
-               entity.GetTransform().SetParent(parentForSelected);
-            }
-            return parentForSelected;
+            return CreateParentForEntities(scene, selection->selected);
+         }
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Create new entity at middle point and set one as parent for selected entities");
          }
 
-         if (ImGui::MenuItem("Last selected as parent for selected", 0, false, nSelected >= 2)) {
+         if (ImGui::MenuItem("Last selected as parent for rest", 0, false, nSelected >= 2)) {
             Entity parentForSelected = selection->LastSelected();
 
             for (auto entity : selection->selected | std::views::reverse | std::views::drop(1)) {
                entity.GetTransform().SetParent(parentForSelected);
             }
             return parentForSelected;
+         }
+         if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Make last selected entity as parent for rest selected entities");
+         }
+
+         ImGui::Separator();
+
+         if (ImGui::MenuItem("Add static rb", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
+               rb.dynamic = false;
+               entity.MarkComponentUpdated<RigidBodyComponent>();
+            }
+            // todo: notify
+         }
+         if (ImGui::MenuItem("Add dynamic rb", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
+               rb.dynamic = true;
+               entity.MarkComponentUpdated<RigidBodyComponent>();
+            }
+         }
+         if (ImGui::MenuItem("Make destructible", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
+               rb.destructible = true;
+               entity.MarkComponentUpdated<RigidBodyComponent>();
+            }
+         }
+
+         ImGui::Separator();
+
+         if (ImGui::MenuItem("Copy material from last selected", 0, false, nSelected >= 2)) {
+            MaterialComponent* materialForCopy = selection->LastSelected().TryGet<MaterialComponent>();
+
+            if (materialForCopy) {
+               for (auto entity : selection->selected | std::views::drop(1)) {
+                  if (auto material = entity.TryGet<MaterialComponent>()) {
+                     *material = *materialForCopy;
+                  }
+               }
+            }
+         }
+
+         ImGui::Separator();
+
+         // todo: random scale
+         float rndScale = 0.3f;
+
+         // todo: iterate on children too
+         if (ImGui::MenuItem("Randomize base color", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               if (auto material = entity.TryGet<MaterialComponent>()) {
+                  material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{-1}, vec3{1}) * rndScale);
+               }
+            }
+         }
+
+         if (ImGui::MenuItem("Randomize roughness", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               if (auto material = entity.TryGet<MaterialComponent>()) {
+                  material->roughness = Saturate(material->roughness + Random::Float(-1, 1) * rndScale);
+               }
+            }
+         }
+
+         if (ImGui::MenuItem("Randomize metalness", 0, false, nSelected >= 1)) {
+            for (auto entity : selection->selected) {
+               if (auto material = entity.TryGet<MaterialComponent>()) {
+                  material->metallic = Saturate(material->metallic + Random::Float(-1, 1) * rndScale);
+               }
+            }
          }
       }
 
