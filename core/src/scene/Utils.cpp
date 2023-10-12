@@ -42,6 +42,17 @@ namespace pbe {
       return entity;
    }
 
+   // todo: move to scene transform component
+   template<typename F>
+   static void SceneHierApplyFunc(Entity entity, F&& func) {
+      func(entity);
+
+      auto& trans = entity.GetTransform();
+      for (auto& childEntity : trans.children) {
+         SceneHierApplyFunc(childEntity, func);
+      }
+   }
+
    Entity CreateCube(Scene& scene, const CubeDesc& desc) {
       auto entity = CreateEmpty(scene, desc.namePrefix, desc.parent, desc.pos, desc.space);
 
@@ -253,9 +264,17 @@ namespace pbe {
          // todo: iterate on children too
          if (ImGui::MenuItem("Randomize base color", 0, false, nSelected >= 1)) {
             for (auto entity : selection->selected) {
-               if (auto material = entity.TryGet<MaterialComponent>()) {
-                  material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{-1}, vec3{1}) * rndScale);
-               }
+               // if (auto material = entity.TryGet<MaterialComponent>()) {
+               //    material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{-1}, vec3{1}) * rndScale);
+               // }
+
+               SceneHierApplyFunc(entity,
+                  [rndScale] (Entity& entity)
+                  {
+                     if (auto material = entity.TryGet<MaterialComponent>()) {
+                        material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{ -1 }, vec3{ 1 }) * rndScale);
+                     }
+                  });
             }
          }
 
