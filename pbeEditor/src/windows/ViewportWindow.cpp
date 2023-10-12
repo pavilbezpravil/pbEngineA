@@ -237,6 +237,22 @@ namespace pbe {
                }
             }
 
+            if (Input::IsKeyDown(KeyCode::E)) {
+               notifyManager.AddNotify("Unselected parent and select children");
+
+               Entity lastSelected = selection->LastSelected();
+
+               if (Input::IsKeyPressing(KeyCode::Shift)) {
+                  selection->Unselect(lastSelected);
+               } else {
+                  selection->ClearSelection();
+               }
+
+               for (auto& childEntity : lastSelected.GetTransform().children) {
+                  selection->Select(childEntity, false);
+               }
+            }
+
             if (Input::IsKeyDown(KeyCode::Q)) {
                notifyManager.AddNotify("Selected parent");
 

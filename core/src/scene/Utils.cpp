@@ -35,20 +35,32 @@ namespace pbe {
       return parentForSelected;
    }
 
+   template<typename F>
+   concept FuncTakesEntity = requires(F func, Entity& entity) {
+      func(entity);
+   };
+
+   template<typename F>
+   concept FuncTakesConstEntity = requires(F func, const Entity& entity) {
+      func(entity);
+   };
+
    // todo: move to other place
    struct SceneHier {
-      // todo: reqiure
-      template<typename F>
-      static void ApplyFunc(Entity entity, F&& func) {
-         func(entity);
+      template<typename F> requires FuncTakesEntity<F>
+      static void ApplyFuncForChildren(Entity root, bool applyOnRoot, F&& func) {
+         if (applyOnRoot) {
+            func(root);
+         }
 
-         auto& trans = entity.GetTransform();
+         auto& trans = root.GetTransform();
          for (auto& childEntity : trans.children) {
-            ApplyFunc(childEntity, func);
+            ApplyFuncForChildren(childEntity, true, std::forward<F>(func));
          }
       }
 
-      template<typename F>
+      // requires requires (F func, const Entity& entity) { func(entity); }
+      template<typename F> requires FuncTakesConstEntity<F>
       static Entity FindParentWith(const Entity& entity, F&& pred) {
          const auto& trans = entity.GetTransform();
 
@@ -57,7 +69,7 @@ namespace pbe {
             return parent;
          }
 
-         return FindParentWith(parent, pred);
+         return FindParentWith(parent, std::forward<F>(pred));
       }
 
       template<typename Comp>
@@ -281,13 +293,20 @@ namespace pbe {
          ImGui::Separator();
 
          if (ImGui::MenuItem("Copy material from last selected", 0, false, nSelected >= 2)) {
-            MaterialComponent* materialForCopy = selection->LastSelected().TryGet<MaterialComponent>();
+            Entity lastSelected = selection->LastSelected();
+            MaterialComponent* materialForCopy = lastSelected.TryGet<MaterialComponent>();
 
             if (materialForCopy) {
-               for (auto entity : selection->selected | std::views::drop(1)) {
+               auto func = [&](Entity& entity) {
                   if (auto material = entity.TryGet<MaterialComponent>()) {
                      *material = *materialForCopy;
                   }
+               };
+
+               SceneHier::ApplyFuncForChildren(lastSelected, false, func);
+
+               for (auto entity : selection->selected | std::views::reverse | std::views::drop(1)) {
+                  SceneHier::ApplyFuncForChildren(entity, true, func);
                }
             }
          }
@@ -299,7 +318,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize base color", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFunc(entity,
+               SceneHier::ApplyFuncForChildren(entity, true,
                   [&] (Entity& entity){
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{ -1 }, vec3{ 1 }) * rndScale);
@@ -310,7 +329,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize roughness", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFunc(entity,
+               SceneHier::ApplyFuncForChildren(entity, true,
                   [&](Entity& entity) {
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->roughness = Saturate(material->roughness + Random::Float(-1, 1) * rndScale);
@@ -321,7 +340,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize metalness", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFunc(entity,
+               SceneHier::ApplyFuncForChildren(entity, true,
                   [&](Entity& entity) {
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->metallic = Saturate(material->metallic + Random::Float(-1, 1) * rndScale);
