@@ -35,22 +35,46 @@ namespace pbe {
       return parentForSelected;
    }
 
+   // todo: move to other place
+   struct SceneHier {
+      // todo: reqiure
+      template<typename F>
+      static void ApplyFunc(Entity entity, F&& func) {
+         func(entity);
+
+         auto& trans = entity.GetTransform();
+         for (auto& childEntity : trans.children) {
+            ApplyFunc(childEntity, func);
+         }
+      }
+
+      template<typename F>
+      static Entity FindParentWith(const Entity& entity, F&& pred) {
+         const auto& trans = entity.GetTransform();
+
+         const auto& parent = trans.parent;
+         if (!parent || pred(parent)) {
+            return parent;
+         }
+
+         return FindParentWith(parent, pred);
+      }
+
+      template<typename Comp>
+      static Entity FindParentWithComponent(const Entity& entity) {
+         return FindParentWith(entity, [](const Entity& entity) { return entity.Has<Comp>(); });
+      }
+   };
+
+   static bool MayAddRigidBody(const Entity& entity) {
+      return SceneHier::FindParentWithComponent<RigidBodyComponent>(entity) == NullEntity;
+   }
+
    static Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos, Space space) {
       // todo: find appropriate name
       auto entity = scene.Create(parent, namePrefix);
       entity.Get<SceneTransformComponent>().SetPosition(pos, space);
       return entity;
-   }
-
-   // todo: move to scene transform component
-   template<typename F>
-   static void SceneHierApplyFunc(Entity entity, F&& func) {
-      func(entity);
-
-      auto& trans = entity.GetTransform();
-      for (auto& childEntity : trans.children) {
-         SceneHierApplyFunc(childEntity, func);
-      }
    }
 
    Entity CreateCube(Scene& scene, const CubeDesc& desc) {
@@ -221,6 +245,10 @@ namespace pbe {
 
          if (ImGui::MenuItem("Add static rb", 0, false, nSelected >= 1)) {
             for (auto entity : selection->selected) {
+               if (!MayAddRigidBody(entity)) {
+                  continue;
+               }
+
                RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
                rb.dynamic = false;
                entity.MarkComponentUpdated<RigidBodyComponent>();
@@ -229,6 +257,10 @@ namespace pbe {
          }
          if (ImGui::MenuItem("Add dynamic rb", 0, false, nSelected >= 1)) {
             for (auto entity : selection->selected) {
+               if (!MayAddRigidBody(entity)) {
+                  continue;
+               }
+
                RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
                rb.dynamic = true;
                entity.MarkComponentUpdated<RigidBodyComponent>();
@@ -236,6 +268,10 @@ namespace pbe {
          }
          if (ImGui::MenuItem("Make destructible", 0, false, nSelected >= 1)) {
             for (auto entity : selection->selected) {
+               if (!MayAddRigidBody(entity)) {
+                  continue;
+               }
+
                RigidBodyComponent& rb = entity.GetOrAdd<RigidBodyComponent>();
                rb.destructible = true;
                entity.MarkComponentUpdated<RigidBodyComponent>();
@@ -261,16 +297,10 @@ namespace pbe {
          // todo: random scale
          float rndScale = 0.3f;
 
-         // todo: iterate on children too
          if (ImGui::MenuItem("Randomize base color", 0, false, nSelected >= 1)) {
-            for (auto entity : selection->selected) {
-               // if (auto material = entity.TryGet<MaterialComponent>()) {
-               //    material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{-1}, vec3{1}) * rndScale);
-               // }
-
-               SceneHierApplyFunc(entity,
-                  [rndScale] (Entity& entity)
-                  {
+            for (auto& entity : selection->selected) {
+               SceneHier::ApplyFunc(entity,
+                  [&] (Entity& entity){
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{ -1 }, vec3{ 1 }) * rndScale);
                      }
@@ -279,18 +309,24 @@ namespace pbe {
          }
 
          if (ImGui::MenuItem("Randomize roughness", 0, false, nSelected >= 1)) {
-            for (auto entity : selection->selected) {
-               if (auto material = entity.TryGet<MaterialComponent>()) {
-                  material->roughness = Saturate(material->roughness + Random::Float(-1, 1) * rndScale);
-               }
+            for (auto& entity : selection->selected) {
+               SceneHier::ApplyFunc(entity,
+                  [&](Entity& entity) {
+                     if (auto material = entity.TryGet<MaterialComponent>()) {
+                        material->roughness = Saturate(material->roughness + Random::Float(-1, 1) * rndScale);
+                     }
+                  });
             }
          }
 
          if (ImGui::MenuItem("Randomize metalness", 0, false, nSelected >= 1)) {
-            for (auto entity : selection->selected) {
-               if (auto material = entity.TryGet<MaterialComponent>()) {
-                  material->metallic = Saturate(material->metallic + Random::Float(-1, 1) * rndScale);
-               }
+            for (auto& entity : selection->selected) {
+               SceneHier::ApplyFunc(entity,
+                  [&](Entity& entity) {
+                     if (auto material = entity.TryGet<MaterialComponent>()) {
+                        material->metallic = Saturate(material->metallic + Random::Float(-1, 1) * rndScale);
+                     }
+                  });
             }
          }
       }

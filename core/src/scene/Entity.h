@@ -140,4 +140,6 @@ namespace pbe {
       Scene* scene = nullptr;
    };
 
+   constexpr Entity NullEntity = {};
+
 }
