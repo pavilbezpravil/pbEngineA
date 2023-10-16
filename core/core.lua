@@ -44,7 +44,7 @@ project "core"
    }
 
    links {
-       "imgui", "d3d11", "yaml", "optick", "dxguid",
+       "imgui", "d3d11", "yaml", "optick", "dxguid", "dxgi",
        "PhysX_64",
        "PhysXCommon_64",
        "PhysXExtensions_static_64",

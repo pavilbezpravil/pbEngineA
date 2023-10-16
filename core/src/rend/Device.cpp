@@ -14,6 +14,50 @@ namespace pbe {
 
    Device* sDevice = nullptr;
 
+   std::string ToString(std::wstring_view wstr) {
+      std::string result;
+
+      int sz = WideCharToMultiByte(CP_ACP, 0, &wstr[0], (int)wstr.size(), 0, 0, 0, 0);
+      result = std::string(sz, 0);
+      WideCharToMultiByte(CP_ACP, 0, &wstr[0], (int)wstr.size(), &result[0], sz, 0, 0);
+
+      return result;
+   }
+
+   Microsoft::WRL::ComPtr<IDXGIAdapter1> CreateDeviceWithMostPowerfulAdapter() {
+      Microsoft::WRL::ComPtr<IDXGIFactory1> dxgiFactory;
+      HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)dxgiFactory.GetAddressOf());
+
+      if (FAILED(hr)) {
+         return {};
+      }
+
+      Microsoft::WRL::ComPtr<IDXGIAdapter1> mostPowerfulAdapter{};
+      size_t maxDedicatedVideoMemory = 0;
+
+      INFO("Adapter list:");
+      for (UINT i = 0; ; ++i) {
+         Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+         if (dxgiFactory->EnumAdapters1(i, adapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND) {
+            break; // No more adapters to enumerate
+         }
+
+         DXGI_ADAPTER_DESC1 desc;
+         adapter->GetDesc1(&desc);
+
+         auto deviceName = desc.Description;
+         auto name = ToString(std::wstring_view{ deviceName, wcslen(deviceName) });
+         INFO("{}. {} {} Mb", i, name, desc.DedicatedVideoMemory / 1024 / 1024);
+
+         if (desc.DedicatedVideoMemory > maxDedicatedVideoMemory) {
+            maxDedicatedVideoMemory = desc.DedicatedVideoMemory;
+            mostPowerfulAdapter = adapter;
+         }
+      }
+
+      return mostPowerfulAdapter;
+   }
+
    Device::Device() {
       sDevice = this;
 
@@ -41,13 +85,15 @@ namespace pbe {
       INFO("Create device with debug layer");
 #endif
 
+      auto adapter = CreateDeviceWithMostPowerfulAdapter();
+
       ID3D11Device* device;
       ID3D11DeviceContext* context{};
 
       D3D_FEATURE_LEVEL featureLevel;
       const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_10_0, };
       // const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_10_0, };
-      if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2,
+      if (D3D11CreateDeviceAndSwapChain(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, createDeviceFlags, featureLevelArray, 2,
          D3D11_SDK_VERSION, &sd, &g_pSwapChain, &device, &featureLevel,
          &context) != S_OK) {
          WARN("Failed create device");
