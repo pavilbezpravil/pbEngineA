@@ -24,6 +24,15 @@ namespace pbe {
       return result;
    }
 
+   std::string AdapterToString(IDXGIAdapter1& adapter) {
+      DXGI_ADAPTER_DESC1 desc;
+      adapter.GetDesc1(&desc);
+
+      auto deviceName = desc.Description;
+      auto name = ToString(std::wstring_view{ deviceName, wcslen(deviceName) });
+      return std::format("{} {} Mb", name, desc.DedicatedVideoMemory / 1024 / 1024);
+   }
+
    Microsoft::WRL::ComPtr<IDXGIAdapter1> CreateDeviceWithMostPowerfulAdapter() {
       Microsoft::WRL::ComPtr<IDXGIFactory1> dxgiFactory;
       HRESULT hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)dxgiFactory.GetAddressOf());
@@ -45,15 +54,15 @@ namespace pbe {
          DXGI_ADAPTER_DESC1 desc;
          adapter->GetDesc1(&desc);
 
-         auto deviceName = desc.Description;
-         auto name = ToString(std::wstring_view{ deviceName, wcslen(deviceName) });
-         INFO("{}. {} {} Mb", i, name, desc.DedicatedVideoMemory / 1024 / 1024);
-
          if (desc.DedicatedVideoMemory > maxDedicatedVideoMemory) {
             maxDedicatedVideoMemory = desc.DedicatedVideoMemory;
             mostPowerfulAdapter = adapter;
          }
+
+         INFO("\t{}. {}", i, AdapterToString(*adapter.Get()));
       }
+
+      INFO("Use adapter: {}", AdapterToString(*mostPowerfulAdapter.Get()));
 
       return mostPowerfulAdapter;
    }

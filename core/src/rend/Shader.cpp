@@ -88,11 +88,11 @@ namespace pbe {
    CVarValue<bool> cShaderReloadOnAnyChange{ "shaders/reload on any change", true};
    CVarValue<bool> cShaderUseCache{ "shaders/use cache", false}; // todo:
 
-   size_t StrHash(std::string_view str) {
+   static size_t StrHash(std::string_view str) {
       return std::hash<std::string_view>()(str);
    }
 
-   std::wstring ToWstr(std::string_view str) {
+   static std::wstring ToWstr(std::string_view str) {
       return std::wstring(str.begin(), str.end());
    }
 
