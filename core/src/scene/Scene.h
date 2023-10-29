@@ -1,7 +1,6 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
+#include "ECSScene.h"
 #include "core/Core.h"
 #include "core/Ref.h"
 #include "math/Types.h"
@@ -18,11 +17,7 @@ namespace pbe {
 
    class Entity;
 
-   struct DelayedDisableMarker {};
-   struct DelayedEnableMarker {};
-   struct DisableMarker {};
-
-   class CORE_API Scene {
+   class CORE_API Scene : public ECSScene {
    public:
       Scene(bool withRoot = true);
       ~Scene();
@@ -52,31 +47,6 @@ namespace pbe {
 
       void DestroyDelayedEntities();
 
-      // todo: mb DelayedDisableMarker add on 'exludes'?
-      template<typename Type, typename... Other, typename... Exclude>
-      const auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) const {
-         return registry.view<Type, Other...>(excludes);
-      }
-
-      template<typename Type, typename... Other, typename... Exclude>
-      auto View(entt::exclude_t<DisableMarker, Exclude...> excludes = entt::exclude_t<DisableMarker>{}) {
-         return registry.view<Type, Other...>(excludes);
-      }
-
-      template<typename Type, typename... Other, typename... Exclude>
-      auto ViewAll(entt::exclude_t<Exclude...> excludes = entt::exclude_t{}) {
-         return registry.view<Type, Other...>(excludes);
-      }
-
-      template<typename Type, typename... Other>
-      int CountEntitiesWithComponents() const {
-         int count = 0;
-         View<Type, Other...>().each([&](auto& c) {
-            ++count;
-         });
-         return count;
-      }
-
       template<typename Component>
       Entity GetAnyWithComponent() const {
          auto entity = View<Component>().front();
@@ -96,11 +66,6 @@ namespace pbe {
          } else {
             return Entity{ entity, this };
          }
-      }
-
-      template<typename Component>
-      void ClearComponent() {
-         registry.clear<Component>();
       }
 
       // process all pending changes with entities (remove\add entity, remove\add component, etc)
@@ -129,8 +94,7 @@ namespace pbe {
       static Scene* GetCurrentDeserializedScene();
 
    private:
-      entt::registry registry;
-      entt::entity rootEntityId { entt::null };
+      EntityID rootEntityId = NullEntityID;
 
       std::unordered_map<uint64, entt::entity> uuidToEntities;
 

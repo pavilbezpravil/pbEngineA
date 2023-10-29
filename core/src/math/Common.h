@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.h"
+#include "core/Core.h"
 
 
 namespace pbe {
@@ -23,5 +24,8 @@ namespace pbe {
    constexpr T Lerp(T x, T y, U t) {
       return glm::mix(x, y, t);
    }
+
+   CORE_API std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform);
+
 
 }

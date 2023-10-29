@@ -1,31 +1,11 @@
 #pragma once
 
-#include <entt/entt.hpp>
-
 #include "Scene.h"
 #include "core/Assert.h"
 
 namespace pbe {
 
-   template<typename... T>
-   void remove_all_with_filter(entt::registry& registry, entt::entity entt) {
-      for (auto [id, storage] : registry.storage()) {
-         if (((storage.type() != entt::type_id<T>()) && ...)) {
-            storage.remove(entt);
-         }
-      }
-   }
-
-   // todo: remove
-   template<typename T>
-   concept Entity_HasOwner = requires(T a) {
-      { a.owner };
-   };
-
    struct SceneTransformComponent;
-
-   using EntityID = entt::entity;
-   constexpr EntityID NullEntityID = entt::null;
 
    class CORE_API Entity {
    public:
@@ -33,86 +13,39 @@ namespace pbe {
       Entity(EntityID id, Scene* scene);
 
       template<typename T, typename...Cs>
-      decltype(auto) Add(Cs&&... cs) {
-         ASSERT(!Has<T>());
-
-         if constexpr (std::is_empty_v<T>) {
-            return scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
-         } else {
-            // todo: remove branch
-            auto& component = scene->registry.emplace<T>(id, std::forward<Cs>(cs)...);
-            // not best way to set owner, but it works fine)
-            if constexpr (Entity_HasOwner<T>) {
-               component.owner = *this;
-            }
-            return component;
-         }
-      }
+      decltype(auto) Add(Cs&&... cs) { return scene->AddComponent<T>(id, std::forward<Cs>(cs)...); }
 
       template<typename T, typename...Cs>
-      decltype(auto) AddOrReplace(Cs&&... cs) {
-         return scene->registry.emplace_or_replace<T>(id, std::forward<Cs>(cs)...);
-      }
+      decltype(auto) AddOrReplace(Cs&&... cs) { return scene->AddOrReplaceComponent<T>(id, std::forward<Cs>(cs)...); }
 
       template<typename T, typename...Cs>
-      void Remove() {
-         ASSERT(Has<T>());
-         scene->registry.erase<T>(id);
-      }
-
-      template<typename... Exclude>
-      void RemoveAll() {
-         remove_all_with_filter<Exclude...>(scene->registry, id);
-      }
+      void Remove() { scene->RemoveComponent<T>(id); }
 
       template<typename... Type>
-      bool Has() const {
-         return scene->registry.all_of<Type...>(id);
-      }
+      bool Has() const { return scene->HasComponent<Type...>(id); }
 
       template<typename... Type>
-      bool HasAny() const {
-         return scene->registry.any_of<Type...>(id);
-      }
+      bool HasAny() const { return scene->HasAnyComponent<Type...>(id); }
 
       template<typename... Type>
-      decltype(auto) Get() {
-         ASSERT(Has<Type...>());
-         return scene->registry.get<Type...>(id);
-      }
+      decltype(auto) Get() { return scene->GetComponent<Type...>(id); }
 
       template<typename... Type>
-      decltype(auto) Get() const {
-         ASSERT(Has<Type...>());
-         return scene->registry.get<Type...>(id);
-      }
+      decltype(auto) Get() const { return scene->GetComponent<Type...>(id); }
 
       template<typename T>
-      T* TryGet() {
-         return scene->registry.try_get<T>(id);
-      }
+      T* TryGet() { return scene->TryGetComponent<T>(id); }
 
       template<typename T>
-      const T* TryGet() const {
-         return scene->registry.try_get<T>(id);
-      }
+      const T* TryGet() const { return scene->TryGetComponent<T>(id); }
 
       template<typename T, typename...Cs>
-      T& GetOrAdd(Cs&&... cs) {
-         if (auto c = TryGet<T>()) {
-            return *c;
-         }
-         return Add<T>(std::forward<Cs>(cs)...);
-      }
+      T& GetOrAdd(Cs&&... cs) { return scene->GetOrAddComponent<T>(id, std::forward<Cs>(cs)...); }
 
       template<typename T>
-      void MarkComponentUpdated() {
-         ASSERT(Has<T>());
-         scene->registry.patch<T>(id);
-      }
+      void MarkComponentUpdated() { scene->PatchComponent<T>(id); }
 
-      void DestroyDelayed(bool withChilds = true);
-      void DestroyImmediate(bool withChilds = true);
+      void DestroyDelayed();
 
       bool Enabled() const;
       void Enable();

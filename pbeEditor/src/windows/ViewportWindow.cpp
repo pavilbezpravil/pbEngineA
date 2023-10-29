@@ -14,6 +14,7 @@
 #include "typer/Registration.h"
 #include "app/Window.h"
 #include "gui/Gui.h"
+#include "math/Common.h"
 #include "physics/PhysComponents.h"
 #include "physics/PhysicsScene.h"
 #include "scene/Utils.h"

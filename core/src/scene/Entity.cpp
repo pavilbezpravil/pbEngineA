@@ -5,16 +5,10 @@
 
 namespace pbe {
 
-   Entity::Entity(entt::entity id, Scene* scene) :id(id), scene(scene) {
-   }
+   Entity::Entity(entt::entity id, Scene* scene) : id(id), scene(scene) { }
 
-   void Entity::DestroyDelayed(bool withChilds) {
-      scene->DestroyDelayed(*this, withChilds);
-   }
-
-   void Entity::DestroyImmediate(bool withChilds) {
-      scene->DestroyImmediate(*this, withChilds);
-      (*this) = {};
+   void Entity::DestroyDelayed() {
+      scene->DestroyDelayed(*this);
    }
 
    bool Entity::Enabled() const {

@@ -2,6 +2,7 @@
 #include "Utils.h"
 
 #include "Component.h"
+#include "SceneHier.h"
 #include "../../../pbeEditor/src/EditorSelection.h" // todo:
 #include "app/Input.h"
 #include "gui/Gui.h"
@@ -34,49 +35,6 @@ namespace pbe {
 
       return parentForSelected;
    }
-
-   template<typename F>
-   concept FuncTakesEntity = requires(F func, Entity& entity) {
-      func(entity);
-   };
-
-   template<typename F>
-   concept FuncTakesConstEntity = requires(F func, const Entity& entity) {
-      func(entity);
-   };
-
-   // todo: move to other place
-   struct SceneHier {
-      template<typename F> requires FuncTakesEntity<F>
-      static void ApplyFuncForChildren(Entity root, bool applyOnRoot, F&& func) {
-         if (applyOnRoot) {
-            func(root);
-         }
-
-         auto& trans = root.GetTransform();
-         for (auto& childEntity : trans.children) {
-            ApplyFuncForChildren(childEntity, true, std::forward<F>(func));
-         }
-      }
-
-      // requires requires (F func, const Entity& entity) { func(entity); }
-      template<typename F> requires FuncTakesConstEntity<F>
-      static Entity FindParentWith(const Entity& entity, F&& pred) {
-         const auto& trans = entity.GetTransform();
-
-         const auto& parent = trans.parent;
-         if (!parent || pred(parent)) {
-            return parent;
-         }
-
-         return FindParentWith(parent, std::forward<F>(pred));
-      }
-
-      template<typename Comp>
-      static Entity FindParentWithComponent(const Entity& entity) {
-         return FindParentWith(entity, [](const Entity& entity) { return entity.Has<Comp>(); });
-      }
-   };
 
    static bool MayAddRigidBody(const Entity& entity) {
       return SceneHier::FindParentWithComponent<RigidBodyComponent>(entity) == NullEntity;
