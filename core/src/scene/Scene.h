@@ -7,6 +7,7 @@
 
 
 namespace pbe {
+
    class System;
    class PhysicsScene;
    struct Deserializer;
@@ -23,10 +24,9 @@ namespace pbe {
       ~Scene();
 
       Entity Create(std::string_view name = {});
-      Entity Create(const Entity& parent, std::string_view name = {});
 
-      // todo: to private
-      Entity CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name = {});
+      void DestroyDelayed(EntityID entityID);
+      void DestroyImmediate(EntityID entityID);
 
       Entity GetEntity(UUID uuid);
 
@@ -36,37 +36,8 @@ namespace pbe {
       Entity Duplicate(const Entity& entity);
 
       // Delayed
-      bool EntityEnabled(const Entity& entity) const;
-      void EntityEnable(Entity& entity, bool withChilds = true);
-      void EntityDisable(Entity& entity, bool withChilds = true);
-
-      void ProcessDelayedEnable();
-
-      void DestroyDelayed(Entity entity, bool withChilds = true);
-      void DestroyImmediate(Entity entity, bool withChilds = true);
-
-      void DestroyDelayedEntities();
-
-      template<typename Component>
-      Entity GetAnyWithComponent() const {
-         auto entity = View<Component>().front();
-         if (entity == entt::null) {
-            return Entity{};
-         } else {
-            // todo: const_cast((
-            return Entity{ entity, const_cast<Scene*>(this) };
-         }
-      }
-
-      template<typename Component>
-      Entity GetAnyWithComponent() {
-         auto entity = View<Component>().front();
-         if (entity == entt::null) {
-            return Entity{};
-         } else {
-            return Entity{ entity, this };
-         }
-      }
+      bool EntityEnabled(EntityID entityID) const;
+      void EntityEnable(EntityID entityID, bool enable, bool withChilds = true);
 
       // process all pending changes with entities (remove\add entity, remove\add component, etc)
       void OnSync();
@@ -101,6 +72,11 @@ namespace pbe {
       // todo: move to scene component?
       std::vector<Own<System>> systems;
 
+      // todo: to private
+      Entity CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name = {});
+
+      void ProcessDelayedEnable();
+
       void EntityDisableImmediate(Entity& entity);
 
       struct DuplicateContext {
@@ -114,6 +90,7 @@ namespace pbe {
 
       friend Entity;
       friend CORE_API Own<Scene> SceneDeserialize(std::string_view path);
+      friend CORE_API void EntityDeserialize(const Deserializer& deser, Scene& scene);
    };
 
    CORE_API void SceneSerialize(std::string_view path, Scene& scene);

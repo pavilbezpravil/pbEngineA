@@ -12,6 +12,9 @@
 
 namespace pbe {
 
+   struct DelayedDestroyMarker {
+   };
+
    Scene::Scene(bool withRoot) {
       dbgRend = std::make_unique<DbgRend>();
 
@@ -31,28 +34,26 @@ namespace pbe {
       return CreateWithUUID(UUID{}, GetRootEntity(), name);
    }
 
-   Entity Scene::Create(const Entity& parent, std::string_view name) {
-      return CreateWithUUID(UUID{}, parent ? parent : GetRootEntity(), name);
+   void Scene::DestroyDelayed(EntityID entityID) {
+      GetOrAddComponent<DelayedDestroyMarker>(entityID);
    }
 
-   Entity Scene::CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name) {
-      auto entityID = registry.create();
-
+   void Scene::DestroyImmediate(EntityID entityID) {
       auto entity = Entity{ entityID, this };
-      entity.Add<UUIDComponent>(uuid);
-      if (!name.empty()) {
-         entity.Add<TagComponent>(name.data());
-      } else {
-         // todo: support entity without name
-         entity.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
+      auto& trans = entity.GetTransform();
+
+      // todo: mb use iterator on children?
+      for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
+         auto& child = trans.children[iChild];
+         DestroyImmediate(child.GetEntityID());
+
+         // note: scene component may be shrink during child destroy
+         trans = entity.GetTransform();
       }
+      trans.SetParentInternal();
 
-      entity.Add<SceneTransformComponent>(entity, parent);
-
-      ASSERT(uuidToEntities.find(uuid) == uuidToEntities.end());
-      uuidToEntities[uuid] = entityID;
-
-      return entity;
+      uuidToEntities.erase(entity.GetUUID());
+      registry.destroy(entity.GetEntityID());
    }
 
    Entity Scene::GetEntity(UUID uuid) {
@@ -67,7 +68,7 @@ namespace pbe {
    void Scene::SetRootEntity(const Entity& entity) {
       ASSERT(entity.GetTransform().HasParent() == false);
       ASSERT(rootEntityId == entt::null);
-      rootEntityId = entity.GetID();
+      rootEntityId = entity.GetEntityID();
    }
 
    Entity Scene::Duplicate(const Entity& entity) {
@@ -100,124 +101,61 @@ namespace pbe {
       return duplicatedEntity;
    }
 
-   bool Scene::EntityEnabled(const Entity& entity) const {
-      return !entity.HasAny<DisableMarker, DelayedDisableMarker, DelayedEnableMarker>();
+   bool Scene::EntityEnabled(EntityID entityID) const {
+      return !HasAnyComponent<DisableMarker, DelayedDisableMarker, DelayedEnableMarker>(entityID);
    }
 
-   void Scene::EntityEnable(Entity& entity, bool withChilds) {
-      if (entity.Has<DelayedEnableMarker>()) {
-         return;
-      }
-      if (entity.Has<DelayedDisableMarker>()) {
-         entity.Remove<DelayedDisableMarker>();
-         return;
-      }
-      if (!entity.Has<DisableMarker>()) {
-         return;
-      }
+   void Scene::EntityEnable(EntityID entityID, bool enable, bool withChilds) {
+      auto entity = Entity{ entityID, this };
 
-      if (withChilds) {
-         for (auto& child : entity.GetTransform().children) {
-            EntityEnable(child);
+      if (enable) {
+         if (entity.Has<DelayedEnableMarker>()) {
+            return;
          }
-      }
-
-      entity.Add<DelayedEnableMarker>();
-      ASSERT(entity.Has<DisableMarker>() && !entity.Has<DelayedDisableMarker>());
-   }
-
-   // todo: when add child to disabled entity, it must be disabled too
-   void Scene::EntityDisable(Entity& entity, bool withChilds) {
-      if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
-         return;
-      }
-      if (entity.Has<DelayedEnableMarker>()) {
-         entity.Remove<DelayedEnableMarker>();
-         return;
-      }
-
-      if (withChilds) {
-         for (auto& child : entity.GetTransform().children) {
-            EntityDisable(child);
+         if (entity.Has<DelayedDisableMarker>()) {
+            entity.Remove<DelayedDisableMarker>();
+            return;
          }
-      }
+         if (!entity.Has<DisableMarker>()) {
+            return;
+         }
 
-      entity.Add<DelayedDisableMarker>();
-      ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
-   }
-
-   void Scene::ProcessDelayedEnable() {
-      // disable
-      for (auto& system : systems) {
-         system->OnEntityDisable();
-      }
-
-      // todo: iterate over all systems or only scripts
-      // const auto& typer = Typer::Get();
-      // for (const auto& si : typer.scripts) {
-      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
-      // }
-
-      for (auto e : ViewAll<DelayedDisableMarker>()) {
-         registry.emplace<DisableMarker>(e);
-      }
-      registry.clear<DelayedDisableMarker>();
-
-      // enable
-      for (auto& system : systems) {
-         system->OnEntityEnable();
-      }
-
-      // todo: iterate over all systems or only scripts
-      // for (const auto& si : typer.scripts) {
-      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
-      // }
-
-      for (auto [entityID, trans] : ViewAll<DelayedEnableMarker, SceneTransformComponent>().each()) {
-         trans.UpdatePrevTransform();
-         registry.erase<DisableMarker>(entityID);
-      }
-      registry.clear<DelayedEnableMarker>();
-   }
-
-   struct DelayedDestroyMarker {
-      bool withChilds = false; // todo: remove?
-   };
-
-   void Scene::DestroyDelayed(Entity entity, bool withChilds) {
-      entity.GetOrAdd<DelayedDestroyMarker>(withChilds);
-   }
-
-   void Scene::DestroyImmediate(Entity entity, bool withChilds) {
-      auto& trans = entity.GetTransform();
-
-      // todo: mb use iterator on children?
-      for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
-         auto& child = trans.children[iChild];
          if (withChilds) {
-            DestroyImmediate(child, true);
-         } else {
-            child.GetTransform().SetParent(trans.parent);
+            for (auto& child : entity.GetTransform()) {
+               EntityEnable(child.GetEntityID(), true);
+            }
          }
 
-         // todo: scene component may be shrink during child destroy
-         trans = entity.GetTransform();
-      }
-      trans.SetParentInternal();
+         entity.Add<DelayedEnableMarker>();
+         ASSERT(entity.Has<DisableMarker>() && !entity.Has<DelayedDisableMarker>());
+      } else {
+         // todo: when add child to disabled entity, it must be disabled too
+         if (entity.HasAny<DisableMarker, DelayedDisableMarker>()) {
+            return;
+         }
+         if (entity.Has<DelayedEnableMarker>()) {
+            entity.Remove<DelayedEnableMarker>();
+            return;
+         }
 
-      uuidToEntities.erase(entity.GetUUID());
-      registry.destroy(entity.GetID());
-   }
+         if (withChilds) {
+            for (auto& child : entity.GetTransform()) {
+               EntityEnable(child.GetEntityID(), false);
+            }
+         }
 
-   void Scene::DestroyDelayedEntities() {
-      for (auto [e, marker] : registry.view<DelayedDestroyMarker>().each()) {
-         DestroyImmediate(Entity{e, this}, marker.withChilds);
+         entity.Add<DelayedDisableMarker>();
+         ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker>()));
       }
-      registry.clear<DelayedDestroyMarker>();
    }
 
    void Scene::OnSync() {
-      DestroyDelayedEntities();
+      // destroy delayed entities
+      for (auto e : registry.view<DelayedDestroyMarker>()) {
+         DestroyImmediate(e);
+      }
+      registry.clear<DelayedDestroyMarker>();
+
       ProcessDelayedEnable();
    }
 
@@ -245,7 +183,7 @@ namespace pbe {
       for (auto [entityID, td] : View<TimedDieComponent>().each()) {
          td.time -= dt;
          if (td.time < 0.f) {
-            DestroyDelayed(Entity{ entityID, this });
+            DestroyDelayed(entityID);
          }
       }
       OnSync();
@@ -312,13 +250,68 @@ namespace pbe {
       return gCurrentDeserializedScene;
    }
 
+   Entity Scene::CreateWithUUID(UUID uuid, const Entity& parent, std::string_view name) {
+      auto entityID = registry.create();
+
+      auto entity = Entity{ entityID, this };
+      entity.Add<UUIDComponent>(uuid);
+      if (!name.empty()) {
+         entity.Add<TagComponent>(name.data());
+      }
+      else {
+         // todo: support entity without name
+         entity.Add<TagComponent>(std::format("{} {}", "Entity", EntitiesCount()));
+      }
+
+      entity.Add<SceneTransformComponent>(entity, parent);
+
+      ASSERT(uuidToEntities.find(uuid) == uuidToEntities.end());
+      uuidToEntities[uuid] = entityID;
+
+      return entity;
+   }
+
+   void Scene::ProcessDelayedEnable() {
+      // disable
+      for (auto& system : systems) {
+         system->OnEntityDisable();
+      }
+
+      // todo: iterate over all systems or only scripts
+      // const auto& typer = Typer::Get();
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnDisable(); });
+      // }
+
+      for (auto e : ViewAll<DelayedDisableMarker>()) {
+         registry.emplace<DisableMarker>(e);
+      }
+      registry.clear<DelayedDisableMarker>();
+
+      // enable
+      for (auto& system : systems) {
+         system->OnEntityEnable();
+      }
+
+      // todo: iterate over all systems or only scripts
+      // for (const auto& si : typer.scripts) {
+      //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
+      // }
+
+      for (auto [entityID, trans] : ViewAll<DelayedEnableMarker, SceneTransformComponent>().each()) {
+         trans.UpdatePrevTransform();
+         registry.erase<DisableMarker>(entityID);
+      }
+      registry.clear<DelayedEnableMarker>();
+   }
+
    void Scene::EntityDisableImmediate(Entity& entity) {
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
       entity.Add<DisableMarker>();
    }
 
    void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
-      hierEntitiesMap[src.GetUUID()] = DuplicateContext{ dst.GetID(), src.Enabled() };
+      hierEntitiesMap[src.GetUUID()] = DuplicateContext{ dst.GetEntityID(), src.Enabled() };
       // while duplicate entities, disable them
       dst.GetScene()->EntityDisableImmediate(dst);
 
@@ -392,12 +385,7 @@ namespace pbe {
       // todo: not fastest solution, find better way to implement copy scene, duplicate logic
 
       for (auto [_, context] : hierEntitiesMap) {
-         Entity entity{ context.enttEntity, this };
-         if (context.enabled) {
-            EntityEnable(entity, false);
-         } else {
-            EntityDisable(entity, false);
-         }
+         EntityEnable(context.enttEntity, context.enabled, false);
       }
    }
 
@@ -489,7 +477,7 @@ namespace pbe {
          if (rootEntityId != entt::null) {
             WARN("Scene has several roots. Create new root and parenting to it all entities without parent");
             auto newRoot = scene->CreateWithUUID(UUID{}, Entity{}, "Scene");
-            rootEntityId = newRoot.GetID();
+            rootEntityId = newRoot.GetEntityID();
 
             for (auto [e, trans] : scene->ViewAll<SceneTransformComponent>().each()) {
                if (!trans.parent) {
@@ -593,7 +581,7 @@ namespace pbe {
       }
 
       if (enabled) {
-         entity.GetScene()->EntityEnable(entity, false);
+         entity.GetScene()->EntityEnable(entity.GetEntityID(), true, false);
       }
    }
 }

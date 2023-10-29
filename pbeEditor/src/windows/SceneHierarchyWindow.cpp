@@ -15,10 +15,8 @@ namespace pbe {
       if (ui::DragDropTarget ddTarget{ DRAG_DROP_ENTITY }) {
          auto childEnt = *ddTarget.GetPayload<Entity>();
          Undo::Get().SaveForFuture(childEnt); // todo: dont work
-         bool changed = childEnt.Get<SceneTransformComponent>().SetParent(entity); // todo: add to pending not in all case
-         if (changed) {
-            Undo::Get().PushSave();
-         }
+         childEnt.Get<SceneTransformComponent>().SetParent(entity); // todo: add to pending not in all case
+         Undo::Get().PushSave();
       }
    }
 
@@ -124,7 +122,7 @@ namespace pbe {
                if (selection) {
                   selection->Unselect(entity);
                }
-               pScene->DestroyImmediate(entity);
+               pScene->DestroyDelayed(entity.GetEntityID());
             }
 
             if (ImGui::MenuItem("Unparent")) {

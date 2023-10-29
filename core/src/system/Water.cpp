@@ -281,7 +281,7 @@ namespace pbe {
    }
 
    void Water::Render(CommandList& cmd, const Scene& scene, RenderContext& cameraContext) {
-      if (!waterDraw || !scene.GetAnyWithComponent<WaterComponent>()) {
+      if (!waterDraw || !Entity::GetAnyWithComponent<WaterComponent>(scene)) {
          return;
       }
 

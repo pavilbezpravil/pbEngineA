@@ -312,7 +312,7 @@ namespace pbe {
          if (e->keyCode == KeyCode::Delete) {
             for (auto entity : editorSelection.selected) {
                Undo::Get().Delete(entity); // todo: undo not each but all at once
-               GetActiveScene()->DestroyImmediate(entity);
+               GetActiveScene()->DestroyDelayed(entity.GetEntityID());
             }
             editorSelection.ClearSelection();
          }

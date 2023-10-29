@@ -21,16 +21,14 @@ namespace pbe {
       Transform& Local();
       Transform World() const;
 
-      // todo: return const ref
-      // World space
       vec3 Position(Space space = Space::World) const;
       quat Rotation(Space space = Space::World) const;
       vec3 Scale(Space space = Space::World) const;
 
-      void SetTransform(const Transform& transform, Space space = Space::World);
-      void SetPosition(const vec3& pos, Space space = Space::World);
-      void SetRotation(const quat& rot, Space space = Space::World);
-      void SetScale(const vec3& s, Space space = Space::World);
+      SceneTransformComponent& SetTransform(const Transform& transform, Space space = Space::World);
+      SceneTransformComponent& SetPosition(const vec3& pos, Space space = Space::World);
+      SceneTransformComponent& SetRotation(const quat& rot, Space space = Space::World);
+      SceneTransformComponent& SetScale(const vec3& s, Space space = Space::World);
 
       vec3 Right() const;
       vec3 Up() const;
@@ -45,17 +43,20 @@ namespace pbe {
       bool HasParent() const { return (bool)parent; }
       bool HasChilds() const { return !children.empty(); }
 
-      void AddChild(Entity child, int iChild = -1, bool keepLocalTransform = false);
-      void RemoveChild(int idx);
-      void RemoveAllChild(Entity theirNewParent = {});
+      SceneTransformComponent& AddChild(Entity child, int iChild = -1, bool keepLocalTransform = false);
+      SceneTransformComponent& RemoveChild(int idx);
+      SceneTransformComponent& RemoveAllChild(Entity theirNewParent = {});
 
-      bool SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
-      bool SetParentInternal(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
+      SceneTransformComponent& SetParent(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
+      SceneTransformComponent& SetParentInternal(Entity newParent = {}, int iChild = -1, bool keepLocalTransform = false);
       int GetChildIdx() const;
 
       void Serialize(Serializer& ser) const;
       bool Deserialize(const Deserializer& deser);
       bool UI();
+
+      auto begin() { return children.begin(); }
+      auto end() { return children.end(); }
 
    private:
       Transform local{

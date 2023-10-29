@@ -67,7 +67,7 @@ namespace pbe {
             relativeScale = abs(relativeScale);
 
             uint chunkIdx = AddChunk(UINT32_MAX, relativeTrans.position, relativeScale);
-            chunkToEntity[chunkIdx] = entity.GetID();
+            chunkToEntity[chunkIdx] = entity.GetEntityID();
          }
 
          for (auto& child : entity.GetTransform().children) {

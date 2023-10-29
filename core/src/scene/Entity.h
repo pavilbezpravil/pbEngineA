@@ -48,8 +48,7 @@ namespace pbe {
       void DestroyDelayed();
 
       bool Enabled() const;
-      void Enable();
-      void Disable();
+      void Enable(bool enable);
       void EnableToggle();
 
       bool Valid() const {
@@ -59,7 +58,7 @@ namespace pbe {
       operator bool() const { return Valid(); } // todo: include Enabled?
       bool operator==(const Entity&) const = default;
 
-      EntityID GetID() const { return id; }
+      EntityID GetEntityID() const { return id; }
       Scene* GetScene() const { return scene; }
 
       SceneTransformComponent& GetTransform();
@@ -67,6 +66,16 @@ namespace pbe {
 
       const char* GetName() const;
       UUID GetUUID() const;
+
+      template<typename Component>
+      static Entity GetAnyWithComponent(const Scene& scene) {
+         return Entity{ scene.GetAnyWithComponent<Component>(), const_cast<Scene*>(&scene) };
+      }
+
+      template<typename Component>
+      static Entity GetAnyWithComponent(Scene& scene) {
+         return Entity{ scene.GetAnyWithComponent<Component>(), &scene };
+      }
 
    private:
       EntityID id = NullEntityID;

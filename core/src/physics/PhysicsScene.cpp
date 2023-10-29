@@ -131,7 +131,8 @@ namespace pbe {
          tkGroup->process();
          damageParamsBuffer.clear();
 
-         scene.DestroyDelayedEntities();
+         // for example destroy delayed entities
+         scene.OnSync();
       }
    }
 

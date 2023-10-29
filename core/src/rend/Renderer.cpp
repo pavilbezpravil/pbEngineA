@@ -299,7 +299,7 @@ namespace pbe {
          instance.transform = trans.GetWorldMatrix();
          instance.prevTransform = trans.GetPrevMatrix();
          instance.material = m;
-         instance.entityID = (uint)trans.entity.GetID();
+         instance.entityID = (uint)trans.entity.GetEntityID();
 
          instances.emplace_back(instance);
       }
@@ -480,7 +480,7 @@ namespace pbe {
       sceneCB.directLight.type = SLIGHT_TYPE_DIRECT;
 
       bool hasDirectLight = false;
-      if (Entity directEntity = scene.GetAnyWithComponent<DirectLightComponent>()) {
+      if (Entity directEntity = Entity::GetAnyWithComponent<DirectLightComponent>(scene)) {
          hasDirectLight = true;
 
          auto& trans = directEntity.GetTransform();
@@ -508,7 +508,7 @@ namespace pbe {
          sceneCB.toShadowSpace = NDCToTexSpaceMat4() * shadowCamera.GetViewProjection();
       }
 
-      if (Entity skyEntity = scene.GetAnyWithComponent<SkyComponent>()) {
+      if (Entity skyEntity = Entity::GetAnyWithComponent<SkyComponent>(scene)) {
          const auto& sky = skyEntity.Get<SkyComponent>();
 
          sceneCB.skyIntensity = sky.intensity;
@@ -967,7 +967,7 @@ namespace pbe {
          cb.instance.material.roughness = material.roughness;
          cb.instance.material.baseColor = material.baseColor;
          cb.instance.material.metallic = material.metallic;
-         cb.instance.entityID = (uint)trans.entity.GetID();
+         cb.instance.entityID = (uint)trans.entity.GetEntityID();
          cb.instanceStart = instanceID++;
 
          auto dynCB = cmd.AllocDynConstantBuffer(cb);
@@ -1036,7 +1036,7 @@ namespace pbe {
             SDrawCallCB cb;
             cb.instance.transform = trans.GetWorldMatrix();
             cb.instance.material.baseColor = outline.color;
-            cb.instance.entityID = (uint)trans.entity.GetID();
+            cb.instance.entityID = (uint)trans.entity.GetEntityID();
 
             auto dynCB = cmd.AllocDynConstantBuffer(cb);
             program.SetCB<SDrawCallCB>(cmd, "gDrawCallCB", *dynCB.buffer, dynCB.offset);

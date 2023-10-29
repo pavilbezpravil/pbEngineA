@@ -156,7 +156,7 @@ namespace pbe {
       if (scene) {
          renderContext.cursorPixelIdx = cursorPixelIdx;
 
-         Entity cameraEntity = scene->GetAnyWithComponent<CameraComponent>();
+         Entity cameraEntity = Entity::GetAnyWithComponent<CameraComponent>(*scene);
          if (!freeCamera && cameraEntity) {
             auto& trans = cameraEntity.Get<SceneTransformComponent>();
             camera.position = trans.Position();
@@ -287,11 +287,7 @@ namespace pbe {
                notifyManager.AddNotify(disable ? "Disable" : "Enable");
 
                for (Entity& entity : selection->selected) {
-                  if (disable) {
-                     entity.Disable();
-                  } else {
-                     entity.Enable();
-                  }
+                  entity.Enable(!disable);
                }
             }
 
@@ -835,7 +831,7 @@ namespace pbe {
          }
 
          for (Entity& entity : selection->selected) {
-            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            auto it = selectedEntityInitialTransforms.find(entity.GetEntityID());
             if (it == selectedEntityInitialTransforms.end()) {
                continue;
             }
@@ -876,7 +872,7 @@ namespace pbe {
          }
 
          for (Entity& entity : selection->selected) {
-            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            auto it = selectedEntityInitialTransforms.find(entity.GetEntityID());
             if (it == selectedEntityInitialTransforms.end()) {
                continue;
             }
@@ -900,7 +896,7 @@ namespace pbe {
          };
 
          for (Entity& entity : selection->selected) {
-            auto it = selectedEntityInitialTransforms.find(entity.GetID());
+            auto it = selectedEntityInitialTransforms.find(entity.GetEntityID());
             if (it == selectedEntityInitialTransforms.end()) {
                continue;
             }
@@ -917,7 +913,7 @@ namespace pbe {
       }
 
       for (Entity& entity : selection->selected) {
-         auto it = selectedEntityInitialTransforms.find(entity.GetID());
+         auto it = selectedEntityInitialTransforms.find(entity.GetEntityID());
          if (it == selectedEntityInitialTransforms.end()) {
             continue;
          }
@@ -936,7 +932,7 @@ namespace pbe {
       }
 
       for (Entity& entity : selection->selected) {
-         auto it = selectedEntityInitialTransforms.find(entity.GetID());
+         auto it = selectedEntityInitialTransforms.find(entity.GetEntityID());
          if (it == selectedEntityInitialTransforms.end()) {
             continue;
          }
@@ -962,7 +958,7 @@ namespace pbe {
 
       selectedEntityInitialTransforms.clear();
       for (auto entity : selection->selected) {
-         selectedEntityInitialTransforms[entity.GetID()] = entity.GetTransform().World();
+         selectedEntityInitialTransforms[entity.GetEntityID()] = entity.GetTransform().World();
       }
 
       // todo: add average

@@ -65,11 +65,8 @@ namespace pbe {
       }
 
       template<typename T, typename...Cs>
-      T& GetOrAddComponent(EntityID id, Cs&&... cs) {
-         if (auto c = TryGetComponent<T>(id)) {
-            return *c;
-         }
-         return AddComponent<T>(id, std::forward<Cs>(cs)...);
+      decltype(auto) GetOrAddComponent(EntityID id, Cs&&... cs) {
+         return registry.get_or_emplace<T>(id, std::forward<Cs>(cs)...);
       }
 
       template<typename T>
@@ -116,6 +113,16 @@ namespace pbe {
             ++count;
             });
          return count;
+      }
+
+      template<typename Component>
+      EntityID GetAnyWithComponent() const {
+         return View<Component>().front();
+      }
+
+      template<typename Component>
+      EntityID GetAnyWithComponent() {
+         return View<Component>().front();
       }
 
    protected:

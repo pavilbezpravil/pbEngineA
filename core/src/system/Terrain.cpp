@@ -26,7 +26,7 @@ namespace pbe {
    CVarSlider<int> cTerrainPatchCount{ C_TERRAIN_PATH "patch count", 64, 1, 512 };
 
    void Terrain::Render(CommandList& cmd, const Scene& scene, RenderContext& cameraContext) {
-      if (!cTerrainDraw || !scene.GetAnyWithComponent<TerrainComponent>()) {
+      if (!cTerrainDraw || !Entity::GetAnyWithComponent<TerrainComponent>(scene)) {
          return;
       }
 

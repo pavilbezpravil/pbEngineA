@@ -8,27 +8,19 @@ namespace pbe {
    Entity::Entity(entt::entity id, Scene* scene) : id(id), scene(scene) { }
 
    void Entity::DestroyDelayed() {
-      scene->DestroyDelayed(*this);
+      scene->DestroyDelayed(GetEntityID());
    }
 
    bool Entity::Enabled() const {
-      return scene->EntityEnabled(*this);
+      return scene->EntityEnabled(GetEntityID());
    }
 
-   void Entity::Enable() {
-      scene->EntityEnable(*this);
-   }
-
-   void Entity::Disable() {
-      scene->EntityDisable(*this);
+   void Entity::Enable(bool enable) {
+      scene->EntityEnable(GetEntityID(), enable);
    }
 
    void Entity::EnableToggle() {
-      if (Enabled()) {
-         Disable();
-      } else {
-         Enable();
-      }
+      Enable(!Enabled());
    }
 
    SceneTransformComponent& Entity::GetTransform() {

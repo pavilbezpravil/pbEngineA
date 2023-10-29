@@ -56,7 +56,8 @@ namespace pbe {
                   visibleChunkIndices.resize(visibleChunkCount);
                   tkChild->getVisibleChunkIndices(visibleChunkIndices.data(), visibleChunkCount);
 
-                  Entity childEntity = pScene->Create(parentTrans.parent, "Chunk Dynamic");
+                  Entity childEntity = pScene->Create("Chunk Dynamic");
+                  childEntity.GetTransform().SetParent(parentTrans.parent);
 
                   auto& childTrans = childEntity.GetTransform();
                   childTrans.SetPosition(parentTrans.Position());
@@ -91,7 +92,7 @@ namespace pbe {
 
                      // todo: update prev transform for correct motion
 
-                     childChunkToEntity[chunkIndex] = visibleChunkEntity.GetID();
+                     childChunkToEntity[chunkIndex] = visibleChunkEntity.GetEntityID();
 
                      uint visibleChunkParentIdx = chunkIndex;
                      while (!parentChunkToEntity.contains(visibleChunkParentIdx)) {

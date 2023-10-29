@@ -127,44 +127,44 @@ namespace pbe {
       return s;
    }
 
-   void SceneTransformComponent::SetTransform(const Transform& transform, Space space) {
+   SceneTransformComponent& SceneTransformComponent::SetTransform(const Transform& transform, Space space) {
       if (space == Space::World && HasParent()) {
          auto pTrans = parent.Get<SceneTransformComponent>().World();
          local = pTrans.TransformInv(transform);
-      }
-      else {
+      } else {
          local = transform;
       }
+      return *this;
    }
 
-   void SceneTransformComponent::SetPosition(const vec3& pos, Space space) {
+   SceneTransformComponent& SceneTransformComponent::SetPosition(const vec3& pos, Space space) {
       if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.position = glm::inverse(pTrans.Rotation()) * (pos - pTrans.Position()) / pTrans.Scale();
-      }
-      else {
+      } else {
          local.position = pos;
       }
+      return *this;
    }
 
-   void SceneTransformComponent::SetRotation(const quat& rot, Space space) {
+   SceneTransformComponent& SceneTransformComponent::SetRotation(const quat& rot, Space space) {
       if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.rotation = glm::inverse(pTrans.Rotation()) * rot;
-      }
-      else {
+      } else {
          local.rotation = rot;
       }
+      return *this;
    }
 
-   void SceneTransformComponent::SetScale(const vec3& s, Space space) {
+   SceneTransformComponent& SceneTransformComponent::SetScale(const vec3& s, Space space) {
       if (space == Space::World && HasParent()) {
          auto& pTrans = parent.Get<SceneTransformComponent>();
          local.scale = s / pTrans.Scale();
-      }
-      else {
+      } else {
          local.scale = s;
       }
+      return *this;
    }
 
    vec3 SceneTransformComponent::Right() const {
@@ -207,23 +207,26 @@ namespace pbe {
       prevWorld = World();
    }
 
-   void SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {
+   SceneTransformComponent& SceneTransformComponent::AddChild(Entity child, int iChild, bool keepLocalTransform) {
       child.Get<SceneTransformComponent>().SetParent(entity, iChild, keepLocalTransform);
+      return *this;
    }
 
-   void SceneTransformComponent::RemoveChild(int idx) {
+   SceneTransformComponent& SceneTransformComponent::RemoveChild(int idx) {
       ASSERT(idx >= 0 && idx < children.size());
       children[idx].Get<SceneTransformComponent>().SetParent(); // todo: mb set to scene root?
+      return *this;
    }
 
-   void SceneTransformComponent::RemoveAllChild(Entity theirNewParent) {
+   SceneTransformComponent& SceneTransformComponent::RemoveAllChild(Entity theirNewParent) {
       for (int i = (int)children.size() - 1; i >= 0; --i) {
          children[i].Get<SceneTransformComponent>().SetParent(theirNewParent);
       }
       ASSERT(!HasChilds());
+      return *this;
    }
 
-   bool SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
+   SceneTransformComponent& SceneTransformComponent::SetParent(Entity newParent, int iChild, bool keepLocalTransform) {
       if (!newParent) {
          newParent = entity.GetScene()->GetRootEntity();
       }
@@ -231,9 +234,9 @@ namespace pbe {
       return SetParentInternal(newParent, iChild, keepLocalTransform);
    }
 
-   bool SceneTransformComponent::SetParentInternal(Entity newParent, int iChild, bool keepLocalTransform) {
+   SceneTransformComponent& SceneTransformComponent::SetParentInternal(Entity newParent, int iChild, bool keepLocalTransform) {
       if (newParent == entity) {
-         return false;
+         return *this;
       }
 
       auto pos = Position();
@@ -246,9 +249,8 @@ namespace pbe {
             int idx = GetChildIdx();
             if (idx < iChild) {
                --iChild;
-            }
-            else if (idx == iChild) {
-               return false;
+            } else if (idx == iChild) {
+               return *this;
             }
          }
          std::erase(pTrans.children, entity);
@@ -260,8 +262,7 @@ namespace pbe {
 
          if (iChild == -1) {
             pTrans.children.push_back(entity);
-         }
-         else {
+         } else {
             pTrans.children.insert(pTrans.children.begin() + iChild, entity);
          }
       }
@@ -272,7 +273,7 @@ namespace pbe {
          SetScale(scale);
       }
 
-      return true;
+      return *this;
    }
 
    int SceneTransformComponent::GetChildIdx() const {

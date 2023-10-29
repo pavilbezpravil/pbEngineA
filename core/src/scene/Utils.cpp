@@ -42,8 +42,12 @@ namespace pbe {
 
    static Entity CreateEmpty(Scene& scene, string_view namePrefix, Entity parent, const vec3& pos, Space space) {
       // todo: find appropriate name
-      auto entity = scene.Create(parent, namePrefix);
-      entity.Get<SceneTransformComponent>().SetPosition(pos, space);
+      auto entity = scene.Create(namePrefix);
+
+      entity.GetTransform()
+         .SetParent(parent)
+         .SetPosition(pos, space);
+
       return entity;
    }
 
