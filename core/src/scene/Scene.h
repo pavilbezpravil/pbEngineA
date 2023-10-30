@@ -3,6 +3,7 @@
 #include "ECSScene.h"
 #include "core/Core.h"
 #include "core/Ref.h"
+#include "core/Type.h"
 #include "math/Types.h"
 
 
@@ -38,6 +39,100 @@ namespace pbe {
       // Delayed
       bool EntityEnabled(EntityID entityID) const;
       void EntityEnable(EntityID entityID, bool enable, bool withChilds = true);
+
+      struct ComponentEventHandlers {
+         using OnEventF = std::function<void(Entity&)>;
+         using OnEventMultipleF = std::function<void(Scene&)>;
+
+         OnEventF onEnable;
+         OnEventF onDisable;
+
+         OnEventMultipleF onEnableMultiple;
+         OnEventMultipleF onDisableMultiple;
+
+         std::vector<OnEventF> onUpdates;
+      };
+
+      std::unordered_map<TypeID, ComponentEventHandlers> componentEventMap;
+
+      template<typename Comp>
+      void OnComponentConstruct(entt::registry& registry, EntityID entityID) {
+         if (EntityEnabled(entityID)) {
+            auto it = componentEventMap.find(GetTypeID<Comp>());
+            // todo: if this function was called, handler must be registered
+            if (it != componentEventMap.end()) {
+               Entity entity{ entityID, this };
+               it->second.onEnable(entity);
+            }
+         }
+      }
+
+      template<typename Comp>
+      void OnComponentDestroy(entt::registry& registry, EntityID entityID) {
+         if (EntityEnabled(entityID)) {
+            auto it = componentEventMap.find(GetTypeID<Comp>());
+            if (it != componentEventMap.end()) {
+               Entity entity{ entityID, this };
+               it->second.onDisable(entity);
+            }
+         }
+      }
+
+      template<typename Comp>
+      void OnComponentUpdate(entt::registry& registry, EntityID entityID) {
+         if (EntityEnabled(entityID)) {
+            auto it = componentEventMap.find(GetTypeID<Comp>());
+            if (it != componentEventMap.end()) {
+               Entity entity{ entityID, this };
+
+               for (auto& onUpdate : it->second.onUpdates) {
+                  onUpdate(entity);
+               }
+            }
+         }
+      }
+
+      template<typename Comp, typename OnEnableT, typename OnDisableT>
+      void RegisterOnComponentEnableDisable(OnEnableT&& onEnableF, OnDisableT&& onDisableF) {
+         ComponentEventHandlers handlers;
+
+         handlers.onEnable = onEnableF;
+         handlers.onDisable = onDisableF;
+
+         handlers.onEnableMultiple = [onEnableF](Scene& scene) {
+            for (auto e : scene.ViewAll<Comp, DelayedEnableMarker>()) {
+               Entity entity{ e, &scene };
+               onEnableF(entity);
+            }
+         };
+
+         handlers.onDisableMultiple = [onDisableF](Scene& scene) {
+            for (auto e : scene.ViewAll<Comp, DelayedDisableMarker>()) {
+               Entity entity{ e, &scene };
+               onDisableF(entity);
+            }
+         };
+
+         auto typeID = GetTypeID<Comp>();
+         ASSERT(!componentEventMap.contains(typeID));
+         componentEventMap[typeID] = std::move(handlers);
+
+         registry.on_construct<Comp>().connect<&Scene::OnComponentConstruct<Comp>>(this);
+         registry.on_destroy<Comp>().connect<&Scene::OnComponentDestroy<Comp>>(this);
+      }
+
+      template<typename Comp, typename OnUpdateT>
+      void RegisterOnComponentUpdate(OnUpdateT&& onUpdateF) {
+         auto typeID = GetTypeID<Comp>();
+         ASSERT(componentEventMap.contains(typeID));
+         ComponentEventHandlers& handlers = componentEventMap[typeID];
+
+         if (handlers.onUpdates.empty()) {
+            registry.on_update<Comp>().connect<&Scene::OnComponentUpdate<Comp>>(this);
+         }
+
+         handlers.onUpdates.push_back(onUpdateF);
+      }
 
       // process all pending changes with entities (remove\add entity, remove\add component, etc)
       void OnSync();

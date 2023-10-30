@@ -209,7 +209,6 @@ namespace pbe {
 
    void Scene::AddSystem(Own<System>&& system) {
       system->SetScene(this);
-      system->OnSetEventHandlers(registry);
       systems.emplace_back(std::move(system));
    }
 
@@ -273,8 +272,10 @@ namespace pbe {
 
    void Scene::ProcessDelayedEnable() {
       // disable
-      for (auto& system : systems) {
-         system->OnEntityDisable();
+      if (ViewAll<DelayedDisableMarker>()) {
+         for (auto [_, handlers] : componentEventMap) {
+            handlers.onDisableMultiple(*this);
+         }
       }
 
       // todo: iterate over all systems or only scripts
@@ -289,8 +290,10 @@ namespace pbe {
       registry.clear<DelayedDisableMarker>();
 
       // enable
-      for (auto& system : systems) {
-         system->OnEntityEnable();
+      if (ViewAll<DelayedEnableMarker>()) {
+         for (auto [_, handlers] : componentEventMap) {
+            handlers.onEnableMultiple(*this);
+         }
       }
 
       // todo: iterate over all systems or only scripts
@@ -298,6 +301,7 @@ namespace pbe {
       //    si.sceneApplyFunc(*this, [](Script& script) { script.OnEnable(); });
       // }
 
+      // todo: move to RenderScene
       for (auto [entityID, trans] : ViewAll<DelayedEnableMarker, SceneTransformComponent>().each()) {
          trans.UpdatePrevTransform();
          registry.erase<DisableMarker>(entityID);

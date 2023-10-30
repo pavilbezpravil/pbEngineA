@@ -19,6 +19,52 @@ using namespace Nv::Blast;
 namespace pbe {
 
    PhysicsScene::PhysicsScene(Scene& scene) : scene(scene) {
+      scene.RegisterOnComponentEnableDisable<RigidBodyComponent>(
+         [&](Entity entity) {
+            auto& rb = entity.Get<RigidBodyComponent>();
+            rb.pxRigidActor = nullptr;
+            rb.destructData = nullptr;
+            rb.tkActor = nullptr;
+
+            rb.CreateOrUpdate(*pxScene, entity);
+         },
+         [&](Entity entity) {
+            entity.Get<RigidBodyComponent>().Remove();
+         }
+      );
+
+      scene.RegisterOnComponentUpdate<RigidBodyComponent>(
+         [&](Entity entity) {
+            entity.Get<RigidBodyComponent>().CreateOrUpdate(*pxScene, entity);
+         }
+      );
+
+      scene.RegisterOnComponentEnableDisable<TriggerComponent>(
+         [&](Entity entity) {
+            entity.Get<TriggerComponent>().pxRigidActor = nullptr;
+            AddTrigger(entity);
+         },
+         [&](Entity entity) {
+            RemoveTrigger(entity);
+         }
+      );
+
+      scene.RegisterOnComponentEnableDisable<JointComponent>(
+         [&](Entity entity) {
+            entity.Get<JointComponent>().pxJoint = nullptr;
+            AddJoint(entity);
+         },
+         [&](Entity entity) {
+            RemoveJoint(entity);
+         }
+      );
+
+      scene.RegisterOnComponentUpdate<JointComponent>(
+         [&](Entity entity) {
+            entity.Get<JointComponent>().SetData(entity);
+         }
+      );
+
       PxSceneDesc sceneDesc(GetPxPhysics()->getTolerancesScale());
       sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
       sceneDesc.cpuDispatcher = GetPxCpuDispatcher();
@@ -154,73 +200,8 @@ namespace pbe {
       }
    }
 
-   void PhysicsScene::OnSetEventHandlers(entt::registry& registry) {
-      registry.on_construct<RigidBodyComponent>().connect<&PhysicsScene::OnConstructRigidBody>(this);
-      registry.on_destroy<RigidBodyComponent>().connect<&PhysicsScene::OnDestroyRigidBody>(this);
-      registry.on_update<RigidBodyComponent>().connect<&PhysicsScene::OnUpdateRigidBody>(this);
-
-      registry.on_construct<TriggerComponent>().connect<&PhysicsScene::OnConstructTrigger>(this);
-      registry.on_destroy<TriggerComponent>().connect<&PhysicsScene::OnDestroyTrigger>(this);
-
-      registry.on_construct<JointComponent>().connect<&PhysicsScene::OnConstructJoint>(this);
-      registry.on_destroy<JointComponent>().connect<&PhysicsScene::OnDestroyJoint>(this);
-      registry.on_update<JointComponent>().connect<&PhysicsScene::OnUpdateJoint>(this);
-   }
-
-   void PhysicsScene::OnEntityEnable() {
-      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedEnableMarker>()) {
-         Entity entity{ e, &scene };
-
-         // todo: when copy component copy ptr to
-         auto& rb = entity.Get<RigidBodyComponent>();
-         ASSERT(!rb.pxRigidActor);
-         ASSERT(!rb.destructData);
-         ASSERT(!rb.tkActor);
-         rb.pxRigidActor = nullptr;
-         rb.destructData = nullptr;
-         rb.tkActor = nullptr;
-
-         AddRigidActor(entity);
-      }
-
-      for (auto e : pScene->ViewAll<GeometryComponent, TriggerComponent, DelayedEnableMarker>()) {
-         Entity entity{ e, &scene };
-         AddTrigger(entity);
-      }
-
-      for (auto e : pScene->ViewAll<JointComponent, DelayedEnableMarker>()) {
-         Entity entity{ e, &scene };
-         AddJoint(entity);
-      }
-   }
-
-   void PhysicsScene::OnEntityDisable() {
-      for (auto e : pScene->ViewAll<RigidBodyComponent, DelayedDisableMarker>()) {
-         Entity entity{ e, &scene };
-         RemoveRigidActor(entity);
-      }
-
-      for (auto e : pScene->ViewAll<TriggerComponent, DelayedDisableMarker>()) {
-         Entity entity{ e, &scene };
-         RemoveTrigger(entity);
-      }
-
-      for (auto e : pScene->ViewAll<JointComponent, DelayedDisableMarker>()) {
-         Entity entity{ e, &scene };
-         RemoveJoint(entity);
-      }
-   }
-
    void PhysicsScene::OnUpdate(float dt) {
       Simulate(dt);
-   }
-
-   void PhysicsScene::AddRigidActor(Entity entity) {
-      entity.Get<RigidBodyComponent>().CreateOrUpdate(*pxScene, entity);
-   }
-
-   void PhysicsScene::RemoveRigidActor(Entity entity) {
-      entity.Get<RigidBodyComponent>().Remove();
    }
 
    void PhysicsScene::AddTrigger(Entity entity) {
@@ -282,66 +263,6 @@ namespace pbe {
       ASSERT(reqSize <= damageParamsBuffer.capacity());
       damageParamsBuffer.resize(reqSize);
       return damageParamsBuffer.data() + curSize;
-   }
-
-   void PhysicsScene::OnConstructRigidBody(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-
-      // todo: when copy component copy ptr to
-      auto& rb = entity.Get<RigidBodyComponent>();
-      rb.pxRigidActor = nullptr;
-      rb.destructData = nullptr;
-      rb.tkActor = nullptr;
-
-      // todo: on each func has this check
-      if (entity.Enabled()) {
-         AddRigidActor(entity);
-      }
-   }
-
-   void PhysicsScene::OnDestroyRigidBody(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      RemoveRigidActor(entity);
-   }
-
-   void PhysicsScene::OnUpdateRigidBody(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      if (entity.Enabled()) {
-         AddRigidActor(entity);
-      }
-   }
-
-   void PhysicsScene::OnConstructTrigger(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      entity.Get<TriggerComponent>().pxRigidActor = nullptr; // todo:
-      if (entity.Enabled()) {
-         AddTrigger(entity);
-      }
-   }
-
-   void PhysicsScene::OnDestroyTrigger(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      RemoveTrigger(entity);
-   }
-
-   void PhysicsScene::OnConstructJoint(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      entity.Get<JointComponent>().pxJoint = nullptr; // todo:
-      if (entity.Enabled()) {
-         AddJoint(entity);
-      }
-   }
-
-   void PhysicsScene::OnDestroyJoint(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      RemoveJoint(entity);
-   }
-
-   void PhysicsScene::OnUpdateJoint(entt::registry& registry, entt::entity _entity) {
-      Entity entity{ _entity, &scene };
-      if (entity.Enabled()) {
-         entity.Get<JointComponent>().SetData(entity);
-      }
    }
 
 }

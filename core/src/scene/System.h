@@ -14,11 +14,6 @@ namespace pbe {
    public:
       virtual ~System() = default;
 
-      virtual void OnSetEventHandlers(entt::registry& registry) {}
-
-      virtual void OnEntityEnable() {}
-      virtual void OnEntityDisable() {}
-
       virtual void OnUpdate(float dt) {}
 
       // virtual void OnConstruct(entt::registry& registry, entt::entity entity) {}
