@@ -179,6 +179,8 @@ namespace pbe {
          bool enabled = false;
       };
 
+      void DuplicateHier(Entity& dst, const Entity& src, bool copyUUID);
+
       void DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
       void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
       void DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);

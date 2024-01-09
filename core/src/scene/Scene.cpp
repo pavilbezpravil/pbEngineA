@@ -9,6 +9,7 @@
 #include "script/Script.h"
 #include "typer/Serialize.h"
 #include "physics/PhysicsScene.h"
+#include "SceneHier.h"
 
 namespace pbe {
 
@@ -90,13 +91,7 @@ namespace pbe {
       auto& trans = entity.GetTransform();
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
 
-      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
-      DuplicateHierEntitiesWithMap(duplicatedEntity, entity, false, hierEntitiesMap);
-
-      Duplicate(duplicatedEntity, entity, false, hierEntitiesMap);
-
-      DuplicateEntityEnable(duplicatedEntity, hierEntitiesMap);
-      ProcessDelayedEnable();
+      DuplicateHier(duplicatedEntity, entity, false);
 
       return duplicatedEntity;
    }
@@ -232,13 +227,7 @@ namespace pbe {
       Entity dstRoot = pScene->CreateWithUUID(srcRoot.GetUUID(), Entity{}, srcRoot.GetName());
       pScene->SetRootEntity(dstRoot);
 
-      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
-      pScene->DuplicateHierEntitiesWithMap(dstRoot, srcRoot, true, hierEntitiesMap);
-
-      pScene->Duplicate(dstRoot, srcRoot, true, hierEntitiesMap);
-
-      pScene->DuplicateEntityEnable(dstRoot, hierEntitiesMap);
-      pScene->ProcessDelayedEnable();
+      pScene->DuplicateHier(dstRoot, srcRoot, true);
 
       return pScene;
    }
@@ -312,6 +301,23 @@ namespace pbe {
    void Scene::EntityDisableImmediate(Entity& entity) {
       ASSERT(!(entity.HasAny<DisableMarker, DelayedEnableMarker, DelayedDisableMarker>()));
       entity.Add<DisableMarker>();
+   }
+
+   void Scene::DuplicateHier(Entity& dst, const Entity& src, bool copyUUID) {
+      ASSERT(dst.GetScene() == this);
+
+      std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
+      DuplicateHierEntitiesWithMap(dst, src, copyUUID, hierEntitiesMap);
+
+      Duplicate(dst, src, copyUUID, hierEntitiesMap);
+
+      // todo: mb create set with enabled entities?
+      // todo: not fastest solution, find better way to implement copy scene, duplicate logic
+      for (auto [_, context] : hierEntitiesMap) {
+         EntityEnable(context.enttEntity, context.enabled, false);
+      }
+
+      ProcessDelayedEnable();
    }
 
    void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
