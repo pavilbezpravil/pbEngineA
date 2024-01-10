@@ -44,8 +44,8 @@ namespace pbe {
       auto& trans = entity.GetTransform();
 
       // todo: mb use iterator on children?
-      for (int iChild = (int)trans.children.size() - 1; iChild >= 0; --iChild) {
-         auto& child = trans.children[iChild];
+      for (int iChild = (int)trans.children.size(); iChild > 0; --iChild) {
+         auto& child = trans.children[iChild - 1];
          DestroyImmediate(child.GetEntityID());
 
          // note: scene component may be shrink during child destroy
@@ -88,10 +88,10 @@ namespace pbe {
 
       Entity duplicatedEntity = Create(std::format("{} {}", namePrefix, ++idx));
 
+      DuplicateHier(duplicatedEntity, entity, false);
+
       auto& trans = entity.GetTransform();
       duplicatedEntity.GetTransform().SetParent(trans.parent, trans.GetChildIdx() + 1);
-
-      DuplicateHier(duplicatedEntity, entity, false);
 
       return duplicatedEntity;
    }
@@ -305,6 +305,13 @@ namespace pbe {
 
    void Scene::DuplicateHier(Entity& dst, const Entity& src, bool copyUUID) {
       ASSERT(dst.GetScene() == this);
+      // if copyUUID == true, dst must be in another scene
+      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
+
+      struct DuplicateContext {
+         entt::entity enttEntity{ entt::null };
+         bool enabled = false;
+      };
 
       std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
 
@@ -321,7 +328,58 @@ namespace pbe {
          AddCopiedEntityToMap(duplicated, child);
          }, false);
 
-      Duplicate(dst, src, copyUUID, hierEntitiesMap);
+      SceneHier::ApplyFuncForChildren(src, [&hierEntitiesMap, dstScene = dst.GetScene()](Entity& src) {
+         Entity dst = { hierEntitiesMap[src.GetUUID()].enttEntity, dstScene };
+
+         auto& srcTrans = src.GetTransform();
+         auto& dstTrans = dst.GetTransform();
+
+         if (srcTrans.parent) {
+            Entity dstParent = { hierEntitiesMap[srcTrans.parent.GetUUID()].enttEntity, dst.GetScene() };
+            dstTrans.SetParent(dstParent, -1, true);
+         }
+         dstTrans.Local() = srcTrans.Local();
+         dstTrans.UpdatePrevTransform();
+
+         const auto& typer = Typer::Get();
+
+         // todo: use entt for iterate components
+         for (const auto& ci : typer.components) {
+            auto* pSrc = ci.tryGetConst(src);
+            if (!pSrc) {
+               continue;
+            }
+
+            auto pDst = ci.copyCtor(dst, pSrc);
+
+            const auto& ti = typer.GetTypeInfo(ci.typeID);
+            if (!ti.hasEntityRef) {
+               continue;
+            }
+
+            for (const auto& field : ti.fields) {
+               auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
+
+               if (filedTypeInfo.hasEntityRef) {
+                  // todo: while dont support nested entity ref
+                  ASSERT(filedTypeInfo.IsSimpleType());
+
+                  // it like from src, because it was copied by value in 'copyCtor'
+                  auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
+                  if (!*pDstEntity) {
+                     continue;
+                  }
+
+                  auto uuid = pDstEntity->GetUUID();
+
+                  auto it = hierEntitiesMap.find(uuid);
+                  if (it != hierEntitiesMap.end()) {
+                     *pDstEntity = Entity{ it->second.enttEntity, dst.GetScene() };
+                  }
+               }
+            }
+         }
+         });
 
       // todo: mb create set with enabled entities?
       // todo: not fastest solution, find better way to implement copy scene, duplicate logic
@@ -330,66 +388,6 @@ namespace pbe {
       }
 
       ProcessDelayedEnable();
-   }
-
-   void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
-      // if copyUUID == true, dst must be in another scene
-      ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
-
-      auto& srcTrans = src.GetTransform();
-
-      // todo: move after loop?
-      auto& dstTrans = dst.GetTransform();
-      if (srcTrans.parent) {
-         Entity dstParent = { hierEntitiesMap[srcTrans.parent.GetUUID()].enttEntity, dst.GetScene() };
-         dstTrans.SetParent(dstParent, -1, true);
-      }
-      dstTrans.Local() = srcTrans.Local();
-      dstTrans.UpdatePrevTransform();
-
-      for (auto child : srcTrans.children) {
-         Entity duplicatedChild = { hierEntitiesMap[child.GetUUID()].enttEntity, dst.GetScene()};
-         Duplicate(duplicatedChild, child, copyUUID, hierEntitiesMap);
-      }
-
-      const auto& typer = Typer::Get();
-
-      // todo: use entt for iterate components
-      for (const auto& ci : typer.components) {
-         auto* pSrc = ci.tryGetConst(src);
-         if (!pSrc) {
-            continue;
-         }
-
-         auto pDst = ci.copyCtor(dst, pSrc);
-
-         const auto& ti = typer.GetTypeInfo(ci.typeID);
-         if (!ti.hasEntityRef) {
-            continue;
-         }
-
-         for (const auto& field : ti.fields) {
-            auto& filedTypeInfo = typer.GetTypeInfo(field.typeID);
-
-            if (filedTypeInfo.hasEntityRef) {
-               // todo: while dont support nested entity ref
-               ASSERT(filedTypeInfo.IsSimpleType());
-
-               // it like from src, because it was copied by value in 'copyCtor'
-               auto pDstEntity = (Entity*)((byte*)pDst + field.offset);
-               if (!*pDstEntity) {
-                  continue;
-               }
-
-               auto uuid = pDstEntity->GetUUID();
-               
-               auto it = hierEntitiesMap.find(uuid);
-               if (it != hierEntitiesMap.end()) {
-                  *pDstEntity = Entity{ it->second.enttEntity, dst.GetScene()};
-               }
-            }
-         }
-      }
    }
 
    static string gAssetsPath = "../../assets/";

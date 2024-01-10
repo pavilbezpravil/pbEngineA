@@ -174,13 +174,7 @@ namespace pbe {
 
       void EntityDisableImmediate(Entity& entity);
 
-      struct DuplicateContext {
-         entt::entity enttEntity{ entt::null };
-         bool enabled = false;
-      };
-
       void DuplicateHier(Entity& dst, const Entity& src, bool copyUUID);
-      void Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap);
 
       friend Entity;
       friend CORE_API Own<Scene> SceneDeserialize(std::string_view path);
