@@ -16,14 +16,14 @@ namespace pbe {
 
    struct SceneHier {
       template<typename F> requires FuncTakesEntity<F>
-      static void ApplyFuncForChildren(Entity root, bool applyOnRoot, F&& func) {
+      static void ApplyFuncForChildren(Entity root, F&& func, bool applyOnRoot = true) {
          if (applyOnRoot) {
             func(root);
          }
 
          auto& trans = root.GetTransform();
          for (auto& childEntity : trans.children) {
-            ApplyFuncForChildren(childEntity, true, std::forward<F>(func));
+            ApplyFuncForChildren(childEntity, std::forward<F>(func));
          }
       }
 

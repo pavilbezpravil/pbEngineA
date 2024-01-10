@@ -265,10 +265,10 @@ namespace pbe {
                   }
                };
 
-               SceneHier::ApplyFuncForChildren(lastSelected, false, func);
+               SceneHier::ApplyFuncForChildren(lastSelected, func, false);
 
                for (auto entity : selection->selected | std::views::reverse | std::views::drop(1)) {
-                  SceneHier::ApplyFuncForChildren(entity, true, func);
+                  SceneHier::ApplyFuncForChildren(entity, func);
                }
             }
          }
@@ -280,7 +280,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize base color", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFuncForChildren(entity, true,
+               SceneHier::ApplyFuncForChildren(entity,
                   [&] (Entity& entity){
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->baseColor = Saturate(material->baseColor + Random::Float3(vec3{ -1 }, vec3{ 1 }) * rndScale);
@@ -291,7 +291,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize roughness", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFuncForChildren(entity, true,
+               SceneHier::ApplyFuncForChildren(entity,
                   [&](Entity& entity) {
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->roughness = Saturate(material->roughness + Random::Float(-1, 1) * rndScale);
@@ -302,7 +302,7 @@ namespace pbe {
 
          if (ImGui::MenuItem("Randomize metalness", 0, false, nSelected >= 1)) {
             for (auto& entity : selection->selected) {
-               SceneHier::ApplyFuncForChildren(entity, true,
+               SceneHier::ApplyFuncForChildren(entity,
                   [&](Entity& entity) {
                      if (auto material = entity.TryGet<MaterialComponent>()) {
                         material->metallic = Saturate(material->metallic + Random::Float(-1, 1) * rndScale);

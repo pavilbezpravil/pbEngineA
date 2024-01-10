@@ -307,7 +307,19 @@ namespace pbe {
       ASSERT(dst.GetScene() == this);
 
       std::unordered_map<UUID, DuplicateContext> hierEntitiesMap;
-      DuplicateHierEntitiesWithMap(dst, src, copyUUID, hierEntitiesMap);
+
+      auto AddCopiedEntityToMap = [&](Entity& duplicated, const Entity& src) {
+         hierEntitiesMap[src.GetUUID()] = DuplicateContext{ duplicated.GetEntityID(), src.Enabled() };
+         // while duplicate entities, disable them
+         EntityDisableImmediate(duplicated);
+         };
+
+      AddCopiedEntityToMap(dst, src);
+
+      SceneHier::ApplyFuncForChildren(src, [&](Entity& child) {
+         Entity duplicated = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, NullEntity, child.GetName());
+         AddCopiedEntityToMap(duplicated, child);
+         }, false);
 
       Duplicate(dst, src, copyUUID, hierEntitiesMap);
 
@@ -320,19 +332,6 @@ namespace pbe {
       ProcessDelayedEnable();
    }
 
-   void Scene::DuplicateHierEntitiesWithMap(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
-      hierEntitiesMap[src.GetUUID()] = DuplicateContext{ dst.GetEntityID(), src.Enabled() };
-      // while duplicate entities, disable them
-      dst.GetScene()->EntityDisableImmediate(dst);
-
-      auto& srcTrans = src.GetTransform();
-
-      for (auto child : srcTrans.children) {
-         Entity duplicatedChild = CreateWithUUID(copyUUID ? child.GetUUID() : UUID{}, dst, child.GetName());
-         DuplicateHierEntitiesWithMap(duplicatedChild, child, copyUUID, hierEntitiesMap);
-      }
-   }
-
    void Scene::Duplicate(Entity& dst, const Entity& src, bool copyUUID, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
       // if copyUUID == true, dst must be in another scene
       ASSERT(!copyUUID || dst.GetScene() != src.GetScene());
@@ -341,6 +340,10 @@ namespace pbe {
 
       // todo: move after loop?
       auto& dstTrans = dst.GetTransform();
+      if (srcTrans.parent) {
+         Entity dstParent = { hierEntitiesMap[srcTrans.parent.GetUUID()].enttEntity, dst.GetScene() };
+         dstTrans.SetParent(dstParent, -1, true);
+      }
       dstTrans.Local() = srcTrans.Local();
       dstTrans.UpdatePrevTransform();
 
@@ -386,16 +389,6 @@ namespace pbe {
                }
             }
          }
-      }
-   }
-
-   void Scene::DuplicateEntityEnable(Entity& root, std::unordered_map<UUID, DuplicateContext>& hierEntitiesMap) {
-      ASSERT(root.GetScene() == this);
-      // todo: mb create set with enabled entities?
-      // todo: not fastest solution, find better way to implement copy scene, duplicate logic
-
-      for (auto [_, context] : hierEntitiesMap) {
-         EntityEnable(context.enttEntity, context.enabled, false);
       }
    }
 
